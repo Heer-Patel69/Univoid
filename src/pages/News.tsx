@@ -5,7 +5,7 @@ import AuthModal from "@/components/auth/AuthModal";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, ExternalLink, User } from "lucide-react";
+import { Calendar, ExternalLink, User, Newspaper as NewsIcon, ArrowRight } from "lucide-react";
 
 const mockNews = [
   {
@@ -59,7 +59,7 @@ const News = () => {
   const [authMessage, setAuthMessage] = useState("");
 
   const handleExternalLink = () => {
-    setAuthMessage("Login to access external news links");
+    setAuthMessage("Sign in to access external news links");
     setAuthOpen(true);
   };
 
@@ -67,56 +67,68 @@ const News = () => {
     <div className="min-h-screen flex flex-col bg-background">
       <Header onAuthClick={() => setAuthOpen(true)} />
       
-      <main className="flex-1 py-8">
+      <main className="flex-1 py-10 md:py-14">
         <div className="container-wide">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-              Campus News
-            </h1>
-            <p className="text-muted-foreground">
-              Stay updated with the latest from your university
-            </p>
+          <div className="mb-10">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-accent rounded-xl flex items-center justify-center">
+                <NewsIcon className="w-6 h-6 text-accent-foreground" />
+              </div>
+              <div>
+                <h1 className="font-display text-2xl md:text-3xl text-foreground">
+                  Campus News
+                </h1>
+                <p className="text-muted-foreground">
+                  Latest updates from your university
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* News Grid */}
           <div className="grid md:grid-cols-2 gap-6">
             {mockNews.map((news) => (
-              <Card key={news.id} className="overflow-hidden hover:border-primary/30 transition-colors">
-                <img
-                  src={news.image}
-                  alt={news.title}
-                  className="w-full h-48 object-cover"
-                />
-                <CardContent className="p-5">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Badge variant="secondary" className="text-xs">{news.category}</Badge>
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
+              <Card key={news.id} className="card-premium overflow-hidden group">
+                <div className="relative overflow-hidden">
+                  <img
+                    src={news.image}
+                    alt={news.title}
+                    className="w-full h-52 object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                  <Badge className="absolute top-4 left-4 bg-background/90 text-foreground border-0">
+                    {news.category}
+                  </Badge>
+                </div>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
+                    <span className="flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5" />
+                      {news.author}
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5" />
                       {news.date}
                     </span>
                   </div>
                   
-                  <h3 className="font-semibold text-foreground mb-2 line-clamp-2">
+                  <h3 className="font-display font-semibold text-lg text-foreground mb-3 line-clamp-2 group-hover:text-primary transition-colors">
                     {news.title}
                   </h3>
                   
-                  <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
+                  <p className="text-sm text-muted-foreground mb-5 line-clamp-3 leading-relaxed">
                     {news.excerpt}
                   </p>
                   
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <User className="w-3 h-3" />
-                      {news.author}
-                    </span>
-                    
+                  <div className="flex items-center justify-end">
                     {news.hasExternalLink ? (
-                      <Button variant="outline" size="sm" onClick={handleExternalLink} className="flex items-center gap-1">
-                        Read more <ExternalLink className="w-3 h-3" />
+                      <Button variant="outline" size="sm" onClick={handleExternalLink} className="flex items-center gap-1.5">
+                        Read more <ExternalLink className="w-3.5 h-3.5" />
                       </Button>
                     ) : (
-                      <Button variant="ghost" size="sm">Read more</Button>
+                      <Button variant="ghost" size="sm" className="text-primary hover:text-primary/80">
+                        Read more <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                      </Button>
                     )}
                   </div>
                 </CardContent>
@@ -125,14 +137,18 @@ const News = () => {
           </div>
 
           {/* CTA */}
-          <div className="mt-12 text-center p-8 bg-secondary/30 rounded-lg">
-            <p className="text-muted-foreground mb-4">
-              Have campus news to share?
-            </p>
-            <Button onClick={() => { setAuthMessage("Login to submit news"); setAuthOpen(true); }}>
-              Join to contribute
-            </Button>
-          </div>
+          <Card className="mt-12 border-0 bg-secondary/50">
+            <CardContent className="p-8 text-center">
+              <h3 className="font-display text-xl text-foreground mb-3">Have campus news to share?</h3>
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                Submit academic updates, event announcements, or achievement stories. All submissions are reviewed by our admin team.
+              </p>
+              <Button onClick={() => { setAuthMessage("Sign in to submit news"); setAuthOpen(true); }} className="shadow-premium-sm">
+                Submit news
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </main>
 
