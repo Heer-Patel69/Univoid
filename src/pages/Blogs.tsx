@@ -38,7 +38,7 @@ const Blogs = () => {
 
   const handleWriteBlog = () => {
     if (user) {
-      navigate("/write-blog");
+      navigate("/submit-blog");
     } else {
       setAuthOpen(true);
     }
