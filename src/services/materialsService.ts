@@ -123,6 +123,19 @@ export async function uploadMaterial(
     return { id: null, error: error as Error };
   }
 
+  // Award XP for material upload (+30 XP)
+  try {
+    await supabase.rpc('award_xp', {
+      _user_id: userId,
+      _amount: 30,
+      _reason: 'material_upload',
+      _content_type: 'material',
+      _content_id: data.id,
+    });
+  } catch (xpError) {
+    console.error('Failed to award XP:', xpError);
+  }
+
   return { id: data.id, error: null };
 }
 

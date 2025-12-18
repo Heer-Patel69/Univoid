@@ -136,6 +136,19 @@ export async function createBook(
     return { id: null, error: error as Error };
   }
 
+  // Award XP for book listing (+25 XP)
+  try {
+    await supabase.rpc('award_xp', {
+      _user_id: data.created_by,
+      _amount: 25,
+      _reason: 'book_listing',
+      _content_type: 'book',
+      _content_id: insertData.id,
+    });
+  } catch (xpError) {
+    console.error('Failed to award XP:', xpError);
+  }
+
   return { id: insertData.id, error: null };
 }
 

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import { BottomNav } from "@/components/layout/BottomNav";
 import AuthModal from "@/components/auth/AuthModal";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -46,7 +47,7 @@ const Leaderboard = () => {
   const topThree = leaderboard.slice(0, 3);
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background pb-20 md:pb-0">
       <Header onAuthClick={() => setAuthOpen(true)} />
       
       <main className="flex-1 py-10 md:py-14">
@@ -210,6 +211,7 @@ const Leaderboard = () => {
       </main>
 
       <Footer />
+      <BottomNav />
       
       <AuthModal 
         isOpen={authOpen} 
