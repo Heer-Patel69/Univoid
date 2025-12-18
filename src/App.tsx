@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import Materials from "./pages/Materials";
 import News from "./pages/News";
@@ -35,17 +36,17 @@ const App = () => (
             <Route path="/blogs" element={<Blogs />} />
             <Route path="/books" element={<Books />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/dashboard/upload-material" element={<UploadMaterial />} />
-            <Route path="/dashboard/write-blog" element={<WriteBlog />} />
-            <Route path="/dashboard/submit-news" element={<SubmitNews />} />
-            <Route path="/dashboard/list-book" element={<ListBook />} />
-            <Route path="/upload-material" element={<UploadMaterial />} />
-            <Route path="/submit-blog" element={<WriteBlog />} />
-            <Route path="/submit-news" element={<SubmitNews />} />
-            <Route path="/sell-book" element={<ListBook />} />
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/dashboard/upload-material" element={<ProtectedRoute><UploadMaterial /></ProtectedRoute>} />
+            <Route path="/dashboard/write-blog" element={<ProtectedRoute><WriteBlog /></ProtectedRoute>} />
+            <Route path="/dashboard/submit-news" element={<ProtectedRoute><SubmitNews /></ProtectedRoute>} />
+            <Route path="/dashboard/list-book" element={<ProtectedRoute><ListBook /></ProtectedRoute>} />
+            <Route path="/upload-material" element={<ProtectedRoute><UploadMaterial /></ProtectedRoute>} />
+            <Route path="/submit-blog" element={<ProtectedRoute><WriteBlog /></ProtectedRoute>} />
+            <Route path="/submit-news" element={<ProtectedRoute><SubmitNews /></ProtectedRoute>} />
+            <Route path="/sell-book" element={<ProtectedRoute><ListBook /></ProtectedRoute>} />
             <Route path="/profile/:userId" element={<Profile />} />
-            <Route path="/admin" element={<Admin />} />
+            <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
