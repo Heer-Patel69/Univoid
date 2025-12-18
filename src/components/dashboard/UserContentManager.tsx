@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -29,32 +29,62 @@ const UserContentManager = ({ userId }: UserContentManagerProps) => {
   const [books, setBooks] = useState<Book[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("materials");
+  const isMounted = useRef(true);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
-  const fetchAllContent = async () => {
+  const fetchAllContent = useCallback(async () => {
     try {
-      const [mats, blgs, nws, bks] = await Promise.all([
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Content fetch timeout')), 8000)
+      );
+
+      const fetchPromise = Promise.all([
         getUserMaterials(userId),
         getUserBlogs(userId),
         getUserNews(userId),
         getUserBooks(userId),
       ]);
-      setMaterials(mats);
-      setBlogs(blgs);
-      setNews(nws);
-      setBooks(bks);
+
+      const [mats, blgs, nws, bks] = await Promise.race([
+        fetchPromise,
+        timeoutPromise,
+      ]) as Awaited<typeof fetchPromise>;
+
+      if (isMounted.current) {
+        setMaterials(mats);
+        setBlogs(blgs);
+        setNews(nws);
+        setBooks(bks);
+      }
     } catch (error) {
       console.error("Error fetching user content:", error);
     } finally {
-      setIsLoading(false);
+      if (isMounted.current) {
+        setIsLoading(false);
+      }
     }
-  };
+  }, [userId]);
 
   useEffect(() => {
+    isMounted.current = true;
+
+    // Safety timeout
+    const safetyTimeout = setTimeout(() => {
+      if (isMounted.current && isLoading) {
+        setIsLoading(false);
+      }
+    }, 10000);
+
     fetchAllContent();
 
-    // Real-time subscriptions
-    const channel = supabase
-      .channel("user-content")
+    // Cleanup existing channel
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+    }
+
+    // Single channel for all user content
+    channelRef.current = supabase
+      .channel(`user-content-${userId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "materials", filter: `created_by=eq.${userId}` }, fetchAllContent)
       .on("postgres_changes", { event: "*", schema: "public", table: "blogs", filter: `created_by=eq.${userId}` }, fetchAllContent)
       .on("postgres_changes", { event: "*", schema: "public", table: "news", filter: `created_by=eq.${userId}` }, fetchAllContent)
@@ -62,9 +92,14 @@ const UserContentManager = ({ userId }: UserContentManagerProps) => {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      isMounted.current = false;
+      clearTimeout(safetyTimeout);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
-  }, [userId]);
+  }, [userId, fetchAllContent]);
 
   const handleDeleteMaterial = async (id: string) => {
     return deleteMaterial(id, userId);

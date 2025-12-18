@@ -21,21 +21,15 @@ import {
 
 const Dashboard = () => {
   const { user, profile, isLoading } = useAuth();
-  const { stats, isLoading: statsLoading } = useDashboardStats(user?.id);
+  const { stats } = useDashboardStats(user?.id);
 
-  // Show loading state
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  // Redirect to home if not authenticated
-  if (!user) {
+  // Redirect to home if not authenticated (but only after loading is done)
+  if (!isLoading && !user) {
     return <Navigate to="/" replace />;
   }
+
+  // Show minimal loading indicator inline, not blocking
+  const showLoadingOverlay = isLoading && !user;
 
   const xp = profile?.total_xp ?? 0;
   const level = Math.floor(xp / 250) + 1;
@@ -56,6 +50,14 @@ const Dashboard = () => {
     { label: "Write Blog", icon: PenLine, href: "/submit-blog" },
     { label: "List Book", icon: Plus, href: "/sell-book" },
   ];
+
+  if (showLoadingOverlay) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
