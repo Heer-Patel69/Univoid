@@ -36,20 +36,52 @@ async function fetchContributorNames(userIds: string[]): Promise<Map<string, str
   return nameMap;
 }
 
-// Materials
+// Material filters interface
+export interface MaterialFilters {
+  search?: string;
+  course?: string;
+  branch?: string;
+  subject?: string;
+  language?: string;
+  college?: string;
+}
+
+// Materials with filters
 export async function getMaterialsPaginated(
   page = 0,
-  pageSize = DEFAULT_PAGE_SIZE
+  pageSize = DEFAULT_PAGE_SIZE,
+  filters?: MaterialFilters
 ): Promise<PaginatedResult<Material>> {
   const from = page * pageSize;
   const to = from + pageSize - 1;
 
-  const { data, error, count } = await supabase
+  let query = supabase
     .from('materials')
     .select('*', { count: 'exact' })
     .eq('status', 'approved')
-    .order('created_at', { ascending: false })
-    .range(from, to);
+    .order('created_at', { ascending: false });
+
+  // Apply filters
+  if (filters?.course) {
+    query = query.eq('course', filters.course);
+  }
+  if (filters?.branch) {
+    query = query.eq('branch', filters.branch);
+  }
+  if (filters?.language) {
+    query = query.eq('language', filters.language);
+  }
+  if (filters?.subject) {
+    query = query.ilike('subject', `%${filters.subject}%`);
+  }
+  if (filters?.college) {
+    query = query.ilike('college', `%${filters.college}%`);
+  }
+  if (filters?.search) {
+    query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%,subject.ilike.%${filters.search}%`);
+  }
+
+  const { data, error, count } = await query.range(from, to);
 
   if (error) throw error;
 

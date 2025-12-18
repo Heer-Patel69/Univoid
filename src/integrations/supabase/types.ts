@@ -127,6 +127,9 @@ export type Database = {
       }
       materials: {
         Row: {
+          branch: string | null
+          college: string | null
+          course: string | null
           created_at: string
           created_by: string
           description: string | null
@@ -134,11 +137,16 @@ export type Database = {
           file_type: string
           file_url: string
           id: string
+          language: string | null
           status: Database["public"]["Enums"]["content_status"]
+          subject: string | null
           title: string
           updated_at: string
         }
         Insert: {
+          branch?: string | null
+          college?: string | null
+          course?: string | null
           created_at?: string
           created_by: string
           description?: string | null
@@ -146,11 +154,16 @@ export type Database = {
           file_type: string
           file_url: string
           id?: string
+          language?: string | null
           status?: Database["public"]["Enums"]["content_status"]
+          subject?: string | null
           title: string
           updated_at?: string
         }
         Update: {
+          branch?: string | null
+          college?: string | null
+          course?: string | null
           created_at?: string
           created_by?: string
           description?: string | null
@@ -158,7 +171,9 @@ export type Database = {
           file_type?: string
           file_url?: string
           id?: string
+          language?: string | null
           status?: Database["public"]["Enums"]["content_status"]
+          subject?: string | null
           title?: string
           updated_at?: string
         }
@@ -206,10 +221,14 @@ export type Database = {
           course_stream: string
           created_at: string
           email: string
+          email_verified: boolean | null
           full_name: string
           id: string
           is_disabled: boolean
           mobile_number: string | null
+          phone_otp_code: string | null
+          phone_otp_expires_at: string | null
+          phone_verified: boolean | null
           profile_photo_url: string | null
           total_xp: number
           updated_at: string
@@ -220,10 +239,14 @@ export type Database = {
           course_stream: string
           created_at?: string
           email: string
+          email_verified?: boolean | null
           full_name: string
           id: string
           is_disabled?: boolean
           mobile_number?: string | null
+          phone_otp_code?: string | null
+          phone_otp_expires_at?: string | null
+          phone_verified?: boolean | null
           profile_photo_url?: string | null
           total_xp?: number
           updated_at?: string
@@ -234,10 +257,14 @@ export type Database = {
           course_stream?: string
           created_at?: string
           email?: string
+          email_verified?: boolean | null
           full_name?: string
           id?: string
           is_disabled?: boolean
           mobile_number?: string | null
+          phone_otp_code?: string | null
+          phone_otp_expires_at?: string | null
+          phone_verified?: boolean | null
           profile_photo_url?: string | null
           total_xp?: number
           updated_at?: string
