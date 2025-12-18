@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import AuthModal from "@/components/auth/AuthModal";
@@ -9,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Search, Download, Eye, Calendar, User, BookOpen, ArrowRight } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Material {
   id: number;
@@ -33,14 +35,30 @@ const mockMaterials: Material[] = [
 ];
 
 const Materials = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [authOpen, setAuthOpen] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [previewMaterial, setPreviewMaterial] = useState<Material | null>(null);
 
   const handleDownload = () => {
-    setAuthMessage("Sign in to download study materials");
-    setAuthOpen(true);
+    if (user) {
+      // TODO: Implement actual download
+      console.log("Downloading...");
+    } else {
+      setAuthMessage("Sign in to download study materials");
+      setAuthOpen(true);
+    }
+  };
+
+  const handleUpload = () => {
+    if (user) {
+      navigate("/dashboard");
+    } else {
+      setAuthMessage("Sign in to upload study materials");
+      setAuthOpen(true);
+    }
   };
 
   const handlePreview = (material: Material) => {
@@ -169,7 +187,7 @@ const Materials = () => {
               <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                 Help fellow students by uploading your notes, past papers, or study guides. Earn XP for every approved contribution.
               </p>
-              <Button onClick={() => { setAuthMessage("Sign in to upload study materials"); setAuthOpen(true); }} className="shadow-premium-sm">
+              <Button onClick={handleUpload} className="shadow-premium-sm">
                 Upload materials
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
