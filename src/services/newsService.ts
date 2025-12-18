@@ -47,27 +47,29 @@ export async function getNewsById(id: string): Promise<News | null> {
 export async function createNews(
   title: string,
   content: string,
-  images: File[],
-  externalLink: string | null,
-  userId: string
+  userId: string,
+  externalLink?: string,
+  images?: File[]
 ): Promise<{ id: string | null; error: Error | null }> {
   const imageUrls: string[] = [];
 
   // Upload up to 3 images
-  const imagesToUpload = images.slice(0, 3);
-  for (const image of imagesToUpload) {
-    const fileExt = image.name.split('.').pop();
-    const filePath = `${userId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+  if (images && images.length > 0) {
+    const imagesToUpload = images.slice(0, 3);
+    for (const image of imagesToUpload) {
+      const fileExt = image.name.split('.').pop();
+      const filePath = `${userId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from('news-images')
-      .upload(filePath, image);
-
-    if (!uploadError) {
-      const { data: { publicUrl } } = supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('news-images')
-        .getPublicUrl(filePath);
-      imageUrls.push(publicUrl);
+        .upload(filePath, image);
+
+      if (!uploadError) {
+        const { data: { publicUrl } } = supabase.storage
+          .from('news-images')
+          .getPublicUrl(filePath);
+        imageUrls.push(publicUrl);
+      }
     }
   }
 
@@ -77,7 +79,7 @@ export async function createNews(
       title,
       content,
       image_urls: imageUrls,
-      external_link: externalLink,
+      external_link: externalLink || null,
       created_by: userId,
       status: 'pending',
     })

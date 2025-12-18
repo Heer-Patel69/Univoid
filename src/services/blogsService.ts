@@ -47,8 +47,8 @@ export async function getBlogById(id: string): Promise<Blog | null> {
 export async function createBlog(
   title: string,
   content: string,
-  coverImage: File | null,
-  userId: string
+  userId: string,
+  coverImage?: File | null
 ): Promise<{ id: string | null; error: Error | null }> {
   let coverImageUrl: string | null = null;
 

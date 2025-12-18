@@ -65,49 +65,55 @@ export async function getSellerContact(bookId: string): Promise<{
   };
 }
 
+interface CreateBookData {
+  title: string;
+  description?: string;
+  price?: number;
+  condition?: string;
+  seller_email: string;
+  seller_mobile: string;
+  seller_address: string;
+  created_by: string;
+  images?: File[];
+}
+
 export async function createBook(
-  title: string,
-  description: string,
-  price: number | null,
-  condition: string,
-  images: File[],
-  sellerMobile: string,
-  sellerAddress: string,
-  sellerEmail: string,
-  userId: string
+  data: CreateBookData
 ): Promise<{ id: string | null; error: Error | null }> {
   const imageUrls: string[] = [];
 
   // Upload up to 3 images
-  const imagesToUpload = images.slice(0, 3);
-  for (const image of imagesToUpload) {
-    const fileExt = image.name.split('.').pop();
-    const filePath = `${userId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+  if (data.images && data.images.length > 0) {
+    const imagesToUpload = data.images.slice(0, 3);
+    for (const image of imagesToUpload) {
+      const fileExt = image.name.split('.').pop();
+      const filePath = `${data.created_by}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from('book-images')
-      .upload(filePath, image);
-
-    if (!uploadError) {
-      const { data: { publicUrl } } = supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('book-images')
-        .getPublicUrl(filePath);
-      imageUrls.push(publicUrl);
+        .upload(filePath, image);
+
+      if (!uploadError) {
+        const { data: urlData } = supabase.storage
+          .from('book-images')
+          .getPublicUrl(filePath);
+        imageUrls.push(urlData.publicUrl);
+      }
     }
   }
 
-  const { data, error } = await supabase
+  const { data: insertData, error } = await supabase
     .from('books')
     .insert({
-      title,
-      description,
-      price,
-      condition,
+      title: data.title,
+      description: data.description || null,
+      price: data.price || null,
+      condition: data.condition || null,
       image_urls: imageUrls,
-      seller_mobile: sellerMobile,
-      seller_address: sellerAddress,
-      seller_email: sellerEmail,
-      created_by: userId,
+      seller_mobile: data.seller_mobile,
+      seller_address: data.seller_address,
+      seller_email: data.seller_email,
+      created_by: data.created_by,
       status: 'pending',
     })
     .select('id')
@@ -117,7 +123,7 @@ export async function createBook(
     return { id: null, error: error as Error };
   }
 
-  return { id: data.id, error: null };
+  return { id: insertData.id, error: null };
 }
 
 export async function markBookAsSold(bookId: string): Promise<{ error: Error | null }> {
