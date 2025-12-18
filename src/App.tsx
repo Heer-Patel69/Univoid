@@ -20,8 +20,19 @@ import UploadMaterial from "./pages/UploadMaterial";
 import WriteBlog from "./pages/WriteBlog";
 import SubmitNews from "./pages/SubmitNews";
 import ListBook from "./pages/ListBook";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import Terms from "./pages/Terms";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30000, // 30 seconds
+      gcTime: 300000, // 5 minutes (formerly cacheTime)
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -38,6 +49,8 @@ const App = () => (
             <Route path="/books" element={<Books />} />
             <Route path="/books/:bookId" element={<BookDetail />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<Terms />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/dashboard/upload-material" element={<ProtectedRoute><UploadMaterial /></ProtectedRoute>} />
             <Route path="/dashboard/write-blog" element={<ProtectedRoute><WriteBlog /></ProtectedRoute>} />

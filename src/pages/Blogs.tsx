@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -6,9 +6,11 @@ import AuthModal from "@/components/auth/AuthModal";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, User, Clock, ArrowRight, Loader2, PenLine } from "lucide-react";
+import { Calendar, User, Clock, ArrowRight, PenLine } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { getBlogs } from "@/services/blogsService";
+import { getBlogsPaginated } from "@/services/paginatedService";
+import { SectionLoader, EmptyState, LoadMoreButton } from "@/components/common/SectionLoader";
+import { useOptimizedFetch } from "@/hooks/useOptimizedFetch";
 import { Blog } from "@/types/database";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -17,24 +19,40 @@ const Blogs = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [authOpen, setAuthOpen] = useState(false);
-  const [blogs, setBlogs] = useState<Blog[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [allBlogs, setAllBlogs] = useState<Blog[]>([]);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  useEffect(() => {
-    const fetchBlogs = async () => {
-      try {
-        const data = await getBlogs();
-        setBlogs(data);
-      } catch (error) {
-        console.error('Error fetching blogs:', error);
-        toast.error('Failed to load blogs');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchBlogs();
+  const fetchBlogs = useCallback(async () => {
+    const result = await getBlogsPaginated(0, 12);
+    setAllBlogs(result.data);
+    setHasMore(result.hasMore);
+    return result.data;
   }, []);
+
+  const { isLoading } = useOptimizedFetch({
+    fetchFn: fetchBlogs,
+    defaultValue: [] as Blog[],
+    timeoutMs: 8000,
+    cacheKey: 'blogs-page-0',
+  });
+
+  const loadMore = async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const nextPage = page + 1;
+      const result = await getBlogsPaginated(nextPage, 12);
+      setAllBlogs(prev => [...prev, ...result.data]);
+      setHasMore(result.hasMore);
+      setPage(nextPage);
+    } catch (error) {
+      toast.error('Failed to load more blogs');
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const handleWriteBlog = () => {
     if (user) {
@@ -86,16 +104,23 @@ const Blogs = () => {
             </div>
           </div>
 
-          {/* Loading State */}
+          {/* Content */}
           {isLoading ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            </div>
+            <SectionLoader size="lg" className="py-16" />
+          ) : allBlogs.length === 0 ? (
+            <EmptyState 
+              message="No blogs have been published yet. Be the first to write one!"
+              action={
+                <Button onClick={handleWriteBlog} className="shadow-premium-sm">
+                  Write a blog post <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              }
+            />
           ) : (
             <>
               {/* Blog List */}
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {blogs.map((blog) => (
+                {allBlogs.map((blog) => (
                   <Card key={blog.id} className="card-premium overflow-hidden group">
                     {blog.cover_image_url && (
                       <div className="relative overflow-hidden">
@@ -103,6 +128,7 @@ const Blogs = () => {
                           src={blog.cover_image_url}
                           alt={blog.title}
                           className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
+                          loading="lazy"
                         />
                       </div>
                     )}
@@ -146,13 +172,12 @@ const Blogs = () => {
                 ))}
               </div>
 
-              {blogs.length === 0 && !isLoading && (
-                <div className="text-center py-16">
-                  <p className="text-muted-foreground">
-                    No blogs have been published yet. Be the first to write one!
-                  </p>
-                </div>
-              )}
+              {/* Load More */}
+              <LoadMoreButton 
+                onClick={loadMore}
+                isLoading={loadingMore}
+                hasMore={hasMore}
+              />
             </>
           )}
 

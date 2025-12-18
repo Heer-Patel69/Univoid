@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -6,9 +6,11 @@ import AuthModal from "@/components/auth/AuthModal";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, ExternalLink, User, Newspaper as NewsIcon, ArrowRight, Loader2 } from "lucide-react";
+import { Calendar, ExternalLink, User, Newspaper as NewsIcon, ArrowRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { getNews } from "@/services/newsService";
+import { getNewsPaginated } from "@/services/paginatedService";
+import { SectionLoader, EmptyState, LoadMoreButton } from "@/components/common/SectionLoader";
+import { useOptimizedFetch } from "@/hooks/useOptimizedFetch";
 import { News as NewsType } from "@/types/database";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -18,24 +20,40 @@ const News = () => {
   const navigate = useNavigate();
   const [authOpen, setAuthOpen] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
-  const [news, setNews] = useState<NewsType[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [allNews, setAllNews] = useState<NewsType[]>([]);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  useEffect(() => {
-    const fetchNews = async () => {
-      try {
-        const data = await getNews();
-        setNews(data);
-      } catch (error) {
-        console.error('Error fetching news:', error);
-        toast.error('Failed to load news');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchNews();
+  const fetchNews = useCallback(async () => {
+    const result = await getNewsPaginated(0, 12);
+    setAllNews(result.data);
+    setHasMore(result.hasMore);
+    return result.data;
   }, []);
+
+  const { isLoading } = useOptimizedFetch({
+    fetchFn: fetchNews,
+    defaultValue: [] as NewsType[],
+    timeoutMs: 8000,
+    cacheKey: 'news-page-0',
+  });
+
+  const loadMore = async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const nextPage = page + 1;
+      const result = await getNewsPaginated(nextPage, 12);
+      setAllNews(prev => [...prev, ...result.data]);
+      setHasMore(result.hasMore);
+      setPage(nextPage);
+    } catch (error) {
+      toast.error('Failed to load more news');
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const handleSubmitNews = () => {
     if (user) {
@@ -88,16 +106,23 @@ const News = () => {
             </div>
           </div>
 
-          {/* Loading State */}
+          {/* Content */}
           {isLoading ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            </div>
+            <SectionLoader size="lg" className="py-16" />
+          ) : allNews.length === 0 ? (
+            <EmptyState 
+              message="No news has been submitted yet. Be the first to share campus updates!"
+              action={
+                <Button onClick={handleSubmitNews} className="shadow-premium-sm">
+                  Submit news <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              }
+            />
           ) : (
             <>
               {/* News Grid */}
               <div className="grid md:grid-cols-2 gap-6">
-                {news.map((item) => (
+                {allNews.map((item) => (
                   <Card key={item.id} className="card-premium overflow-hidden group">
                     {item.image_urls && item.image_urls.length > 0 && (
                       <div className="relative overflow-hidden">
@@ -105,6 +130,7 @@ const News = () => {
                           src={item.image_urls[0]}
                           alt={item.title}
                           className="w-full h-52 object-cover transition-transform duration-300 group-hover:scale-105"
+                          loading="lazy"
                         />
                         <Badge className="absolute top-4 left-4 bg-background/90 text-foreground border-0">
                           News
@@ -152,13 +178,12 @@ const News = () => {
                 ))}
               </div>
 
-              {news.length === 0 && !isLoading && (
-                <div className="text-center py-16">
-                  <p className="text-muted-foreground">
-                    No news has been submitted yet. Be the first to share campus updates!
-                  </p>
-                </div>
-              )}
+              {/* Load More */}
+              <LoadMoreButton 
+                onClick={loadMore}
+                isLoading={loadingMore}
+                hasMore={hasMore}
+              />
             </>
           )}
 
