@@ -36,44 +36,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<AppRole>('student');
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchProfile = async (userId: string) => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
-    
-    if (data) {
-      setProfile(data as Profile);
-    }
-  };
+  const fetchUserData = async (userId: string) => {
+    const [profileResult, roleResult] = await Promise.all([
+      supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
+      supabase.from('user_roles').select('role').eq('user_id', userId),
+    ]);
 
-  const fetchRole = async (userId: string) => {
-    const { data } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId);
-    
-    if (data && data.length > 0) {
-      // Check if user has admin role (prioritize admin over student)
-      const hasAdmin = data.some(r => r.role === 'admin');
-      setRole(hasAdmin ? 'admin' : (data[0].role as AppRole));
+    if (profileResult.data) {
+      setProfile(profileResult.data as Profile);
+    }
+
+    if (roleResult.data && roleResult.data.length > 0) {
+      const hasAdmin = roleResult.data.some(r => r.role === 'admin');
+      setRole(hasAdmin ? 'admin' : (roleResult.data[0].role as AppRole));
     }
   };
 
   useEffect(() => {
+    let isMounted = true;
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
+        if (!isMounted) return;
+        
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Defer Supabase calls with setTimeout to prevent deadlock
-          setTimeout(() => {
-            fetchProfile(session.user.id);
-            fetchRole(session.user.id);
-          }, 0);
+          await fetchUserData(session.user.id);
         } else {
           setProfile(null);
           setRole('student');
@@ -82,18 +73,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const initAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!isMounted) return;
+      
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        fetchProfile(session.user.id);
-        fetchRole(session.user.id);
+        await fetchUserData(session.user.id);
       }
       setIsLoading(false);
-    });
+    };
 
-    return () => subscription.unsubscribe();
+    initAuth();
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signUp = async (data: SignUpData): Promise<{ error: Error | null }> => {
