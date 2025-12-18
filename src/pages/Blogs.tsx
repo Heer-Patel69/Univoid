@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import AuthModal from "@/components/auth/AuthModal";
@@ -6,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, User, Clock, ArrowRight } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const mockBlogs = [
   {
@@ -71,7 +73,17 @@ const mockBlogs = [
 ];
 
 const Blogs = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [authOpen, setAuthOpen] = useState(false);
+
+  const handleWriteBlog = () => {
+    if (user) {
+      navigate("/dashboard");
+    } else {
+      setAuthOpen(true);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -139,7 +151,7 @@ const Blogs = () => {
             <p className="text-muted-foreground mb-4">
               Have something to share with fellow students?
             </p>
-            <Button onClick={() => setAuthOpen(true)}>
+            <Button onClick={handleWriteBlog}>
               Write a blog post
             </Button>
           </div>

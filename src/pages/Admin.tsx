@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, Eye, FileText, Newspaper, PenLine, BookOpen, User, Calendar } from "lucide-react";
+import { Check, X, Eye, FileText, Newspaper, PenLine, BookOpen, Loader2 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Mock pending items
 const mockPendingMaterials = [
@@ -29,10 +30,25 @@ const mockPendingBooks = [
 ];
 
 const Admin = () => {
+  const { user, isAdmin, isLoading } = useAuth();
   const [materials, setMaterials] = useState(mockPendingMaterials);
   const [news, setNews] = useState(mockPendingNews);
   const [blogs, setBlogs] = useState(mockPendingBlogs);
   const [books, setBooks] = useState(mockPendingBooks);
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Redirect if not admin
+  if (!user || !isAdmin) {
+    return <Navigate to="/" replace />;
+  }
 
   const handleApprove = (type: string, id: number) => {
     switch (type) {

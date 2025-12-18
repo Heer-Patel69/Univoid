@@ -1,33 +1,40 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, Navigate } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { User, Trophy, FileText, PenLine, Newspaper, BookOpen, ArrowLeft } from "lucide-react";
-
-// Mock profile data
-const mockProfile = {
-  name: "Sarah Kim",
-  level: 11,
-  xp: 2180,
-  globalRank: 2,
-  stats: {
-    materialsUploaded: 18,
-    blogsWritten: 12,
-    newsSubmitted: 3,
-    booksListed: 5,
-  },
-  hasPhoto: false,
-};
+import { User, Trophy, FileText, PenLine, Newspaper, BookOpen, ArrowLeft, Loader2 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Profile = () => {
   const { userId } = useParams();
+  const { user, profile, isLoading } = useAuth();
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // If viewing own profile and not logged in, redirect
+  const isOwnProfile = !userId || userId === user?.id;
+  if (isOwnProfile && !user) {
+    return <Navigate to="/" replace />;
+  }
+
+  // For own profile, use auth context data
+  const displayProfile = isOwnProfile ? profile : null;
+  const xp = displayProfile?.total_xp ?? 0;
+  const level = Math.floor(xp / 250) + 1;
 
   const statItems = [
-    { label: "Materials", value: mockProfile.stats.materialsUploaded, icon: FileText },
-    { label: "Blogs", value: mockProfile.stats.blogsWritten, icon: PenLine },
-    { label: "News", value: mockProfile.stats.newsSubmitted, icon: Newspaper },
-    { label: "Books", value: mockProfile.stats.booksListed, icon: BookOpen },
+    { label: "Materials", value: 0, icon: FileText },
+    { label: "Blogs", value: 0, icon: PenLine },
+    { label: "News", value: 0, icon: Newspaper },
+    { label: "Books", value: 0, icon: BookOpen },
   ];
 
   return (
@@ -49,11 +56,22 @@ const Profile = () => {
             <CardContent className="p-8">
               {/* Header */}
               <div className="flex flex-col items-center text-center mb-8">
-                <div className="w-24 h-24 bg-accent rounded-full flex items-center justify-center mb-4">
-                  <User className="w-12 h-12 text-primary" />
-                </div>
-                <h1 className="text-2xl font-bold text-foreground mb-1">{mockProfile.name}</h1>
-                <p className="text-muted-foreground">Level {mockProfile.level}</p>
+                {displayProfile?.profile_photo_url ? (
+                  <img 
+                    src={displayProfile.profile_photo_url} 
+                    alt={displayProfile.full_name}
+                    className="w-24 h-24 rounded-full object-cover mb-4"
+                  />
+                ) : (
+                  <div className="w-24 h-24 bg-accent rounded-full flex items-center justify-center mb-4">
+                    <User className="w-12 h-12 text-primary" />
+                  </div>
+                )}
+                <h1 className="text-2xl font-bold text-foreground mb-1">{displayProfile?.full_name ?? 'User'}</h1>
+                <p className="text-muted-foreground">Level {level}</p>
+                {displayProfile?.college_name && (
+                  <p className="text-sm text-muted-foreground mt-1">{displayProfile.college_name}</p>
+                )}
               </div>
 
               {/* XP and Rank */}
@@ -62,14 +80,14 @@ const Profile = () => {
                   <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
                     <Trophy className="w-7 h-7 text-primary" />
                   </div>
-                  <p className="text-xl font-bold text-foreground">#{mockProfile.globalRank}</p>
-                  <p className="text-xs text-muted-foreground">Global Rank</p>
+                  <p className="text-xl font-bold text-foreground">Lvl {level}</p>
+                  <p className="text-xs text-muted-foreground">Current Level</p>
                 </div>
                 <div className="text-center">
                   <div className="w-14 h-14 bg-accent rounded-full flex items-center justify-center mx-auto mb-2">
                     <span className="text-lg font-bold text-primary">XP</span>
                   </div>
-                  <p className="text-xl font-bold text-foreground">{mockProfile.xp.toLocaleString()}</p>
+                  <p className="text-xl font-bold text-foreground">{xp.toLocaleString()}</p>
                   <p className="text-xs text-muted-foreground">Total XP</p>
                 </div>
               </div>
