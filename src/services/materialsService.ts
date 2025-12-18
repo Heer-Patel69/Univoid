@@ -45,11 +45,16 @@ export async function getMaterialById(id: string): Promise<Material | null> {
   return material;
 }
 
+interface UploadOptions {
+  onProgress?: (progress: number) => void;
+}
+
 export async function uploadMaterial(
   file: File,
   title: string,
   description: string,
-  userId: string
+  userId: string,
+  options?: UploadOptions
 ): Promise<{ id: string | null; error: Error | null }> {
   // Check for blocked video formats
   const fileExt = file.name.split('.').pop()?.toLowerCase() || '';
@@ -57,15 +62,26 @@ export async function uploadMaterial(
     return { id: null, error: new Error('Video files are not allowed') };
   }
 
+  // Check file size (10MB limit for cloud optimization)
+  if (file.size > 10 * 1024 * 1024) {
+    return { id: null, error: new Error('File size must be less than 10MB') };
+  }
+
+  options?.onProgress?.(10);
+
   // Upload file to storage
   const filePath = `${userId}/${Date.now()}-${file.name}`;
   const { error: uploadError } = await supabase.storage
     .from('materials')
     .upload(filePath, file);
 
+  options?.onProgress?.(60);
+
   if (uploadError) {
     return { id: null, error: uploadError as Error };
   }
+
+  options?.onProgress?.(70);
 
   // Get file URL (signed URL for private bucket)
   const { data: urlData } = await supabase.storage
@@ -73,6 +89,8 @@ export async function uploadMaterial(
     .createSignedUrl(filePath, 60 * 60 * 24 * 365); // 1 year
 
   const fileUrl = urlData?.signedUrl || '';
+
+  options?.onProgress?.(80);
 
   // Create material record - instant publish
   const { data, error } = await supabase
@@ -88,6 +106,8 @@ export async function uploadMaterial(
     })
     .select('id')
     .single();
+
+  options?.onProgress?.(100);
 
   if (error) {
     return { id: null, error: error as Error };

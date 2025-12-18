@@ -1,6 +1,16 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Book } from '@/types/database';
 
+// Books expire after 15 days
+const BOOK_EXPIRY_DAYS = 15;
+
+function isBookExpired(createdAt: string): boolean {
+  const created = new Date(createdAt);
+  const now = new Date();
+  const diffDays = (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24);
+  return diffDays > BOOK_EXPIRY_DAYS;
+}
+
 export async function getBooks(status: 'approved' | 'all' = 'approved'): Promise<Book[]> {
   let query = supabase
     .from('books')
@@ -15,7 +25,9 @@ export async function getBooks(status: 'approved' | 'all' = 'approved'): Promise
 
   if (error) throw error;
 
-  const books = data as Book[];
+  // Filter out expired books and fetch contributor names
+  const books = (data as Book[]).filter(book => !isBookExpired(book.created_at));
+  
   for (const book of books) {
     const { data: nameData } = await supabase.rpc('get_contributor_name', {
       user_id: book.created_by,

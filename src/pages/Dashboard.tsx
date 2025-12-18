@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
+import UserContentManager from "@/components/dashboard/UserContentManager";
 import { 
   User, 
   Trophy, 
@@ -13,7 +14,6 @@ import {
   PenLine,
   Newspaper,
   BookOpen,
-  ShoppingCart,
   Upload,
   Plus,
   Loader2
@@ -188,6 +188,8 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
 
+              {/* User Content Manager */}
+              <UserContentManager userId={user.id} />
             </div>
           </div>
         </div>

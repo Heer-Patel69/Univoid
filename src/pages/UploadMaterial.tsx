@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/contexts/AuthContext";
 import { uploadMaterial } from "@/services/materialsService";
 import { toast } from "sonner";
@@ -18,16 +19,15 @@ const UploadMaterial = () => {
   const [description, setDescription] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [isSuccess, setIsSuccess] = useState(false);
-
-  // Route protection is handled by ProtectedRoute wrapper
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
-      // Check file size (max 20MB)
-      if (selectedFile.size > 20 * 1024 * 1024) {
-        toast.error("File size must be less than 20MB");
+      // Check file size (max 10MB for cloud optimization)
+      if (selectedFile.size > 10 * 1024 * 1024) {
+        toast.error("File size must be less than 10MB for optimal performance");
         return;
       }
       setFile(selectedFile);
@@ -48,18 +48,28 @@ const UploadMaterial = () => {
     }
 
     setIsSubmitting(true);
+    setUploadProgress(0);
 
-    const { id, error } = await uploadMaterial(file, title, description, user.id);
+    const { id, error } = await uploadMaterial(
+      file, 
+      title, 
+      description, 
+      user.id,
+      {
+        onProgress: (progress) => setUploadProgress(progress),
+      }
+    );
 
     setIsSubmitting(false);
 
     if (error) {
       toast.error(error.message);
+      setUploadProgress(0);
       return;
     }
 
     setIsSuccess(true);
-    toast.success("Material submitted for review!");
+    toast.success("Material uploaded successfully!");
   };
 
   if (isSuccess) {
@@ -73,12 +83,12 @@ const UploadMaterial = () => {
                 <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
                   <CheckCircle className="w-8 h-8 text-green-600" />
                 </div>
-                <h2 className="text-xl font-bold text-foreground mb-2">Submission Successful!</h2>
+                <h2 className="text-xl font-bold text-foreground mb-2">Upload Successful!</h2>
                 <p className="text-muted-foreground mb-6">
-                  Your material has been submitted for review. Once approved, it will appear in the materials section and you'll earn XP!
+                  Your material is now live and available for others to access!
                 </p>
                 <div className="flex gap-3 justify-center">
-                  <Button variant="outline" onClick={() => { setIsSuccess(false); setTitle(""); setDescription(""); setFile(null); }}>
+                  <Button variant="outline" onClick={() => { setIsSuccess(false); setTitle(""); setDescription(""); setFile(null); setUploadProgress(0); }}>
                     Upload Another
                   </Button>
                   <Link to="/dashboard">
@@ -124,6 +134,7 @@ const UploadMaterial = () => {
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     required
+                    disabled={isSubmitting}
                   />
                 </div>
 
@@ -135,6 +146,7 @@ const UploadMaterial = () => {
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     rows={3}
+                    disabled={isSubmitting}
                   />
                 </div>
 
@@ -147,8 +159,9 @@ const UploadMaterial = () => {
                       className="hidden"
                       accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.md,.jpg,.jpeg,.png"
                       onChange={handleFileChange}
+                      disabled={isSubmitting}
                     />
-                    <label htmlFor="file" className="cursor-pointer">
+                    <label htmlFor="file" className={`cursor-pointer ${isSubmitting ? 'pointer-events-none' : ''}`}>
                       {file ? (
                         <div className="flex items-center justify-center gap-2">
                           <FileText className="w-5 h-5 text-primary" />
@@ -159,12 +172,23 @@ const UploadMaterial = () => {
                         <>
                           <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                           <p className="text-muted-foreground">Click to select a file</p>
-                          <p className="text-xs text-muted-foreground mt-1">PDF, DOC, PPT, images (max 20MB)</p>
+                          <p className="text-xs text-muted-foreground mt-1">PDF, DOC, PPT, images (max 10MB)</p>
                         </>
                       )}
                     </label>
                   </div>
                 </div>
+
+                {/* Upload Progress */}
+                {isSubmitting && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Uploading...</span>
+                      <span className="font-medium text-primary">{Math.round(uploadProgress)}%</span>
+                    </div>
+                    <Progress value={uploadProgress} className="h-2" />
+                  </div>
+                )}
 
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
                   {isSubmitting ? (
@@ -175,7 +199,7 @@ const UploadMaterial = () => {
                   ) : (
                     <>
                       <Upload className="w-4 h-4 mr-2" />
-                      Submit for Review
+                      Upload Material
                     </>
                   )}
                 </Button>
