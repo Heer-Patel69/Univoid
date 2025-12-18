@@ -1,15 +1,24 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, User, LogOut, Shield } from "lucide-react";
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface HeaderProps {
   onAuthClick: () => void;
-  isLoggedIn?: boolean;
 }
 
-const Header = ({ onAuthClick, isLoggedIn = false }: HeaderProps) => {
+const Header = ({ onAuthClick }: HeaderProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, profile, isAdmin, signOut } = useAuth();
 
   const navLinks = [
     { href: "/materials", label: "Study Materials" },
@@ -18,6 +27,19 @@ const Header = ({ onAuthClick, isLoggedIn = false }: HeaderProps) => {
     { href: "/books", label: "Book Exchange" },
     { href: "/leaderboard", label: "Leaderboard" },
   ];
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
@@ -46,10 +68,45 @@ const Header = ({ onAuthClick, isLoggedIn = false }: HeaderProps) => {
 
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center gap-2">
-            {isLoggedIn ? (
-              <Link to="/dashboard">
-                <Button size="sm" className="font-medium">Dashboard</Button>
-              </Link>
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage src={profile?.profile_photo_url || undefined} alt={profile?.full_name} />
+                      <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+                        {profile?.full_name ? getInitials(profile.full_name) : 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <div className="flex flex-col space-y-1 p-2">
+                    <p className="text-sm font-medium leading-none">{profile?.full_name}</p>
+                    <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/dashboard" className="cursor-pointer">
+                      <User className="mr-2 h-4 w-4" />
+                      Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                  {isAdmin && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin" className="cursor-pointer">
+                        <Shield className="mr-2 h-4 w-4" />
+                        Admin Panel
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
               <>
                 <Button variant="ghost" size="sm" onClick={onAuthClick} className="font-medium">
@@ -89,19 +146,39 @@ const Header = ({ onAuthClick, isLoggedIn = false }: HeaderProps) => {
                   {link.label}
                 </Link>
               ))}
-              <div className="flex gap-2 mt-4 pt-4 border-t border-border/50">
-                {isLoggedIn ? (
-                  <Link to="/dashboard" className="flex-1">
-                    <Button size="sm" className="w-full font-medium">
-                      Dashboard
+              <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-border/50">
+                {user ? (
+                  <>
+                    <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="outline" size="sm" className="w-full font-medium">
+                        <User className="w-4 h-4 mr-2" />
+                        Dashboard
+                      </Button>
+                    </Link>
+                    {isAdmin && (
+                      <Link to="/admin" onClick={() => setMobileMenuOpen(false)}>
+                        <Button variant="outline" size="sm" className="w-full font-medium">
+                          <Shield className="w-4 h-4 mr-2" />
+                          Admin Panel
+                        </Button>
+                      </Link>
+                    )}
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="w-full font-medium text-destructive" 
+                      onClick={() => { handleSignOut(); setMobileMenuOpen(false); }}
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Sign out
                     </Button>
-                  </Link>
+                  </>
                 ) : (
                   <>
-                    <Button variant="ghost" size="sm" className="flex-1 font-medium" onClick={() => { onAuthClick(); setMobileMenuOpen(false); }}>
+                    <Button variant="ghost" size="sm" className="w-full font-medium" onClick={() => { onAuthClick(); setMobileMenuOpen(false); }}>
                       Sign in
                     </Button>
-                    <Button size="sm" className="flex-1 font-medium" onClick={() => { onAuthClick(); setMobileMenuOpen(false); }}>
+                    <Button size="sm" className="w-full font-medium" onClick={() => { onAuthClick(); setMobileMenuOpen(false); }}>
                       Join
                     </Button>
                   </>
