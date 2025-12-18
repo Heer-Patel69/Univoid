@@ -1,0 +1,201 @@
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { FileText, PenLine, Newspaper, BookOpen, Loader2 } from "lucide-react";
+import DeleteButton from "@/components/common/DeleteButton";
+import { 
+  getUserMaterials, 
+  getUserBlogs, 
+  getUserNews, 
+  getUserBooks,
+  deleteMaterial,
+  deleteBlog,
+  deleteNews,
+  deleteBook
+} from "@/services/contentService";
+import { Material, Blog, News, Book } from "@/types/database";
+import { supabase } from "@/integrations/supabase/client";
+
+interface UserContentManagerProps {
+  userId: string;
+}
+
+const UserContentManager = ({ userId }: UserContentManagerProps) => {
+  const [materials, setMaterials] = useState<Material[]>([]);
+  const [blogs, setBlogs] = useState<Blog[]>([]);
+  const [news, setNews] = useState<News[]>([]);
+  const [books, setBooks] = useState<Book[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("materials");
+
+  const fetchAllContent = async () => {
+    try {
+      const [mats, blgs, nws, bks] = await Promise.all([
+        getUserMaterials(userId),
+        getUserBlogs(userId),
+        getUserNews(userId),
+        getUserBooks(userId),
+      ]);
+      setMaterials(mats);
+      setBlogs(blgs);
+      setNews(nws);
+      setBooks(bks);
+    } catch (error) {
+      console.error("Error fetching user content:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllContent();
+
+    // Real-time subscriptions
+    const channel = supabase
+      .channel("user-content")
+      .on("postgres_changes", { event: "*", schema: "public", table: "materials", filter: `created_by=eq.${userId}` }, fetchAllContent)
+      .on("postgres_changes", { event: "*", schema: "public", table: "blogs", filter: `created_by=eq.${userId}` }, fetchAllContent)
+      .on("postgres_changes", { event: "*", schema: "public", table: "news", filter: `created_by=eq.${userId}` }, fetchAllContent)
+      .on("postgres_changes", { event: "*", schema: "public", table: "books", filter: `created_by=eq.${userId}` }, fetchAllContent)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
+
+  const handleDeleteMaterial = async (id: string) => {
+    return deleteMaterial(id, userId);
+  };
+
+  const handleDeleteBlog = async (id: string) => {
+    return deleteBlog(id, userId);
+  };
+
+  const handleDeleteNews = async (id: string) => {
+    return deleteNews(id, userId);
+  };
+
+  const handleDeleteBook = async (id: string) => {
+    return deleteBook(id, userId);
+  };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-6 flex items-center justify-center">
+          <Loader2 className="w-6 h-6 animate-spin text-primary" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const totalCount = materials.length + blogs.length + news.length + books.length;
+
+  if (totalCount === 0) {
+    return null;
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Your Content</CardTitle>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid grid-cols-4 w-full">
+            <TabsTrigger value="materials" className="text-xs">
+              <FileText className="w-3 h-3 mr-1" />
+              {materials.length}
+            </TabsTrigger>
+            <TabsTrigger value="blogs" className="text-xs">
+              <PenLine className="w-3 h-3 mr-1" />
+              {blogs.length}
+            </TabsTrigger>
+            <TabsTrigger value="news" className="text-xs">
+              <Newspaper className="w-3 h-3 mr-1" />
+              {news.length}
+            </TabsTrigger>
+            <TabsTrigger value="books" className="text-xs">
+              <BookOpen className="w-3 h-3 mr-1" />
+              {books.length}
+            </TabsTrigger>
+          </TabsList>
+
+          <ScrollArea className="h-[200px] mt-3">
+            <TabsContent value="materials" className="mt-0 space-y-2">
+              {materials.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">No materials yet</p>
+              ) : (
+                materials.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-secondary/50">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{item.title}</p>
+                      <p className="text-xs text-muted-foreground">{item.file_type?.toUpperCase()}</p>
+                    </div>
+                    <DeleteButton onDelete={() => handleDeleteMaterial(item.id)} />
+                  </div>
+                ))
+              )}
+            </TabsContent>
+
+            <TabsContent value="blogs" className="mt-0 space-y-2">
+              {blogs.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">No blogs yet</p>
+              ) : (
+                blogs.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-secondary/50">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{item.title}</p>
+                      <Badge variant="secondary" className="text-xs">{item.status}</Badge>
+                    </div>
+                    <DeleteButton onDelete={() => handleDeleteBlog(item.id)} />
+                  </div>
+                ))
+              )}
+            </TabsContent>
+
+            <TabsContent value="news" className="mt-0 space-y-2">
+              {news.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">No news yet</p>
+              ) : (
+                news.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-secondary/50">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{item.title}</p>
+                      <Badge variant="secondary" className="text-xs">{item.status}</Badge>
+                    </div>
+                    <DeleteButton onDelete={() => handleDeleteNews(item.id)} />
+                  </div>
+                ))
+              )}
+            </TabsContent>
+
+            <TabsContent value="books" className="mt-0 space-y-2">
+              {books.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">No books yet</p>
+              ) : (
+                books.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-secondary/50">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{item.title}</p>
+                      <div className="flex gap-1">
+                        {item.is_sold && <Badge variant="outline" className="text-xs">Sold</Badge>}
+                        {item.price && <Badge variant="secondary" className="text-xs">₹{item.price}</Badge>}
+                      </div>
+                    </div>
+                    <DeleteButton onDelete={() => handleDeleteBook(item.id)} />
+                  </div>
+                ))
+              )}
+            </TabsContent>
+          </ScrollArea>
+        </Tabs>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default UserContentManager;
