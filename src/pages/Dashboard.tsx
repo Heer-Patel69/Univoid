@@ -6,7 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
+import { useLeaderboard } from "@/hooks/useLeaderboard";
 import UserContentManager from "@/components/dashboard/UserContentManager";
+import { AnimatedCounter } from "@/components/common/AnimatedCounter";
+import { calculateLevel, getLevelProgress } from "@/types/database";
 import { 
   User, 
   Trophy, 
@@ -16,12 +19,17 @@ import {
   BookOpen,
   Upload,
   Plus,
-  Loader2
+  Loader2,
+  ArrowRight,
+  Crown,
+  Medal,
+  Award
 } from "lucide-react";
 
 const Dashboard = () => {
   const { user, profile, isLoading } = useAuth();
   const { stats } = useDashboardStats(user?.id);
+  const { leaderboard } = useLeaderboard(5);
 
   // Redirect to home if not authenticated (but only after loading is done)
   if (!isLoading && !user) {
@@ -32,10 +40,16 @@ const Dashboard = () => {
   const showLoadingOverlay = isLoading && !user;
 
   const xp = profile?.total_xp ?? 0;
-  const level = Math.floor(xp / 250) + 1;
-  const xpInCurrentLevel = xp % 250;
-  const xpToNextLevel = 250;
-  const xpProgress = (xpInCurrentLevel / xpToNextLevel) * 100;
+  const level = calculateLevel(xp);
+  const levelProgress = getLevelProgress(xp);
+  const xpProgress = (levelProgress.current / levelProgress.max) * 100;
+
+  const getRankIcon = (rank: number) => {
+    if (rank === 1) return <Crown className="w-4 h-4 text-yellow-500" />;
+    if (rank === 2) return <Medal className="w-4 h-4 text-gray-400" />;
+    if (rank === 3) return <Award className="w-4 h-4 text-amber-600" />;
+    return <span className="text-xs font-medium text-muted-foreground">#{rank}</span>;
+  };
 
   const statCards = [
     { label: "Materials Uploaded", value: stats.materialsCount, icon: FileText },
@@ -93,21 +107,25 @@ const Dashboard = () => {
                   <div className="max-w-md">
                     <div className="flex justify-between text-sm mb-2">
                       <span className="text-muted-foreground">XP Progress</span>
-                      <span className="font-medium text-primary">{xpInCurrentLevel} / {xpToNextLevel}</span>
+                      <span className="font-medium text-primary">
+                        <AnimatedCounter value={levelProgress.current} duration={800} /> / {levelProgress.max}
+                      </span>
                     </div>
-                    <Progress value={xpProgress} className="h-2" />
+                    <Progress value={xpProgress} className="h-2 transition-all duration-500" />
                     <p className="text-xs text-muted-foreground mt-1">
-                      {xpToNextLevel - xpInCurrentLevel} XP to Level {level + 1}
+                      {levelProgress.max - levelProgress.current} XP to Level {levelProgress.nextLevel}
                     </p>
                   </div>
                 </div>
 
                 {/* XP & Rank Badge */}
                 <div className="flex-shrink-0 text-center">
-                  <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center mx-auto mb-2 transition-transform hover:scale-110">
                     <Trophy className="w-8 h-8 text-yellow-500" />
                   </div>
-                  <p className="text-sm font-medium text-foreground">{xp} XP</p>
+                  <p className="text-sm font-medium text-foreground">
+                    <AnimatedCounter value={xp} duration={1000} /> XP
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     {stats.globalRank ? `#${stats.globalRank} Global` : 'Total XP'}
                   </p>
@@ -155,6 +173,51 @@ const Dashboard = () => {
 
             {/* Sidebar */}
             <div className="space-y-6">
+              {/* Leaderboard Preview */}
+              <Card className="overflow-hidden">
+                <CardHeader className="pb-3 bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Trophy className="w-4 h-4 text-yellow-500" />
+                      Leaderboard
+                    </CardTitle>
+                    <Link to="/leaderboard" className="text-xs text-primary hover:text-primary/80 flex items-center gap-1 transition-colors">
+                      View all <ArrowRight className="w-3 h-3" />
+                    </Link>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-3">
+                  <div className="space-y-2">
+                    {leaderboard.length > 0 ? leaderboard.slice(0, 5).map((leader, index) => (
+                      <div 
+                        key={leader.id} 
+                        className={`flex items-center gap-3 p-2.5 rounded-lg transition-all duration-200 hover:scale-[1.02] ${
+                          user?.id === leader.id 
+                            ? 'bg-primary/10 border border-primary/20' 
+                            : 'bg-secondary/50'
+                        }`}
+                      >
+                        <div className="w-6 h-6 rounded-full flex items-center justify-center bg-background">
+                          {getRankIcon(index + 1)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">
+                            {leader.full_name}
+                            {user?.id === leader.id && <span className="text-xs text-primary ml-1">(You)</span>}
+                          </p>
+                          <p className="text-xs text-muted-foreground">Level {leader.level}</p>
+                        </div>
+                        <span className="text-xs font-semibold text-primary">{leader.total_xp} XP</span>
+                      </div>
+                    )) : (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        Be the first to earn XP!
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Quick Links */}
               <Card>
                 <CardHeader className="pb-3">
@@ -162,26 +225,20 @@ const Dashboard = () => {
                 </CardHeader>
                 <CardContent className="pt-0">
                   <div className="space-y-2">
-                    <Link to="/leaderboard">
-                      <Button variant="ghost" size="sm" className="w-full justify-start">
-                        <Trophy className="w-4 h-4 mr-2" />
-                        View Leaderboard
-                      </Button>
-                    </Link>
                     <Link to="/materials">
-                      <Button variant="ghost" size="sm" className="w-full justify-start">
+                      <Button variant="ghost" size="sm" className="w-full justify-start transition-transform hover:translate-x-1">
                         <FileText className="w-4 h-4 mr-2" />
                         Browse Materials
                       </Button>
                     </Link>
                     <Link to="/blogs">
-                      <Button variant="ghost" size="sm" className="w-full justify-start">
+                      <Button variant="ghost" size="sm" className="w-full justify-start transition-transform hover:translate-x-1">
                         <PenLine className="w-4 h-4 mr-2" />
                         Read Blogs
                       </Button>
                     </Link>
                     <Link to="/books">
-                      <Button variant="ghost" size="sm" className="w-full justify-start">
+                      <Button variant="ghost" size="sm" className="w-full justify-start transition-transform hover:translate-x-1">
                         <BookOpen className="w-4 h-4 mr-2" />
                         Book Exchange
                       </Button>

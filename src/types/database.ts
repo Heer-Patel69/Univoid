@@ -98,22 +98,37 @@ export interface XPTransaction {
   created_at: string;
 }
 
-// XP values
+// XP values per requirement
 export const XP_VALUES = {
-  material_approved: 50,
-  blog_approved: 30,
-  news_approved: 10,
-  book_listed: 20,
-  book_sold: 40,
+  verification: 20,      // Email OR Phone verification (one-time)
+  material_approved: 30, // Study material upload
+  blog_approved: 15,     // Blog publish
+  news_approved: 10,     // News publish
+  book_listed: 20,       // Book listing
+  daily_login: 2,        // Daily login (once per day)
 } as const;
 
 // Blocked video formats
 export const BLOCKED_VIDEO_FORMATS = ['mp4', 'mkv', 'avi', 'mov', 'wmv', 'flv', 'webm'];
 
-// Calculate user level from XP
+// Calculate user level from XP per requirement:
+// Level 1: 0–50 XP
+// Level 2: 51–150 XP
+// Level 3: 151–300 XP
+// Level 4: 300+ XP
 export function calculateLevel(xp: number): number {
-  // Every 200 XP = 1 level
-  return Math.floor(xp / 200) + 1;
+  if (xp <= 50) return 1;
+  if (xp <= 150) return 2;
+  if (xp <= 300) return 3;
+  return 4;
+}
+
+// Get XP thresholds for level progress
+export function getLevelProgress(xp: number): { current: number; max: number; nextLevel: number } {
+  if (xp <= 50) return { current: xp, max: 50, nextLevel: 2 };
+  if (xp <= 150) return { current: xp - 50, max: 100, nextLevel: 3 };
+  if (xp <= 300) return { current: xp - 150, max: 150, nextLevel: 4 };
+  return { current: xp - 300, max: xp - 300 + 100, nextLevel: 5 }; // Level 4+ continues
 }
 
 // Public profile (what's shown to others)

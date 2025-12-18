@@ -57,9 +57,10 @@ export async function updateContentStatus(
 }
 
 export async function awardBookSoldXP(userId: string, bookId: string): Promise<{ error: Error | null }> {
+  // Award additional XP for book sold (use book_listed value as bonus)
   const { error } = await supabase.rpc('award_xp', {
     _user_id: userId,
-    _amount: XP_VALUES.book_sold,
+    _amount: XP_VALUES.book_listed, // Use book_listed as the sold bonus
     _reason: 'Book sold',
     _content_type: 'books',
     _content_id: bookId,
