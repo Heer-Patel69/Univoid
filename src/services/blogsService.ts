@@ -88,6 +88,19 @@ export async function createBlog(
     return { id: null, error: error as Error };
   }
 
+  // Award XP for blog publish (+15 XP)
+  try {
+    await supabase.rpc('award_xp', {
+      _user_id: userId,
+      _amount: 15,
+      _reason: 'blog_publish',
+      _content_type: 'blog',
+      _content_id: data.id,
+    });
+  } catch (xpError) {
+    console.error('Failed to award XP:', xpError);
+  }
+
   return { id: data.id, error: null };
 }
 

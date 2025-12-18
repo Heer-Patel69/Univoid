@@ -91,6 +91,19 @@ export async function createNews(
     return { id: null, error: error as Error };
   }
 
+  // Award XP for news publish (+10 XP)
+  try {
+    await supabase.rpc('award_xp', {
+      _user_id: userId,
+      _amount: 10,
+      _reason: 'news_publish',
+      _content_type: 'news',
+      _content_id: data.id,
+    });
+  } catch (xpError) {
+    console.error('Failed to award XP:', xpError);
+  }
+
   return { id: data.id, error: null };
 }
 

@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import { BottomNav } from "@/components/layout/BottomNav";
 import AuthModal from "@/components/auth/AuthModal";
 import ReportButton from "@/components/reports/ReportButton";
 import { Card, CardContent } from "@/components/ui/card";
@@ -72,7 +73,7 @@ const Books = () => {
   );
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background pb-20 md:pb-0">
       <Header onAuthClick={() => setAuthOpen(true)} />
       
       <main className="flex-1 py-10 md:py-14">
@@ -215,6 +216,7 @@ const Books = () => {
       </main>
 
       <Footer />
+      <BottomNav />
       
       <AuthModal 
         isOpen={authOpen} 
