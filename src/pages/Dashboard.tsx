@@ -62,7 +62,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header onAuthClick={() => {}} isLoggedIn={true} />
+      <Header onAuthClick={() => {}} />
       
       <main className="flex-1 py-8">
         <div className="container-wide">
