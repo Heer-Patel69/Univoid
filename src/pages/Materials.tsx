@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Download, Eye, Calendar, User } from "lucide-react";
+import { Search, Download, Eye, Calendar, User, BookOpen, ArrowRight } from "lucide-react";
 
 interface Material {
   id: number;
@@ -39,7 +39,7 @@ const Materials = () => {
   const [previewMaterial, setPreviewMaterial] = useState<Material | null>(null);
 
   const handleDownload = () => {
-    setAuthMessage("Login to download study materials");
+    setAuthMessage("Sign in to download study materials");
     setAuthOpen(true);
   };
 
@@ -56,24 +56,31 @@ const Materials = () => {
     <div className="min-h-screen flex flex-col bg-background">
       <Header onAuthClick={() => setAuthOpen(true)} />
       
-      <main className="flex-1 py-8">
+      <main className="flex-1 py-10 md:py-14">
         <div className="container-wide">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-              Study Materials
-            </h1>
-            <p className="text-muted-foreground">
-              Browse notes, past papers, and resources shared by students
-            </p>
+          <div className="mb-10">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-accent rounded-xl flex items-center justify-center">
+                <BookOpen className="w-6 h-6 text-accent-foreground" />
+              </div>
+              <div>
+                <h1 className="font-display text-2xl md:text-3xl text-foreground">
+                  Study Materials
+                </h1>
+                <p className="text-muted-foreground">
+                  Notes, past papers, and resources shared by students
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Search */}
           <div className="relative mb-8 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               placeholder="Search by title or subject..."
-              className="pl-10"
+              className="pl-10 h-11"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -84,17 +91,17 @@ const Materials = () => {
             {filteredMaterials.map((material) => (
               <Card 
                 key={material.id} 
-                className="hover:border-primary/30 transition-colors cursor-pointer group"
+                className="card-premium cursor-pointer group"
                 onClick={() => handlePreview(material)}
               >
-                <CardContent className="p-4 md:p-6">
-                  <div className="flex flex-col md:flex-row md:items-start gap-4">
+                <CardContent className="p-5 md:p-6">
+                  <div className="flex flex-col md:flex-row md:items-start gap-5">
                     {/* Thumbnail Preview */}
                     <MaterialThumbnail 
                       fileType={material.fileType}
                       title={material.title}
                       thumbnailUrl={material.thumbnailUrl}
-                      className="group-hover:scale-[1.02] transition-transform"
+                      className="transition-transform group-hover:scale-[1.02]"
                     />
                     
                     <div className="flex-1 min-w-0">
@@ -102,23 +109,23 @@ const Materials = () => {
                         <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
                           {material.title}
                         </h3>
-                        <Badge variant="secondary" className="text-xs">{material.type}</Badge>
+                        <Badge variant="secondary" className="text-xs font-medium">{material.type}</Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                      <p className="text-sm text-muted-foreground mb-4 line-clamp-2 leading-relaxed">
                         {material.preview}
                       </p>
                       <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
                         <Badge variant="outline" className="font-normal">{material.subject}</Badge>
-                        <span className="flex items-center gap-1">
-                          <User className="w-3 h-3" />
+                        <span className="flex items-center gap-1.5">
+                          <User className="w-3.5 h-3.5" />
                           {material.contributor}
                         </span>
-                        <span className="flex items-center gap-1">
-                          <Download className="w-3 h-3" />
-                          {material.downloads}
+                        <span className="flex items-center gap-1.5">
+                          <Download className="w-3.5 h-3.5" />
+                          {material.downloads} downloads
                         </span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
+                        <span className="flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5" />
                           {material.date}
                         </span>
                       </div>
@@ -128,7 +135,7 @@ const Materials = () => {
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        className="flex items-center gap-1"
+                        className="flex items-center gap-1.5"
                         onClick={(e) => { e.stopPropagation(); handlePreview(material); }}
                       >
                         <Eye className="w-4 h-4" />
@@ -137,7 +144,7 @@ const Materials = () => {
                       <Button 
                         size="sm" 
                         onClick={(e) => { e.stopPropagation(); handleDownload(); }} 
-                        className="flex items-center gap-1"
+                        className="flex items-center gap-1.5 shadow-premium-sm"
                       >
                         <Download className="w-4 h-4" />
                         Download
@@ -150,20 +157,24 @@ const Materials = () => {
           </div>
 
           {filteredMaterials.length === 0 && (
-            <div className="text-center py-12">
+            <div className="text-center py-16">
               <p className="text-muted-foreground">No materials found matching your search.</p>
             </div>
           )}
 
           {/* CTA */}
-          <div className="mt-12 text-center p-8 bg-secondary/30 rounded-lg">
-            <p className="text-muted-foreground mb-4">
-              Have study materials to share?
-            </p>
-            <Button onClick={() => { setAuthMessage("Login to upload study materials"); setAuthOpen(true); }}>
-              Join to contribute
-            </Button>
-          </div>
+          <Card className="mt-12 border-0 bg-secondary/50">
+            <CardContent className="p-8 text-center">
+              <h3 className="font-display text-xl text-foreground mb-3">Have study materials to share?</h3>
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                Help fellow students by uploading your notes, past papers, or study guides. Earn XP for every approved contribution.
+              </p>
+              <Button onClick={() => { setAuthMessage("Sign in to upload study materials"); setAuthOpen(true); }} className="shadow-premium-sm">
+                Upload materials
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </main>
 
