@@ -7,12 +7,21 @@ const corsHeaders = {
 };
 
 // Keywords for filtering student/job/placement news
-const KEYWORDS = [
-  "student", "college", "university", "exam", "admission",
-  "job", "placement", "internship", "hiring", "recruitment",
-  "fresher", "skills", "career", "salary", "employment",
-  "graduate", "campus", "education", "scholarship"
+const SEARCH_QUERIES = [
+  "college internship",
+  "campus placement",
+  "fresher jobs India",
+  "student career",
+  "engineering jobs",
 ];
+
+interface NewsAPIArticle {
+  title: string;
+  description: string;
+  source: { name: string };
+  url: string;
+  publishedAt: string;
+}
 
 interface NewsItem {
   title: string;
@@ -39,44 +48,56 @@ function categorizeNews(title: string, description: string): NewsItem["category"
 }
 
 function generateSummary(description: string): string {
-  // Generate 3-4 line summary
   if (!description) return "";
   const sentences = description.split(/[.!?]+/).filter(s => s.trim().length > 0);
   return sentences.slice(0, 3).join(". ").trim() + ".";
 }
 
-async function fetchNewsFromAPI(): Promise<NewsItem[]> {
-  // Using a free news API - NewsData.io free tier or similar
-  // For demo, we'll create sample news that would come from real APIs
+async function fetchNewsFromNewsAPI(apiKey: string): Promise<NewsItem[]> {
+  const allNews: NewsItem[] = [];
   
-  const sampleNews: NewsItem[] = [
-    {
-      title: "Top IT Companies Begin Campus Recruitment Drive 2024",
-      description: "Major IT companies have started their annual campus recruitment drives across engineering colleges. Students from computer science and IT branches are being targeted for software development roles.",
-      source: "Education Today",
-      url: "https://example.com/news/1",
-      category: "Placement",
-      publishedAt: new Date().toISOString(),
-    },
-    {
-      title: "Government Announces New Internship Program for Students",
-      description: "A new government-backed internship program aims to provide industry experience to over 100,000 college students. The program covers multiple sectors including technology, finance, and manufacturing.",
-      source: "Career India",
-      url: "https://example.com/news/2",
-      category: "Job",
-      publishedAt: new Date().toISOString(),
-    },
-    {
-      title: "Skill Demand Report: AI and Data Science Lead 2024",
-      description: "Latest industry reports show AI and data science skills are the most in-demand for freshers. Companies are offering premium packages for candidates with these specialized skills.",
-      source: "Tech Careers",
-      url: "https://example.com/news/3",
-      category: "Trend",
-      publishedAt: new Date().toISOString(),
-    },
-  ];
+  // Fetch news for each search query
+  for (const query of SEARCH_QUERIES.slice(0, 2)) { // Limit to 2 queries to stay within free tier
+    try {
+      const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&language=en&sortBy=publishedAt&pageSize=5`;
+      
+      console.log(`Fetching news for query: ${query}`);
+      
+      const response = await fetch(url, {
+        headers: {
+          "X-Api-Key": apiKey,
+        },
+      });
 
-  return sampleNews;
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`NewsAPI error for "${query}": ${response.status} - ${errorText}`);
+        continue;
+      }
+
+      const data = await response.json();
+      
+      if (data.articles && Array.isArray(data.articles)) {
+        for (const article of data.articles as NewsAPIArticle[]) {
+          if (!article.title || !article.description) continue;
+          
+          allNews.push({
+            title: article.title,
+            description: article.description,
+            source: article.source?.name || "Unknown",
+            url: article.url,
+            category: categorizeNews(article.title, article.description),
+            publishedAt: article.publishedAt,
+          });
+        }
+      }
+    } catch (error) {
+      console.error(`Error fetching news for "${query}":`, error);
+    }
+  }
+
+  console.log(`Total news items fetched: ${allNews.length}`);
+  return allNews;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -86,29 +107,49 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    console.log("Starting auto-news fetch...");
+    console.log("Starting auto-news fetch from NewsAPI.org...");
+
+    const newsApiKey = Deno.env.get("NEWS_API_KEY");
+    if (!newsApiKey) {
+      throw new Error("NEWS_API_KEY not configured");
+    }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Fetch news from API
-    const newsItems = await fetchNewsFromAPI();
-    console.log(`Fetched ${newsItems.length} news items`);
+    // Fetch news from NewsAPI.org
+    const newsItems = await fetchNewsFromNewsAPI(newsApiKey);
+    
+    if (newsItems.length === 0) {
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: "No news items fetched",
+          total: 0,
+          inserted: 0,
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
 
     let insertedCount = 0;
 
     for (const item of newsItems) {
       // Check if similar news already exists (by title similarity)
+      const titlePrefix = item.title.substring(0, 50);
       const { data: existing } = await supabase
         .from("news")
         .select("id")
-        .ilike("title", `%${item.title.substring(0, 30)}%`)
+        .ilike("title", `%${titlePrefix}%`)
         .limit(1);
 
       if (existing && existing.length > 0) {
-        console.log(`Skipping duplicate: ${item.title}`);
+        console.log(`Skipping duplicate: ${item.title.substring(0, 50)}...`);
         continue;
       }
 
@@ -128,14 +169,16 @@ const handler = async (req: Request): Promise<Response> => {
         console.error(`Failed to insert news: ${error.message}`);
       } else {
         insertedCount++;
-        console.log(`Inserted: ${item.title}`);
+        console.log(`Inserted: ${item.title.substring(0, 50)}...`);
       }
     }
+
+    console.log(`Completed: ${insertedCount} news items inserted`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `Fetched and inserted ${insertedCount} news items`,
+        message: `Fetched and inserted ${insertedCount} news items from NewsAPI.org`,
         total: newsItems.length,
         inserted: insertedCount,
       }),
