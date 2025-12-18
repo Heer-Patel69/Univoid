@@ -102,6 +102,7 @@ export async function createBook(
     }
   }
 
+  // Instant publish
   const { data: insertData, error } = await supabase
     .from('books')
     .insert({
@@ -114,7 +115,7 @@ export async function createBook(
       seller_address: data.seller_address,
       seller_email: data.seller_email,
       created_by: data.created_by,
-      status: 'pending',
+      status: 'approved',
     })
     .select('id')
     .single();

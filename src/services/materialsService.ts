@@ -74,7 +74,7 @@ export async function uploadMaterial(
 
   const fileUrl = urlData?.signedUrl || '';
 
-  // Create material record
+  // Create material record - instant publish
   const { data, error } = await supabase
     .from('materials')
     .insert({
@@ -84,7 +84,7 @@ export async function uploadMaterial(
       file_type: fileExt,
       file_size: file.size,
       created_by: userId,
-      status: 'pending',
+      status: 'approved',
     })
     .select('id')
     .single();

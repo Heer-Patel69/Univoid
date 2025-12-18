@@ -71,6 +71,7 @@ export async function createBlog(
     coverImageUrl = publicUrl;
   }
 
+  // Instant publish
   const { data, error } = await supabase
     .from('blogs')
     .insert({
@@ -78,7 +79,7 @@ export async function createBlog(
       content,
       cover_image_url: coverImageUrl,
       created_by: userId,
-      status: 'pending',
+      status: 'approved',
     })
     .select('id')
     .single();
