@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/contexts/AuthContext";
+import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { 
   User, 
   Trophy, 
@@ -20,6 +21,7 @@ import {
 
 const Dashboard = () => {
   const { user, profile, isLoading } = useAuth();
+  const { stats, isLoading: statsLoading } = useDashboardStats(user?.id);
 
   // Show loading state
   if (isLoading) {
@@ -42,11 +44,10 @@ const Dashboard = () => {
   const xpProgress = (xpInCurrentLevel / xpToNextLevel) * 100;
 
   const statCards = [
-    { label: "Materials Uploaded", value: 0, icon: FileText },
-    { label: "Blogs Written", value: 0, icon: PenLine },
-    { label: "News Submitted", value: 0, icon: Newspaper },
-    { label: "Books Listed", value: 0, icon: BookOpen },
-    { label: "Books Bought", value: 0, icon: ShoppingCart },
+    { label: "Materials Uploaded", value: stats.materialsCount, icon: FileText },
+    { label: "Blogs Written", value: stats.blogsCount, icon: PenLine },
+    { label: "News Submitted", value: stats.newsCount, icon: Newspaper },
+    { label: "Books Listed", value: stats.booksCount, icon: BookOpen },
   ];
 
   const contributeActions = [
@@ -99,13 +100,15 @@ const Dashboard = () => {
                   </div>
                 </div>
 
-                {/* XP Badge */}
+                {/* XP & Rank Badge */}
                 <div className="flex-shrink-0 text-center">
                   <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center mx-auto mb-2">
                     <Trophy className="w-8 h-8 text-yellow-500" />
                   </div>
                   <p className="text-sm font-medium text-foreground">{xp} XP</p>
-                  <p className="text-xs text-muted-foreground">Total XP</p>
+                  <p className="text-xs text-muted-foreground">
+                    {stats.globalRank ? `#${stats.globalRank} Global` : 'Total XP'}
+                  </p>
                 </div>
               </div>
             </CardContent>
