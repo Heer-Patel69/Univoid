@@ -1,43 +1,69 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Navigate } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, Eye, FileText, Newspaper, PenLine, BookOpen, Loader2 } from "lucide-react";
+import { Check, X, FileText, Newspaper, PenLine, BookOpen, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { getPendingContent, updateContentStatus, getAllPendingCounts } from "@/services/adminService";
+import { toast } from "sonner";
+import { format } from "date-fns";
 
-// Mock pending items
-const mockPendingMaterials = [
-  { id: 1, title: "Linear Algebra Complete Notes", subject: "Mathematics", submitter: "John Doe", date: "2024-01-18" },
-  { id: 2, title: "Machine Learning Cheat Sheet", subject: "Computer Science", submitter: "Jane Smith", date: "2024-01-17" },
-];
-
-const mockPendingNews = [
-  { id: 1, title: "New Lab Equipment Arrived", category: "Campus", submitter: "Mike Wilson", date: "2024-01-18" },
-  { id: 2, title: "Sports Day Announcement", category: "Events", submitter: "Sarah Brown", date: "2024-01-17" },
-];
-
-const mockPendingBlogs = [
-  { id: 1, title: "My Exchange Semester Experience", category: "Student Life", author: "Emma Davis", date: "2024-01-18" },
-];
-
-const mockPendingBooks = [
-  { id: 1, title: "Database Systems Concepts", condition: "Good", price: 40, seller: "Chris Lee", date: "2024-01-18" },
-  { id: 2, title: "Operating Systems", condition: "Like New", price: 50, seller: "Anna Kim", date: "2024-01-17" },
-];
+interface PendingItem {
+  id: string;
+  title: string;
+  created_by: string;
+  created_at: string;
+  contributor_name?: string;
+  description?: string;
+  content?: string;
+  condition?: string;
+  price?: number;
+  file_type?: string;
+}
 
 const Admin = () => {
-  const { user, isAdmin, isLoading } = useAuth();
-  const [materials, setMaterials] = useState(mockPendingMaterials);
-  const [news, setNews] = useState(mockPendingNews);
-  const [blogs, setBlogs] = useState(mockPendingBlogs);
-  const [books, setBooks] = useState(mockPendingBooks);
+  const { user, isAdmin, isLoading: authLoading } = useAuth();
+  const [materials, setMaterials] = useState<PendingItem[]>([]);
+  const [news, setNews] = useState<PendingItem[]>([]);
+  const [blogs, setBlogs] = useState<PendingItem[]>([]);
+  const [books, setBooks] = useState<PendingItem[]>([]);
+  const [pendingCounts, setPendingCounts] = useState({ materials: 0, news: 0, blogs: 0, books: 0 });
+  const [isLoading, setIsLoading] = useState(true);
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
-  // Show loading state
-  if (isLoading) {
+  const fetchPendingContent = useCallback(async () => {
+    try {
+      const [materialsData, newsData, blogsData, booksData, counts] = await Promise.all([
+        getPendingContent('materials'),
+        getPendingContent('news'),
+        getPendingContent('blogs'),
+        getPendingContent('books'),
+        getAllPendingCounts(),
+      ]);
+      setMaterials(materialsData as PendingItem[]);
+      setNews(newsData as PendingItem[]);
+      setBlogs(blogsData as PendingItem[]);
+      setBooks(booksData as PendingItem[]);
+      setPendingCounts(counts);
+    } catch (error) {
+      console.error('Error fetching pending content:', error);
+      toast.error('Failed to load pending content');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (user && isAdmin) {
+      fetchPendingContent();
+    }
+  }, [user, isAdmin, fetchPendingContent]);
+
+  if (authLoading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -45,37 +71,82 @@ const Admin = () => {
     );
   }
 
-  // Redirect if not admin
   if (!user || !isAdmin) {
     return <Navigate to="/" replace />;
   }
 
-  const handleApprove = (type: string, id: number) => {
+  const handleApprove = async (type: 'materials' | 'news' | 'blogs' | 'books', item: PendingItem) => {
+    setProcessingId(item.id);
+    const { error } = await updateContentStatus(type, item.id, 'approved', item.created_by);
+    setProcessingId(null);
+
+    if (error) {
+      toast.error('Failed to approve: ' + error.message);
+      return;
+    }
+
+    toast.success(`${type.slice(0, -1).charAt(0).toUpperCase() + type.slice(1, -1)} approved! XP awarded to contributor.`);
+    
+    // Remove from local state
     switch (type) {
       case 'materials':
-        setMaterials(materials.filter(m => m.id !== id));
+        setMaterials(prev => prev.filter(m => m.id !== item.id));
+        setPendingCounts(prev => ({ ...prev, materials: prev.materials - 1 }));
         break;
       case 'news':
-        setNews(news.filter(n => n.id !== id));
+        setNews(prev => prev.filter(n => n.id !== item.id));
+        setPendingCounts(prev => ({ ...prev, news: prev.news - 1 }));
         break;
       case 'blogs':
-        setBlogs(blogs.filter(b => b.id !== id));
+        setBlogs(prev => prev.filter(b => b.id !== item.id));
+        setPendingCounts(prev => ({ ...prev, blogs: prev.blogs - 1 }));
         break;
       case 'books':
-        setBooks(books.filter(b => b.id !== id));
+        setBooks(prev => prev.filter(b => b.id !== item.id));
+        setPendingCounts(prev => ({ ...prev, books: prev.books - 1 }));
         break;
     }
   };
 
-  const handleReject = (type: string, id: number) => {
-    handleApprove(type, id); // Same removal logic for demo
+  const handleReject = async (type: 'materials' | 'news' | 'blogs' | 'books', item: PendingItem) => {
+    setProcessingId(item.id);
+    const { error } = await updateContentStatus(type, item.id, 'rejected', item.created_by);
+    setProcessingId(null);
+
+    if (error) {
+      toast.error('Failed to reject: ' + error.message);
+      return;
+    }
+
+    toast.success(`${type.slice(0, -1).charAt(0).toUpperCase() + type.slice(1, -1)} rejected.`);
+    
+    // Remove from local state
+    switch (type) {
+      case 'materials':
+        setMaterials(prev => prev.filter(m => m.id !== item.id));
+        setPendingCounts(prev => ({ ...prev, materials: prev.materials - 1 }));
+        break;
+      case 'news':
+        setNews(prev => prev.filter(n => n.id !== item.id));
+        setPendingCounts(prev => ({ ...prev, news: prev.news - 1 }));
+        break;
+      case 'blogs':
+        setBlogs(prev => prev.filter(b => b.id !== item.id));
+        setPendingCounts(prev => ({ ...prev, blogs: prev.blogs - 1 }));
+        break;
+      case 'books':
+        setBooks(prev => prev.filter(b => b.id !== item.id));
+        setPendingCounts(prev => ({ ...prev, books: prev.books - 1 }));
+        break;
+    }
   };
 
-  const pendingCounts = {
-    materials: materials.length,
-    news: news.length,
-    blogs: blogs.length,
-    books: books.length,
+  const formatDate = (dateStr: string) => {
+    try {
+      return format(new Date(dateStr), 'MMM d, yyyy');
+    } catch {
+      return dateStr;
+    }
   };
 
   return (
@@ -165,7 +236,7 @@ const Admin = () => {
                         <thead>
                           <tr className="border-b border-border">
                             <th className="text-left p-3 text-sm font-medium text-muted-foreground">Title</th>
-                            <th className="text-left p-3 text-sm font-medium text-muted-foreground hidden sm:table-cell">Subject</th>
+                            <th className="text-left p-3 text-sm font-medium text-muted-foreground hidden sm:table-cell">Type</th>
                             <th className="text-left p-3 text-sm font-medium text-muted-foreground hidden md:table-cell">Submitter</th>
                             <th className="text-left p-3 text-sm font-medium text-muted-foreground hidden md:table-cell">Date</th>
                             <th className="text-right p-3 text-sm font-medium text-muted-foreground">Actions</th>
@@ -175,16 +246,25 @@ const Admin = () => {
                           {materials.map((item) => (
                             <tr key={item.id} className="border-b border-border last:border-0">
                               <td className="p-3 font-medium text-foreground">{item.title}</td>
-                              <td className="p-3 text-muted-foreground hidden sm:table-cell">{item.subject}</td>
-                              <td className="p-3 text-muted-foreground hidden md:table-cell">{item.submitter}</td>
-                              <td className="p-3 text-muted-foreground hidden md:table-cell">{item.date}</td>
+                              <td className="p-3 text-muted-foreground hidden sm:table-cell uppercase">{item.file_type}</td>
+                              <td className="p-3 text-muted-foreground hidden md:table-cell">{item.contributor_name}</td>
+                              <td className="p-3 text-muted-foreground hidden md:table-cell">{formatDate(item.created_at)}</td>
                               <td className="p-3 text-right">
                                 <div className="flex justify-end gap-2">
-                                  <Button variant="outline" size="sm"><Eye className="w-4 h-4" /></Button>
-                                  <Button variant="default" size="sm" onClick={() => handleApprove('materials', item.id)}>
-                                    <Check className="w-4 h-4" />
+                                  <Button 
+                                    variant="default" 
+                                    size="sm" 
+                                    onClick={() => handleApprove('materials', item)}
+                                    disabled={processingId === item.id}
+                                  >
+                                    {processingId === item.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                                   </Button>
-                                  <Button variant="destructive" size="sm" onClick={() => handleReject('materials', item.id)}>
+                                  <Button 
+                                    variant="destructive" 
+                                    size="sm" 
+                                    onClick={() => handleReject('materials', item)}
+                                    disabled={processingId === item.id}
+                                  >
                                     <X className="w-4 h-4" />
                                   </Button>
                                 </div>
@@ -207,7 +287,6 @@ const Admin = () => {
                         <thead>
                           <tr className="border-b border-border">
                             <th className="text-left p-3 text-sm font-medium text-muted-foreground">Title</th>
-                            <th className="text-left p-3 text-sm font-medium text-muted-foreground hidden sm:table-cell">Category</th>
                             <th className="text-left p-3 text-sm font-medium text-muted-foreground hidden md:table-cell">Submitter</th>
                             <th className="text-left p-3 text-sm font-medium text-muted-foreground hidden md:table-cell">Date</th>
                             <th className="text-right p-3 text-sm font-medium text-muted-foreground">Actions</th>
@@ -217,16 +296,24 @@ const Admin = () => {
                           {news.map((item) => (
                             <tr key={item.id} className="border-b border-border last:border-0">
                               <td className="p-3 font-medium text-foreground">{item.title}</td>
-                              <td className="p-3 text-muted-foreground hidden sm:table-cell">{item.category}</td>
-                              <td className="p-3 text-muted-foreground hidden md:table-cell">{item.submitter}</td>
-                              <td className="p-3 text-muted-foreground hidden md:table-cell">{item.date}</td>
+                              <td className="p-3 text-muted-foreground hidden md:table-cell">{item.contributor_name}</td>
+                              <td className="p-3 text-muted-foreground hidden md:table-cell">{formatDate(item.created_at)}</td>
                               <td className="p-3 text-right">
                                 <div className="flex justify-end gap-2">
-                                  <Button variant="outline" size="sm"><Eye className="w-4 h-4" /></Button>
-                                  <Button variant="default" size="sm" onClick={() => handleApprove('news', item.id)}>
-                                    <Check className="w-4 h-4" />
+                                  <Button 
+                                    variant="default" 
+                                    size="sm" 
+                                    onClick={() => handleApprove('news', item)}
+                                    disabled={processingId === item.id}
+                                  >
+                                    {processingId === item.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                                   </Button>
-                                  <Button variant="destructive" size="sm" onClick={() => handleReject('news', item.id)}>
+                                  <Button 
+                                    variant="destructive" 
+                                    size="sm" 
+                                    onClick={() => handleReject('news', item)}
+                                    disabled={processingId === item.id}
+                                  >
                                     <X className="w-4 h-4" />
                                   </Button>
                                 </div>
@@ -249,7 +336,6 @@ const Admin = () => {
                         <thead>
                           <tr className="border-b border-border">
                             <th className="text-left p-3 text-sm font-medium text-muted-foreground">Title</th>
-                            <th className="text-left p-3 text-sm font-medium text-muted-foreground hidden sm:table-cell">Category</th>
                             <th className="text-left p-3 text-sm font-medium text-muted-foreground hidden md:table-cell">Author</th>
                             <th className="text-left p-3 text-sm font-medium text-muted-foreground hidden md:table-cell">Date</th>
                             <th className="text-right p-3 text-sm font-medium text-muted-foreground">Actions</th>
@@ -259,16 +345,24 @@ const Admin = () => {
                           {blogs.map((item) => (
                             <tr key={item.id} className="border-b border-border last:border-0">
                               <td className="p-3 font-medium text-foreground">{item.title}</td>
-                              <td className="p-3 text-muted-foreground hidden sm:table-cell">{item.category}</td>
-                              <td className="p-3 text-muted-foreground hidden md:table-cell">{item.author}</td>
-                              <td className="p-3 text-muted-foreground hidden md:table-cell">{item.date}</td>
+                              <td className="p-3 text-muted-foreground hidden md:table-cell">{item.contributor_name}</td>
+                              <td className="p-3 text-muted-foreground hidden md:table-cell">{formatDate(item.created_at)}</td>
                               <td className="p-3 text-right">
                                 <div className="flex justify-end gap-2">
-                                  <Button variant="outline" size="sm"><Eye className="w-4 h-4" /></Button>
-                                  <Button variant="default" size="sm" onClick={() => handleApprove('blogs', item.id)}>
-                                    <Check className="w-4 h-4" />
+                                  <Button 
+                                    variant="default" 
+                                    size="sm" 
+                                    onClick={() => handleApprove('blogs', item)}
+                                    disabled={processingId === item.id}
+                                  >
+                                    {processingId === item.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                                   </Button>
-                                  <Button variant="destructive" size="sm" onClick={() => handleReject('blogs', item.id)}>
+                                  <Button 
+                                    variant="destructive" 
+                                    size="sm" 
+                                    onClick={() => handleReject('blogs', item)}
+                                    disabled={processingId === item.id}
+                                  >
                                     <X className="w-4 h-4" />
                                   </Button>
                                 </div>
@@ -301,16 +395,25 @@ const Admin = () => {
                           {books.map((item) => (
                             <tr key={item.id} className="border-b border-border last:border-0">
                               <td className="p-3 font-medium text-foreground">{item.title}</td>
-                              <td className="p-3 text-muted-foreground hidden sm:table-cell">{item.condition}</td>
-                              <td className="p-3 text-muted-foreground hidden sm:table-cell">${item.price}</td>
-                              <td className="p-3 text-muted-foreground hidden md:table-cell">{item.seller}</td>
+                              <td className="p-3 text-muted-foreground hidden sm:table-cell">{item.condition || '-'}</td>
+                              <td className="p-3 text-muted-foreground hidden sm:table-cell">{item.price ? `₹${item.price}` : 'Exchange'}</td>
+                              <td className="p-3 text-muted-foreground hidden md:table-cell">{item.contributor_name}</td>
                               <td className="p-3 text-right">
                                 <div className="flex justify-end gap-2">
-                                  <Button variant="outline" size="sm"><Eye className="w-4 h-4" /></Button>
-                                  <Button variant="default" size="sm" onClick={() => handleApprove('books', item.id)}>
-                                    <Check className="w-4 h-4" />
+                                  <Button 
+                                    variant="default" 
+                                    size="sm" 
+                                    onClick={() => handleApprove('books', item)}
+                                    disabled={processingId === item.id}
+                                  >
+                                    {processingId === item.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                                   </Button>
-                                  <Button variant="destructive" size="sm" onClick={() => handleReject('books', item.id)}>
+                                  <Button 
+                                    variant="destructive" 
+                                    size="sm" 
+                                    onClick={() => handleReject('books', item)}
+                                    disabled={processingId === item.id}
+                                  >
                                     <X className="w-4 h-4" />
                                   </Button>
                                 </div>
