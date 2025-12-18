@@ -10,8 +10,26 @@ const navItems = [
   { href: "/books", label: "Books", icon: ArrowLeftRight },
 ];
 
+// Paths where bottom nav should NOT appear
+const HIDDEN_PATHS = [
+  "/dashboard",
+  "/upload-material",
+  "/submit-blog",
+  "/submit-news",
+  "/sell-book",
+  "/admin",
+  "/profile",
+];
+
 export function BottomNav() {
   const location = useLocation();
+
+  // Hide on dashboard and protected action pages
+  const shouldHide = HIDDEN_PATHS.some(path => location.pathname.startsWith(path));
+  
+  if (shouldHide) {
+    return null;
+  }
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border/50 md:hidden">
