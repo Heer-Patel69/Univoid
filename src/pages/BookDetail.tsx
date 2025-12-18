@@ -7,17 +7,12 @@ import BookCarousel from "@/components/books/BookCarousel";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, User, MessageCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, User, MessageCircle, Loader2, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getBookById, getSellerContact } from "@/services/booksService";
 import { Book } from "@/types/database";
 import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+
 
 const BookDetail = () => {
   const { bookId } = useParams<{ bookId: string }>();
@@ -197,30 +192,40 @@ const BookDetail = () => {
         message="Login to contact the seller"
       />
 
-      {/* Contact Dialog */}
-      <Dialog open={contactDialogOpen} onOpenChange={setContactDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Seller Contact Information</DialogTitle>
-          </DialogHeader>
-          {selectedBookContact && (
-            <div className="space-y-4 py-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Email</p>
-                <p className="font-medium text-foreground">{selectedBookContact.email}</p>
+      {/* Contact Modal */}
+      {contactDialogOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div 
+            className="fixed inset-0 bg-black/80" 
+            onClick={() => setContactDialogOpen(false)}
+          />
+          <div className="relative z-50 w-full max-w-md mx-4 bg-background border rounded-lg shadow-lg p-6">
+            <button
+              onClick={() => setContactDialogOpen(false)}
+              className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <h2 className="text-lg font-semibold mb-4">Seller Contact Information</h2>
+            {selectedBookContact && (
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Email</p>
+                  <p className="font-medium text-foreground">{selectedBookContact.email}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Mobile</p>
+                  <p className="font-medium text-foreground">{selectedBookContact.mobile || "Not provided"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Location</p>
+                  <p className="font-medium text-foreground">{selectedBookContact.address}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Mobile</p>
-                <p className="font-medium text-foreground">{selectedBookContact.mobile || "Not provided"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Location</p>
-                <p className="font-medium text-foreground">{selectedBookContact.address}</p>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
