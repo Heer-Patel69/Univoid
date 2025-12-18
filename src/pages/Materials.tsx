@@ -6,12 +6,13 @@ import AuthModal from "@/components/auth/AuthModal";
 import MaterialPreviewModal from "@/components/materials/MaterialPreviewModal";
 import MaterialThumbnail from "@/components/materials/MaterialThumbnail";
 import ReportButton from "@/components/reports/ReportButton";
+import MaterialFilters, { MaterialFiltersState, initialFilters } from "@/components/materials/MaterialFilters";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Download, Eye, Calendar, User, BookOpen, ArrowRight } from "lucide-react";
+import { Download, Eye, Calendar, User, BookOpen, ArrowRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useVerification } from "@/hooks/useVerification";
 import { getDownloadUrl } from "@/services/materialsService";
 import { getMaterialsPaginated } from "@/services/paginatedService";
 import { SectionLoader, EmptyState, LoadMoreButton } from "@/components/common/SectionLoader";
@@ -22,15 +23,17 @@ import { toast } from "sonner";
 
 const Materials = () => {
   const { user } = useAuth();
+  const { canDownload } = useVerification();
   const navigate = useNavigate();
   const [authOpen, setAuthOpen] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [filters, setFilters] = useState<MaterialFiltersState>(initialFilters);
   const [previewMaterial, setPreviewMaterial] = useState<Material | null>(null);
   const [page, setPage] = useState(0);
   const [allMaterials, setAllMaterials] = useState<Material[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [isFiltering, setIsFiltering] = useState(false);
 
   const fetchMaterials = useCallback(async () => {
     const result = await getMaterialsPaginated(0, 20);
@@ -46,12 +49,43 @@ const Materials = () => {
     cacheKey: 'materials-page-0',
   });
 
+  const applyFilters = async (newFilters: MaterialFiltersState) => {
+    setFilters(newFilters);
+    setIsFiltering(true);
+    setPage(0);
+    try {
+      const apiFilters = {
+        search: newFilters.search || undefined,
+        course: newFilters.course || undefined,
+        branch: newFilters.branch || undefined,
+        subject: newFilters.subject || undefined,
+        language: newFilters.language || undefined,
+        college: newFilters.college || undefined,
+      };
+      const result = await getMaterialsPaginated(0, 20, apiFilters);
+      setAllMaterials(result.data);
+      setHasMore(result.hasMore);
+    } catch (error) {
+      toast.error('Failed to filter materials');
+    } finally {
+      setIsFiltering(false);
+    }
+  };
+
   const loadMore = async () => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
     try {
       const nextPage = page + 1;
-      const result = await getMaterialsPaginated(nextPage, 20);
+      const apiFilters = {
+        search: filters.search || undefined,
+        course: filters.course || undefined,
+        branch: filters.branch || undefined,
+        subject: filters.subject || undefined,
+        language: filters.language || undefined,
+        college: filters.college || undefined,
+      };
+      const result = await getMaterialsPaginated(nextPage, 20, apiFilters);
       setAllMaterials(prev => [...prev, ...result.data]);
       setHasMore(result.hasMore);
       setPage(nextPage);
@@ -63,40 +97,26 @@ const Materials = () => {
   };
 
   const handleDownload = async (material: Material) => {
-    if (user) {
-      try {
-        const url = await getDownloadUrl(material.id);
-        if (url) {
-          window.open(url, '_blank');
-        } else {
-          toast.error('Download link not available');
-        }
-      } catch (error) {
-        toast.error('Failed to get download link');
-      }
-    } else {
+    if (!user) {
       setAuthMessage("Sign in to download study materials");
       setAuthOpen(true);
+      return;
+    }
+    if (!canDownload) {
+      toast.error("Please verify your account to download materials");
+      return;
+    }
+    try {
+      const url = await getDownloadUrl(material.id);
+      if (url) {
+        window.open(url, '_blank');
+      } else {
+        toast.error('Download link not available');
+      }
+    } catch (error) {
+      toast.error('Failed to get download link');
     }
   };
-
-  const handleUpload = () => {
-    if (user) {
-      navigate("/upload-material");
-    } else {
-      setAuthMessage("Sign in to upload study materials");
-      setAuthOpen(true);
-    }
-  };
-
-  const handlePreview = (material: Material) => {
-    setPreviewMaterial(material);
-  };
-
-  const filteredMaterials = allMaterials.filter(material =>
-    material.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (material.description?.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
 
   const formatDate = (dateStr: string) => {
     try {

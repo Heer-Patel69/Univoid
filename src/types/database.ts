@@ -35,6 +35,12 @@ export interface Material {
   status: ContentStatus;
   created_at: string;
   updated_at: string;
+  // New fields
+  course: string | null;
+  branch: string | null;
+  subject: string | null;
+  language: string | null;
+  college: string | null;
   // Joined data
   contributor_name?: string;
 }

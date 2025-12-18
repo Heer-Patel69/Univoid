@@ -47,6 +47,11 @@ export async function getMaterialById(id: string): Promise<Material | null> {
 
 interface UploadOptions {
   onProgress?: (progress: number) => void;
+  course?: string;
+  branch?: string;
+  subject?: string;
+  language?: string;
+  college?: string;
 }
 
 export async function uploadMaterial(
@@ -103,6 +108,11 @@ export async function uploadMaterial(
       file_size: file.size,
       created_by: userId,
       status: 'approved',
+      course: options?.course || null,
+      branch: options?.branch || null,
+      subject: options?.subject || null,
+      language: options?.language || null,
+      college: options?.college || null,
     })
     .select('id')
     .single();
