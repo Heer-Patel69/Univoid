@@ -118,6 +118,19 @@ const Materials = () => {
     }
   };
 
+  const handleUpload = () => {
+    if (user) {
+      navigate("/upload-material");
+    } else {
+      setAuthMessage("Sign in to upload study materials");
+      setAuthOpen(true);
+    }
+  };
+
+  const handlePreview = (material: Material) => {
+    setPreviewMaterial(material);
+  };
+
   const formatDate = (dateStr: string) => {
     try {
       return format(new Date(dateStr), 'MMM d, yyyy');
@@ -159,36 +172,30 @@ const Materials = () => {
             </div>
           </div>
 
-          {/* Search */}
-          <div className="relative mb-8 max-w-md">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by title or description..."
-              className="pl-10 h-11"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
+          {/* Filters */}
+          <MaterialFilters 
+            filters={filters} 
+            onFiltersChange={applyFilters}
+            onClearFilters={() => applyFilters(initialFilters)}
+          />
 
           {/* Content */}
-          {isLoading ? (
+          {isLoading || isFiltering ? (
             <SectionLoader size="lg" className="py-16" />
           ) : allMaterials.length === 0 ? (
             <EmptyState 
-              message="No materials have been uploaded yet. Be the first to contribute!"
+              message="No materials found. Try adjusting your filters or be the first to contribute!"
               action={
                 <Button onClick={handleUpload} className="shadow-premium-sm">
                   Upload materials <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               }
             />
-          ) : filteredMaterials.length === 0 ? (
-            <EmptyState message="No materials found matching your search." />
           ) : (
             <>
               {/* Materials List */}
               <div className="space-y-4">
-                {filteredMaterials.map((material) => (
+                {allMaterials.map((material) => (
                   <Card 
                     key={material.id} 
                     className="card-premium cursor-pointer group"
@@ -210,9 +217,16 @@ const Materials = () => {
                             </h3>
                             <Badge variant="secondary" className="text-xs font-medium uppercase">{material.file_type}</Badge>
                           </div>
-                          <p className="text-sm text-muted-foreground mb-4 line-clamp-2 leading-relaxed">
+                          <p className="text-sm text-muted-foreground mb-3 line-clamp-2 leading-relaxed">
                             {material.description || 'No description provided'}
                           </p>
+                          {/* Material metadata */}
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            {material.course && <Badge variant="outline" className="text-xs">{material.course}</Badge>}
+                            {material.branch && <Badge variant="outline" className="text-xs">{material.branch}</Badge>}
+                            {material.subject && <Badge variant="outline" className="text-xs">{material.subject}</Badge>}
+                            {material.language && <Badge variant="outline" className="text-xs">{material.language}</Badge>}
+                          </div>
                           <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1.5">
                               <User className="w-3.5 h-3.5" />
@@ -222,6 +236,9 @@ const Materials = () => {
                               <Calendar className="w-3.5 h-3.5" />
                               {formatDate(material.created_at)}
                             </span>
+                            {material.college && (
+                              <span className="text-muted-foreground">{material.college}</span>
+                            )}
                           </div>
                         </div>
 
@@ -257,13 +274,11 @@ const Materials = () => {
               </div>
 
               {/* Load More */}
-              {!searchQuery && (
-                <LoadMoreButton 
-                  onClick={loadMore}
-                  isLoading={loadingMore}
-                  hasMore={hasMore}
-                />
-              )}
+              <LoadMoreButton 
+                onClick={loadMore}
+                isLoading={loadingMore}
+                hasMore={hasMore}
+              />
             </>
           )}
 
@@ -295,7 +310,7 @@ const Materials = () => {
         material={previewMaterial ? {
           id: parseInt(previewMaterial.id.substring(0, 8), 16),
           title: previewMaterial.title,
-          subject: 'Study Material',
+          subject: previewMaterial.subject || 'Study Material',
           type: previewMaterial.file_type.toUpperCase(),
           fileType: getFileTypeDisplay(previewMaterial.file_type),
           downloads: 0,
