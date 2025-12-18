@@ -98,6 +98,33 @@ export type Database = {
         }
         Relationships: []
       }
+      contact_messages: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          is_read: boolean
+          message: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          is_read?: boolean
+          message: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          name?: string
+        }
+        Relationships: []
+      }
       materials: {
         Row: {
           created_at: string
@@ -181,6 +208,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          is_disabled: boolean
           mobile_number: string | null
           profile_photo_url: string | null
           total_xp: number
@@ -194,6 +222,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          is_disabled?: boolean
           mobile_number?: string | null
           profile_photo_url?: string | null
           total_xp?: number
@@ -207,6 +236,7 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
+          is_disabled?: boolean
           mobile_number?: string | null
           profile_photo_url?: string | null
           total_xp?: number
