@@ -1,6 +1,7 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
+import { EmailVerificationPending } from "./EmailVerificationPending";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -21,6 +22,15 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   if (!user) {
     // Store the attempted URL for redirect after login
     return <Navigate to="/?auth=login" state={{ from: location.pathname }} replace />;
+  }
+
+  // Check if email is verified
+  const isGoogleUser = user.app_metadata?.provider === 'google';
+  const emailConfirmed = user.email_confirmed_at !== null;
+  const isVerified = isGoogleUser || emailConfirmed;
+
+  if (!isVerified) {
+    return <EmailVerificationPending email={user.email || ''} />;
   }
 
   return <>{children}</>;
