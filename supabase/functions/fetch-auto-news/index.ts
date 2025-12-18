@@ -119,6 +119,19 @@ const handler = async (req: Request): Promise<Response> => {
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Get a system user ID for auto-news (first admin or any existing user)
+    const { data: systemUser } = await supabase
+      .from("profiles")
+      .select("id")
+      .limit(1)
+      .single();
+    
+    const systemUserId = systemUser?.id;
+    if (!systemUserId) {
+      throw new Error("No users found in database to assign auto-news");
+    }
+    console.log(`Using system user ID: ${systemUserId}`);
+
     // Fetch news from NewsAPI.org
     const newsItems = await fetchNewsFromNewsAPI(newsApiKey);
     
@@ -161,7 +174,7 @@ const handler = async (req: Request): Promise<Response> => {
         title: `[${item.category}] ${item.title}`,
         content,
         external_link: item.url,
-        created_by: "00000000-0000-0000-0000-000000000000", // System user placeholder
+        created_by: systemUserId,
         status: "approved",
       });
 
