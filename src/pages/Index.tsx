@@ -1,10 +1,13 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import AuthModal from "@/components/auth/AuthModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { LiveStatsSection } from "@/components/common/LiveStatsSection";
+import { useAuth } from "@/contexts/AuthContext";
+import { useLeaderboard } from "@/hooks/useLeaderboard";
 import { 
   BookOpen, 
   Newspaper, 
@@ -13,7 +16,6 @@ import {
   Trophy, 
   Star, 
   Shield, 
-  Users,
   ArrowRight,
   Sparkles,
   CheckCircle2
@@ -21,6 +23,21 @@ import {
 
 const Index = () => {
   const [authOpen, setAuthOpen] = useState(false);
+  const { user, isLoading } = useAuth();
+  const navigate = useNavigate();
+  const { leaderboard } = useLeaderboard(3);
+
+  // Redirect logged-in users to dashboard
+  useEffect(() => {
+    if (!isLoading && user) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, isLoading, navigate]);
+
+  // Don't render Home page for logged-in users
+  if (!isLoading && user) {
+    return null;
+  }
 
   const features = [
     {
@@ -49,11 +66,17 @@ const Index = () => {
     },
   ];
 
-  const leaderboardPreview = [
-    { rank: 1, name: "Alex Chen", xp: 2450, level: 12 },
-    { rank: 2, name: "Sarah Kim", xp: 2180, level: 11 },
-    { rank: 3, name: "Mike Johnson", xp: 1950, level: 10 },
-  ];
+  // Use real leaderboard data
+  const leaderboardPreview = leaderboard.length > 0 
+    ? leaderboard.map((user, index) => ({
+        rank: index + 1,
+        name: user.full_name,
+        xp: user.total_xp,
+        level: user.level,
+      }))
+    : [
+        { rank: 1, name: "Be the first!", xp: 0, level: 1 },
+      ];
 
   const trustPoints = [
     "Admin-reviewed content",
@@ -259,15 +282,8 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Community Stats */}
-        <section className="section-spacing-sm bg-secondary/40">
-          <div className="container-wide">
-            <div className="flex items-center justify-center gap-3 text-muted-foreground">
-              <Users className="w-5 h-5" />
-              <span className="font-medium">Trusted by students across universities</span>
-            </div>
-          </div>
-        </section>
+        {/* Live Stats Section */}
+        <LiveStatsSection />
 
         {/* CTA Section */}
         <section className="section-spacing bg-primary">

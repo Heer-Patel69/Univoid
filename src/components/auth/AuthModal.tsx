@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -45,6 +46,7 @@ const AuthModal = ({ isOpen, onClose, onSuccess, message }: AuthModalProps) => {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const navigate = useNavigate();
   
   // Login fields
   const [email, setEmail] = useState("");
@@ -75,20 +77,29 @@ const AuthModal = ({ isOpen, onClose, onSuccess, message }: AuthModalProps) => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: `${window.location.origin}/dashboard`,
           queryParams: {
             access_type: 'offline',
-            prompt: 'consent',
+            prompt: 'select_account',
           },
         },
       });
 
       if (error) {
-        toast({
-          title: "Google sign-in failed",
-          description: error.message,
-          variant: "destructive",
-        });
+        // Handle account-exists-with-different-credential
+        if (error.message.includes('already registered') || error.message.includes('different credential')) {
+          toast({
+            title: "Account exists",
+            description: "An account with this email already exists. Please sign in with your original method.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Google sign-in failed",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
       }
     } catch (error) {
       toast({
@@ -127,6 +138,8 @@ const AuthModal = ({ isOpen, onClose, onSuccess, message }: AuthModalProps) => {
           resetForm();
           onSuccess?.();
           onClose();
+          // Redirect to dashboard after login
+          navigate('/dashboard', { replace: true });
         }
       } else {
         // Validation
@@ -140,7 +153,7 @@ const AuthModal = ({ isOpen, onClose, onSuccess, message }: AuthModalProps) => {
           return;
         }
 
-        const redirectUrl = `${window.location.origin}/`;
+        const redirectUrl = `${window.location.origin}/dashboard`;
         
         const { error } = await supabase.auth.signUp({
           email,
