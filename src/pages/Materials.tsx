@@ -2,29 +2,49 @@ import { useState } from "react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import AuthModal from "@/components/auth/AuthModal";
+import MaterialPreviewModal from "@/components/materials/MaterialPreviewModal";
+import MaterialThumbnail from "@/components/materials/MaterialThumbnail";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, FileText, Download, Eye, Calendar } from "lucide-react";
+import { Search, Download, Eye, Calendar, User } from "lucide-react";
 
-const mockMaterials = [
-  { id: 1, title: "Calculus II Complete Notes", subject: "Mathematics", type: "Notes", downloads: 234, date: "2024-01-15", preview: "Comprehensive notes covering integration techniques, series, and sequences..." },
-  { id: 2, title: "Organic Chemistry Past Papers 2023", subject: "Chemistry", type: "Past Paper", downloads: 189, date: "2024-01-12", preview: "Collection of past examination papers with marking schemes..." },
-  { id: 3, title: "Data Structures & Algorithms Summary", subject: "Computer Science", type: "Notes", downloads: 312, date: "2024-01-10", preview: "Quick reference guide for common data structures and algorithm complexity..." },
-  { id: 4, title: "Microeconomics Cheat Sheet", subject: "Economics", type: "Cheat Sheet", downloads: 156, date: "2024-01-08", preview: "One-page summary of key microeconomics concepts and formulas..." },
-  { id: 5, title: "Physics Lab Report Template", subject: "Physics", type: "Template", downloads: 98, date: "2024-01-05", preview: "Standard lab report template with examples and formatting guidelines..." },
-  { id: 6, title: "Introduction to Psychology Notes", subject: "Psychology", type: "Notes", downloads: 201, date: "2024-01-03", preview: "Lecture notes covering foundational psychology concepts..." },
+interface Material {
+  id: number;
+  title: string;
+  subject: string;
+  type: string;
+  fileType: "pdf" | "image" | "doc" | "other";
+  downloads: number;
+  date: string;
+  preview: string;
+  contributor: string;
+  thumbnailUrl?: string;
+}
+
+const mockMaterials: Material[] = [
+  { id: 1, title: "Calculus II Complete Notes", subject: "Mathematics", type: "Notes", fileType: "pdf", downloads: 234, date: "2024-01-15", preview: "Comprehensive notes covering integration techniques, series, and sequences. Includes worked examples and practice problems for each topic.", contributor: "Sarah Ahmed" },
+  { id: 2, title: "Organic Chemistry Past Papers 2023", subject: "Chemistry", type: "Past Paper", fileType: "pdf", downloads: 189, date: "2024-01-12", preview: "Collection of past examination papers with marking schemes. Covers reactions, mechanisms, and synthesis problems.", contributor: "Ali Hassan" },
+  { id: 3, title: "Data Structures & Algorithms Summary", subject: "Computer Science", type: "Notes", fileType: "doc", downloads: 312, date: "2024-01-10", preview: "Quick reference guide for common data structures and algorithm complexity. Perfect for interview preparation.", contributor: "Fatima Khan" },
+  { id: 4, title: "Microeconomics Cheat Sheet", subject: "Economics", type: "Cheat Sheet", fileType: "image", downloads: 156, date: "2024-01-08", preview: "One-page summary of key microeconomics concepts and formulas. Covers supply, demand, elasticity, and market structures.", contributor: "Omar Malik" },
+  { id: 5, title: "Physics Lab Report Template", subject: "Physics", type: "Template", fileType: "doc", downloads: 98, date: "2024-01-05", preview: "Standard lab report template with examples and formatting guidelines. Includes sections for methodology, results, and analysis.", contributor: "Ayesha Rahman" },
+  { id: 6, title: "Introduction to Psychology Notes", subject: "Psychology", type: "Notes", fileType: "pdf", downloads: 201, date: "2024-01-03", preview: "Lecture notes covering foundational psychology concepts including cognition, behavior, and development theories.", contributor: "Hassan Ali" },
 ];
 
 const Materials = () => {
   const [authOpen, setAuthOpen] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [previewMaterial, setPreviewMaterial] = useState<Material | null>(null);
 
   const handleDownload = () => {
     setAuthMessage("Login to download study materials");
     setAuthOpen(true);
+  };
+
+  const handlePreview = (material: Material) => {
+    setPreviewMaterial(material);
   };
 
   const filteredMaterials = mockMaterials.filter(material =>
@@ -62,30 +82,40 @@ const Materials = () => {
           {/* Materials List */}
           <div className="space-y-4">
             {filteredMaterials.map((material) => (
-              <Card key={material.id} className="hover:border-primary/30 transition-colors">
+              <Card 
+                key={material.id} 
+                className="hover:border-primary/30 transition-colors cursor-pointer group"
+                onClick={() => handlePreview(material)}
+              >
                 <CardContent className="p-4 md:p-6">
                   <div className="flex flex-col md:flex-row md:items-start gap-4">
-                    <div className="flex-shrink-0">
-                      <div className="w-12 h-12 bg-accent rounded-lg flex items-center justify-center">
-                        <FileText className="w-6 h-6 text-primary" />
-                      </div>
-                    </div>
+                    {/* Thumbnail Preview */}
+                    <MaterialThumbnail 
+                      fileType={material.fileType}
+                      title={material.title}
+                      thumbnailUrl={material.thumbnailUrl}
+                      className="group-hover:scale-[1.02] transition-transform"
+                    />
                     
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2 mb-2">
-                        <h3 className="font-semibold text-foreground">{material.title}</h3>
+                        <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                          {material.title}
+                        </h3>
                         <Badge variant="secondary" className="text-xs">{material.type}</Badge>
                       </div>
                       <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                         {material.preview}
                       </p>
                       <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+                        <Badge variant="outline" className="font-normal">{material.subject}</Badge>
                         <span className="flex items-center gap-1">
-                          <Badge variant="outline" className="font-normal">{material.subject}</Badge>
+                          <User className="w-3 h-3" />
+                          {material.contributor}
                         </span>
                         <span className="flex items-center gap-1">
                           <Download className="w-3 h-3" />
-                          {material.downloads} downloads
+                          {material.downloads}
                         </span>
                         <span className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
@@ -95,11 +125,20 @@ const Materials = () => {
                     </div>
 
                     <div className="flex gap-2 md:flex-shrink-0">
-                      <Button variant="outline" size="sm" className="flex items-center gap-1">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex items-center gap-1"
+                        onClick={(e) => { e.stopPropagation(); handlePreview(material); }}
+                      >
                         <Eye className="w-4 h-4" />
                         Preview
                       </Button>
-                      <Button size="sm" onClick={handleDownload} className="flex items-center gap-1">
+                      <Button 
+                        size="sm" 
+                        onClick={(e) => { e.stopPropagation(); handleDownload(); }} 
+                        className="flex items-center gap-1"
+                      >
                         <Download className="w-4 h-4" />
                         Download
                       </Button>
@@ -134,6 +173,16 @@ const Materials = () => {
         isOpen={authOpen} 
         onClose={() => setAuthOpen(false)}
         message={authMessage}
+      />
+
+      <MaterialPreviewModal
+        material={previewMaterial}
+        isOpen={!!previewMaterial}
+        onClose={() => setPreviewMaterial(null)}
+        onDownload={() => {
+          setPreviewMaterial(null);
+          handleDownload();
+        }}
       />
     </div>
   );
