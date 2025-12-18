@@ -6,6 +6,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const SYSTEM_USER_EMAIL = "system@univoid.local";
+const SYSTEM_USER_NAME = "UniVoid System";
+
 // Keywords for filtering student/job/placement news
 const SEARCH_QUERIES = [
   "college internship",
@@ -53,11 +56,48 @@ function generateSummary(description: string): string {
   return sentences.slice(0, 3).join(". ").trim() + ".";
 }
 
+async function getOrCreateSystemUser(supabase: any): Promise<string> {
+  // Check if system user already exists by email
+  const { data: existingProfile } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("email", SYSTEM_USER_EMAIL)
+    .maybeSingle();
+
+  if (existingProfile?.id) {
+    console.log(`Using existing system user: ${existingProfile.id}`);
+    return existingProfile.id;
+  }
+
+  // Create new system user via admin API
+  console.log("Creating new system user...");
+  
+  const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    email: SYSTEM_USER_EMAIL,
+    password: crypto.randomUUID(), // Random password - won't be used for login
+    email_confirm: true,
+    user_metadata: {
+      full_name: SYSTEM_USER_NAME,
+      college_name: "UniVoid System",
+      course_stream: "System",
+      year_semester: "N/A",
+    },
+  });
+
+  if (authError) {
+    console.error("Failed to create system user:", authError.message);
+    throw new Error(`Failed to create system user: ${authError.message}`);
+  }
+
+  console.log(`Created system user: ${authData.user.id}`);
+  return authData.user.id;
+}
+
 async function fetchNewsFromNewsAPI(apiKey: string): Promise<NewsItem[]> {
   const allNews: NewsItem[] = [];
   
   // Fetch news for each search query
-  for (const query of SEARCH_QUERIES.slice(0, 2)) { // Limit to 2 queries to stay within free tier
+  for (const query of SEARCH_QUERIES.slice(0, 2)) {
     try {
       const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&language=en&sortBy=publishedAt&pageSize=5`;
       
@@ -119,17 +159,8 @@ const handler = async (req: Request): Promise<Response> => {
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get a system user ID for auto-news (first admin or any existing user)
-    const { data: systemUser } = await supabase
-      .from("profiles")
-      .select("id")
-      .limit(1)
-      .single();
-    
-    const systemUserId = systemUser?.id;
-    if (!systemUserId) {
-      throw new Error("No users found in database to assign auto-news");
-    }
+    // Get or create system user for auto-generated content
+    const systemUserId = await getOrCreateSystemUser(supabase);
     console.log(`Using system user ID: ${systemUserId}`);
 
     // Fetch news from NewsAPI.org
@@ -192,6 +223,7 @@ const handler = async (req: Request): Promise<Response> => {
       JSON.stringify({ 
         success: true, 
         message: `Fetched and inserted ${insertedCount} news items from NewsAPI.org`,
+        systemUserId,
         total: newsItems.length,
         inserted: insertedCount,
       }),
