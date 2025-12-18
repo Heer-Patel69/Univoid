@@ -52,11 +52,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data } = await supabase
       .from('user_roles')
       .select('role')
-      .eq('user_id', userId)
-      .single();
+      .eq('user_id', userId);
     
-    if (data) {
-      setRole(data.role as AppRole);
+    if (data && data.length > 0) {
+      // Check if user has admin role (prioritize admin over student)
+      const hasAdmin = data.some(r => r.role === 'admin');
+      setRole(hasAdmin ? 'admin' : (data[0].role as AppRole));
     }
   };
 
