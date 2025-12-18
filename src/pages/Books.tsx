@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -7,9 +7,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, BookOpen, User, Loader2, ArrowRight, Images } from "lucide-react";
+import { Search, BookOpen, User, ArrowRight, Images } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { getBooks } from "@/services/booksService";
+import { getBooksPaginated } from "@/services/paginatedService";
+import { SectionLoader, EmptyState, LoadMoreButton } from "@/components/common/SectionLoader";
+import { useOptimizedFetch } from "@/hooks/useOptimizedFetch";
 import { Book } from "@/types/database";
 import { toast } from "sonner";
 
@@ -19,25 +21,40 @@ const Books = () => {
   const [authOpen, setAuthOpen] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [books, setBooks] = useState<Book[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [allBooks, setAllBooks] = useState<Book[]>([]);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  useEffect(() => {
-    const fetchBooks = async () => {
-      try {
-        const data = await getBooks();
-        // Filter out sold books
-        setBooks(data.filter(book => !book.is_sold));
-      } catch (error) {
-        console.error('Error fetching books:', error);
-        toast.error('Failed to load books');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchBooks();
+  const fetchBooks = useCallback(async () => {
+    const result = await getBooksPaginated(0, 12);
+    setAllBooks(result.data);
+    setHasMore(result.hasMore);
+    return result.data;
   }, []);
+
+  const { isLoading } = useOptimizedFetch({
+    fetchFn: fetchBooks,
+    defaultValue: [] as Book[],
+    timeoutMs: 8000,
+    cacheKey: 'books-page-0',
+  });
+
+  const loadMore = async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const nextPage = page + 1;
+      const result = await getBooksPaginated(nextPage, 12);
+      setAllBooks(prev => [...prev, ...result.data]);
+      setHasMore(result.hasMore);
+      setPage(nextPage);
+    } catch (error) {
+      toast.error('Failed to load more books');
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const handleListBook = () => {
     if (user) {
@@ -48,7 +65,7 @@ const Books = () => {
     }
   };
 
-  const filteredBooks = books.filter(book =>
+  const filteredBooks = allBooks.filter(book =>
     book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (book.description?.toLowerCase().includes(searchQuery.toLowerCase()))
   );
@@ -87,11 +104,20 @@ const Books = () => {
             />
           </div>
 
-          {/* Loading State */}
+          {/* Content */}
           {isLoading ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            </div>
+            <SectionLoader size="lg" className="py-16" />
+          ) : allBooks.length === 0 ? (
+            <EmptyState 
+              message="No books have been listed yet. Be the first to list one!"
+              action={
+                <Button onClick={handleListBook} className="shadow-premium-sm">
+                  List a book <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              }
+            />
+          ) : filteredBooks.length === 0 ? (
+            <EmptyState message="No books found matching your search." />
           ) : (
             <>
               {/* Books Grid */}
@@ -105,6 +131,7 @@ const Books = () => {
                             src={book.image_urls[0]}
                             alt={book.title}
                             className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
+                            loading="lazy"
                           />
                           {book.image_urls.length > 1 && (
                             <div className="absolute bottom-2 right-2 bg-background/80 backdrop-blur-sm text-foreground text-xs px-2 py-1 rounded-full flex items-center gap-1">
@@ -151,12 +178,13 @@ const Books = () => {
                 ))}
               </div>
 
-              {filteredBooks.length === 0 && !isLoading && (
-                <div className="text-center py-16">
-                  <p className="text-muted-foreground">
-                    {books.length === 0 ? 'No books have been listed yet. Be the first to list one!' : 'No books found matching your search.'}
-                  </p>
-                </div>
+              {/* Load More */}
+              {!searchQuery && (
+                <LoadMoreButton 
+                  onClick={loadMore}
+                  isLoading={loadingMore}
+                  hasMore={hasMore}
+                />
               )}
             </>
           )}

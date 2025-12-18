@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -9,9 +9,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Download, Eye, Calendar, User, BookOpen, ArrowRight, Loader2 } from "lucide-react";
+import { Search, Download, Eye, Calendar, User, BookOpen, ArrowRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { getMaterials, getDownloadUrl } from "@/services/materialsService";
+import { getDownloadUrl } from "@/services/materialsService";
+import { getMaterialsPaginated } from "@/services/paginatedService";
+import { SectionLoader, EmptyState, LoadMoreButton } from "@/components/common/SectionLoader";
+import { useOptimizedFetch } from "@/hooks/useOptimizedFetch";
 import { Material } from "@/types/database";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -23,24 +26,40 @@ const Materials = () => {
   const [authMessage, setAuthMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [previewMaterial, setPreviewMaterial] = useState<Material | null>(null);
-  const [materials, setMaterials] = useState<Material[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [allMaterials, setAllMaterials] = useState<Material[]>([]);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  useEffect(() => {
-    const fetchMaterials = async () => {
-      try {
-        const data = await getMaterials();
-        setMaterials(data);
-      } catch (error) {
-        console.error('Error fetching materials:', error);
-        toast.error('Failed to load materials');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchMaterials();
+  const fetchMaterials = useCallback(async () => {
+    const result = await getMaterialsPaginated(0, 20);
+    setAllMaterials(result.data);
+    setHasMore(result.hasMore);
+    return result.data;
   }, []);
+
+  const { isLoading } = useOptimizedFetch({
+    fetchFn: fetchMaterials,
+    defaultValue: [] as Material[],
+    timeoutMs: 8000,
+    cacheKey: 'materials-page-0',
+  });
+
+  const loadMore = async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const nextPage = page + 1;
+      const result = await getMaterialsPaginated(nextPage, 20);
+      setAllMaterials(prev => [...prev, ...result.data]);
+      setHasMore(result.hasMore);
+      setPage(nextPage);
+    } catch (error) {
+      toast.error('Failed to load more materials');
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const handleDownload = async (material: Material) => {
     if (user) {
@@ -73,7 +92,7 @@ const Materials = () => {
     setPreviewMaterial(material);
   };
 
-  const filteredMaterials = materials.filter(material =>
+  const filteredMaterials = allMaterials.filter(material =>
     material.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (material.description?.toLowerCase().includes(searchQuery.toLowerCase()))
   );
@@ -130,11 +149,20 @@ const Materials = () => {
             />
           </div>
 
-          {/* Loading State */}
+          {/* Content */}
           {isLoading ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            </div>
+            <SectionLoader size="lg" className="py-16" />
+          ) : allMaterials.length === 0 ? (
+            <EmptyState 
+              message="No materials have been uploaded yet. Be the first to contribute!"
+              action={
+                <Button onClick={handleUpload} className="shadow-premium-sm">
+                  Upload materials <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              }
+            />
+          ) : filteredMaterials.length === 0 ? (
+            <EmptyState message="No materials found matching your search." />
           ) : (
             <>
               {/* Materials List */}
@@ -201,12 +229,13 @@ const Materials = () => {
                 ))}
               </div>
 
-              {filteredMaterials.length === 0 && !isLoading && (
-                <div className="text-center py-16">
-                  <p className="text-muted-foreground">
-                    {materials.length === 0 ? 'No materials have been uploaded yet. Be the first to contribute!' : 'No materials found matching your search.'}
-                  </p>
-                </div>
+              {/* Load More */}
+              {!searchQuery && (
+                <LoadMoreButton 
+                  onClick={loadMore}
+                  isLoading={loadingMore}
+                  hasMore={hasMore}
+                />
               )}
             </>
           )}
