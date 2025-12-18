@@ -14,6 +14,10 @@ import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
+import UploadMaterial from "./pages/UploadMaterial";
+import WriteBlog from "./pages/WriteBlog";
+import SubmitNews from "./pages/SubmitNews";
+import ListBook from "./pages/ListBook";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +36,10 @@ const App = () => (
             <Route path="/books" element={<Books />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard/upload-material" element={<UploadMaterial />} />
+            <Route path="/dashboard/write-blog" element={<WriteBlog />} />
+            <Route path="/dashboard/submit-news" element={<SubmitNews />} />
+            <Route path="/dashboard/list-book" element={<ListBook />} />
             <Route path="/profile/:userId" element={<Profile />} />
             <Route path="/admin" element={<Admin />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

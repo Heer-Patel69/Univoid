@@ -138,12 +138,14 @@ const Dashboard = () => {
                 <h2 className="text-lg font-semibold text-foreground mb-4">Contribute</h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {contributeActions.map((action) => (
-                    <Card key={action.label} className="hover:border-primary/50 transition-colors cursor-pointer">
-                      <CardContent className="p-4 text-center">
-                        <action.icon className="w-8 h-8 text-primary mx-auto mb-2" />
-                        <p className="text-sm font-medium text-foreground">{action.label}</p>
-                      </CardContent>
-                    </Card>
+                    <Link key={action.label} to={action.href}>
+                      <Card className="hover:border-primary/50 transition-colors cursor-pointer h-full">
+                        <CardContent className="p-4 text-center">
+                          <action.icon className="w-8 h-8 text-primary mx-auto mb-2" />
+                          <p className="text-sm font-medium text-foreground">{action.label}</p>
+                        </CardContent>
+                      </Card>
+                    </Link>
                   ))}
                 </div>
               </section>
