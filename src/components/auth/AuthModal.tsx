@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import {
   Dialog,
   DialogContent,
@@ -9,8 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Mail, Lock, User, ArrowRight, Building, BookOpen, Calendar, Phone, Loader2 } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -34,7 +34,6 @@ const AuthModal = ({ isOpen, onClose, onSuccess, message }: AuthModalProps) => {
   const [yearSemester, setYearSemester] = useState("");
   const [mobileNumber, setMobileNumber] = useState("");
 
-  const { signIn, signUp } = useAuth();
   const { toast } = useToast();
 
   const resetForm = () => {
@@ -53,7 +52,10 @@ const AuthModal = ({ isOpen, onClose, onSuccess, message }: AuthModalProps) => {
 
     try {
       if (mode === "login") {
-        const { error } = await signIn(email, password);
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
         if (error) {
           toast({
             title: "Sign in failed",
@@ -83,14 +85,21 @@ const AuthModal = ({ isOpen, onClose, onSuccess, message }: AuthModalProps) => {
           return;
         }
 
-        const { error } = await signUp({
+        const redirectUrl = `${window.location.origin}/`;
+        
+        const { error } = await supabase.auth.signUp({
           email,
           password,
-          full_name: fullName,
-          college_name: collegeName,
-          course_stream: courseStream,
-          year_semester: yearSemester,
-          mobile_number: mobileNumber || undefined,
+          options: {
+            emailRedirectTo: redirectUrl,
+            data: {
+              full_name: fullName,
+              college_name: collegeName,
+              course_stream: courseStream,
+              year_semester: yearSemester,
+              mobile_number: mobileNumber || null,
+            },
+          },
         });
 
         if (error) {
