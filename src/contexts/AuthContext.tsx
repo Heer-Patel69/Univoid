@@ -139,12 +139,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signIn = async (email: string, password: string): Promise<{ error: Error | null }> => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    return { error: error as Error | null };
+    if (error) {
+      return { error: error as Error };
+    }
+
+    // Check if user is disabled
+    if (data.user) {
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('is_disabled')
+        .eq('id', data.user.id)
+        .single();
+
+      if (profileData?.is_disabled) {
+        await supabase.auth.signOut();
+        return { error: new Error('Your account has been disabled. Please contact support.') };
+      }
+    }
+
+    return { error: null };
   };
 
   const signOut = async () => {

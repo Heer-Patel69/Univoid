@@ -13,6 +13,7 @@ const Footer = () => {
     community: [
       { href: "/leaderboard", label: "Leaderboard" },
       { href: "/dashboard", label: "Dashboard" },
+      { href: "/contact", label: "Contact Us" },
     ],
     legal: [
       { href: "/privacy-policy", label: "Privacy Policy" },

@@ -8,7 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { 
   Check, X, FileText, Newspaper, PenLine, BookOpen, Loader2, 
-  Flag, Trash2, Eye, Users, Shield, AlertTriangle 
+  Flag, Trash2, Eye, Users, Shield, AlertTriangle, Ban, KeyRound,
+  Mail, MessageSquare
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
@@ -23,7 +24,16 @@ import {
   adminDeleteNews,
   adminDeleteBook,
   adminDeleteUser,
+  toggleUserDisabled,
+  sendPasswordResetEmail,
 } from "@/services/adminService";
+import { 
+  getContactMessages, 
+  markMessageAsRead, 
+  deleteContactMessage,
+  getUnreadCount,
+  ContactMessage 
+} from "@/services/contactService";
 import { getReports, updateReportStatus, deleteReportedContent, Report, ReportContentType } from "@/services/reportsService";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -63,6 +73,8 @@ interface UserItem {
   total_xp: number;
   created_at: string;
   profile_photo_url?: string;
+  mobile_number?: string;
+  is_disabled?: boolean;
 }
 
 const Admin = () => {
@@ -75,11 +87,13 @@ const Admin = () => {
   const [allBooks, setAllBooks] = useState<ContentItem[]>([]);
   const [allUsers, setAllUsers] = useState<UserItem[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
+  const [contactMessages, setContactMessages] = useState<ContactMessage[]>([]);
   
   // Counts
   const [counts, setCounts] = useState({ materials: 0, blogs: 0, news: 0, books: 0, users: 0 });
   const [pendingCounts, setPendingCounts] = useState({ materials: 0, blogs: 0, news: 0, books: 0 });
   const [reportCount, setReportCount] = useState(0);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
   
   // UI state
   const [isLoading, setIsLoading] = useState(true);
@@ -95,8 +109,10 @@ const Admin = () => {
         booksData,
         usersData,
         reportsData,
+        messagesData,
         contentCounts,
         pendingCountsData,
+        unreadCount,
       ] = await Promise.all([
         getAllContent('materials'),
         getAllContent('blogs'),
@@ -104,8 +120,10 @@ const Admin = () => {
         getAllContent('books'),
         getAllUsers(),
         getReports('pending'),
+        getContactMessages(),
         getContentCounts(),
         getAllPendingCounts(),
+        getUnreadCount(),
       ]);
       
       setAllMaterials(materialsData as ContentItem[]);
@@ -114,9 +132,11 @@ const Admin = () => {
       setAllBooks(booksData as ContentItem[]);
       setAllUsers(usersData as UserItem[]);
       setReports(reportsData);
+      setContactMessages(messagesData);
       setCounts(contentCounts);
       setPendingCounts(pendingCountsData);
       setReportCount(reportsData.length);
+      setUnreadMessagesCount(unreadCount);
     } catch (error) {
       console.error('Error fetching admin data:', error);
       toast.error('Failed to load admin data');
@@ -172,6 +192,13 @@ const Admin = () => {
               setReports(data);
               setReportCount(data.length);
             });
+          })
+          .subscribe(),
+        
+        supabase.channel('admin-contact-messages')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'contact_messages' }, () => {
+            getContactMessages().then(setContactMessages);
+            getUnreadCount().then(setUnreadMessagesCount);
           })
           .subscribe(),
       ];
@@ -377,6 +404,68 @@ const Admin = () => {
     );
   };
 
+  const handleToggleUserDisabled = async (userItem: UserItem) => {
+    setProcessingId(userItem.id);
+    const newDisabledState = !userItem.is_disabled;
+    
+    const { error } = await toggleUserDisabled(userItem.id, newDisabledState);
+    setProcessingId(null);
+
+    if (error) {
+      toast.error('Failed to update user status: ' + error.message);
+      return;
+    }
+
+    toast.success(newDisabledState ? 'User account disabled' : 'User account enabled');
+    setAllUsers(prev => prev.map(u => 
+      u.id === userItem.id ? { ...u, is_disabled: newDisabledState } : u
+    ));
+  };
+
+  const handleForcePasswordReset = async (userItem: UserItem) => {
+    setProcessingId(userItem.id);
+    
+    const { error } = await sendPasswordResetEmail(userItem.email);
+    setProcessingId(null);
+
+    if (error) {
+      toast.error('Failed to send password reset: ' + error.message);
+      return;
+    }
+
+    toast.success(`Password reset email sent to ${userItem.email}`);
+  };
+
+  const handleMarkMessageRead = async (message: ContactMessage) => {
+    if (message.is_read) return;
+    
+    const { error } = await markMessageAsRead(message.id);
+    if (error) {
+      toast.error('Failed to mark as read');
+      return;
+    }
+
+    setContactMessages(prev => prev.map(m => 
+      m.id === message.id ? { ...m, is_read: true } : m
+    ));
+    setUnreadMessagesCount(prev => Math.max(0, prev - 1));
+  };
+
+  const handleDeleteMessage = async (messageId: string) => {
+    setProcessingId(messageId);
+    
+    const { error } = await deleteContactMessage(messageId);
+    setProcessingId(null);
+
+    if (error) {
+      toast.error('Failed to delete message');
+      return;
+    }
+
+    toast.success('Message deleted');
+    setContactMessages(prev => prev.filter(m => m.id !== messageId));
+  };
+
   const renderUsersTable = () => {
     if (allUsers.length === 0) {
       return <p className="text-muted-foreground text-center py-8">No users found</p>;
@@ -389,34 +478,134 @@ const Admin = () => {
             <tr className="border-b border-border">
               <th className="text-left p-3 text-sm font-medium text-muted-foreground">Name</th>
               <th className="text-left p-3 text-sm font-medium text-muted-foreground hidden sm:table-cell">Email</th>
-              <th className="text-left p-3 text-sm font-medium text-muted-foreground hidden md:table-cell">College</th>
-              <th className="text-left p-3 text-sm font-medium text-muted-foreground hidden md:table-cell">XP</th>
-              <th className="text-left p-3 text-sm font-medium text-muted-foreground hidden lg:table-cell">Joined</th>
+              <th className="text-left p-3 text-sm font-medium text-muted-foreground hidden md:table-cell">Phone</th>
+              <th className="text-left p-3 text-sm font-medium text-muted-foreground hidden md:table-cell">Status</th>
+              <th className="text-left p-3 text-sm font-medium text-muted-foreground hidden lg:table-cell">XP</th>
               <th className="text-right p-3 text-sm font-medium text-muted-foreground">Actions</th>
             </tr>
           </thead>
           <tbody>
             {allUsers.map((userItem) => (
-              <tr key={userItem.id} className="border-b border-border last:border-0 hover:bg-muted/50">
-                <td className="p-3 font-medium text-foreground">{userItem.full_name}</td>
+              <tr key={userItem.id} className={`border-b border-border last:border-0 hover:bg-muted/50 ${userItem.is_disabled ? 'opacity-60' : ''}`}>
+                <td className="p-3">
+                  <div>
+                    <p className="font-medium text-foreground">{userItem.full_name}</p>
+                    <p className="text-xs text-muted-foreground sm:hidden">{userItem.email}</p>
+                  </div>
+                </td>
                 <td className="p-3 text-muted-foreground hidden sm:table-cell">{userItem.email}</td>
-                <td className="p-3 text-muted-foreground hidden md:table-cell max-w-xs truncate">{userItem.college_name}</td>
-                <td className="p-3 text-muted-foreground hidden md:table-cell">{userItem.total_xp}</td>
-                <td className="p-3 text-muted-foreground hidden lg:table-cell">{formatDate(userItem.created_at)}</td>
+                <td className="p-3 text-muted-foreground hidden md:table-cell">{userItem.mobile_number || '-'}</td>
+                <td className="p-3 hidden md:table-cell">
+                  {userItem.is_disabled ? (
+                    <Badge variant="destructive">Disabled</Badge>
+                  ) : (
+                    <Badge variant="default" className="bg-green-500/20 text-green-600 border-green-500/30">Active</Badge>
+                  )}
+                </td>
+                <td className="p-3 text-muted-foreground hidden lg:table-cell">{userItem.total_xp}</td>
                 <td className="p-3 text-right">
-                  <Button 
-                    variant="destructive" 
-                    size="sm" 
-                    onClick={() => setDeleteConfirm({ type: 'users', id: userItem.id, title: userItem.full_name })}
-                    disabled={processingId === userItem.id || userItem.id === user?.id}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  <div className="flex justify-end gap-1">
+                    <Button 
+                      variant={userItem.is_disabled ? "default" : "outline"}
+                      size="sm" 
+                      onClick={() => handleToggleUserDisabled(userItem)}
+                      disabled={processingId === userItem.id || userItem.id === user?.id}
+                      title={userItem.is_disabled ? 'Enable account' : 'Disable account'}
+                    >
+                      {processingId === userItem.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Ban className="w-4 h-4" />
+                      )}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => handleForcePasswordReset(userItem)}
+                      disabled={processingId === userItem.id}
+                      title="Send password reset email"
+                    >
+                      <KeyRound className="w-4 h-4" />
+                    </Button>
+                    <Button 
+                      variant="destructive" 
+                      size="sm" 
+                      onClick={() => setDeleteConfirm({ type: 'users', id: userItem.id, title: userItem.full_name })}
+                      disabled={processingId === userItem.id || userItem.id === user?.id}
+                      title="Delete user"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+      </div>
+    );
+  };
+
+  const renderContactMessagesTab = () => {
+    if (contactMessages.length === 0) {
+      return <p className="text-muted-foreground text-center py-8">No contact messages</p>;
+    }
+
+    return (
+      <div className="space-y-4">
+        {contactMessages.map((message) => (
+          <Card 
+            key={message.id} 
+            className={`border-border ${!message.is_read ? 'border-l-4 border-l-primary' : ''}`}
+            onClick={() => handleMarkMessageRead(message)}
+          >
+            <CardContent className="p-4">
+              <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                <div className="space-y-2 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-foreground">{message.name}</span>
+                    {!message.is_read && (
+                      <Badge variant="default" className="text-xs">New</Badge>
+                    )}
+                  </div>
+                  
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    <p className="flex items-center gap-1">
+                      <Mail className="w-3 h-3" />
+                      <a href={`mailto:${message.email}`} className="hover:text-primary">
+                        {message.email}
+                      </a>
+                    </p>
+                    <p>Received: {formatDate(message.created_at)}</p>
+                  </div>
+
+                  <div className="mt-3 p-3 bg-muted/50 rounded-lg">
+                    <p className="text-sm text-foreground whitespace-pre-wrap">{message.message}</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteMessage(message.id);
+                    }}
+                    disabled={processingId === message.id}
+                    className="flex items-center gap-1"
+                  >
+                    {processingId === message.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     );
   };
@@ -607,6 +796,9 @@ const Admin = () => {
                   <TabsTrigger value="reports" className="text-xs sm:text-sm">
                     Reports {reportCount > 0 && <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 text-xs">{reportCount}</Badge>}
                   </TabsTrigger>
+                  <TabsTrigger value="messages" className="text-xs sm:text-sm">
+                    Messages {unreadMessagesCount > 0 && <Badge variant="default" className="ml-1 h-5 w-5 p-0 text-xs">{unreadMessagesCount}</Badge>}
+                  </TabsTrigger>
                 </TabsList>
               </CardHeader>
 
@@ -633,6 +825,10 @@ const Admin = () => {
 
                 <TabsContent value="reports" className="mt-0">
                   {renderReportsTab()}
+                </TabsContent>
+
+                <TabsContent value="messages" className="mt-0">
+                  {renderContactMessagesTab()}
                 </TabsContent>
               </CardContent>
             </Tabs>

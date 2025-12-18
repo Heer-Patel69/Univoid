@@ -267,3 +267,37 @@ export async function adminDeleteUser(userId: string): Promise<{ error: Error | 
   const { error } = await supabase.from('profiles').delete().eq('id', userId);
   return { error: error as Error | null };
 }
+
+// ============ USER ACCOUNT MANAGEMENT ============
+
+export async function toggleUserDisabled(userId: string, disabled: boolean): Promise<{ error: Error | null }> {
+  const { error } = await supabase
+    .from('profiles')
+    .update({ is_disabled: disabled })
+    .eq('id', userId);
+
+  return { error: error as Error | null };
+}
+
+export async function sendPasswordResetEmail(email: string): Promise<{ error: Error | null }> {
+  const redirectUrl = `${window.location.origin}/`;
+  
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: redirectUrl,
+  });
+
+  return { error: error as Error | null };
+}
+
+// ============ CONTENT CONTRIBUTION COUNTS ============
+
+export async function getUserContributions(userId: string): Promise<number> {
+  const [materials, blogs, news, books] = await Promise.all([
+    supabase.from('materials').select('id', { count: 'exact', head: true }).eq('created_by', userId).eq('status', 'approved'),
+    supabase.from('blogs').select('id', { count: 'exact', head: true }).eq('created_by', userId).eq('status', 'approved'),
+    supabase.from('news').select('id', { count: 'exact', head: true }).eq('created_by', userId).eq('status', 'approved'),
+    supabase.from('books').select('id', { count: 'exact', head: true }).eq('created_by', userId).eq('status', 'approved'),
+  ]);
+
+  return (materials.count || 0) + (blogs.count || 0) + (news.count || 0) + (books.count || 0);
+}
