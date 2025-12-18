@@ -5,6 +5,7 @@ import Footer from "@/components/layout/Footer";
 import AuthModal from "@/components/auth/AuthModal";
 import MaterialPreviewModal from "@/components/materials/MaterialPreviewModal";
 import MaterialThumbnail from "@/components/materials/MaterialThumbnail";
+import ReportButton from "@/components/reports/ReportButton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -205,6 +206,12 @@ const Materials = () => {
                         </div>
 
                         <div className="flex gap-2 md:flex-shrink-0">
+                          <ReportButton
+                            contentType="materials"
+                            contentId={material.id}
+                            contentOwnerId={material.created_by}
+                            contentTitle={material.title}
+                          />
                           <Button 
                             variant="outline" 
                             size="sm" 

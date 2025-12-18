@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import AuthModal from "@/components/auth/AuthModal";
+import ReportButton from "@/components/reports/ReportButton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -158,10 +159,18 @@ const Blogs = () => {
                             <p className="text-sm font-medium text-foreground">{blog.contributor_name || 'Anonymous'}</p>
                           </div>
                         </div>
-                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {formatDate(blog.created_at)}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <ReportButton
+                            contentType="blogs"
+                            contentId={blog.id}
+                            contentOwnerId={blog.created_by}
+                            contentTitle={blog.title}
+                          />
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {formatDate(blog.created_at)}
+                          </span>
+                        </div>
                       </div>
                       
                       <Button variant="ghost" size="sm" className="w-full mt-4 flex items-center justify-center gap-1">

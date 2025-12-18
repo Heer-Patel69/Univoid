@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import AuthModal from "@/components/auth/AuthModal";
+import ReportButton from "@/components/reports/ReportButton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -157,7 +158,13 @@ const News = () => {
                         {getExcerpt(item.content)}
                       </p>
                       
-                      <div className="flex items-center justify-end">
+                      <div className="flex items-center justify-between">
+                        <ReportButton
+                          contentType="news"
+                          contentId={item.id}
+                          contentOwnerId={item.created_by}
+                          contentTitle={item.title}
+                        />
                         {item.external_link ? (
                           <Button 
                             variant="outline" 

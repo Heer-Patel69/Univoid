@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import AuthModal from "@/components/auth/AuthModal";
+import ReportButton from "@/components/reports/ReportButton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -168,9 +169,17 @@ const Books = () => {
                           <p className="text-lg font-semibold text-primary mt-3">₹{book.price}</p>
                         )}
                         
-                        <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
-                          <User className="w-3 h-3" />
-                          <span>{book.contributor_name || 'Anonymous'}</span>
+                        <div className="flex items-center justify-between mt-3">
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <User className="w-3 h-3" />
+                            <span>{book.contributor_name || 'Anonymous'}</span>
+                          </div>
+                          <ReportButton
+                            contentType="books"
+                            contentId={book.id}
+                            contentOwnerId={book.created_by}
+                            contentTitle={book.title}
+                          />
                         </div>
                       </CardContent>
                     </Card>
