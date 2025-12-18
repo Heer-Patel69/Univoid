@@ -1,17 +1,82 @@
 import { useParams, Link, Navigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { User, Trophy, FileText, PenLine, Newspaper, BookOpen, ArrowLeft, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+
+interface ProfileData {
+  id: string;
+  full_name: string;
+  profile_photo_url: string | null;
+  total_xp: number;
+}
+
+interface ContributionStats {
+  materials: number;
+  blogs: number;
+  news: number;
+  books: number;
+}
 
 const Profile = () => {
   const { userId } = useParams();
-  const { user, profile, isLoading } = useAuth();
+  const { user, profile, isLoading: authLoading } = useAuth();
+  const [publicProfile, setPublicProfile] = useState<ProfileData | null>(null);
+  const [stats, setStats] = useState<ContributionStats>({ materials: 0, blogs: 0, news: 0, books: 0 });
+  const [isLoading, setIsLoading] = useState(true);
+
+  const isOwnProfile = !userId || userId === user?.id;
+  const targetUserId = isOwnProfile ? user?.id : userId;
+
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      if (!targetUserId) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        // Fetch public profile data (only public fields)
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('id, full_name, profile_photo_url, total_xp')
+          .eq('id', targetUserId)
+          .maybeSingle();
+
+        if (profileData) {
+          setPublicProfile(profileData);
+        }
+
+        // Fetch contribution stats
+        const [materialsRes, blogsRes, newsRes, booksRes] = await Promise.all([
+          supabase.from('materials').select('id', { count: 'exact', head: true }).eq('created_by', targetUserId),
+          supabase.from('blogs').select('id', { count: 'exact', head: true }).eq('created_by', targetUserId),
+          supabase.from('news').select('id', { count: 'exact', head: true }).eq('created_by', targetUserId),
+          supabase.from('books').select('id', { count: 'exact', head: true }).eq('created_by', targetUserId),
+        ]);
+
+        setStats({
+          materials: materialsRes.count ?? 0,
+          blogs: blogsRes.count ?? 0,
+          news: newsRes.count ?? 0,
+          books: booksRes.count ?? 0,
+        });
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProfileData();
+  }, [targetUserId]);
 
   // Show loading state
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -20,22 +85,41 @@ const Profile = () => {
   }
 
   // If viewing own profile and not logged in, redirect
-  const isOwnProfile = !userId || userId === user?.id;
   if (isOwnProfile && !user) {
     return <Navigate to="/" replace />;
   }
 
-  // For own profile, use auth context data
-  const displayProfile = isOwnProfile ? profile : null;
+  // Use public profile data, or auth profile for own profile
+  const displayProfile = isOwnProfile ? profile : publicProfile;
   const xp = displayProfile?.total_xp ?? 0;
   const level = Math.floor(xp / 250) + 1;
 
   const statItems = [
-    { label: "Materials", value: 0, icon: FileText },
-    { label: "Blogs", value: 0, icon: PenLine },
-    { label: "News", value: 0, icon: Newspaper },
-    { label: "Books", value: 0, icon: BookOpen },
+    { label: "Materials", value: stats.materials, icon: FileText },
+    { label: "Blogs", value: stats.blogs, icon: PenLine },
+    { label: "News", value: stats.news, icon: Newspaper },
+    { label: "Books", value: stats.books, icon: BookOpen },
   ];
+
+  if (!displayProfile) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header onAuthClick={() => {}} />
+        <main className="flex-1 py-8">
+          <div className="container-wide max-w-2xl text-center py-16">
+            <p className="text-muted-foreground">Profile not found.</p>
+            <Link to="/leaderboard">
+              <Button variant="outline" className="mt-4">
+                <ArrowLeft className="w-4 h-4 mr-1" />
+                Back to Leaderboard
+              </Button>
+            </Link>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -69,9 +153,7 @@ const Profile = () => {
                 )}
                 <h1 className="text-2xl font-bold text-foreground mb-1">{displayProfile?.full_name ?? 'User'}</h1>
                 <p className="text-muted-foreground">Level {level}</p>
-                {displayProfile?.college_name && (
-                  <p className="text-sm text-muted-foreground mt-1">{displayProfile.college_name}</p>
-                )}
+                {/* Note: We intentionally hide college_name, email, mobile for privacy */}
               </div>
 
               {/* XP and Rank */}

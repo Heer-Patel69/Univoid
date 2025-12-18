@@ -51,10 +51,10 @@ const Dashboard = () => {
   ];
 
   const contributeActions = [
-    { label: "Upload Material", icon: Upload, href: "/dashboard/upload-material" },
-    { label: "Submit News", icon: Newspaper, href: "/dashboard/submit-news" },
-    { label: "Write Blog", icon: PenLine, href: "/dashboard/write-blog" },
-    { label: "List Book", icon: Plus, href: "/dashboard/list-book" },
+    { label: "Upload Material", icon: Upload, href: "/upload-material" },
+    { label: "Submit News", icon: Newspaper, href: "/submit-news" },
+    { label: "Write Blog", icon: PenLine, href: "/write-blog" },
+    { label: "List Book", icon: Plus, href: "/list-book" },
   ];
 
   return (

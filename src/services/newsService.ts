@@ -73,6 +73,7 @@ export async function createNews(
     }
   }
 
+  // Instant publish
   const { data, error } = await supabase
     .from('news')
     .insert({
@@ -81,7 +82,7 @@ export async function createNews(
       image_urls: imageUrls,
       external_link: externalLink || null,
       created_by: userId,
-      status: 'pending',
+      status: 'approved',
     })
     .select('id')
     .single();
