@@ -55,6 +55,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let isMounted = true;
 
+    // Safety timeout - never block app for more than 5 seconds
+    const safetyTimeout = setTimeout(() => {
+      if (isMounted && isLoading) {
+        console.warn('Auth loading timeout - proceeding without auth');
+        setIsLoading(false);
+      }
+    }, 5000);
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -64,33 +72,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          await fetchUserData(session.user.id);
+          // Use setTimeout to avoid blocking
+          setTimeout(() => {
+            if (isMounted) {
+              fetchUserData(session.user.id).catch(console.error);
+            }
+          }, 0);
         } else {
           setProfile(null);
           setRole('student');
         }
+        setIsLoading(false);
       }
     );
 
     // THEN check for existing session
     const initAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!isMounted) return;
-      
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        await fetchUserData(session.user.id);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!isMounted) return;
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          await fetchUserData(session.user.id);
+        }
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
-      setIsLoading(false);
     };
 
     initAuth();
 
     return () => {
       isMounted = false;
+      clearTimeout(safetyTimeout);
       subscription.unsubscribe();
     };
   }, []);
