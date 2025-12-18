@@ -12,6 +12,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { createBook } from "@/services/booksService";
 import { toast } from "sonner";
 import { ArrowLeft, BookOpen, Loader2, CheckCircle } from "lucide-react";
+import BookImageUpload from "@/components/books/BookImageUpload";
+import { CompressedImage } from "@/lib/imageCompression";
 
 const ListBook = () => {
   const { user, profile, isLoading } = useAuth();
@@ -19,6 +21,7 @@ const ListBook = () => {
   const [description, setDescription] = useState("");
   const [condition, setCondition] = useState("");
   const [price, setPrice] = useState("");
+  const [images, setImages] = useState<CompressedImage[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -36,6 +39,11 @@ const ListBook = () => {
       return;
     }
 
+    if (images.length === 0) {
+      toast.error("Please add at least one image");
+      return;
+    }
+
     setIsSubmitting(true);
 
     const { id, error } = await createBook({
@@ -47,6 +55,7 @@ const ListBook = () => {
       seller_mobile: profile.mobile_number || '',
       seller_address: profile.college_name,
       created_by: user.id,
+      images: images.map(img => img.file),
     });
 
     setIsSubmitting(false);
@@ -57,7 +66,7 @@ const ListBook = () => {
     }
 
     setIsSuccess(true);
-    toast.success("Book listing submitted for review!");
+    toast.success("Book listed successfully!");
   };
 
   if (isSuccess) {
@@ -73,10 +82,10 @@ const ListBook = () => {
                 </div>
                 <h2 className="text-xl font-bold text-foreground mb-2">Book Listed!</h2>
                 <p className="text-muted-foreground mb-6">
-                  Your book has been submitted for review. Once approved, it will appear in the book exchange and you'll earn XP!
+                  Your book is now live in the book exchange!
                 </p>
                 <div className="flex gap-3 justify-center">
-                  <Button variant="outline" onClick={() => { setIsSuccess(false); setTitle(""); setDescription(""); setCondition(""); setPrice(""); }}>
+                  <Button variant="outline" onClick={() => { setIsSuccess(false); setTitle(""); setDescription(""); setCondition(""); setPrice(""); setImages([]); }}>
                     List Another
                   </Button>
                   <Link to="/dashboard">
@@ -114,6 +123,15 @@ const ListBook = () => {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="space-y-2">
+                  <Label>Book Photos *</Label>
+                  <BookImageUpload
+                    images={images}
+                    onImagesChange={setImages}
+                    maxImages={5}
+                  />
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="title">Book Title *</Label>
                   <Input
@@ -180,7 +198,7 @@ const ListBook = () => {
                   ) : (
                     <>
                       <BookOpen className="w-4 h-4 mr-2" />
-                      Submit for Review
+                      List Book
                     </>
                   )}
                 </Button>

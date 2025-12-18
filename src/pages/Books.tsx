@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import AuthModal from "@/components/auth/AuthModal";
@@ -7,17 +7,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, BookOpen, User, MessageCircle, Loader2, ArrowRight } from "lucide-react";
+import { Search, BookOpen, User, Loader2, ArrowRight, Images } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { getBooks, getSellerContact } from "@/services/booksService";
+import { getBooks } from "@/services/booksService";
 import { Book } from "@/types/database";
 import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 
 const Books = () => {
   const { user } = useAuth();
@@ -27,13 +21,6 @@ const Books = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [books, setBooks] = useState<Book[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedBookContact, setSelectedBookContact] = useState<{
-    mobile: string;
-    email: string;
-    address: string;
-  } | null>(null);
-  const [contactDialogOpen, setContactDialogOpen] = useState(false);
-  const [loadingContact, setLoadingContact] = useState(false);
 
   useEffect(() => {
     const fetchBooks = async () => {
@@ -51,28 +38,6 @@ const Books = () => {
 
     fetchBooks();
   }, []);
-
-  const handleContact = async (book: Book) => {
-    if (user) {
-      setLoadingContact(true);
-      try {
-        const contact = await getSellerContact(book.id);
-        if (contact) {
-          setSelectedBookContact(contact);
-          setContactDialogOpen(true);
-        } else {
-          toast.error('Could not retrieve seller contact');
-        }
-      } catch (error) {
-        toast.error('Failed to get seller contact');
-      } finally {
-        setLoadingContact(false);
-      }
-    } else {
-      setAuthMessage("Login to contact the seller");
-      setAuthOpen(true);
-    }
-  };
 
   const handleListBook = () => {
     if (user) {
@@ -132,63 +97,57 @@ const Books = () => {
               {/* Books Grid */}
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredBooks.map((book) => (
-                  <Card key={book.id} className="card-premium overflow-hidden group">
-                    {book.image_urls && book.image_urls.length > 0 ? (
-                      <div className="relative overflow-hidden">
-                        <img
-                          src={book.image_urls[0]}
-                          alt={book.title}
-                          className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
-                        />
-                      </div>
-                    ) : (
-                      <div className="w-full h-32 bg-accent flex items-center justify-center">
-                        <BookOpen className="w-12 h-12 text-primary" />
-                      </div>
-                    )}
-                    <CardContent className="p-5">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-foreground text-sm line-clamp-2 mb-1 group-hover:text-primary transition-colors">
-                          {book.title}
-                        </h3>
-                        {book.description && (
-                          <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{book.description}</p>
-                        )}
-                      </div>
-                      
-                      <div className="flex items-center gap-2 mt-3">
-                        <Badge variant={book.price ? "default" : "outline"} className="text-xs">
-                          {book.price ? 'For Sale' : 'Exchange'}
-                        </Badge>
-                        {book.condition && (
-                          <Badge variant="secondary" className="text-xs">{book.condition}</Badge>
-                        )}
-                      </div>
-                      
-                      {book.price && book.price > 0 && (
-                        <p className="text-lg font-semibold text-primary mt-3">₹{book.price}</p>
+                  <Link key={book.id} to={`/books/${book.id}`}>
+                    <Card className="card-premium overflow-hidden group cursor-pointer h-full">
+                      {book.image_urls && book.image_urls.length > 0 ? (
+                        <div className="relative overflow-hidden">
+                          <img
+                            src={book.image_urls[0]}
+                            alt={book.title}
+                            className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                          {book.image_urls.length > 1 && (
+                            <div className="absolute bottom-2 right-2 bg-background/80 backdrop-blur-sm text-foreground text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                              <Images className="w-3 h-3" />
+                              {book.image_urls.length}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="w-full h-32 bg-accent flex items-center justify-center">
+                          <BookOpen className="w-12 h-12 text-primary" />
+                        </div>
                       )}
-                      
-                      <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
-                        <User className="w-3 h-3" />
-                        <span>{book.contributor_name || 'Anonymous'}</span>
-                      </div>
-                      
-                      <Button 
-                        className="w-full mt-4" 
-                        size="sm"
-                        onClick={() => handleContact(book)}
-                        disabled={loadingContact}
-                      >
-                        {loadingContact ? (
-                          <Loader2 className="w-4 h-4 animate-spin mr-1" />
-                        ) : (
-                          <MessageCircle className="w-4 h-4 mr-1" />
+                      <CardContent className="p-5">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-foreground text-sm line-clamp-2 mb-1 group-hover:text-primary transition-colors">
+                            {book.title}
+                          </h3>
+                          {book.description && (
+                            <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{book.description}</p>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center gap-2 mt-3">
+                          <Badge variant={book.price ? "default" : "outline"} className="text-xs">
+                            {book.price ? 'For Sale' : 'Exchange'}
+                          </Badge>
+                          {book.condition && (
+                            <Badge variant="secondary" className="text-xs">{book.condition}</Badge>
+                          )}
+                        </div>
+                        
+                        {book.price && book.price > 0 && (
+                          <p className="text-lg font-semibold text-primary mt-3">₹{book.price}</p>
                         )}
-                        Contact Seller
-                      </Button>
-                    </CardContent>
-                  </Card>
+                        
+                        <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
+                          <User className="w-3 h-3" />
+                          <span>{book.contributor_name || 'Anonymous'}</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
                 ))}
               </div>
 
@@ -225,31 +184,6 @@ const Books = () => {
         onClose={() => setAuthOpen(false)}
         message={authMessage}
       />
-
-      {/* Contact Dialog */}
-      <Dialog open={contactDialogOpen} onOpenChange={setContactDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Seller Contact Information</DialogTitle>
-          </DialogHeader>
-          {selectedBookContact && (
-            <div className="space-y-4 py-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Email</p>
-                <p className="font-medium text-foreground">{selectedBookContact.email}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Mobile</p>
-                <p className="font-medium text-foreground">{selectedBookContact.mobile}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Address</p>
-                <p className="font-medium text-foreground">{selectedBookContact.address}</p>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

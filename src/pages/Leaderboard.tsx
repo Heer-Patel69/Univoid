@@ -5,20 +5,9 @@ import Footer from "@/components/layout/Footer";
 import AuthModal from "@/components/auth/AuthModal";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Trophy, Medal, Award, User, ArrowRight, Crown } from "lucide-react";
-
-const mockLeaderboard = [
-  { rank: 1, name: "Alex Chen", xp: 2450, level: 12, materials: 24, blogs: 8, news: 5, userId: "alex-chen" },
-  { rank: 2, name: "Sarah Kim", xp: 2180, level: 11, materials: 18, blogs: 12, news: 3, userId: "sarah-kim" },
-  { rank: 3, name: "Mike Johnson", xp: 1950, level: 10, materials: 15, blogs: 6, news: 8, userId: "mike-johnson" },
-  { rank: 4, name: "Emma Wilson", xp: 1720, level: 9, materials: 12, blogs: 10, news: 2, userId: "emma-wilson" },
-  { rank: 5, name: "David Lee", xp: 1580, level: 9, materials: 10, blogs: 5, news: 6, userId: "david-lee" },
-  { rank: 6, name: "Lisa Brown", xp: 1420, level: 8, materials: 8, blogs: 9, news: 1, userId: "lisa-brown" },
-  { rank: 7, name: "James Taylor", xp: 1280, level: 7, materials: 11, blogs: 3, news: 4, userId: "james-taylor" },
-  { rank: 8, name: "Anna Martinez", xp: 1150, level: 7, materials: 7, blogs: 7, news: 2, userId: "anna-martinez" },
-  { rank: 9, name: "Chris Anderson", xp: 980, level: 6, materials: 6, blogs: 4, news: 3, userId: "chris-anderson" },
-  { rank: 10, name: "Sofia Garcia", xp: 850, level: 5, materials: 5, blogs: 5, news: 1, userId: "sofia-garcia" },
-];
+import { Trophy, Medal, Award, User, ArrowRight, Crown, Loader2 } from "lucide-react";
+import { useLeaderboard } from "@/hooks/useLeaderboard";
+import { PublicProfile } from "@/types/database";
 
 const getRankIcon = (rank: number) => {
   switch (rank) {
@@ -52,6 +41,9 @@ const getRankStyles = (rank: number) => {
 
 const Leaderboard = () => {
   const [authOpen, setAuthOpen] = useState(false);
+  const { leaderboard, isLoading } = useLeaderboard(50);
+
+  const topThree = leaderboard.slice(0, 3);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -72,116 +64,134 @@ const Leaderboard = () => {
             </p>
           </div>
 
-          {/* Top 3 Podium */}
-          <div className="grid md:grid-cols-3 gap-4 mb-10">
-            {/* Second Place */}
-            <div className="order-2 md:order-1 md:mt-8">
-              <Card className={`${getRankStyles(2)} border transition-all hover:shadow-premium-md`}>
-                <CardContent className="p-6 text-center">
-                  <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Medal className="w-8 h-8 text-muted-foreground" />
+          {isLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : leaderboard.length === 0 ? (
+            <div className="text-center py-16">
+              <p className="text-muted-foreground">No contributors yet. Be the first!</p>
+            </div>
+          ) : (
+            <>
+              {/* Top 3 Podium */}
+              {topThree.length >= 3 && (
+                <div className="grid md:grid-cols-3 gap-4 mb-10">
+                  {/* Second Place */}
+                  <div className="order-2 md:order-1 md:mt-8">
+                    <Card className={`${getRankStyles(2)} border transition-all hover:shadow-premium-md`}>
+                      <CardContent className="p-6 text-center">
+                        <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-4">
+                          <Medal className="w-8 h-8 text-muted-foreground" />
+                        </div>
+                        <Link to={`/profile/${topThree[1].id}`} className="hover:text-primary transition-colors">
+                          <h3 className="font-semibold text-foreground mb-1">{topThree[1].full_name}</h3>
+                        </Link>
+                        <p className="text-sm text-muted-foreground mb-3">Level {topThree[1].level}</p>
+                        <p className="text-2xl font-bold text-primary">{topThree[1].total_xp.toLocaleString()} XP</p>
+                        <div className="flex justify-center gap-4 mt-4 text-xs text-muted-foreground">
+                          <span>{topThree[1].materials_count} materials</span>
+                          <span>{topThree[1].blogs_count} blogs</span>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
-                  <Link to={`/profile/${mockLeaderboard[1].userId}`} className="hover:text-primary transition-colors">
-                    <h3 className="font-semibold text-foreground mb-1">{mockLeaderboard[1].name}</h3>
-                  </Link>
-                  <p className="text-sm text-muted-foreground mb-3">Level {mockLeaderboard[1].level}</p>
-                  <p className="text-2xl font-bold text-primary">{mockLeaderboard[1].xp.toLocaleString()} XP</p>
-                  <div className="flex justify-center gap-4 mt-4 text-xs text-muted-foreground">
-                    <span>{mockLeaderboard[1].materials} materials</span>
-                    <span>{mockLeaderboard[1].blogs} blogs</span>
+
+                  {/* First Place */}
+                  <div className="order-1 md:order-2">
+                    <Card className={`${getRankStyles(1)} border transition-all hover:shadow-premium-lg`}>
+                      <CardContent className="p-6 text-center">
+                        <div className="w-20 h-20 bg-warning/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                          <Crown className="w-10 h-10 text-warning" />
+                        </div>
+                        <Link to={`/profile/${topThree[0].id}`} className="hover:text-primary transition-colors">
+                          <h3 className="font-semibold text-lg text-foreground mb-1">{topThree[0].full_name}</h3>
+                        </Link>
+                        <p className="text-sm text-muted-foreground mb-3">Level {topThree[0].level}</p>
+                        <p className="text-3xl font-bold text-warning">{topThree[0].total_xp.toLocaleString()} XP</p>
+                        <div className="flex justify-center gap-4 mt-4 text-xs text-muted-foreground">
+                          <span>{topThree[0].materials_count} materials</span>
+                          <span>{topThree[0].blogs_count} blogs</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Third Place */}
+                  <div className="order-3 md:mt-12">
+                    <Card className={`${getRankStyles(3)} border transition-all hover:shadow-premium-md`}>
+                      <CardContent className="p-6 text-center">
+                        <div className="w-16 h-16 bg-amber-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                          <Award className="w-8 h-8 text-amber-600" />
+                        </div>
+                        <Link to={`/profile/${topThree[2].id}`} className="hover:text-primary transition-colors">
+                          <h3 className="font-semibold text-foreground mb-1">{topThree[2].full_name}</h3>
+                        </Link>
+                        <p className="text-sm text-muted-foreground mb-3">Level {topThree[2].level}</p>
+                        <p className="text-2xl font-bold text-amber-600">{topThree[2].total_xp.toLocaleString()} XP</p>
+                        <div className="flex justify-center gap-4 mt-4 text-xs text-muted-foreground">
+                          <span>{topThree[2].materials_count} materials</span>
+                          <span>{topThree[2].blogs_count} blogs</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              )}
+
+              {/* Full Leaderboard Table */}
+              <Card className="shadow-premium-sm">
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-border">
+                          <th className="text-left p-4 text-sm font-medium text-muted-foreground">Rank</th>
+                          <th className="text-left p-4 text-sm font-medium text-muted-foreground">User</th>
+                          <th className="text-left p-4 text-sm font-medium text-muted-foreground hidden sm:table-cell">Level</th>
+                          <th className="text-left p-4 text-sm font-medium text-muted-foreground hidden md:table-cell">Materials</th>
+                          <th className="text-left p-4 text-sm font-medium text-muted-foreground hidden md:table-cell">Blogs</th>
+                          <th className="text-right p-4 text-sm font-medium text-muted-foreground">XP</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {leaderboard.map((user) => (
+                          <tr 
+                            key={user.id} 
+                            className={`border-b border-border/50 last:border-0 hover:bg-secondary/30 transition-colors ${
+                              user.rank && user.rank <= 3 ? 'bg-accent/30' : ''
+                            }`}
+                          >
+                            <td className="p-4">
+                              <div className="flex items-center">
+                                {getRankIcon(user.rank || 0)}
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              <Link to={`/profile/${user.id}`} className="flex items-center gap-3 hover:text-primary transition-colors">
+                                <div className="w-9 h-9 bg-secondary rounded-full flex items-center justify-center overflow-hidden">
+                                  {user.profile_photo_url ? (
+                                    <img src={user.profile_photo_url} alt={user.full_name} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <User className="w-4 h-4 text-muted-foreground" />
+                                  )}
+                                </div>
+                                <span className="font-medium text-foreground">{user.full_name}</span>
+                              </Link>
+                            </td>
+                            <td className="p-4 text-muted-foreground hidden sm:table-cell">Level {user.level}</td>
+                            <td className="p-4 text-muted-foreground hidden md:table-cell">{user.materials_count}</td>
+                            <td className="p-4 text-muted-foreground hidden md:table-cell">{user.blogs_count}</td>
+                            <td className="p-4 text-right font-semibold text-primary">{user.total_xp.toLocaleString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </CardContent>
               </Card>
-            </div>
-
-            {/* First Place */}
-            <div className="order-1 md:order-2">
-              <Card className={`${getRankStyles(1)} border transition-all hover:shadow-premium-lg`}>
-                <CardContent className="p-6 text-center">
-                  <div className="w-20 h-20 bg-warning/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Crown className="w-10 h-10 text-warning" />
-                  </div>
-                  <Link to={`/profile/${mockLeaderboard[0].userId}`} className="hover:text-primary transition-colors">
-                    <h3 className="font-semibold text-lg text-foreground mb-1">{mockLeaderboard[0].name}</h3>
-                  </Link>
-                  <p className="text-sm text-muted-foreground mb-3">Level {mockLeaderboard[0].level}</p>
-                  <p className="text-3xl font-bold text-warning">{mockLeaderboard[0].xp.toLocaleString()} XP</p>
-                  <div className="flex justify-center gap-4 mt-4 text-xs text-muted-foreground">
-                    <span>{mockLeaderboard[0].materials} materials</span>
-                    <span>{mockLeaderboard[0].blogs} blogs</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Third Place */}
-            <div className="order-3 md:mt-12">
-              <Card className={`${getRankStyles(3)} border transition-all hover:shadow-premium-md`}>
-                <CardContent className="p-6 text-center">
-                  <div className="w-16 h-16 bg-amber-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Award className="w-8 h-8 text-amber-600" />
-                  </div>
-                  <Link to={`/profile/${mockLeaderboard[2].userId}`} className="hover:text-primary transition-colors">
-                    <h3 className="font-semibold text-foreground mb-1">{mockLeaderboard[2].name}</h3>
-                  </Link>
-                  <p className="text-sm text-muted-foreground mb-3">Level {mockLeaderboard[2].level}</p>
-                  <p className="text-2xl font-bold text-amber-600">{mockLeaderboard[2].xp.toLocaleString()} XP</p>
-                  <div className="flex justify-center gap-4 mt-4 text-xs text-muted-foreground">
-                    <span>{mockLeaderboard[2].materials} materials</span>
-                    <span>{mockLeaderboard[2].blogs} blogs</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          {/* Full Leaderboard Table */}
-          <Card className="shadow-premium-sm">
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="text-left p-4 text-sm font-medium text-muted-foreground">Rank</th>
-                      <th className="text-left p-4 text-sm font-medium text-muted-foreground">User</th>
-                      <th className="text-left p-4 text-sm font-medium text-muted-foreground hidden sm:table-cell">Level</th>
-                      <th className="text-left p-4 text-sm font-medium text-muted-foreground hidden md:table-cell">Materials</th>
-                      <th className="text-left p-4 text-sm font-medium text-muted-foreground hidden md:table-cell">Blogs</th>
-                      <th className="text-right p-4 text-sm font-medium text-muted-foreground">XP</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {mockLeaderboard.map((user) => (
-                      <tr 
-                        key={user.rank} 
-                        className={`border-b border-border/50 last:border-0 hover:bg-secondary/30 transition-colors ${
-                          user.rank <= 3 ? 'bg-accent/30' : ''
-                        }`}
-                      >
-                        <td className="p-4">
-                          <div className="flex items-center">
-                            {getRankIcon(user.rank)}
-                          </div>
-                        </td>
-                        <td className="p-4">
-                          <Link to={`/profile/${user.userId}`} className="flex items-center gap-3 hover:text-primary transition-colors">
-                            <div className="w-9 h-9 bg-secondary rounded-full flex items-center justify-center">
-                              <User className="w-4 h-4 text-muted-foreground" />
-                            </div>
-                            <span className="font-medium text-foreground">{user.name}</span>
-                          </Link>
-                        </td>
-                        <td className="p-4 text-muted-foreground hidden sm:table-cell">Level {user.level}</td>
-                        <td className="p-4 text-muted-foreground hidden md:table-cell">{user.materials}</td>
-                        <td className="p-4 text-muted-foreground hidden md:table-cell">{user.blogs}</td>
-                        <td className="p-4 text-right font-semibold text-primary">{user.xp.toLocaleString()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
+            </>
+          )}
 
           {/* CTA */}
           <Card className="mt-12 border-0 bg-secondary/50">

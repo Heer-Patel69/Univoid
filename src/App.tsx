@@ -10,6 +10,7 @@ import Materials from "./pages/Materials";
 import News from "./pages/News";
 import Blogs from "./pages/Blogs";
 import Books from "./pages/Books";
+import BookDetail from "./pages/BookDetail";
 import Leaderboard from "./pages/Leaderboard";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/news" element={<News />} />
             <Route path="/blogs" element={<Blogs />} />
             <Route path="/books" element={<Books />} />
+            <Route path="/books/:bookId" element={<BookDetail />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/dashboard/upload-material" element={<ProtectedRoute><UploadMaterial /></ProtectedRoute>} />
