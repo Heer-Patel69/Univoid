@@ -76,7 +76,7 @@ const Books = () => {
 
   const handleListBook = () => {
     if (user) {
-      navigate("/list-book");
+      navigate("/sell-book");
     } else {
       setAuthMessage("Login to list your books");
       setAuthOpen(true);
