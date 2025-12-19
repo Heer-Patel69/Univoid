@@ -9,8 +9,10 @@ import { Badge } from "@/components/ui/badge";
 import { 
   Check, X, FileText, Newspaper, BookOpen, Loader2, 
   Flag, Trash2, Eye, Users, Shield, AlertTriangle, Ban, KeyRound,
-  Mail, MessageSquare, Sparkles, Calendar, ToggleLeft, ToggleRight
+  Mail, MessageSquare, Sparkles, Calendar, ToggleLeft, ToggleRight, UserPlus
 } from "lucide-react";
+import AdminAssistantManager from "@/components/admin/AdminAssistantManager";
+import { isFullAdmin } from "@/services/adminInviteService";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
   getPendingContent, 
@@ -97,6 +99,7 @@ const Admin = () => {
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
   const [organizerAppsCount, setOrganizerAppsCount] = useState(0);
   const [eventsCount, setEventsCount] = useState(0);
+  const [isUserFullAdmin, setIsUserFullAdmin] = useState(false);
   
   // UI state
   const [isLoading, setIsLoading] = useState(true);
@@ -159,6 +162,7 @@ const Admin = () => {
   useEffect(() => {
     if (user && isAdmin) {
       fetchAllData();
+      isFullAdmin().then(setIsUserFullAdmin);
 
       // Real-time subscriptions for all tables
       const channels = [
@@ -1027,6 +1031,10 @@ const Admin = () => {
                     <Calendar className="w-3 h-3 mr-1" />
                     Events
                   </TabsTrigger>
+                  <TabsTrigger value="assistants" className="text-xs sm:text-sm">
+                    <UserPlus className="w-3 h-3 mr-1" />
+                    Assistants
+                  </TabsTrigger>
                 </TabsList>
               </CardHeader>
 
@@ -1061,6 +1069,10 @@ const Admin = () => {
 
                 <TabsContent value="events" className="mt-0">
                   {renderEventsTab()}
+                </TabsContent>
+
+                <TabsContent value="assistants" className="mt-0">
+                  <AdminAssistantManager isFullAdmin={isUserFullAdmin} />
                 </TabsContent>
               </CardContent>
             </Tabs>
