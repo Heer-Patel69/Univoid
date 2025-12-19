@@ -57,16 +57,40 @@ const OrganizerDashboard = () => {
     enabled: !!selectedEvent,
   });
 
-  // Approve/Reject mutation
+  // Approve/Reject mutation - generates QR on approval
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status, userId }: { id: string; status: "approved" | "rejected"; userId: string }) => {
+      // Generate unique QR code for approved registrations
+      let qrCode = null;
+      
+      if (status === "approved") {
+        // Create unique QR code string
+        qrCode = `UV-${selectedEvent}-${id}-${Date.now()}`;
+        
+        // Create ticket entry with QR code
+        const { error: ticketError } = await supabase
+          .from("event_tickets")
+          .insert({
+            registration_id: id,
+            event_id: selectedEvent!,
+            user_id: userId,
+            qr_code: qrCode,
+          });
+        
+        if (ticketError) {
+          console.error("Ticket creation error:", ticketError);
+          throw new Error("Failed to generate ticket");
+        }
+      }
+      
+      // Update registration status
       const { error } = await supabase
         .from("event_registrations")
         .update({ payment_status: status, reviewed_at: new Date().toISOString() })
         .eq("id", id);
       if (error) throw error;
 
-      // Send email notification
+      // Send email notification with QR code
       try {
         await supabase.functions.invoke("send-registration-status-email", {
           body: {
@@ -74,6 +98,7 @@ const OrganizerDashboard = () => {
             status,
             eventId: selectedEvent,
             userId,
+            qrCode, // Include QR code in email
           },
         });
       } catch (emailError) {
@@ -82,8 +107,11 @@ const OrganizerDashboard = () => {
       }
     },
     onSuccess: (_, { status }) => {
-      toast({ title: `Registration ${status === "approved" ? "Approved" : "Rejected"}` });
+      toast({ title: status === "approved" ? "✅ Approved & QR Sent!" : "❌ Registration Rejected" });
       queryClient.invalidateQueries({ queryKey: ["event-registrations", selectedEvent] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
 
