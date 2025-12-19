@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import AuthModal from "@/components/auth/AuthModal";
-import { Plus, Calendar, Users, CheckCircle, XCircle, Eye, QrCode, ScanLine } from "lucide-react";
+import { Plus, Calendar, Users, CheckCircle, XCircle, Eye, QrCode, ScanLine, Pencil } from "lucide-react";
 import { format } from "date-fns";
 import type { Event, EventRegistration } from "@/services/eventsService";
 
@@ -188,6 +188,9 @@ const OrganizerDashboard = () => {
                       <div className="flex gap-2">
                         <Link to={`/events/${selectedEventData.id}`}>
                           <Button variant="outline" size="sm"><Eye className="w-4 h-4 mr-1" /> View</Button>
+                        </Link>
+                        <Link to={`/organizer/edit-event/${selectedEventData.id}`}>
+                          <Button variant="outline" size="sm"><Pencil className="w-4 h-4 mr-1" /> Edit</Button>
                         </Link>
                         <Button variant="outline" size="sm" onClick={() => setScannerOpen(true)}>
                           <ScanLine className="w-4 h-4 mr-1" /> Check-in
