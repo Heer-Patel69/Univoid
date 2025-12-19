@@ -22,16 +22,16 @@ const Footer = () => {
   };
 
   return (
-    <footer className="border-t border-border/50 bg-secondary/30">
+    <footer className="border-t-2 border-foreground bg-card">
       <div className="container-wide py-12">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link to="/" className="flex items-center gap-2.5 mb-4">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">U</span>
+              <div className="w-8 h-8 bg-foreground rounded-xl flex items-center justify-center">
+                <span className="text-background font-bold text-sm">U</span>
               </div>
-              <span className="font-display font-semibold text-lg text-foreground">UniVoid</span>
+              <span className="font-bold text-lg text-foreground">UniVoid</span>
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed">
               A trusted student platform for learning, sharing, and growing together.
@@ -40,7 +40,7 @@ const Footer = () => {
 
           {/* Platform Links */}
           <div>
-            <h4 className="font-semibold text-foreground text-sm mb-4">Platform</h4>
+            <h4 className="font-bold text-foreground text-sm mb-4">Platform</h4>
             <ul className="space-y-2.5">
               {footerLinks.platform.map((link) => (
                 <li key={link.href}>
@@ -57,7 +57,7 @@ const Footer = () => {
 
           {/* Community Links */}
           <div>
-            <h4 className="font-semibold text-foreground text-sm mb-4">Community</h4>
+            <h4 className="font-bold text-foreground text-sm mb-4">Community</h4>
             <ul className="space-y-2.5">
               {footerLinks.community.map((link) => (
                 <li key={link.href}>
@@ -74,7 +74,7 @@ const Footer = () => {
 
           {/* Legal Links */}
           <div>
-            <h4 className="font-semibold text-foreground text-sm mb-4">Legal</h4>
+            <h4 className="font-bold text-foreground text-sm mb-4">Legal</h4>
             <ul className="space-y-2.5">
               {footerLinks.legal.map((link) => (
                 <li key={link.href}>
@@ -91,7 +91,7 @@ const Footer = () => {
 
           {/* Trust */}
           <div>
-            <h4 className="font-semibold text-foreground text-sm mb-4">Trust & Quality</h4>
+            <h4 className="font-bold text-foreground text-sm mb-4">Trust & Quality</h4>
             <p className="text-sm text-muted-foreground leading-relaxed">
               All content is reviewed by our admin team to ensure quality and reliability.
             </p>
@@ -99,7 +99,7 @@ const Footer = () => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-10 pt-6 border-t border-border/50">
+        <div className="mt-10 pt-6 border-t-2 border-foreground/10">
           <p className="text-sm text-muted-foreground text-center">
             © {currentYear} UniVoid. Built for students, by students.
           </p>
