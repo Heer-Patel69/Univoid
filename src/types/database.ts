@@ -35,14 +35,22 @@ export interface Material {
   status: ContentStatus;
   created_at: string;
   updated_at: string;
-  // New fields
+  // Metadata fields
   course: string | null;
   branch: string | null;
   subject: string | null;
   language: string | null;
   college: string | null;
+  // Engagement metrics
+  views_count: number;
+  downloads_count: number;
+  likes_count: number;
+  shares_count: number;
+  file_hash: string | null;
+  thumbnail_url: string | null;
   // Joined data
   contributor_name?: string;
+  user_has_liked?: boolean;
 }
 
 export interface Blog {
@@ -85,8 +93,26 @@ export interface Book {
   status: ContentStatus;
   created_at: string;
   updated_at: string;
+  // New fields
+  category: string | null;
+  author: string | null;
+  views_count: number;
   contributor_name?: string;
 }
+
+// Book categories
+export const BOOK_CATEGORIES = [
+  'Academic Textbooks',
+  'Technology & Programming',
+  'Competitive Exams',
+  'Fiction',
+  'Non-Fiction',
+  'Reference Books',
+  'Self-Help',
+  'Other',
+] as const;
+
+export type BookCategory = typeof BOOK_CATEGORIES[number];
 
 export interface XPTransaction {
   id: string;

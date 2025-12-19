@@ -5,13 +5,11 @@ import Footer from "@/components/layout/Footer";
 import { BottomNav } from "@/components/layout/BottomNav";
 import AuthModal from "@/components/auth/AuthModal";
 import MaterialPreviewModal from "@/components/materials/MaterialPreviewModal";
-import MaterialThumbnail from "@/components/materials/MaterialThumbnail";
-import ReportButton from "@/components/reports/ReportButton";
+import MaterialCard from "@/components/materials/MaterialCard";
 import MaterialFilters, { MaterialFiltersState, initialFilters } from "@/components/materials/MaterialFilters";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Download, Eye, Calendar, User, BookOpen, ArrowRight } from "lucide-react";
+import { BookOpen, ArrowRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useVerification } from "@/hooks/useVerification";
 import { getDownloadUrl } from "@/services/materialsService";
@@ -21,6 +19,7 @@ import { useOptimizedFetch } from "@/hooks/useOptimizedFetch";
 import { Material } from "@/types/database";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const Materials = () => {
   const { user } = useAuth();
@@ -35,9 +34,10 @@ const Materials = () => {
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [isFiltering, setIsFiltering] = useState(false);
+  const [likingIds, setLikingIds] = useState<Set<string>>(new Set());
 
   const fetchMaterials = useCallback(async () => {
-    const result = await getMaterialsPaginated(0, 20);
+    const result = await getMaterialsPaginated(0, 18);
     setAllMaterials(result.data);
     setHasMore(result.hasMore);
     return result.data;
@@ -63,7 +63,7 @@ const Materials = () => {
         language: newFilters.language || undefined,
         college: newFilters.college || undefined,
       };
-      const result = await getMaterialsPaginated(0, 20, apiFilters);
+      const result = await getMaterialsPaginated(0, 18, apiFilters);
       setAllMaterials(result.data);
       setHasMore(result.hasMore);
     } catch (error) {
@@ -86,7 +86,7 @@ const Materials = () => {
         language: filters.language || undefined,
         college: filters.college || undefined,
       };
-      const result = await getMaterialsPaginated(nextPage, 20, apiFilters);
+      const result = await getMaterialsPaginated(nextPage, 18, apiFilters);
       setAllMaterials(prev => [...prev, ...result.data]);
       setHasMore(result.hasMore);
       setPage(nextPage);
@@ -108,14 +108,89 @@ const Materials = () => {
       return;
     }
     try {
+      // Increment download count
+      await supabase.rpc('increment_material_downloads', { material_id: material.id });
+      
       const url = await getDownloadUrl(material.id);
       if (url) {
         window.open(url, '_blank');
+        // Update local state
+        setAllMaterials(prev => prev.map(m => 
+          m.id === material.id 
+            ? { ...m, downloads_count: (m.downloads_count || 0) + 1 }
+            : m
+        ));
       } else {
         toast.error('Download link not available');
       }
     } catch (error) {
       toast.error('Failed to get download link');
+    }
+  };
+
+  const handleLike = async (material: Material) => {
+    if (!user) {
+      setAuthMessage("Sign in to like materials");
+      setAuthOpen(true);
+      return;
+    }
+
+    if (likingIds.has(material.id)) return;
+    
+    setLikingIds(prev => new Set(prev).add(material.id));
+    
+    try {
+      const { data: newLikeState, error } = await supabase.rpc('toggle_material_like', {
+        p_material_id: material.id,
+      });
+      
+      if (error) throw error;
+      
+      setAllMaterials(prev => prev.map(m => 
+        m.id === material.id 
+          ? { 
+              ...m, 
+              user_has_liked: newLikeState,
+              likes_count: newLikeState 
+                ? (m.likes_count || 0) + 1 
+                : Math.max(0, (m.likes_count || 0) - 1)
+            }
+          : m
+      ));
+    } catch (error) {
+      toast.error('Failed to update like');
+    } finally {
+      setLikingIds(prev => {
+        const next = new Set(prev);
+        next.delete(material.id);
+        return next;
+      });
+    }
+  };
+
+  const handleShare = async (material: Material) => {
+    const url = `${window.location.origin}/materials?id=${material.id}`;
+    
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: material.title,
+          text: `Check out this study material: ${material.title}`,
+          url,
+        });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast.success('Link copied to clipboard');
+      }
+      
+      await supabase.rpc('increment_material_shares', { material_id: material.id });
+      setAllMaterials(prev => prev.map(m => 
+        m.id === material.id 
+          ? { ...m, shares_count: (m.shares_count || 0) + 1 }
+          : m
+      ));
+    } catch (error) {
+      // User cancelled share or error
     }
   };
 
@@ -128,8 +203,15 @@ const Materials = () => {
     }
   };
 
-  const handlePreview = (material: Material) => {
+  const handlePreview = async (material: Material) => {
     setPreviewMaterial(material);
+    // Increment view count
+    await supabase.rpc('increment_material_views', { material_id: material.id });
+    setAllMaterials(prev => prev.map(m => 
+      m.id === material.id 
+        ? { ...m, views_count: (m.views_count || 0) + 1 }
+        : m
+    ));
   };
 
   const formatDate = (dateStr: string) => {
@@ -194,83 +276,18 @@ const Materials = () => {
             />
           ) : (
             <>
-              {/* Materials List */}
-              <div className="space-y-4">
+              {/* Materials Grid - 3 cols desktop, 2 tablet, 1 mobile */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                 {allMaterials.map((material) => (
-                  <Card 
-                    key={material.id} 
-                    className="card-premium cursor-pointer group"
-                    onClick={() => handlePreview(material)}
-                  >
-                    <CardContent className="p-5 md:p-6">
-                      <div className="flex flex-col md:flex-row md:items-start gap-5">
-                        {/* Thumbnail Preview */}
-                        <MaterialThumbnail 
-                          fileType={getFileTypeDisplay(material.file_type)}
-                          title={material.title}
-                          className="transition-transform group-hover:scale-[1.02]"
-                        />
-                        
-                        <div className="flex-1 min-w-0">
-                          <div className="flex flex-wrap items-center gap-2 mb-2">
-                            <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                              {material.title}
-                            </h3>
-                            <Badge variant="secondary" className="text-xs font-medium uppercase">{material.file_type}</Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground mb-3 line-clamp-2 leading-relaxed">
-                            {material.description || 'No description provided'}
-                          </p>
-                          {/* Material metadata */}
-                          <div className="flex flex-wrap gap-2 mb-3">
-                            {material.course && <Badge variant="outline" className="text-xs">{material.course}</Badge>}
-                            {material.branch && <Badge variant="outline" className="text-xs">{material.branch}</Badge>}
-                            {material.subject && <Badge variant="outline" className="text-xs">{material.subject}</Badge>}
-                            {material.language && <Badge variant="outline" className="text-xs">{material.language}</Badge>}
-                          </div>
-                          <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
-                            <span className="flex items-center gap-1.5">
-                              <User className="w-3.5 h-3.5" />
-                              {material.contributor_name || 'Anonymous'}
-                            </span>
-                            <span className="flex items-center gap-1.5">
-                              <Calendar className="w-3.5 h-3.5" />
-                              {formatDate(material.created_at)}
-                            </span>
-                            {material.college && (
-                              <span className="text-muted-foreground">{material.college}</span>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="flex gap-2 md:flex-shrink-0">
-                          <ReportButton
-                            contentType="materials"
-                            contentId={material.id}
-                            contentOwnerId={material.created_by}
-                            contentTitle={material.title}
-                          />
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="flex items-center gap-1.5"
-                            onClick={(e) => { e.stopPropagation(); handlePreview(material); }}
-                          >
-                            <Eye className="w-4 h-4" />
-                            Preview
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            onClick={(e) => { e.stopPropagation(); handleDownload(material); }} 
-                            className="flex items-center gap-1.5 shadow-premium-sm"
-                          >
-                            <Download className="w-4 h-4" />
-                            Download
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <MaterialCard
+                    key={material.id}
+                    material={material}
+                    onPreview={handlePreview}
+                    onDownload={handleDownload}
+                    onLike={handleLike}
+                    onShare={handleShare}
+                    isLiking={likingIds.has(material.id)}
+                  />
                 ))}
               </div>
 
@@ -315,7 +332,7 @@ const Materials = () => {
           subject: previewMaterial.subject || 'Study Material',
           type: previewMaterial.file_type.toUpperCase(),
           fileType: getFileTypeDisplay(previewMaterial.file_type),
-          downloads: 0,
+          downloads: previewMaterial.downloads_count || 0,
           date: formatDate(previewMaterial.created_at),
           preview: previewMaterial.description || 'No description provided',
           contributor: previewMaterial.contributor_name || 'Anonymous',
