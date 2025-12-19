@@ -74,7 +74,7 @@ const CreateEvent = () => {
       // Upload flyer
       if (flyerFile) {
         const ext = flyerFile.name.split(".").pop();
-        const path = `flyers/${user.id}/${Date.now()}.${ext}`;
+        const path = `${user.id}/flyers/${Date.now()}.${ext}`;
         const { error } = await supabase.storage.from("event-assets").upload(path, flyerFile);
         if (error) throw error;
         const { data: { publicUrl } } = supabase.storage.from("event-assets").getPublicUrl(path);
@@ -84,7 +84,7 @@ const CreateEvent = () => {
       // Upload UPI QR
       if (qrFile && formData.is_paid) {
         const ext = qrFile.name.split(".").pop();
-        const path = `upi-qr/${user.id}/${Date.now()}.${ext}`;
+        const path = `${user.id}/upi-qr/${Date.now()}.${ext}`;
         const { error } = await supabase.storage.from("event-assets").upload(path, qrFile);
         if (error) throw error;
         const { data: { publicUrl } } = supabase.storage.from("event-assets").getPublicUrl(path);
