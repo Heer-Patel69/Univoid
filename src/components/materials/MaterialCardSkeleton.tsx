@@ -3,18 +3,18 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 const MaterialCardSkeleton = () => {
   return (
-    <Card className="overflow-hidden h-full flex flex-col">
+    <Card className="overflow-hidden h-full flex flex-col border-border-strong/10">
       <CardContent className="p-0 flex flex-col h-full">
         {/* Top Section */}
         <div className="p-6 pb-0 flex-1 flex flex-col">
           <div className="flex gap-4">
             {/* Thumbnail skeleton */}
-            <Skeleton className="w-20 h-24 flex-shrink-0 rounded-lg" />
+            <Skeleton className="w-20 h-24 flex-shrink-0 rounded-2xl" />
             
             <div className="flex-1 min-w-0 flex flex-col">
               {/* Title skeleton */}
-              <Skeleton className="h-4 w-full mb-1" />
-              <Skeleton className="h-4 w-3/4 mb-3" />
+              <Skeleton className="h-4 w-full mb-1 rounded-full" />
+              <Skeleton className="h-4 w-3/4 mb-3 rounded-full" />
               
               {/* Tags skeleton */}
               <div className="flex flex-wrap gap-1.5 mb-2 min-h-[40px] content-start">
@@ -25,35 +25,35 @@ const MaterialCardSkeleton = () => {
               
               {/* Uploader info skeleton */}
               <div className="flex items-center gap-3 mt-auto">
-                <Skeleton className="h-3 w-20" />
-                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-3 w-20 rounded-full" />
+                <Skeleton className="h-3 w-24 rounded-full" />
               </div>
             </div>
           </div>
           
           {/* Description toggle skeleton */}
           <div className="mt-3">
-            <Skeleton className="h-3 w-28" />
+            <Skeleton className="h-3 w-28 rounded-full" />
           </div>
         </div>
         
         {/* Footer Section */}
-        <div className="px-6 pb-6 pt-4 mt-auto border-t-2 border-foreground/10">
+        <div className="px-6 pb-6 pt-4 mt-auto border-t border-border">
           {/* Stats skeleton */}
           <div className="flex items-center gap-4 mb-3">
-            <Skeleton className="h-3 w-10" />
-            <Skeleton className="h-3 w-10" />
-            <Skeleton className="h-3 w-10" />
+            <Skeleton className="h-4 w-12 rounded-full" />
+            <Skeleton className="h-4 w-12 rounded-full" />
+            <Skeleton className="h-4 w-12 rounded-full" />
           </div>
           
           {/* Action buttons skeleton */}
           <div className="flex items-center gap-2">
-            <Skeleton className="h-8 w-8 rounded-full" />
-            <Skeleton className="h-8 w-8 rounded-full" />
+            <Skeleton className="h-9 w-9 rounded-full" />
+            <Skeleton className="h-9 w-9 rounded-full" />
             <div className="flex-1" />
-            <Skeleton className="h-8 w-8 rounded-full" />
-            <Skeleton className="h-8 w-20 rounded-full" />
-            <Skeleton className="h-8 w-24 rounded-full" />
+            <Skeleton className="h-9 w-9 rounded-full" />
+            <Skeleton className="h-9 w-20 rounded-full" />
+            <Skeleton className="h-9 w-24 rounded-full" />
           </div>
         </div>
       </CardContent>
