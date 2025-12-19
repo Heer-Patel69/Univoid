@@ -277,7 +277,7 @@ const Materials = () => {
           ) : (
             <>
               {/* Materials Grid - 3 cols desktop, 2 tablet, 1 mobile */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 items-stretch">
                 {allMaterials.map((material) => (
                   <MaterialCard
                     key={material.id}

@@ -55,12 +55,12 @@ const MaterialCard = ({
   return (
     <Card className="group overflow-hidden h-full flex flex-col hover:shadow-univoid-hover transition-all duration-200 hover:-translate-y-1">
       <CardContent className="p-0 flex flex-col h-full">
-        {/* Clickable area for preview */}
+        {/* Top Section - Grows to fill space */}
         <div 
-          className="p-5 pb-0 cursor-pointer flex-1"
+          className="p-6 pb-0 cursor-pointer flex-1 flex flex-col"
           onClick={() => onPreview(material)}
         >
-          {/* Thumbnail */}
+          {/* Thumbnail + Content */}
           <div className="flex gap-4">
             <MaterialThumbnail 
               fileType={getFileTypeDisplay(material.file_type)}
@@ -69,33 +69,33 @@ const MaterialCard = ({
               className="w-20 h-24 flex-shrink-0 transition-transform group-hover:scale-[1.02]"
             />
             
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 flex flex-col">
               {/* Title - max 2 lines */}
               <h3 className="font-bold text-foreground line-clamp-2 mb-2 transition-colors text-sm leading-tight">
                 {material.title}
               </h3>
               
-              {/* Tags */}
-              <div className="flex flex-wrap gap-1.5 mb-2">
+              {/* Tags - Fixed minimum height for consistency */}
+              <div className="flex flex-wrap gap-1.5 mb-2 min-h-[40px] content-start">
                 {material.course && (
-                  <Badge variant="secondary" className="text-[10px] px-2 py-0.5">
+                  <Badge variant="secondary" className="text-[10px] px-2 py-0.5 h-fit">
                     {material.course}
                   </Badge>
                 )}
                 {material.subject && (
-                  <Badge variant="outline" className="text-[10px] px-2 py-0.5">
+                  <Badge variant="outline" className="text-[10px] px-2 py-0.5 h-fit">
                     {material.subject}
                   </Badge>
                 )}
                 {material.language && (
-                  <Badge variant="outline" className="text-[10px] px-2 py-0.5">
+                  <Badge variant="outline" className="text-[10px] px-2 py-0.5 h-fit">
                     {material.language}
                   </Badge>
                 )}
               </div>
               
               {/* Uploader info */}
-              <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+              <div className="flex items-center gap-3 text-[11px] text-muted-foreground mt-auto">
                 <span className="flex items-center gap-1">
                   <User className="w-3 h-3" />
                   {material.contributor_name || 'Anonymous'}
@@ -142,8 +142,8 @@ const MaterialCard = ({
           )}
         </div>
         
-        {/* Engagement & Actions */}
-        <div className="px-5 pb-5 pt-4 mt-auto border-t-2 border-foreground/10">
+        {/* Footer Section - Always at bottom */}
+        <div className="px-6 pb-6 pt-4 mt-auto border-t-2 border-foreground/10">
           {/* Engagement stats */}
           <div className="flex items-center gap-4 text-[11px] text-muted-foreground mb-3">
             <span className="flex items-center gap-1">
