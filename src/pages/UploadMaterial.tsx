@@ -14,7 +14,7 @@ import { useVerification } from "@/hooks/useVerification";
 import VerificationBanner from "@/components/common/VerificationBanner";
 import { uploadMaterial } from "@/services/materialsService";
 import { toast } from "sonner";
-import { ArrowLeft, Upload, Loader2, FileText, CheckCircle, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Upload, Loader2, FileText, CheckCircle, AlertTriangle, Clock } from "lucide-react";
 import { COURSE_OPTIONS, BRANCH_OPTIONS, LANGUAGE_OPTIONS } from "@/constants/materialOptions";
 
 const UploadMaterial = () => {
@@ -111,7 +111,7 @@ const UploadMaterial = () => {
     }
 
     setIsSuccess(true);
-    toast.success("Material uploaded successfully!");
+    toast.success("Material submitted for review!");
   };
 
   if (isSuccess) {
@@ -122,12 +122,12 @@ const UploadMaterial = () => {
           <div className="container-wide max-w-lg">
             <Card>
               <CardContent className="p-8 text-center">
-                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle className="w-8 h-8 text-green-600" />
+                <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Clock className="w-8 h-8 text-yellow-600" />
                 </div>
-                <h2 className="text-xl font-bold text-foreground mb-2">Upload Successful!</h2>
+                <h2 className="text-xl font-bold text-foreground mb-2">Submitted for Review!</h2>
                 <p className="text-muted-foreground mb-6">
-                  Your material is now live and available for others to access!
+                  Your material has been submitted and is pending admin approval. You'll be notified once it's published!
                 </p>
                 <div className="flex gap-3 justify-center">
                   <Button variant="outline" onClick={() => { 
