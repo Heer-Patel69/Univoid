@@ -29,7 +29,7 @@ const EVENT_TYPES = ["Hackathon", "Party", "Conference", "Workshop", "Competitio
 
 const CreateEvent = () => {
   const navigate = useNavigate();
-  const { user, isOrganizer } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -155,20 +155,6 @@ const CreateEvent = () => {
     );
   }
 
-  if (!isOrganizer) {
-    return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <Header onAuthClick={() => setShowAuthModal(true)} />
-        <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
-        <main className="flex-1 container mx-auto px-4 py-20 text-center">
-          <h1 className="text-2xl font-bold mb-4">Organizer Access Required</h1>
-          <p className="text-muted-foreground mb-6">You need to be an approved organizer to create events.</p>
-          <Button onClick={() => navigate("/become-organizer")}>Become an Organizer</Button>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
