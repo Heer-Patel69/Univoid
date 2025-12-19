@@ -97,7 +97,7 @@ export async function uploadMaterial(
 
   options?.onProgress?.(80);
 
-  // Create material record - instant publish
+  // Create material record - pending review
   const { data, error } = await supabase
     .from('materials')
     .insert({
@@ -107,7 +107,7 @@ export async function uploadMaterial(
       file_type: fileExt,
       file_size: file.size,
       created_by: userId,
-      status: 'approved',
+      status: 'pending', // Requires admin approval
       course: options?.course || null,
       branch: options?.branch || null,
       subject: options?.subject || null,
@@ -123,18 +123,25 @@ export async function uploadMaterial(
     return { id: null, error: error as Error };
   }
 
-  // Award XP for material upload (+30 XP)
-  try {
-    await supabase.rpc('award_xp', {
-      _user_id: userId,
-      _amount: 30,
-      _reason: 'material_upload',
-      _content_type: 'material',
-      _content_id: data.id,
-    });
-  } catch (xpError) {
-    console.error('Failed to award XP:', xpError);
-  }
+  // Get uploader name for notification
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('full_name')
+    .eq('id', userId)
+    .single();
+
+  // Notify admins about new pending content (async, don't await)
+  supabase.functions.invoke('notify-pending-review', {
+    body: {
+      materialId: data.id,
+      title,
+      uploaderName: profile?.full_name || 'A user',
+      contentType: 'material',
+    },
+  }).catch((err) => console.error('Failed to send notification:', err));
+
+  // XP is awarded on APPROVAL, not on upload
+  // See adminService.ts updateContentStatus for XP award
 
   return { id: data.id, error: null };
 }

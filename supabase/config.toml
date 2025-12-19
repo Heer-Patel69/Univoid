@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.send-admin-invite]
 verify_jwt = true
+
+[functions.notify-pending-review]
+verify_jwt = true
