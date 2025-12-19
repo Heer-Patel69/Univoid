@@ -158,32 +158,46 @@ serve(async (req) => {
       </html>
     `;
 
+    console.log("=== RESEND EMAIL ATTEMPT ===");
+    console.log("To:", normalizedEmail);
+    console.log("API Key exists:", !!RESEND_API_KEY);
+    console.log("API Key prefix:", RESEND_API_KEY?.substring(0, 10) + "...");
+
+    const emailPayload = {
+      from: "UniVoid <onboarding@resend.dev>",
+      to: [normalizedEmail],
+      subject: "You've been invited as an Admin Assistant on UniVoid",
+      html: emailHtml,
+    };
+    console.log("Email payload (without html):", { ...emailPayload, html: "[HTML CONTENT]" });
+
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
-      body: JSON.stringify({
-        from: "UniVoid <onboarding@resend.dev>",
-        to: [normalizedEmail],
-        subject: "You've been invited as an Admin Assistant on UniVoid",
-        html: emailHtml,
-      }),
+      body: JSON.stringify(emailPayload),
     });
 
+    const responseText = await res.text();
+    console.log("Resend response status:", res.status);
+    console.log("Resend response body:", responseText);
+
     if (!res.ok) {
-      const errorData = await res.text();
-      console.error("Resend API error:", errorData);
-      // Still return success since invite was created
+      console.error("❌ RESEND API ERROR:", responseText);
       return new Response(
-        JSON.stringify({ success: true, message: "Invite created (email failed to send)" }),
+        JSON.stringify({ 
+          success: false, 
+          message: "Invite created but email failed", 
+          emailError: responseText 
+        }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const emailData = await res.json();
-    console.log("Admin invite email sent:", emailData);
+    const emailData = JSON.parse(responseText);
+    console.log("✅ Admin invite email sent successfully:", emailData);
 
     return new Response(
       JSON.stringify({ success: true, message: "Invite sent successfully" }),
