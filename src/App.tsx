@@ -33,6 +33,7 @@ import Projects from "./pages/Projects";
 import CreateProject from "./pages/CreateProject";
 import ProjectDetail from "./pages/ProjectDetail";
 import Tasks from "./pages/Tasks";
+import TaskDetail from "./pages/TaskDetail";
 import CreateTask from "./pages/CreateTask";
 
 const queryClient = new QueryClient({
@@ -65,6 +66,8 @@ const App = () => (
             <Route path="/projects/create" element={<ProtectedRoute><CreateProject /></ProtectedRoute>} />
             <Route path="/projects/:projectId" element={<ProjectDetail />} />
             <Route path="/tasks" element={<Tasks />} />
+            <Route path="/tasks/my-requests" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
+            <Route path="/tasks/:taskId" element={<TaskDetail />} />
             <Route path="/tasks/create" element={<ProtectedRoute><CreateTask /></ProtectedRoute>} />
             <Route path="/become-organizer" element={<BecomeOrganizer />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
