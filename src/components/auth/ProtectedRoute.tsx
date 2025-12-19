@@ -25,9 +25,11 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }
 
   // Check if email is verified
-  const isGoogleUser = user.app_metadata?.provider === 'google';
+  // OAuth users (Google, etc.) are trusted and verified by default
+  const provider = user.app_metadata?.provider;
+  const isOAuthUser = provider && provider !== 'email';
   const emailConfirmed = user.email_confirmed_at !== null;
-  const isVerified = isGoogleUser || emailConfirmed;
+  const isVerified = isOAuthUser || emailConfirmed;
 
   if (!isVerified) {
     return <EmailVerificationPending email={user.email || ''} />;

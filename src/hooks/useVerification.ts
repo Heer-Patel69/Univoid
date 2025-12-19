@@ -23,14 +23,15 @@ export function useVerification(): VerificationStatus {
     };
   }
 
-  // Google auth users are auto email-verified
-  const isGoogleUser = user.app_metadata?.provider === 'google';
+  // OAuth users (Google, etc.) are trusted and verified by default
+  const provider = user.app_metadata?.provider;
+  const isOAuthUser = provider && provider !== 'email';
   
   // Check if email is confirmed via Supabase auth
   const supabaseEmailConfirmed = user.email_confirmed_at !== null;
   
-  // User is verified if: email confirmed OR phone verified OR Google auth
-  const emailVerified = supabaseEmailConfirmed || isGoogleUser || (profile as any).email_verified === true;
+  // User is verified if: email confirmed OR phone verified OR OAuth provider
+  const emailVerified = supabaseEmailConfirmed || isOAuthUser || (profile as any).email_verified === true;
   const phoneVerified = (profile as any).phone_verified === true;
   
   const isVerified = emailVerified || phoneVerified;
