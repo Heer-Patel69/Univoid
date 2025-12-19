@@ -6,6 +6,7 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import AuthModal from "@/components/auth/AuthModal";
 import MaterialPreviewModal from "@/components/materials/MaterialPreviewModal";
 import MaterialCard from "@/components/materials/MaterialCard";
+import MaterialCardSkeleton from "@/components/materials/MaterialCardSkeleton";
 import MaterialFilters, { MaterialFiltersState, initialFilters } from "@/components/materials/MaterialFilters";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -264,7 +265,11 @@ const Materials = () => {
 
           {/* Content */}
           {isLoading || isFiltering ? (
-            <SectionLoader size="lg" className="py-16" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 items-stretch">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <MaterialCardSkeleton key={i} />
+              ))}
+            </div>
           ) : allMaterials.length === 0 ? (
             <EmptyState 
               message="No materials found. Try adjusting your filters or be the first to contribute!"
