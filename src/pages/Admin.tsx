@@ -270,7 +270,7 @@ const Admin = () => {
 
   const handleApprove = async (type: 'materials' | 'news' | 'books', item: ContentItem) => {
     setProcessingId(item.id);
-    const { error } = await updateContentStatus(type, item.id, 'approved', item.created_by);
+    const { error } = await updateContentStatus(type, item.id, 'approved', item.created_by, item.title);
     setProcessingId(null);
 
     if (error) {
@@ -284,7 +284,7 @@ const Admin = () => {
 
   const handleReject = async (type: 'materials' | 'news' | 'books', item: ContentItem) => {
     setProcessingId(item.id);
-    const { error } = await updateContentStatus(type, item.id, 'rejected', item.created_by);
+    const { error } = await updateContentStatus(type, item.id, 'rejected', item.created_by, item.title);
     setProcessingId(null);
 
     if (error) {

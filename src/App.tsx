@@ -14,6 +14,7 @@ import BookDetail from "./pages/BookDetail";
 import Leaderboard from "./pages/Leaderboard";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
+import EditProfile from "./pages/EditProfile";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import UploadMaterial from "./pages/UploadMaterial";
@@ -85,6 +86,8 @@ const App = () => (
             <Route path="/organizer/dashboard" element={<ProtectedRoute><OrganizerDashboard /></ProtectedRoute>} />
             <Route path="/organizer/create-event" element={<ProtectedRoute><CreateEvent /></ProtectedRoute>} />
             <Route path="/organizer/edit-event/:eventId" element={<ProtectedRoute><EditEvent /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/profile/edit" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
             <Route path="/profile/:userId" element={<Profile />} />
             <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />

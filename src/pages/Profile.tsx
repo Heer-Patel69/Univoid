@@ -4,12 +4,9 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { User, Trophy, FileText, Newspaper, BookOpen, ArrowLeft, Loader2, Pencil, Save, X } from "lucide-react";
+import { User, Trophy, FileText, Newspaper, BookOpen, ArrowLeft, Loader2, Pencil } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 
 interface ProfileData {
   id: string;
@@ -33,16 +30,6 @@ const Profile = () => {
   const [publicProfile, setPublicProfile] = useState<ProfileData | null>(null);
   const [stats, setStats] = useState<ContributionStats>({ materials: 0, news: 0, books: 0 });
   const [isLoading, setIsLoading] = useState(true);
-  const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  
-  // Editable fields
-  const [editForm, setEditForm] = useState({
-    full_name: "",
-    college_name: "",
-    course_stream: "",
-    year_semester: "",
-  });
 
   const isOwnProfile = !userId || userId === user?.id;
   const targetUserId = isOwnProfile ? user?.id : userId;
@@ -63,12 +50,6 @@ const Profile = () => {
 
         if (profileData) {
           setPublicProfile(profileData);
-          setEditForm({
-            full_name: profileData.full_name || "",
-            college_name: profileData.college_name || "",
-            course_stream: profileData.course_stream || "",
-            year_semester: profileData.year_semester || "",
-          });
         }
 
         const [materialsRes, newsRes, booksRes] = await Promise.all([
@@ -91,35 +72,6 @@ const Profile = () => {
 
     fetchProfileData();
   }, [targetUserId]);
-
-  const handleSave = async () => {
-    if (!user) return;
-    
-    setIsSaving(true);
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          full_name: editForm.full_name,
-          college_name: editForm.college_name,
-          course_stream: editForm.course_stream,
-          year_semester: editForm.year_semester,
-        })
-        .eq('id', user.id);
-
-      if (error) throw error;
-
-      toast.success("Profile updated successfully!");
-      setIsEditing(false);
-      
-      // Update local state
-      setPublicProfile(prev => prev ? { ...prev, ...editForm } : null);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to update profile");
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   if (authLoading || isLoading) {
     return (
@@ -192,72 +144,22 @@ const Profile = () => {
                   </div>
                 )}
                 
-                {isEditing ? (
-                  <Input
-                    value={editForm.full_name}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, full_name: e.target.value }))}
-                    className="text-center text-xl font-bold max-w-xs"
-                    placeholder="Your name"
-                  />
-                ) : (
-                  <h1 className="text-2xl font-bold text-foreground mb-1">{displayProfile?.full_name ?? 'User'}</h1>
-                )}
+                <h1 className="text-2xl font-bold text-foreground mb-1">{displayProfile?.full_name ?? 'User'}</h1>
                 <p className="text-muted-foreground">Level {level}</p>
                 
                 {/* Edit Button */}
-                {isOwnProfile && !isEditing && (
-                  <Button variant="outline" size="sm" className="mt-4 gap-2" onClick={() => setIsEditing(true)}>
-                    <Pencil className="w-4 h-4" />
-                    Edit Profile
-                  </Button>
+                {isOwnProfile && (
+                  <Link to="/profile/edit">
+                    <Button variant="outline" size="sm" className="mt-4 gap-2">
+                      <Pencil className="w-4 h-4" />
+                      Edit Profile
+                    </Button>
+                  </Link>
                 )}
               </div>
 
-              {/* Editable Fields */}
-              {isEditing && isOwnProfile && (
-                <div className="space-y-4 mb-8 max-w-sm mx-auto">
-                  <div>
-                    <Label className="text-sm">College Name</Label>
-                    <Input
-                      value={editForm.college_name}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, college_name: e.target.value }))}
-                      placeholder="Your college"
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-sm">Course / Stream</Label>
-                    <Input
-                      value={editForm.course_stream}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, course_stream: e.target.value }))}
-                      placeholder="e.g. B.Tech CSE"
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-sm">Year / Semester</Label>
-                    <Input
-                      value={editForm.year_semester}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, year_semester: e.target.value }))}
-                      placeholder="e.g. 3rd Year"
-                      className="mt-1"
-                    />
-                  </div>
-                  
-                  <div className="flex gap-2 pt-2">
-                    <Button variant="outline" className="flex-1" onClick={() => setIsEditing(false)}>
-                      <X className="w-4 h-4 mr-1" /> Cancel
-                    </Button>
-                    <Button className="flex-1" onClick={handleSave} disabled={isSaving}>
-                      {isSaving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
-                      Save
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {/* Profile Info (when not editing) */}
-              {!isEditing && publicProfile && (publicProfile.college_name || publicProfile.course_stream) && (
+              {/* Profile Info */}
+              {publicProfile && (publicProfile.college_name || publicProfile.course_stream) && (
                 <div className="text-center text-sm text-muted-foreground mb-8 space-y-1">
                   {publicProfile.college_name && <p>{publicProfile.college_name}</p>}
                   {publicProfile.course_stream && publicProfile.year_semester && (
