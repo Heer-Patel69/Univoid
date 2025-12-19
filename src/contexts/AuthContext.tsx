@@ -9,6 +9,7 @@ interface AuthContextType {
   profile: Profile | null;
   role: AppRole;
   isAdmin: boolean;
+  isOrganizer: boolean;
   isLoading: boolean;
   signUp: (data: SignUpData) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
@@ -36,6 +37,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<AppRole>('student');
   const [isLoading, setIsLoading] = useState(true);
 
+  const [userRoles, setUserRoles] = useState<string[]>([]);
+
   const fetchUserData = async (userId: string) => {
     const [profileResult, roleResult] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
@@ -47,8 +50,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     if (roleResult.data && roleResult.data.length > 0) {
-      const hasAdmin = roleResult.data.some(r => r.role === 'admin');
-      setRole(hasAdmin ? 'admin' : (roleResult.data[0].role as AppRole));
+      const roles = roleResult.data.map(r => r.role);
+      setUserRoles(roles);
+      const hasAdmin = roles.includes('admin');
+      const hasOrganizer = roles.includes('organizer');
+      setRole(hasAdmin ? 'admin' : hasOrganizer ? 'organizer' : (roleResult.data[0].role as AppRole));
+    } else {
+      setUserRoles([]);
     }
   };
 
@@ -220,7 +228,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     session,
     profile,
     role,
-    isAdmin: role === 'admin',
+    isAdmin: role === 'admin' || userRoles.includes('admin'),
+    isOrganizer: role === 'organizer' || userRoles.includes('organizer') || userRoles.includes('admin'),
     isLoading,
     signUp,
     signIn,

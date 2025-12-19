@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { 
   Check, X, FileText, Newspaper, PenLine, BookOpen, Loader2, 
   Flag, Trash2, Eye, Users, Shield, AlertTriangle, Ban, KeyRound,
-  Mail, MessageSquare
+  Mail, MessageSquare, Sparkles
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
@@ -88,12 +88,14 @@ const Admin = () => {
   const [allUsers, setAllUsers] = useState<UserItem[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
   const [contactMessages, setContactMessages] = useState<ContactMessage[]>([]);
+  const [organizerApps, setOrganizerApps] = useState<any[]>([]);
   
   // Counts
   const [counts, setCounts] = useState({ materials: 0, blogs: 0, news: 0, books: 0, users: 0 });
   const [pendingCounts, setPendingCounts] = useState({ materials: 0, blogs: 0, news: 0, books: 0 });
   const [reportCount, setReportCount] = useState(0);
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+  const [organizerAppsCount, setOrganizerAppsCount] = useState(0);
   
   // UI state
   const [isLoading, setIsLoading] = useState(true);
@@ -113,6 +115,7 @@ const Admin = () => {
         contentCounts,
         pendingCountsData,
         unreadCount,
+        organizerAppsData,
       ] = await Promise.all([
         getAllContent('materials'),
         getAllContent('blogs'),
@@ -124,6 +127,7 @@ const Admin = () => {
         getContentCounts(),
         getAllPendingCounts(),
         getUnreadCount(),
+        supabase.from('organizer_applications').select('*').eq('status', 'pending').order('created_at', { ascending: true }),
       ]);
       
       setAllMaterials(materialsData as ContentItem[]);
@@ -137,6 +141,8 @@ const Admin = () => {
       setPendingCounts(pendingCountsData);
       setReportCount(reportsData.length);
       setUnreadMessagesCount(unreadCount);
+      setOrganizerApps(organizerAppsData.data || []);
+      setOrganizerAppsCount((organizerAppsData.data || []).length);
     } catch (error) {
       console.error('Error fetching admin data:', error);
       toast.error('Failed to load admin data');
@@ -680,6 +686,81 @@ const Admin = () => {
     );
   };
 
+  const handleApproveOrganizer = async (app: any) => {
+    setProcessingId(app.id);
+    try {
+      // Add organizer role
+      await supabase.from('user_roles').insert({ user_id: app.user_id, role: 'organizer' });
+      // Update application status
+      await supabase.from('organizer_applications').update({ 
+        status: 'approved', 
+        reviewed_by: user?.id, 
+        reviewed_at: new Date().toISOString() 
+      }).eq('id', app.id);
+      
+      toast.success('Organizer approved!');
+      setOrganizerApps(prev => prev.filter(a => a.id !== app.id));
+      setOrganizerAppsCount(prev => prev - 1);
+    } catch (error: any) {
+      toast.error('Failed to approve: ' + error.message);
+    }
+    setProcessingId(null);
+  };
+
+  const handleRejectOrganizer = async (app: any) => {
+    setProcessingId(app.id);
+    try {
+      await supabase.from('organizer_applications').update({ 
+        status: 'rejected', 
+        reviewed_by: user?.id, 
+        reviewed_at: new Date().toISOString() 
+      }).eq('id', app.id);
+      
+      toast.success('Application rejected');
+      setOrganizerApps(prev => prev.filter(a => a.id !== app.id));
+      setOrganizerAppsCount(prev => prev - 1);
+    } catch (error: any) {
+      toast.error('Failed to reject: ' + error.message);
+    }
+    setProcessingId(null);
+  };
+
+  const renderOrganizerAppsTab = () => {
+    if (organizerApps.length === 0) {
+      return <p className="text-muted-foreground text-center py-8">No pending organizer applications</p>;
+    }
+
+    return (
+      <div className="space-y-4">
+        {organizerApps.map((app) => (
+          <Card key={app.id}>
+            <CardContent className="p-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="space-y-2">
+                  <p className="font-medium">User ID: {app.user_id.slice(0, 8)}...</p>
+                  <p className="text-sm text-muted-foreground">Applied: {formatDate(app.created_at)}</p>
+                  {app.reason && <p className="text-sm italic">"{app.reason}"</p>}
+                  <a href={app.proof_url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
+                    View Proof Document
+                  </a>
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={() => handleApproveOrganizer(app)} disabled={processingId === app.id}>
+                    {processingId === app.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4 mr-1" />}
+                    Approve
+                  </Button>
+                  <Button size="sm" variant="destructive" onClick={() => handleRejectOrganizer(app)} disabled={processingId === app.id}>
+                    <X className="w-4 h-4 mr-1" /> Reject
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  };
+
   const totalPending = pendingCounts.materials + pendingCounts.blogs + pendingCounts.news + pendingCounts.books;
 
   return (
@@ -799,6 +880,10 @@ const Admin = () => {
                   <TabsTrigger value="messages" className="text-xs sm:text-sm">
                     Messages {unreadMessagesCount > 0 && <Badge variant="default" className="ml-1 h-5 w-5 p-0 text-xs">{unreadMessagesCount}</Badge>}
                   </TabsTrigger>
+                  <TabsTrigger value="organizers" className="text-xs sm:text-sm">
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    Organizers {organizerAppsCount > 0 && <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 text-xs">{organizerAppsCount}</Badge>}
+                  </TabsTrigger>
                 </TabsList>
               </CardHeader>
 
@@ -829,6 +914,10 @@ const Admin = () => {
 
                 <TabsContent value="messages" className="mt-0">
                   {renderContactMessagesTab()}
+                </TabsContent>
+
+                <TabsContent value="organizers" className="mt-0">
+                  {renderOrganizerAppsTab()}
                 </TabsContent>
               </CardContent>
             </Tabs>
