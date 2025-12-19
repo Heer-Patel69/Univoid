@@ -119,6 +119,36 @@ export type Database = {
         }
         Relationships: []
       }
+      email_preferences: {
+        Row: {
+          created_at: string
+          event_alerts: boolean
+          id: string
+          scholarship_alerts: boolean
+          updated_at: string
+          user_id: string
+          weekly_digest: boolean
+        }
+        Insert: {
+          created_at?: string
+          event_alerts?: boolean
+          id?: string
+          scholarship_alerts?: boolean
+          updated_at?: string
+          user_id: string
+          weekly_digest?: boolean
+        }
+        Update: {
+          created_at?: string
+          event_alerts?: boolean
+          id?: string
+          scholarship_alerts?: boolean
+          updated_at?: string
+          user_id?: string
+          weekly_digest?: boolean
+        }
+        Relationships: []
+      }
       event_materials: {
         Row: {
           created_at: string
@@ -439,6 +469,7 @@ export type Database = {
       }
       news: {
         Row: {
+          category: string | null
           content: string
           created_at: string
           created_by: string
@@ -450,6 +481,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          category?: string | null
           content: string
           created_at?: string
           created_by: string
@@ -461,6 +493,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          category?: string | null
           content?: string
           created_at?: string
           created_by?: string
