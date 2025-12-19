@@ -29,6 +29,7 @@ import EventDetail from "./pages/EventDetail";
 import CreateEvent from "./pages/CreateEvent";
 import OrganizerDashboard from "./pages/OrganizerDashboard";
 import MyTickets from "./pages/MyTickets";
+import BecomeOrganizer from "./pages/BecomeOrganizer";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -57,6 +58,7 @@ const App = () => (
             <Route path="/books/:bookId" element={<BookDetail />} />
             <Route path="/events" element={<Events />} />
             <Route path="/events/:eventId" element={<EventDetail />} />
+            <Route path="/become-organizer" element={<BecomeOrganizer />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<Terms />} />

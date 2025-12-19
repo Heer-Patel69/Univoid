@@ -15,7 +15,7 @@ import { Plus, Calendar, Sparkles } from "lucide-react";
 import AuthModal from "@/components/auth/AuthModal";
 
 const Events = () => {
-  const { user, isAdmin } = useAuth();
+  const { user, isOrganizer } = useAuth();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [priceFilter, setPriceFilter] = useState("all");
@@ -62,6 +62,24 @@ const Events = () => {
               <p className="text-muted-foreground">
                 Discover hackathons, workshops, cultural fests & more
               </p>
+            </div>
+
+            <div className="flex gap-2">
+              {user && isOrganizer ? (
+                <Link to="/organizer/create-event">
+                  <Button className="rounded-full gap-2">
+                    <Plus className="w-4 h-4" />
+                    Create Event
+                  </Button>
+                </Link>
+              ) : user ? (
+                <Link to="/become-organizer">
+                  <Button variant="outline" className="rounded-full gap-2">
+                    <Sparkles className="w-4 h-4" />
+                    Become Organizer
+                  </Button>
+                </Link>
+              ) : null}
             </div>
           </div>
 
