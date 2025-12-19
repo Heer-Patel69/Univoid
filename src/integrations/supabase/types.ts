@@ -217,8 +217,8 @@ export type Database = {
       }
       profiles: {
         Row: {
-          college_name: string
-          course_stream: string
+          college_name: string | null
+          course_stream: string | null
           created_at: string
           email: string
           email_verified: boolean | null
@@ -232,11 +232,11 @@ export type Database = {
           profile_photo_url: string | null
           total_xp: number
           updated_at: string
-          year_semester: string
+          year_semester: string | null
         }
         Insert: {
-          college_name: string
-          course_stream: string
+          college_name?: string | null
+          course_stream?: string | null
           created_at?: string
           email: string
           email_verified?: boolean | null
@@ -250,11 +250,11 @@ export type Database = {
           profile_photo_url?: string | null
           total_xp?: number
           updated_at?: string
-          year_semester: string
+          year_semester?: string | null
         }
         Update: {
-          college_name?: string
-          course_stream?: string
+          college_name?: string | null
+          course_stream?: string | null
           created_at?: string
           email?: string
           email_verified?: boolean | null
@@ -268,7 +268,7 @@ export type Database = {
           profile_photo_url?: string | null
           total_xp?: number
           updated_at?: string
-          year_semester?: string
+          year_semester?: string | null
         }
         Relationships: []
       }
