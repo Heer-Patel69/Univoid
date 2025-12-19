@@ -9,13 +9,13 @@ const corsHeaders = {
 const SYSTEM_USER_EMAIL = "system@univoid.local";
 const SYSTEM_USER_NAME = "UniVoid System";
 
-// Keywords for filtering student/job/placement news
+// Keywords for filtering scholarship/job/placement news
 const SEARCH_QUERIES = [
-  "college internship",
-  "campus placement",
-  "fresher jobs India",
-  "student career",
-  "engineering jobs",
+  "scholarship India students",
+  "government scholarship 2024 2025",
+  "college scholarship deadline",
+  "engineering scholarship",
+  "merit scholarship India",
 ];
 
 interface NewsAPIArticle {
@@ -32,22 +32,27 @@ interface NewsItem {
   source: string;
   url: string;
   category: "Student" | "Job" | "Placement" | "Trend";
+  isScholarship: boolean;
   publishedAt: string;
 }
 
-function categorizeNews(title: string, description: string): NewsItem["category"] {
+function categorizeNews(title: string, description: string): { category: NewsItem["category"]; isScholarship: boolean } {
   const text = `${title} ${description}`.toLowerCase();
   
+  // Prioritize scholarship detection
+  if (text.includes("scholarship") || text.includes("fellowship") || text.includes("grant") || text.includes("stipend")) {
+    return { category: "Student", isScholarship: true };
+  }
   if (text.includes("placement") || text.includes("campus") || text.includes("recruit")) {
-    return "Placement";
+    return { category: "Placement", isScholarship: false };
   }
   if (text.includes("job") || text.includes("hiring") || text.includes("career") || text.includes("internship")) {
-    return "Job";
+    return { category: "Job", isScholarship: false };
   }
   if (text.includes("trend") || text.includes("salary") || text.includes("skill") || text.includes("demand")) {
-    return "Trend";
+    return { category: "Trend", isScholarship: false };
   }
-  return "Student";
+  return { category: "Student", isScholarship: false };
 }
 
 function generateSummary(description: string): string {
@@ -121,12 +126,14 @@ async function fetchNewsFromNewsAPI(apiKey: string): Promise<NewsItem[]> {
         for (const article of data.articles as NewsAPIArticle[]) {
           if (!article.title || !article.description) continue;
           
+          const catResult = categorizeNews(article.title, article.description);
           allNews.push({
             title: article.title,
             description: article.description,
             source: article.source?.name || "Unknown",
             url: article.url,
-            category: categorizeNews(article.title, article.description),
+            category: catResult.category,
+            isScholarship: catResult.isScholarship,
             publishedAt: article.publishedAt,
           });
         }
@@ -197,16 +204,22 @@ const handler = async (req: Request): Promise<Response> => {
         continue;
       }
 
-      // Create news entry
+      // Create news entry with category
       const summary = generateSummary(item.description);
-      const content = `${summary}\n\n**Category:** ${item.category}\n**Source:** ${item.source}\n\n*Auto-curated for students*`;
+      const content = `${summary}\n\n**Source:** ${item.source}\n\n*Auto-curated for students*`;
+      
+      // Map to database category
+      const dbCategory = item.isScholarship ? "scholarship" : 
+        item.category === "Job" ? "job" : 
+        item.category === "Placement" ? "placement" : "general";
 
       const { error } = await supabase.from("news").insert({
-        title: `[${item.category}] ${item.title}`,
+        title: item.title,
         content,
         external_link: item.url,
         created_by: systemUserId,
         status: "approved",
+        category: dbCategory,
       });
 
       if (error) {
