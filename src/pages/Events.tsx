@@ -11,11 +11,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { fetchEvents } from "@/services/eventsService";
 import { useAuth } from "@/contexts/AuthContext";
-import { Plus, Calendar, Sparkles } from "lucide-react";
+import { Plus, Calendar } from "lucide-react";
 import AuthModal from "@/components/auth/AuthModal";
 
 const Events = () => {
-  const { user, isOrganizer } = useAuth();
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [priceFilter, setPriceFilter] = useState("all");
@@ -64,23 +64,14 @@ const Events = () => {
               </p>
             </div>
 
-            <div className="flex gap-2">
-              {user && isOrganizer ? (
-                <Link to="/organizer/create-event">
-                  <Button className="rounded-full gap-2">
-                    <Plus className="w-4 h-4" />
-                    Create Event
-                  </Button>
-                </Link>
-              ) : user ? (
-                <Link to="/become-organizer">
-                  <Button variant="outline" className="rounded-full gap-2">
-                    <Sparkles className="w-4 h-4" />
-                    Become Organizer
-                  </Button>
-                </Link>
-              ) : null}
-            </div>
+            {user && (
+              <Link to="/organizer/create-event">
+                <Button className="rounded-full gap-2">
+                  <Plus className="w-4 h-4" />
+                  Create Event
+                </Button>
+              </Link>
+            )}
           </div>
 
           <EventFilters
