@@ -46,7 +46,7 @@ export interface MaterialFilters {
   college?: string;
 }
 
-// Materials with filters
+// Materials with filters - optimized to fetch only needed fields for listing
 export async function getMaterialsPaginated(
   page = 0,
   pageSize = DEFAULT_PAGE_SIZE,
@@ -55,9 +55,10 @@ export async function getMaterialsPaginated(
   const from = page * pageSize;
   const to = from + pageSize - 1;
 
+  // Only select fields needed for the card display (performance optimization)
   let query = supabase
     .from('materials')
-    .select('*', { count: 'exact' })
+    .select('id, title, file_type, course, subject, branch, language, college, thumbnail_url, created_by, created_at, views_count, downloads_count, likes_count, shares_count', { count: 'exact' })
     .eq('status', 'approved')
     .order('created_at', { ascending: false });
 

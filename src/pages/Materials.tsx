@@ -37,7 +37,7 @@ const Materials = () => {
   const [likingIds, setLikingIds] = useState<Set<string>>(new Set());
 
   const fetchMaterials = useCallback(async () => {
-    const result = await getMaterialsPaginated(0, 18);
+    const result = await getMaterialsPaginated(0, 15); // Reduced from 18 to 15 for faster loading
     setAllMaterials(result.data);
     setHasMore(result.hasMore);
     return result.data;
@@ -63,7 +63,7 @@ const Materials = () => {
         language: newFilters.language || undefined,
         college: newFilters.college || undefined,
       };
-      const result = await getMaterialsPaginated(0, 18, apiFilters);
+      const result = await getMaterialsPaginated(0, 15, apiFilters);
       setAllMaterials(result.data);
       setHasMore(result.hasMore);
     } catch (error) {
@@ -86,7 +86,7 @@ const Materials = () => {
         language: filters.language || undefined,
         college: filters.college || undefined,
       };
-      const result = await getMaterialsPaginated(nextPage, 18, apiFilters);
+      const result = await getMaterialsPaginated(nextPage, 15, apiFilters);
       setAllMaterials(prev => [...prev, ...result.data]);
       setHasMore(result.hasMore);
       setPage(nextPage);
