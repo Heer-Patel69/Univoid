@@ -102,7 +102,7 @@ const handler = async (req: Request): Promise<Response> => {
         ${event.venue_address ? `<li><strong>Address:</strong> ${event.venue_address}</li>` : ""}
       </ul>
       ${qrCodeImageHtml}
-      <p>You can also view your ticket in the <a href="https://univoid.in/my-tickets" style="color: #6366f1;">My Tickets</a> section of your account.</p>
+      <p>You can also view your ticket in the <a href="https://univoid.lovable.app/my-tickets" style="color: #6366f1;">My Tickets</a> section of your account.</p>
     `;
 
     const rejectedContent = `
