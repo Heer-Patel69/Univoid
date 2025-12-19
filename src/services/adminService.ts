@@ -29,7 +29,8 @@ export async function updateContentStatus(
   type: ContentType,
   contentId: string,
   status: ContentStatus,
-  createdBy: string
+  createdBy: string,
+  contentTitle?: string
 ): Promise<{ error: Error | null }> {
   const { error } = await supabase
     .from(type)
@@ -50,6 +51,23 @@ export async function updateContentStatus(
         _content_type: type,
         _content_id: contentId,
       });
+    }
+  }
+
+  // Send status email notification to user
+  if (contentTitle && (status === 'approved' || status === 'rejected')) {
+    try {
+      await supabase.functions.invoke('send-material-status-email', {
+        body: {
+          userId: createdBy,
+          materialTitle: contentTitle,
+          status,
+          contentType: type,
+        },
+      });
+    } catch (emailError) {
+      console.error('Failed to send status email:', emailError);
+      // Don't fail the whole operation if email fails
     }
   }
 

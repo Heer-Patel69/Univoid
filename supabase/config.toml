@@ -20,3 +20,6 @@ verify_jwt = true
 
 [functions.notify-pending-review]
 verify_jwt = true
+
+[functions.send-material-status-email]
+verify_jwt = true
