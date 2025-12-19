@@ -24,12 +24,13 @@ import ListBook from "./pages/ListBook";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Terms from "./pages/Terms";
 import Contact from "./pages/Contact";
+import Events from "./pages/Events";
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 30000, // 30 seconds
-      gcTime: 300000, // 5 minutes (formerly cacheTime)
+      staleTime: 30000,
+      gcTime: 300000,
       retry: 1,
       refetchOnWindowFocus: false,
     },
@@ -50,6 +51,7 @@ const App = () => (
             <Route path="/blogs" element={<Blogs />} />
             <Route path="/books" element={<Books />} />
             <Route path="/books/:bookId" element={<BookDetail />} />
+            <Route path="/events" element={<Events />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<Terms />} />
@@ -65,7 +67,6 @@ const App = () => (
             <Route path="/sell-book" element={<ProtectedRoute><ListBook /></ProtectedRoute>} />
             <Route path="/profile/:userId" element={<Profile />} />
             <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
           <CookieConsent />
