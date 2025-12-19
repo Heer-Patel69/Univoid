@@ -1,12 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
-import { BookOpen, Newspaper, Trophy, PenLine, Repeat2 } from "lucide-react";
+import { BookOpen, Newspaper, Trophy, Calendar, Repeat2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/materials", label: "Materials", icon: BookOpen },
-  { href: "/news", label: "News", icon: Newspaper },
+  { href: "/events", label: "Events", icon: Calendar },
   { href: "/leaderboard", label: "Ranks", icon: Trophy, highlight: true },
-  { href: "/blogs", label: "Blogs", icon: PenLine },
+  { href: "/news", label: "News", icon: Newspaper },
   { href: "/books", label: "Books", icon: Repeat2 },
 ];
 

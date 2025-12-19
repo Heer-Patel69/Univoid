@@ -25,6 +25,10 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Terms from "./pages/Terms";
 import Contact from "./pages/Contact";
 import Events from "./pages/Events";
+import EventDetail from "./pages/EventDetail";
+import CreateEvent from "./pages/CreateEvent";
+import OrganizerDashboard from "./pages/OrganizerDashboard";
+import MyTickets from "./pages/MyTickets";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -52,6 +56,7 @@ const App = () => (
             <Route path="/books" element={<Books />} />
             <Route path="/books/:bookId" element={<BookDetail />} />
             <Route path="/events" element={<Events />} />
+            <Route path="/events/:eventId" element={<EventDetail />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<Terms />} />
@@ -61,10 +66,13 @@ const App = () => (
             <Route path="/dashboard/write-blog" element={<ProtectedRoute><WriteBlog /></ProtectedRoute>} />
             <Route path="/dashboard/submit-news" element={<ProtectedRoute><SubmitNews /></ProtectedRoute>} />
             <Route path="/dashboard/list-book" element={<ProtectedRoute><ListBook /></ProtectedRoute>} />
+            <Route path="/dashboard/my-tickets" element={<ProtectedRoute><MyTickets /></ProtectedRoute>} />
             <Route path="/upload-material" element={<ProtectedRoute><UploadMaterial /></ProtectedRoute>} />
             <Route path="/submit-blog" element={<ProtectedRoute><WriteBlog /></ProtectedRoute>} />
             <Route path="/submit-news" element={<ProtectedRoute><SubmitNews /></ProtectedRoute>} />
             <Route path="/sell-book" element={<ProtectedRoute><ListBook /></ProtectedRoute>} />
+            <Route path="/organizer/dashboard" element={<ProtectedRoute><OrganizerDashboard /></ProtectedRoute>} />
+            <Route path="/organizer/create-event" element={<ProtectedRoute><CreateEvent /></ProtectedRoute>} />
             <Route path="/profile/:userId" element={<Profile />} />
             <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
