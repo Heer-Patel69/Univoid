@@ -14,7 +14,10 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import AuthModal from "@/components/auth/AuthModal";
-import { Plus, Calendar, Users, CheckCircle, XCircle, Eye, QrCode, ScanLine, Pencil } from "lucide-react";
+import { 
+  Plus, Calendar, Users, CheckCircle, XCircle, Eye, 
+  ScanLine, Pencil, TicketCheck, Clock, TrendingUp 
+} from "lucide-react";
 import { format } from "date-fns";
 import type { Event, EventRegistration } from "@/services/eventsService";
 
@@ -57,17 +60,36 @@ const OrganizerDashboard = () => {
     enabled: !!selectedEvent,
   });
 
-  // Approve/Reject mutation - generates QR on approval
+  // Fetch check-in stats
+  const { data: checkInStats } = useQuery({
+    queryKey: ["event-checkin-stats", selectedEvent],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("event_tickets")
+        .select("is_used")
+        .eq("event_id", selectedEvent!);
+      if (error) throw error;
+      const total = data?.length || 0;
+      const checkedIn = data?.filter(t => t.is_used).length || 0;
+      return { total, checkedIn };
+    },
+    enabled: !!selectedEvent,
+  });
+
+  // Calculate stats
+  const totalEvents = events?.length || 0;
+  const totalRegistrations = events?.reduce((sum, e) => sum + (e.registrations_count || 0), 0) || 0;
+  const pendingCount = registrations?.filter(r => r.payment_status === "pending").length || 0;
+  const approvedCount = registrations?.filter(r => r.payment_status === "approved").length || 0;
+
+  // Approve/Reject mutation
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status, userId }: { id: string; status: "approved" | "rejected"; userId: string }) => {
-      // Generate unique QR code for approved registrations
       let qrCode = null;
       
       if (status === "approved") {
-        // Create unique QR code string
         qrCode = `UV-${selectedEvent}-${id}-${Date.now()}`;
         
-        // Create ticket entry with QR code
         const { error: ticketError } = await supabase
           .from("event_tickets")
           .insert({
@@ -83,14 +105,12 @@ const OrganizerDashboard = () => {
         }
       }
       
-      // Update registration status
       const { error } = await supabase
         .from("event_registrations")
         .update({ payment_status: status, reviewed_at: new Date().toISOString() })
         .eq("id", id);
       if (error) throw error;
 
-      // Send email notification with QR code
       try {
         await supabase.functions.invoke("send-registration-status-email", {
           body: {
@@ -98,17 +118,17 @@ const OrganizerDashboard = () => {
             status,
             eventId: selectedEvent,
             userId,
-            qrCode, // Include QR code in email
+            qrCode,
           },
         });
       } catch (emailError) {
         console.error("Failed to send status email:", emailError);
-        // Don't fail the mutation if email fails
       }
     },
     onSuccess: (_, { status }) => {
       toast({ title: status === "approved" ? "✅ Approved & QR Sent!" : "❌ Registration Rejected" });
       queryClient.invalidateQueries({ queryKey: ["event-registrations", selectedEvent] });
+      queryClient.invalidateQueries({ queryKey: ["event-checkin-stats", selectedEvent] });
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -139,6 +159,7 @@ const OrganizerDashboard = () => {
     onSuccess: () => {
       toast({ title: "✅ Check-in Successful!" });
       setQrInput("");
+      queryClient.invalidateQueries({ queryKey: ["event-checkin-stats", selectedEvent] });
     },
     onError: (error: Error) => {
       toast({ title: "❌ Check-in Failed", description: error.message, variant: "destructive" });
@@ -146,7 +167,6 @@ const OrganizerDashboard = () => {
   });
 
   const selectedEventData = events?.find(e => e.id === selectedEvent);
-  const pendingCount = registrations?.filter(r => r.payment_status === "pending").length || 0;
 
   useEffect(() => {
     if (events && events.length > 0 && !selectedEvent) {
@@ -174,14 +194,74 @@ const OrganizerDashboard = () => {
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
 
       <main className="flex-1 container mx-auto px-4 py-6 pb-24 md:pb-8">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div>
-            <h1 className="font-display text-3xl font-bold">Organizer Dashboard</h1>
-            <p className="text-muted-foreground">Manage your events and registrations</p>
+            <h1 className="font-display text-2xl md:text-3xl font-bold">Organizer Dashboard</h1>
+            <p className="text-muted-foreground text-sm">Manage your events and registrations</p>
           </div>
           <Link to="/organizer/create-event">
             <Button className="gap-2"><Plus className="w-4 h-4" /> Create Event</Button>
           </Link>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          <Card className="bg-gradient-to-br from-primary/10 to-primary/5">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                  <Calendar className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{totalEvents}</p>
+                  <p className="text-xs text-muted-foreground">Total Events</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-blue-500/10 to-blue-500/5">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                  <Users className="w-5 h-5 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{totalRegistrations}</p>
+                  <p className="text-xs text-muted-foreground">Registrations</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+                  <TicketCheck className="w-5 h-5 text-green-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{checkInStats?.checkedIn || 0}</p>
+                  <p className="text-xs text-muted-foreground">Checked In</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-orange-500/10 to-orange-500/5">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
+                  <Clock className="w-5 h-5 text-orange-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{pendingCount}</p>
+                  <p className="text-xs text-muted-foreground">Pending</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {eventsLoading ? (
@@ -203,12 +283,12 @@ const OrganizerDashboard = () => {
               {events?.map(event => (
                 <Card 
                   key={event.id} 
-                  className={`cursor-pointer transition-all ${selectedEvent === event.id ? "ring-2 ring-primary" : "hover:shadow-md"}`}
+                  className={`cursor-pointer transition-all ${selectedEvent === event.id ? "ring-2 ring-primary bg-primary/5" : "hover:shadow-md"}`}
                   onClick={() => setSelectedEvent(event.id)}
                 >
                   <CardContent className="p-4">
-                    <h4 className="font-semibold line-clamp-1">{event.title}</h4>
-                    <p className="text-xs text-muted-foreground">{format(new Date(event.start_date), "MMM d, yyyy")}</p>
+                    <h4 className="font-semibold line-clamp-1 text-sm">{event.title}</h4>
+                    <p className="text-xs text-muted-foreground mt-1">{format(new Date(event.start_date), "MMM d, yyyy")}</p>
                     <div className="flex gap-2 mt-2">
                       <Badge variant="outline" className="text-xs">{event.registrations_count} reg</Badge>
                       <Badge variant={event.status === "published" ? "default" : "secondary"} className="text-xs">{event.status}</Badge>
@@ -222,65 +302,66 @@ const OrganizerDashboard = () => {
             <div className="lg:col-span-3">
               {selectedEventData && (
                 <Card>
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
+                  <CardHeader className="pb-4">
+                    <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                       <div>
-                        <CardTitle>{selectedEventData.title}</CardTitle>
-                        <CardDescription>{format(new Date(selectedEventData.start_date), "EEEE, MMMM d, yyyy 'at' h:mm a")}</CardDescription>
+                        <CardTitle className="text-lg">{selectedEventData.title}</CardTitle>
+                        <CardDescription className="text-sm">{format(new Date(selectedEventData.start_date), "EEEE, MMMM d, yyyy 'at' h:mm a")}</CardDescription>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         <Link to={`/events/${selectedEventData.id}`}>
                           <Button variant="outline" size="sm"><Eye className="w-4 h-4 mr-1" /> View</Button>
                         </Link>
                         <Link to={`/organizer/edit-event/${selectedEventData.id}`}>
                           <Button variant="outline" size="sm"><Pencil className="w-4 h-4 mr-1" /> Edit</Button>
                         </Link>
-                        <Button variant="outline" size="sm" onClick={() => setScannerOpen(true)}>
-                          <ScanLine className="w-4 h-4 mr-1" /> Check-in
+                        <Button size="sm" onClick={() => setScannerOpen(true)} className="gap-1">
+                          <ScanLine className="w-4 h-4" /> Scan QR
                         </Button>
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent>
                     <Tabs defaultValue="pending">
-                      <TabsList>
-                        <TabsTrigger value="pending">
-                          Pending {pendingCount > 0 && <Badge variant="destructive" className="ml-2">{pendingCount}</Badge>}
+                      <TabsList className="mb-4">
+                        <TabsTrigger value="pending" className="gap-1">
+                          Pending 
+                          {pendingCount > 0 && <Badge variant="destructive" className="ml-1 h-5 px-1.5">{pendingCount}</Badge>}
                         </TabsTrigger>
-                        <TabsTrigger value="approved">Approved</TabsTrigger>
+                        <TabsTrigger value="approved">Approved ({approvedCount})</TabsTrigger>
                         <TabsTrigger value="rejected">Rejected</TabsTrigger>
                       </TabsList>
 
                       {["pending", "approved", "rejected"].map(status => (
-                        <TabsContent key={status} value={status} className="space-y-3">
+                        <TabsContent key={status} value={status} className="space-y-3 mt-0">
                           {registrations?.filter(r => r.payment_status === status).length === 0 ? (
-                            <p className="text-center py-8 text-muted-foreground">No {status} registrations</p>
+                            <p className="text-center py-8 text-muted-foreground text-sm">No {status} registrations</p>
                           ) : (
                             registrations?.filter(r => r.payment_status === status).map(reg => (
-                              <Card key={reg.id}>
-                                <CardContent className="p-4 flex items-center justify-between">
+                              <Card key={reg.id} className="border">
+                                <CardContent className="p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                                   <div className="flex items-center gap-3">
-                                    <Avatar>
-                                      <AvatarFallback>U</AvatarFallback>
+                                    <Avatar className="h-9 w-9">
+                                      <AvatarFallback className="text-xs">U</AvatarFallback>
                                     </Avatar>
                                     <div>
-                                      <p className="font-medium">User {reg.user_id.slice(0, 8)}...</p>
+                                      <p className="font-medium text-sm">User {reg.user_id.slice(0, 8)}...</p>
                                       <p className="text-xs text-muted-foreground">{format(new Date(reg.created_at), "MMM d, h:mm a")}</p>
                                     </div>
                                   </div>
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-2 w-full sm:w-auto">
                                     {reg.payment_screenshot_url && (
                                       <a href={reg.payment_screenshot_url} target="_blank" rel="noopener noreferrer">
-                                        <Button variant="outline" size="sm">View Screenshot</Button>
+                                        <Button variant="outline" size="sm" className="text-xs">Screenshot</Button>
                                       </a>
                                     )}
                                     {status === "pending" && (
                                       <>
-                                        <Button size="sm" onClick={() => updateStatusMutation.mutate({ id: reg.id, status: "approved", userId: reg.user_id })}>
-                                          <CheckCircle className="w-4 h-4 mr-1" /> Approve
+                                        <Button size="sm" className="flex-1 sm:flex-none text-xs" onClick={() => updateStatusMutation.mutate({ id: reg.id, status: "approved", userId: reg.user_id })}>
+                                          <CheckCircle className="w-3 h-3 mr-1" /> Approve
                                         </Button>
-                                        <Button size="sm" variant="destructive" onClick={() => updateStatusMutation.mutate({ id: reg.id, status: "rejected", userId: reg.user_id })}>
-                                          <XCircle className="w-4 h-4 mr-1" /> Reject
+                                        <Button size="sm" variant="destructive" className="flex-1 sm:flex-none text-xs" onClick={() => updateStatusMutation.mutate({ id: reg.id, status: "rejected", userId: reg.user_id })}>
+                                          <XCircle className="w-3 h-3 mr-1" /> Reject
                                         </Button>
                                       </>
                                     )}
@@ -314,13 +395,13 @@ const OrganizerDashboard = () => {
                 value={qrInput}
                 onChange={(e) => setQrInput(e.target.value)}
                 placeholder="Enter QR code..."
-                className="flex-1 px-3 py-2 border rounded-lg"
+                className="flex-1 px-3 py-2 border rounded-lg bg-background"
               />
               <Button onClick={() => checkInMutation.mutate(qrInput)} disabled={!qrInput || checkInMutation.isPending}>
-                {checkInMutation.isPending ? "Checking..." : "Check In"}
+                {checkInMutation.isPending ? "..." : "Check In"}
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground text-center">Paste the QR code text or scan it with your device's camera</p>
+            <p className="text-xs text-muted-foreground text-center">Paste the QR code text or scan with your device</p>
           </div>
         </DialogContent>
       </Dialog>

@@ -3,6 +3,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Search, X } from 'lucide-react';
 import { COURSE_OPTIONS, BRANCH_OPTIONS, LANGUAGE_OPTIONS } from '@/constants/materialOptions';
+import { useIsMobile } from '@/hooks/use-mobile';
+import MobileFilterSheet from './MobileFilterSheet';
 
 export interface MaterialFiltersState {
   search: string;
@@ -29,12 +31,25 @@ export const initialFilters: MaterialFiltersState = {
 };
 
 export default function MaterialFilters({ filters, onFiltersChange, onClearFilters }: MaterialFiltersProps) {
+  const isMobile = useIsMobile();
   const hasActiveFilters = Object.values(filters).some(v => v !== '');
 
   const updateFilter = (key: keyof MaterialFiltersState, value: string) => {
     onFiltersChange({ ...filters, [key]: value === 'all' ? '' : value });
   };
 
+  // Mobile: Use bottom sheet
+  if (isMobile) {
+    return (
+      <MobileFilterSheet 
+        filters={filters} 
+        onFiltersChange={onFiltersChange} 
+        onClearFilters={onClearFilters} 
+      />
+    );
+  }
+
+  // Desktop: Original pills layout
   return (
     <div className="space-y-4 mb-8">
       {/* Search */}
