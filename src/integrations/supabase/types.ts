@@ -289,6 +289,36 @@ export type Database = {
         }
         Relationships: []
       }
+      phone_otp_codes: {
+        Row: {
+          attempts: number
+          created_at: string
+          expires_at: string
+          id: string
+          otp_code: string
+          user_id: string
+          verified: boolean
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          expires_at: string
+          id?: string
+          otp_code: string
+          user_id: string
+          verified?: boolean
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          expires_at?: string
+          id?: string
+          otp_code?: string
+          user_id?: string
+          verified?: boolean
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           college_name: string | null
@@ -300,8 +330,6 @@ export type Database = {
           id: string
           is_disabled: boolean
           mobile_number: string | null
-          phone_otp_code: string | null
-          phone_otp_expires_at: string | null
           phone_verified: boolean | null
           profile_photo_url: string | null
           total_xp: number
@@ -318,8 +346,6 @@ export type Database = {
           id: string
           is_disabled?: boolean
           mobile_number?: string | null
-          phone_otp_code?: string | null
-          phone_otp_expires_at?: string | null
           phone_verified?: boolean | null
           profile_photo_url?: string | null
           total_xp?: number
@@ -336,8 +362,6 @@ export type Database = {
           id?: string
           is_disabled?: boolean
           mobile_number?: string | null
-          phone_otp_code?: string | null
-          phone_otp_expires_at?: string | null
           phone_verified?: boolean | null
           profile_photo_url?: string | null
           total_xp?: number
@@ -475,6 +499,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      cleanup_expired_otps: { Args: never; Returns: undefined }
       generate_ticket_qr: { Args: never; Returns: string }
       get_book_by_id_safe: {
         Args: { p_book_id: string }
