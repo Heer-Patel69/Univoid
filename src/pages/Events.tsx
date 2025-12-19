@@ -12,8 +12,8 @@ import {
   Filter,
   ChevronRight
 } from 'lucide-react';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
+import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,7 +21,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SectionLoader } from '@/components/common/SectionLoader';
-import { AuthModal } from '@/components/auth/AuthModal';
+import AuthModal from '@/components/auth/AuthModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOptimizedFetch } from '@/hooks/useOptimizedFetch';
 import { getEvents, isUserOrganizer } from '@/services/eventsService';
@@ -55,7 +55,11 @@ export default function Events() {
     return result.data;
   }, [selectedCategory, selectedCity, searchQuery]);
 
-  const { isLoading, refetch } = useOptimizedFetch(fetchEvents);
+  const { isLoading, refetch } = useOptimizedFetch({
+    fetchFn: fetchEvents,
+    defaultValue: [] as Event[],
+    cacheKey: `events-${selectedCategory}-${selectedCity}-${searchQuery}`,
+  });
 
   // Check if user is organizer
   useEffect(() => {
@@ -126,7 +130,7 @@ export default function Events() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Header />
+      <Header onAuthClick={() => setAuthOpen(true)} />
       
       <main className="flex-1 container mx-auto px-4 py-8 pb-24 md:pb-8">
         {/* Hero Section */}
@@ -304,7 +308,7 @@ export default function Events() {
 
       <Footer />
       <BottomNav />
-      <AuthModal open={authOpen} onOpenChange={setAuthOpen} />
+      <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} />
     </div>
   );
 }
