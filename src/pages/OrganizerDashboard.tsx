@@ -59,15 +59,30 @@ const OrganizerDashboard = () => {
 
   // Approve/Reject mutation
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: "approved" | "rejected" }) => {
+    mutationFn: async ({ id, status, userId }: { id: string; status: "approved" | "rejected"; userId: string }) => {
       const { error } = await supabase
         .from("event_registrations")
         .update({ payment_status: status, reviewed_at: new Date().toISOString() })
         .eq("id", id);
       if (error) throw error;
+
+      // Send email notification
+      try {
+        await supabase.functions.invoke("send-registration-status-email", {
+          body: {
+            registrationId: id,
+            status,
+            eventId: selectedEvent,
+            userId,
+          },
+        });
+      } catch (emailError) {
+        console.error("Failed to send status email:", emailError);
+        // Don't fail the mutation if email fails
+      }
     },
-    onSuccess: () => {
-      toast({ title: "Status Updated" });
+    onSuccess: (_, { status }) => {
+      toast({ title: `Registration ${status === "approved" ? "Approved" : "Rejected"}` });
       queryClient.invalidateQueries({ queryKey: ["event-registrations", selectedEvent] });
     },
   });
@@ -233,10 +248,10 @@ const OrganizerDashboard = () => {
                                     )}
                                     {status === "pending" && (
                                       <>
-                                        <Button size="sm" onClick={() => updateStatusMutation.mutate({ id: reg.id, status: "approved" })}>
+                                        <Button size="sm" onClick={() => updateStatusMutation.mutate({ id: reg.id, status: "approved", userId: reg.user_id })}>
                                           <CheckCircle className="w-4 h-4 mr-1" /> Approve
                                         </Button>
-                                        <Button size="sm" variant="destructive" onClick={() => updateStatusMutation.mutate({ id: reg.id, status: "rejected" })}>
+                                        <Button size="sm" variant="destructive" onClick={() => updateStatusMutation.mutate({ id: reg.id, status: "rejected", userId: reg.user_id })}>
                                           <XCircle className="w-4 h-4 mr-1" /> Reject
                                         </Button>
                                       </>
