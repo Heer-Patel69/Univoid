@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      blocked_email_domains: {
+        Row: {
+          created_at: string
+          domain: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          domain: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          domain?: string
+          id?: string
+        }
+        Relationships: []
+      }
       blogs: {
         Row: {
           content: string
@@ -49,6 +67,8 @@ export type Database = {
       }
       books: {
         Row: {
+          author: string | null
+          category: string | null
           condition: string | null
           created_at: string
           created_by: string
@@ -63,8 +83,11 @@ export type Database = {
           status: Database["public"]["Enums"]["content_status"]
           title: string
           updated_at: string
+          views_count: number
         }
         Insert: {
+          author?: string | null
+          category?: string | null
           condition?: string | null
           created_at?: string
           created_by: string
@@ -79,8 +102,11 @@ export type Database = {
           status?: Database["public"]["Enums"]["content_status"]
           title: string
           updated_at?: string
+          views_count?: number
         }
         Update: {
+          author?: string | null
+          category?: string | null
           condition?: string | null
           created_at?: string
           created_by?: string
@@ -95,6 +121,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["content_status"]
           title?: string
           updated_at?: string
+          views_count?: number
         }
         Relationships: []
       }
@@ -515,6 +542,35 @@ export type Database = {
         }
         Relationships: []
       }
+      material_likes: {
+        Row: {
+          created_at: string
+          id: string
+          material_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          material_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          material_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "material_likes_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       materials: {
         Row: {
           branch: string | null
@@ -523,15 +579,21 @@ export type Database = {
           created_at: string
           created_by: string
           description: string | null
+          downloads_count: number
+          file_hash: string | null
           file_size: number | null
           file_type: string
           file_url: string
           id: string
           language: string | null
+          likes_count: number
+          shares_count: number
           status: Database["public"]["Enums"]["content_status"]
           subject: string | null
+          thumbnail_url: string | null
           title: string
           updated_at: string
+          views_count: number
         }
         Insert: {
           branch?: string | null
@@ -540,15 +602,21 @@ export type Database = {
           created_at?: string
           created_by: string
           description?: string | null
+          downloads_count?: number
+          file_hash?: string | null
           file_size?: number | null
           file_type: string
           file_url: string
           id?: string
           language?: string | null
+          likes_count?: number
+          shares_count?: number
           status?: Database["public"]["Enums"]["content_status"]
           subject?: string | null
+          thumbnail_url?: string | null
           title: string
           updated_at?: string
+          views_count?: number
         }
         Update: {
           branch?: string | null
@@ -557,15 +625,21 @@ export type Database = {
           created_at?: string
           created_by?: string
           description?: string | null
+          downloads_count?: number
+          file_hash?: string | null
           file_size?: number | null
           file_type?: string
           file_url?: string
           id?: string
           language?: string | null
+          likes_count?: number
+          shares_count?: number
           status?: Database["public"]["Enums"]["content_status"]
           subject?: string | null
+          thumbnail_url?: string | null
           title?: string
           updated_at?: string
+          views_count?: number
         }
         Relationships: []
       }
@@ -805,12 +879,62 @@ export type Database = {
         Returns: undefined
       }
       generate_ticket_qr: { Args: never; Returns: string }
+      get_book_recommendations: {
+        Args: { p_book_id: string; p_limit?: number }
+        Returns: {
+          author: string | null
+          category: string | null
+          condition: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          image_urls: string[] | null
+          is_sold: boolean
+          price: number | null
+          seller_address: string
+          seller_email: string
+          seller_mobile: string
+          status: Database["public"]["Enums"]["content_status"]
+          title: string
+          updated_at: string
+          views_count: number
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "books"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_contributor_name: { Args: { user_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      increment_book_views: { Args: { book_id: string }; Returns: undefined }
+      increment_material_downloads: {
+        Args: { material_id: string }
+        Returns: undefined
+      }
+      increment_material_shares: {
+        Args: { material_id: string }
+        Returns: undefined
+      }
+      increment_material_views: {
+        Args: { material_id: string }
+        Returns: undefined
+      }
+      is_email_blocked: { Args: { p_email: string }; Returns: boolean }
+      toggle_material_like: {
+        Args: { p_material_id: string }
+        Returns: boolean
+      }
+      user_has_liked_material: {
+        Args: { p_material_id: string }
         Returns: boolean
       }
     }
