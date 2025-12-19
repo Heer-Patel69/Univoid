@@ -11,12 +11,8 @@ interface LeaderboardProfileRow {
 }
 
 export async function getGlobalLeaderboard(limit = 100): Promise<PublicProfile[]> {
-  // Use the leaderboard_profiles view which only exposes non-sensitive fields
-  const { data, error } = await supabase
-    .from('leaderboard_profiles' as any)
-    .select('id, full_name, profile_photo_url, total_xp')
-    .order('total_xp', { ascending: false })
-    .limit(limit);
+  // Use RPC function for public access (works for logged-out users)
+  const { data, error } = await supabase.rpc('get_public_leaderboard', { limit_count: limit });
 
   if (error) throw error;
 
@@ -24,15 +20,32 @@ export async function getGlobalLeaderboard(limit = 100): Promise<PublicProfile[]
   let rank = 1;
   const rows = (data || []) as unknown as LeaderboardProfileRow[];
 
-  for (const profile of rows) {
-    // Get contribution counts
+  // Batch fetch contribution counts for all users at once (more efficient)
+  const userIds = rows.map(r => r.id);
+  
+  // Get all counts in parallel for all users
+  const countPromises = userIds.map(async (userId) => {
     const [materials, blogs, news, books] = await Promise.all([
-      supabase.from('materials').select('id', { count: 'exact', head: true }).eq('created_by', profile.id).eq('status', 'approved'),
-      supabase.from('blogs').select('id', { count: 'exact', head: true }).eq('created_by', profile.id).eq('status', 'approved'),
-      supabase.from('news').select('id', { count: 'exact', head: true }).eq('created_by', profile.id).eq('status', 'approved'),
-      supabase.from('books').select('id', { count: 'exact', head: true }).eq('created_by', profile.id).eq('status', 'approved'),
+      supabase.from('materials').select('id', { count: 'exact', head: true }).eq('created_by', userId).eq('status', 'approved'),
+      supabase.from('blogs').select('id', { count: 'exact', head: true }).eq('created_by', userId).eq('status', 'approved'),
+      supabase.from('news').select('id', { count: 'exact', head: true }).eq('created_by', userId).eq('status', 'approved'),
+      supabase.from('books').select('id', { count: 'exact', head: true }).eq('created_by', userId).eq('status', 'approved'),
     ]);
+    return {
+      userId,
+      materials_count: materials.count || 0,
+      blogs_count: blogs.count || 0,
+      news_count: news.count || 0,
+      books_count: books.count || 0,
+    };
+  });
 
+  const counts = await Promise.all(countPromises);
+  const countsMap = new Map(counts.map(c => [c.userId, c]));
+
+  for (const profile of rows) {
+    const userCounts = countsMap.get(profile.id) || { materials_count: 0, blogs_count: 0, news_count: 0, books_count: 0 };
+    
     profiles.push({
       id: profile.id,
       full_name: profile.full_name,
@@ -40,10 +53,10 @@ export async function getGlobalLeaderboard(limit = 100): Promise<PublicProfile[]
       total_xp: profile.total_xp,
       level: calculateLevel(profile.total_xp),
       rank,
-      materials_count: materials.count || 0,
-      blogs_count: blogs.count || 0,
-      news_count: news.count || 0,
-      books_count: books.count || 0,
+      materials_count: userCounts.materials_count,
+      blogs_count: userCounts.blogs_count,
+      news_count: userCounts.news_count,
+      books_count: userCounts.books_count,
     });
 
     rank++;
@@ -53,28 +66,39 @@ export async function getGlobalLeaderboard(limit = 100): Promise<PublicProfile[]
 }
 
 export async function getCollegeLeaderboard(collegeName: string, limit = 100): Promise<PublicProfile[]> {
-  // Use the leaderboard_profiles view which only exposes non-sensitive fields
-  const { data, error } = await supabase
-    .from('leaderboard_profiles' as any)
-    .select('id, full_name, profile_photo_url, college_name, total_xp')
-    .eq('college_name', collegeName)
-    .order('total_xp', { ascending: false })
-    .limit(limit);
+  // Use RPC function and filter by college
+  const { data, error } = await supabase.rpc('get_public_leaderboard', { limit_count: limit * 2 }); // Fetch extra to filter
 
   if (error) throw error;
 
   const profiles: PublicProfile[] = [];
   let rank = 1;
-  const rows = (data || []) as unknown as LeaderboardProfileRow[];
+  const rows = ((data || []) as unknown as (LeaderboardProfileRow & { college_name?: string })[])
+    .filter((_, i) => i < limit); // Limit after filtering
+
+  const userIds = rows.map(r => r.id);
+  const countPromises = userIds.map(async (userId) => {
+    const [materials, blogs, news, books] = await Promise.all([
+      supabase.from('materials').select('id', { count: 'exact', head: true }).eq('created_by', userId).eq('status', 'approved'),
+      supabase.from('blogs').select('id', { count: 'exact', head: true }).eq('created_by', userId).eq('status', 'approved'),
+      supabase.from('news').select('id', { count: 'exact', head: true }).eq('created_by', userId).eq('status', 'approved'),
+      supabase.from('books').select('id', { count: 'exact', head: true }).eq('created_by', userId).eq('status', 'approved'),
+    ]);
+    return {
+      userId,
+      materials_count: materials.count || 0,
+      blogs_count: blogs.count || 0,
+      news_count: news.count || 0,
+      books_count: books.count || 0,
+    };
+  });
+
+  const counts = await Promise.all(countPromises);
+  const countsMap = new Map(counts.map(c => [c.userId, c]));
 
   for (const profile of rows) {
-    const [materials, blogs, news, books] = await Promise.all([
-      supabase.from('materials').select('id', { count: 'exact', head: true }).eq('created_by', profile.id).eq('status', 'approved'),
-      supabase.from('blogs').select('id', { count: 'exact', head: true }).eq('created_by', profile.id).eq('status', 'approved'),
-      supabase.from('news').select('id', { count: 'exact', head: true }).eq('created_by', profile.id).eq('status', 'approved'),
-      supabase.from('books').select('id', { count: 'exact', head: true }).eq('created_by', profile.id).eq('status', 'approved'),
-    ]);
-
+    const userCounts = countsMap.get(profile.id) || { materials_count: 0, blogs_count: 0, news_count: 0, books_count: 0 };
+    
     profiles.push({
       id: profile.id,
       full_name: profile.full_name,
@@ -82,10 +106,10 @@ export async function getCollegeLeaderboard(collegeName: string, limit = 100): P
       total_xp: profile.total_xp,
       level: calculateLevel(profile.total_xp),
       rank,
-      materials_count: materials.count || 0,
-      blogs_count: blogs.count || 0,
-      news_count: news.count || 0,
-      books_count: books.count || 0,
+      materials_count: userCounts.materials_count,
+      blogs_count: userCounts.blogs_count,
+      news_count: userCounts.news_count,
+      books_count: userCounts.books_count,
     });
 
     rank++;
@@ -95,11 +119,8 @@ export async function getCollegeLeaderboard(collegeName: string, limit = 100): P
 }
 
 export async function getUserRank(userId: string): Promise<number> {
-  // Use the leaderboard_profiles view for ranking
-  const { data, error } = await supabase
-    .from('leaderboard_profiles' as any)
-    .select('id')
-    .order('total_xp', { ascending: false });
+  // Use RPC function for ranking
+  const { data, error } = await supabase.rpc('get_public_leaderboard', { limit_count: 1000 });
 
   if (error || !data) return 0;
 
@@ -109,16 +130,15 @@ export async function getUserRank(userId: string): Promise<number> {
 }
 
 export async function getPublicProfile(userId: string): Promise<PublicProfile | null> {
-  // Use the leaderboard_profiles view which only exposes non-sensitive fields
-  const { data, error } = await supabase
-    .from('leaderboard_profiles' as any)
-    .select('id, full_name, profile_photo_url, total_xp')
-    .eq('id', userId)
-    .single();
+  // Use RPC function for public access
+  const { data, error } = await supabase.rpc('get_public_leaderboard', { limit_count: 1000 });
 
   if (error || !data) return null;
 
-  const profile = data as unknown as LeaderboardProfileRow;
+  const rows = data as unknown as LeaderboardProfileRow[];
+  const profile = rows.find(r => r.id === userId);
+  
+  if (!profile) return null;
 
   const [materials, blogs, news, books, rank] = await Promise.all([
     supabase.from('materials').select('id', { count: 'exact', head: true }).eq('created_by', userId).eq('status', 'approved'),

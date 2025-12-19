@@ -142,8 +142,8 @@ const MaterialCard = ({
           )}
         </div>
         
-        {/* Engagement & Actions */}
-        <div className="p-4 pt-3 mt-auto border-t border-border/50">
+        {/* Engagement & Actions - proper padding to prevent buttons touching edges */}
+        <div className="px-4 pb-4 pt-3 mt-auto border-t border-border/50">
           {/* Engagement stats */}
           <div className="flex items-center gap-4 text-[11px] text-muted-foreground mb-3">
             <span className="flex items-center gap-1">

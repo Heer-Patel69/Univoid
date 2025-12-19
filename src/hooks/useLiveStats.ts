@@ -19,13 +19,14 @@ export function useLiveStats(): LiveStats {
 
     const fetchStats = async () => {
       try {
+        // Use RPC function to count users (bypasses RLS for accurate count)
         const [usersResult, materialsResult] = await Promise.all([
-          supabase.from('profiles').select('id', { count: 'exact', head: true }),
+          supabase.rpc('get_registered_users_count'),
           supabase.from('materials').select('id', { count: 'exact', head: true }).eq('status', 'approved'),
         ]);
 
         if (isMounted.current) {
-          setTotalUsers(usersResult.count || 0);
+          setTotalUsers(usersResult.data || 0);
           setTotalMaterials(materialsResult.count || 0);
           setIsLoading(false);
         }
