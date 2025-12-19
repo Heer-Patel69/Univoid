@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, User, LogOut, Shield, BookOpen, Newspaper, FileText, Repeat2, Trophy, Calendar, LayoutDashboard } from "lucide-react";
+import { Menu, X, User, LogOut, Shield, BookOpen, Newspaper, FileText, Repeat2, Trophy, Calendar, LayoutDashboard, Folder, Briefcase } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -24,7 +24,8 @@ const Header = ({ onAuthClick }: HeaderProps) => {
   const navLinks = [
     { href: "/materials", label: "Materials", icon: BookOpen },
     { href: "/events", label: "Events", icon: Calendar },
-    { href: "/news", label: "News", icon: Newspaper },
+    { href: "/projects", label: "Projects", icon: Folder },
+    { href: "/tasks", label: "Tasks", icon: Briefcase },
     { href: "/books", label: "Books", icon: Repeat2 },
     { href: "/leaderboard", label: "Ranks", icon: Trophy },
   ];
