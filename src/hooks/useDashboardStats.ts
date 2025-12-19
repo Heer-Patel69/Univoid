@@ -3,7 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface DashboardStats {
   materialsCount: number;
-  blogsCount: number;
   newsCount: number;
   booksCount: number;
   globalRank: number | null;
@@ -11,7 +10,6 @@ interface DashboardStats {
 
 const defaultStats: DashboardStats = {
   materialsCount: 0,
-  blogsCount: 0,
   newsCount: 0,
   booksCount: 0,
   globalRank: null,
@@ -34,10 +32,6 @@ export function useDashboardStats(userId: string | undefined) {
           .select('id', { count: 'exact', head: true })
           .eq('created_by', userId),
         supabase
-          .from('blogs')
-          .select('id', { count: 'exact', head: true })
-          .eq('created_by', userId),
-        supabase
           .from('news')
           .select('id', { count: 'exact', head: true })
           .eq('created_by', userId),
@@ -52,7 +46,7 @@ export function useDashboardStats(userId: string | undefined) {
         setTimeout(() => reject(new Error('Stats fetch timeout')), 5000)
       );
 
-      const [materialsRes, blogsRes, newsRes, booksRes] = await Promise.race([
+      const [materialsRes, newsRes, booksRes] = await Promise.race([
         fetchPromise,
         timeoutPromise,
       ]) as Awaited<typeof fetchPromise>;
@@ -83,7 +77,6 @@ export function useDashboardStats(userId: string | undefined) {
 
       setStats({
         materialsCount: materialsRes.count ?? 0,
-        blogsCount: blogsRes.count ?? 0,
         newsCount: newsRes.count ?? 0,
         booksCount: booksRes.count ?? 0,
         globalRank,
@@ -118,7 +111,6 @@ export function useDashboardStats(userId: string | undefined) {
     channelRef.current = supabase
       .channel(`dashboard-${userId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'materials', filter: `created_by=eq.${userId}` }, fetchStats)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'blogs', filter: `created_by=eq.${userId}` }, fetchStats)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'news', filter: `created_by=eq.${userId}` }, fetchStats)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'books', filter: `created_by=eq.${userId}` }, fetchStats)
       .subscribe();

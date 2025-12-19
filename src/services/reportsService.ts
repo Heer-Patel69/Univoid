@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 
-export type ReportContentType = 'materials' | 'blogs' | 'news' | 'books' | 'profiles';
+export type ReportContentType = 'materials' | 'news' | 'books' | 'profiles';
 export type ReportStatus = 'pending' | 'resolved' | 'ignored';
 
 export const REPORT_REASONS = [
@@ -88,9 +88,6 @@ export async function getReports(status?: ReportStatus): Promise<Report[]> {
       if (report.content_type === 'materials') {
         const { data } = await supabase.from('materials').select('title').eq('id', report.content_id).maybeSingle();
         contentTitle = data?.title || 'Unknown';
-      } else if (report.content_type === 'blogs') {
-        const { data } = await supabase.from('blogs').select('title').eq('id', report.content_id).maybeSingle();
-        contentTitle = data?.title || 'Unknown';
       } else if (report.content_type === 'news') {
         const { data } = await supabase.from('news').select('title').eq('id', report.content_id).maybeSingle();
         contentTitle = data?.title || 'Unknown';
@@ -125,7 +122,6 @@ export async function deleteReportedContent(
   contentId: string
 ): Promise<{ error: Error | null }> {
   if (contentType === 'profiles') {
-    // Cannot delete profiles directly
     return { error: new Error('Cannot delete user profiles directly') };
   }
 

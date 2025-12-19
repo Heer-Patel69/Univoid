@@ -14,7 +14,6 @@ import {
   User, 
   Trophy, 
   FileText,
-  PenLine,
   Newspaper,
   BookOpen,
   Upload,
@@ -53,7 +52,6 @@ const Dashboard = () => {
 
   const statCards = [
     { label: "Materials Uploaded", value: stats.materialsCount, icon: FileText },
-    { label: "Blogs Written", value: stats.blogsCount, icon: PenLine },
     { label: "News Submitted", value: stats.newsCount, icon: Newspaper },
     { label: "Books Listed", value: stats.booksCount, icon: BookOpen },
   ];
@@ -61,7 +59,6 @@ const Dashboard = () => {
   const contributeActions = [
     { label: "Upload Material", icon: Upload, href: "/upload-material" },
     { label: "Submit News", icon: Newspaper, href: "/submit-news" },
-    { label: "Write Blog", icon: PenLine, href: "/submit-blog" },
     { label: "List Book", icon: Plus, href: "/sell-book" },
   ];
 
@@ -140,7 +137,7 @@ const Dashboard = () => {
               {/* Contribution Stats */}
               <section>
                 <h2 className="text-lg font-semibold text-foreground mb-4">Your Contributions</h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {statCards.map((stat) => (
                     <Card key={stat.label}>
                       <CardContent className="p-4 text-center">
@@ -156,7 +153,7 @@ const Dashboard = () => {
               {/* Contribute Section */}
               <section>
                 <h2 className="text-lg font-semibold text-foreground mb-4">Contribute</h2>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   {contributeActions.map((action) => (
                     <Link key={action.label} to={action.href}>
                       <Card className="hover:border-primary/50 transition-colors cursor-pointer h-full">
@@ -229,12 +226,6 @@ const Dashboard = () => {
                       <Button variant="ghost" size="sm" className="w-full justify-start transition-transform hover:translate-x-1">
                         <FileText className="w-4 h-4 mr-2" />
                         Browse Materials
-                      </Button>
-                    </Link>
-                    <Link to="/blogs">
-                      <Button variant="ghost" size="sm" className="w-full justify-start transition-transform hover:translate-x-1">
-                        <PenLine className="w-4 h-4 mr-2" />
-                        Read Blogs
                       </Button>
                     </Link>
                     <Link to="/books">

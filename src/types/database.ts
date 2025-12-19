@@ -53,18 +53,6 @@ export interface Material {
   user_has_liked?: boolean;
 }
 
-export interface Blog {
-  id: string;
-  title: string;
-  content: string;
-  cover_image_url: string | null;
-  created_by: string;
-  status: ContentStatus;
-  created_at: string;
-  updated_at: string;
-  contributor_name?: string;
-}
-
 export interface News {
   id: string;
   title: string;
@@ -128,7 +116,6 @@ export interface XPTransaction {
 export const XP_VALUES = {
   verification: 20,      // Email OR Phone verification (one-time)
   material_approved: 30, // Study material upload
-  blog_approved: 15,     // Blog publish
   news_approved: 10,     // News publish
   book_listed: 20,       // Book listing
   daily_login: 2,        // Daily login (once per day)
@@ -166,7 +153,6 @@ export interface PublicProfile {
   level: number;
   rank?: number;
   materials_count: number;
-  blogs_count: number;
   news_count: number;
   books_count: number;
 }

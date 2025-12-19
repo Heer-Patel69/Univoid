@@ -92,7 +92,7 @@ const Leaderboard = () => {
                         <p className="text-2xl font-bold text-primary">{topThree[1].total_xp.toLocaleString()} XP</p>
                         <div className="flex justify-center gap-4 mt-4 text-xs text-muted-foreground">
                           <span>{topThree[1].materials_count} materials</span>
-                          <span>{topThree[1].blogs_count} blogs</span>
+                          <span>{topThree[1].news_count} news</span>
                         </div>
                       </CardContent>
                     </Card>
@@ -112,7 +112,7 @@ const Leaderboard = () => {
                         <p className="text-3xl font-bold text-warning">{topThree[0].total_xp.toLocaleString()} XP</p>
                         <div className="flex justify-center gap-4 mt-4 text-xs text-muted-foreground">
                           <span>{topThree[0].materials_count} materials</span>
-                          <span>{topThree[0].blogs_count} blogs</span>
+                          <span>{topThree[0].news_count} news</span>
                         </div>
                       </CardContent>
                     </Card>
@@ -132,7 +132,7 @@ const Leaderboard = () => {
                         <p className="text-2xl font-bold text-amber-600">{topThree[2].total_xp.toLocaleString()} XP</p>
                         <div className="flex justify-center gap-4 mt-4 text-xs text-muted-foreground">
                           <span>{topThree[2].materials_count} materials</span>
-                          <span>{topThree[2].blogs_count} blogs</span>
+                          <span>{topThree[2].news_count} news</span>
                         </div>
                       </CardContent>
                     </Card>
@@ -151,7 +151,7 @@ const Leaderboard = () => {
                           <th className="text-left p-4 text-sm font-medium text-muted-foreground">User</th>
                           <th className="text-left p-4 text-sm font-medium text-muted-foreground hidden sm:table-cell">Level</th>
                           <th className="text-left p-4 text-sm font-medium text-muted-foreground hidden md:table-cell">Materials</th>
-                          <th className="text-left p-4 text-sm font-medium text-muted-foreground hidden md:table-cell">Blogs</th>
+                          <th className="text-left p-4 text-sm font-medium text-muted-foreground hidden md:table-cell">News</th>
                           <th className="text-right p-4 text-sm font-medium text-muted-foreground">XP</th>
                         </tr>
                       </thead>
@@ -182,7 +182,7 @@ const Leaderboard = () => {
                             </td>
                             <td className="p-4 text-muted-foreground hidden sm:table-cell">Level {user.level}</td>
                             <td className="p-4 text-muted-foreground hidden md:table-cell">{user.materials_count}</td>
-                            <td className="p-4 text-muted-foreground hidden md:table-cell">{user.blogs_count}</td>
+                            <td className="p-4 text-muted-foreground hidden md:table-cell">{user.news_count}</td>
                             <td className="p-4 text-right font-semibold text-primary">{user.total_xp.toLocaleString()}</td>
                           </tr>
                         ))}
@@ -199,7 +199,7 @@ const Leaderboard = () => {
             <CardContent className="p-8 text-center">
               <h3 className="font-display text-xl text-foreground mb-3">Want to climb the leaderboard?</h3>
               <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                Start contributing study materials, write blogs, or share news. Every approved contribution earns you XP.
+                Start contributing study materials or share news. Every approved contribution earns you XP.
               </p>
               <Button onClick={() => setAuthOpen(true)} className="shadow-premium-sm">
                 Start contributing

@@ -9,7 +9,6 @@ import { CookieConsent } from "@/components/common/CookieConsent";
 import Index from "./pages/Index";
 import Materials from "./pages/Materials";
 import News from "./pages/News";
-import Blogs from "./pages/Blogs";
 import Books from "./pages/Books";
 import BookDetail from "./pages/BookDetail";
 import Leaderboard from "./pages/Leaderboard";
@@ -18,7 +17,6 @@ import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import UploadMaterial from "./pages/UploadMaterial";
-import WriteBlog from "./pages/WriteBlog";
 import SubmitNews from "./pages/SubmitNews";
 import ListBook from "./pages/ListBook";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -54,7 +52,6 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/materials" element={<Materials />} />
             <Route path="/news" element={<News />} />
-            <Route path="/blogs" element={<Blogs />} />
             <Route path="/books" element={<Books />} />
             <Route path="/books/:bookId" element={<BookDetail />} />
             <Route path="/events" element={<Events />} />
@@ -66,12 +63,10 @@ const App = () => (
             <Route path="/contact" element={<Contact />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/dashboard/upload-material" element={<ProtectedRoute><UploadMaterial /></ProtectedRoute>} />
-            <Route path="/dashboard/write-blog" element={<ProtectedRoute><WriteBlog /></ProtectedRoute>} />
             <Route path="/dashboard/submit-news" element={<ProtectedRoute><SubmitNews /></ProtectedRoute>} />
             <Route path="/dashboard/list-book" element={<ProtectedRoute><ListBook /></ProtectedRoute>} />
             <Route path="/dashboard/my-tickets" element={<ProtectedRoute><MyTickets /></ProtectedRoute>} />
             <Route path="/upload-material" element={<ProtectedRoute><UploadMaterial /></ProtectedRoute>} />
-            <Route path="/submit-blog" element={<ProtectedRoute><WriteBlog /></ProtectedRoute>} />
             <Route path="/submit-news" element={<ProtectedRoute><SubmitNews /></ProtectedRoute>} />
             <Route path="/sell-book" element={<ProtectedRoute><ListBook /></ProtectedRoute>} />
             <Route path="/organizer/dashboard" element={<ProtectedRoute><OrganizerDashboard /></ProtectedRoute>} />
