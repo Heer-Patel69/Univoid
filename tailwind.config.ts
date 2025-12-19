@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['Playfair Display', 'serif'],
+        sans: ['DM Sans', 'system-ui', 'sans-serif'],
+        display: ['DM Sans', 'system-ui', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -59,6 +59,13 @@ export default {
           DEFAULT: "hsl(var(--warning))",
           foreground: "hsl(var(--warning-foreground))",
         },
+        category: {
+          blue: "hsl(var(--category-blue))",
+          green: "hsl(var(--category-green))",
+          orange: "hsl(var(--category-orange))",
+          yellow: "hsl(var(--category-yellow))",
+          purple: "hsl(var(--category-purple))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
@@ -72,16 +79,18 @@ export default {
       },
       borderRadius: {
         lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        md: "calc(var(--radius) - 4px)",
+        sm: "calc(var(--radius) - 8px)",
         xl: "calc(var(--radius) + 4px)",
         "2xl": "calc(var(--radius) + 8px)",
+        "3xl": "calc(var(--radius) + 12px)",
+      },
+      borderWidth: {
+        '3': '3px',
       },
       boxShadow: {
-        'premium-sm': '0 1px 2px 0 hsl(222 47% 11% / 0.04)',
-        'premium-md': '0 4px 6px -1px hsl(222 47% 11% / 0.06), 0 2px 4px -2px hsl(222 47% 11% / 0.06)',
-        'premium-lg': '0 10px 15px -3px hsl(222 47% 11% / 0.08), 0 4px 6px -4px hsl(222 47% 11% / 0.06)',
-        'premium-xl': '0 20px 25px -5px hsl(222 47% 11% / 0.08), 0 8px 10px -6px hsl(222 47% 11% / 0.06)',
+        'univoid': '0 4px 12px 0 rgba(0, 0, 0, 0.08)',
+        'univoid-hover': '0 8px 24px 0 rgba(0, 0, 0, 0.12)',
       },
       keyframes: {
         "accordion-down": {

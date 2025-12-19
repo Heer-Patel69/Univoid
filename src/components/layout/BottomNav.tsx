@@ -32,7 +32,7 @@ export function BottomNav() {
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border/50 md:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t-2 border-foreground md:hidden">
       <div className="flex items-center justify-around h-16 px-2">
         {navItems.map((item) => {
           const isActive = location.pathname === item.href;
@@ -45,21 +45,21 @@ export function BottomNav() {
               className={cn(
                 "flex flex-col items-center justify-center gap-1 flex-1 py-2 transition-colors",
                 isActive 
-                  ? "text-primary" 
+                  ? "text-foreground" 
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
               <div
                 className={cn(
                   "w-10 h-10 rounded-full flex items-center justify-center transition-all",
-                  item.highlight && !isActive && "bg-primary/10",
-                  item.highlight && isActive && "bg-primary text-primary-foreground",
-                  isActive && !item.highlight && "bg-accent"
+                  item.highlight && !isActive && "bg-secondary",
+                  item.highlight && isActive && "bg-foreground text-background",
+                  isActive && !item.highlight && "bg-foreground text-background"
                 )}
               >
                 <Icon className="w-5 h-5" />
               </div>
-              <span className="text-[10px] font-medium">{item.label}</span>
+              <span className="text-[10px] font-semibold">{item.label}</span>
             </Link>
           );
         })}
