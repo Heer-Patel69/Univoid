@@ -1111,6 +1111,7 @@ export type Database = {
         Args: { material_id: string }
         Returns: undefined
       }
+      is_admin_or_assistant: { Args: { _user_id: string }; Returns: boolean }
       is_email_blocked: { Args: { p_email: string }; Returns: boolean }
       toggle_material_like: {
         Args: { p_material_id: string }
