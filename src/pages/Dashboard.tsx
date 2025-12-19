@@ -22,7 +22,11 @@ import {
   ArrowRight,
   Crown,
   Medal,
-  Award
+  Award,
+  Folder,
+  Briefcase,
+  Calendar,
+  CheckSquare
 } from "lucide-react";
 
 const Dashboard = () => {
@@ -60,6 +64,12 @@ const Dashboard = () => {
     { label: "Upload Material", icon: Upload, href: "/upload-material" },
     { label: "Submit News", icon: Newspaper, href: "/submit-news" },
     { label: "List Book", icon: Plus, href: "/sell-book" },
+  ];
+
+  const collaborationActions = [
+    { label: "My Projects", icon: Folder, href: "/projects", color: "text-purple-500", bgColor: "bg-purple-500/10" },
+    { label: "Task Plaza", icon: Briefcase, href: "/tasks", color: "text-orange-500", bgColor: "bg-orange-500/10" },
+    { label: "My Events", icon: Calendar, href: "/my-tickets", color: "text-blue-500", bgColor: "bg-blue-500/10" },
   ];
 
   if (showLoadingOverlay) {
@@ -159,6 +169,25 @@ const Dashboard = () => {
                       <Card className="hover:border-primary/50 transition-colors cursor-pointer h-full">
                         <CardContent className="p-4 text-center">
                           <action.icon className="w-8 h-8 text-primary mx-auto mb-2" />
+                          <p className="text-sm font-medium text-foreground">{action.label}</p>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+
+              {/* Collaboration Section */}
+              <section>
+                <h2 className="text-lg font-semibold text-foreground mb-4">Collaborate</h2>
+                <div className="grid grid-cols-3 gap-4">
+                  {collaborationActions.map((action) => (
+                    <Link key={action.label} to={action.href}>
+                      <Card className="hover:border-primary/50 transition-all cursor-pointer h-full group hover:shadow-md">
+                        <CardContent className="p-4 text-center">
+                          <div className={`w-12 h-12 ${action.bgColor} rounded-full flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform`}>
+                            <action.icon className={`w-6 h-6 ${action.color}`} />
+                          </div>
                           <p className="text-sm font-medium text-foreground">{action.label}</p>
                         </CardContent>
                       </Card>

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import QRCode from "https://esm.sh/qrcode@1.5.3";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -14,6 +15,7 @@ interface StatusEmailRequest {
   status: "approved" | "rejected";
   eventId: string;
   userId: string;
+  qrCode?: string; // The generated QR code string
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -24,8 +26,8 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { registrationId, status, eventId, userId }: StatusEmailRequest = await req.json();
-    console.log("Processing status email:", { registrationId, status, eventId, userId });
+    const { registrationId, status, eventId, userId, qrCode }: StatusEmailRequest = await req.json();
+    console.log("Processing status email:", { registrationId, status, eventId, userId, hasQR: !!qrCode });
 
     // Create Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -70,6 +72,27 @@ const handler = async (req: Request): Promise<Response> => {
       minute: "2-digit",
     });
 
+    // Generate QR code image if qrCode is provided
+    let qrCodeImageHtml = "";
+    if (qrCode && isApproved) {
+      try {
+        const qrDataUrl = await QRCode.toDataURL(qrCode, {
+          width: 200,
+          margin: 2,
+          color: { dark: '#000000', light: '#ffffff' }
+        });
+        qrCodeImageHtml = `
+          <div style="text-align: center; margin: 24px 0; padding: 20px; background: #f9fafb; border-radius: 12px;">
+            <p style="color: #374151; font-weight: 600; margin-bottom: 16px;">🎫 Your Entry QR Code</p>
+            <img src="${qrDataUrl}" alt="Event Entry QR Code" style="width: 200px; height: 200px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" />
+            <p style="color: #6b7280; font-size: 12px; margin-top: 12px;">Show this QR code at the entry gate</p>
+          </div>
+        `;
+      } catch (qrError) {
+        console.error("QR generation error:", qrError);
+      }
+    }
+
     const approvedContent = `
       <p>Great news! Your ticket is now confirmed. Here's what you need to know:</p>
       <ul style="color: #374151; margin: 16px 0;">
@@ -78,7 +101,8 @@ const handler = async (req: Request): Promise<Response> => {
         ${event.venue_name ? `<li><strong>Venue:</strong> ${event.venue_name}</li>` : ""}
         ${event.venue_address ? `<li><strong>Address:</strong> ${event.venue_address}</li>` : ""}
       </ul>
-      <p>You can view your ticket and QR code in the <a href="https://univoid.in/my-tickets" style="color: #6366f1;">My Tickets</a> section of your account.</p>
+      ${qrCodeImageHtml}
+      <p>You can also view your ticket in the <a href="https://univoid.in/my-tickets" style="color: #6366f1;">My Tickets</a> section of your account.</p>
     `;
 
     const rejectedContent = `

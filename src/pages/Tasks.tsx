@@ -108,76 +108,75 @@ const Tasks = () => {
   );
 
   const TaskCard = ({ task, showBidButton = false }: { task: TaskRequest; showBidButton?: boolean }) => (
-    <Card className={`border-border ${task.is_urgent ? 'border-l-4 border-l-destructive' : ''}`}>
-      <CardContent className="p-4">
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <Badge variant="outline" className="text-xs">
-                {TASK_TYPE_LABELS[task.task_type]}
-              </Badge>
-              {task.is_urgent && (
-                <Badge variant="destructive" className="text-xs animate-pulse">
-                  <AlertTriangle className="w-3 h-3 mr-1" />
-                  Urgent
-                </Badge>
-              )}
-            </div>
-            
-            <h3 className="font-medium text-foreground mb-1">{task.title}</h3>
-            
-            <div className="text-sm text-muted-foreground space-y-1">
-              {task.subject && (
-                <p className="flex items-center gap-1">
-                  <FileText className="w-3 h-3" />
-                  {task.subject} {task.page_count && `• ${task.page_count} pages`}
-                </p>
-              )}
-              {task.deadline && (
-                <p className="flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  Due {formatDistanceToNow(new Date(task.deadline), { addSuffix: true })}
-                </p>
-              )}
-            </div>
-          </div>
+    <Card className={`border-border h-full flex flex-col ${task.is_urgent ? 'border-l-4 border-l-destructive' : ''}`}>
+      <CardContent className="p-4 flex flex-col flex-1">
+        <div className="flex items-center gap-2 mb-2 flex-wrap">
+          <Badge variant="outline" className="text-xs">
+            {TASK_TYPE_LABELS[task.task_type]}
+          </Badge>
+          {task.is_urgent && (
+            <Badge variant="destructive" className="text-xs animate-pulse">
+              <AlertTriangle className="w-3 h-3 mr-1" />
+              Urgent
+            </Badge>
+          )}
+        </div>
+        
+        <h3 className="font-medium text-foreground mb-2 line-clamp-2">{task.title}</h3>
+        
+        <div className="text-sm text-muted-foreground space-y-1 mb-3 flex-1">
+          {task.subject && (
+            <p className="flex items-center gap-1">
+              <FileText className="w-3 h-3 flex-shrink-0" />
+              <span className="truncate">{task.subject} {task.page_count && `• ${task.page_count} pg`}</span>
+            </p>
+          )}
+          {task.deadline && (
+            <p className="flex items-center gap-1">
+              <Clock className="w-3 h-3 flex-shrink-0" />
+              <span className="truncate">Due {formatDistanceToNow(new Date(task.deadline), { addSuffix: true })}</span>
+            </p>
+          )}
+        </div>
 
-          <div className="flex flex-col items-end gap-2">
-            {task.budget && (
-              <Badge variant="default" className="bg-green-500/20 text-green-600 border-green-500/30">
-                <IndianRupee className="w-3 h-3" />
-                {task.budget}
-                {task.is_negotiable && " (Nego)"}
-              </Badge>
-            )}
-            
-            {showBidButton && (
-              <Button 
-                size="sm" 
-                variant="outline" 
-                onClick={() => {
-                  if (!user) {
-                    setShowAuthModal(true);
-                    return;
-                  }
-                  setBidTask(task);
-                }}
-                className="gap-1"
-              >
-                <Hand className="w-3 h-3" />
-                I can do this
-              </Button>
-            )}
-
-            {!showBidButton && task.status && (
+        <div className="flex items-center justify-between gap-2 mt-auto pt-2 border-t border-border/50">
+          {task.budget ? (
+            <Badge variant="default" className="bg-green-500/20 text-green-600 border-green-500/30">
+              <IndianRupee className="w-3 h-3" />
+              {task.budget}
+              {task.is_negotiable && " (N)"}
+            </Badge>
+          ) : (
+            <span className="text-xs text-muted-foreground">No budget set</span>
+          )}
+          
+          {showBidButton ? (
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={(e) => {
+                e.preventDefault();
+                if (!user) {
+                  setShowAuthModal(true);
+                  return;
+                }
+                setBidTask(task);
+              }}
+              className="gap-1"
+            >
+              <Hand className="w-3 h-3" />
+              Bid
+            </Button>
+          ) : (
+            task.status && (
               <Badge variant={
                 task.status === 'completed' ? 'default' :
                 task.status === 'assigned' ? 'secondary' : 'outline'
-              }>
+              } className="text-xs">
                 {task.status}
               </Badge>
-            )}
-          </div>
+            )
+          )}
         </div>
       </CardContent>
     </Card>
@@ -233,8 +232,8 @@ const Tasks = () => {
 
               <TabsContent value="browse" className="mt-0">
                 {isLoading ? (
-                  <div className="space-y-4">
-                    {[...Array(5)].map((_, i) => (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {[...Array(6)].map((_, i) => (
                       <TaskSkeleton key={i} />
                     ))}
                   </div>
@@ -251,7 +250,7 @@ const Tasks = () => {
                     </CardContent>
                   </Card>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {openTasks.map((task) => (
                       <TaskCard key={task.id} task={task} showBidButton />
                     ))}
@@ -278,7 +277,7 @@ const Tasks = () => {
                         </CardContent>
                       </Card>
                     ) : (
-                      <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {myRequests.map((task) => (
                           <Link key={task.id} to={`/tasks/${task.id}`}>
                             <TaskCard task={task} />
@@ -302,7 +301,7 @@ const Tasks = () => {
                         </CardContent>
                       </Card>
                     ) : (
-                      <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {myAssigned.map((task) => (
                           <Link key={task.id} to={`/tasks/${task.id}`}>
                             <TaskCard task={task} />
