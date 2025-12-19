@@ -53,7 +53,7 @@ const MaterialCard = ({
   };
 
   return (
-    <Card className="group overflow-hidden h-full flex flex-col hover:shadow-univoid-hover transition-all duration-200 hover:-translate-y-1">
+    <Card className="group overflow-hidden h-full flex flex-col hover:shadow-soft-xl transition-all duration-300 hover:-translate-y-2 border-border-strong/10">
       <CardContent className="p-0 flex flex-col h-full">
         {/* Top Section - Grows to fill space */}
         <div 
@@ -66,29 +66,29 @@ const MaterialCard = ({
               fileType={getFileTypeDisplay(material.file_type)}
               title={material.title}
               thumbnailUrl={material.thumbnail_url || undefined}
-              className="w-20 h-24 flex-shrink-0 transition-transform group-hover:scale-[1.02]"
+              className="w-20 h-24 flex-shrink-0 transition-transform group-hover:scale-[1.02] rounded-2xl"
             />
             
             <div className="flex-1 min-w-0 flex flex-col">
               {/* Title - max 2 lines */}
-              <h3 className="font-bold text-foreground line-clamp-2 mb-2 transition-colors text-sm leading-tight">
+              <h3 className="font-bold text-foreground line-clamp-2 mb-2 transition-colors text-sm leading-tight font-display">
                 {material.title}
               </h3>
               
               {/* Tags - Fixed minimum height for consistency */}
               <div className="flex flex-wrap gap-1.5 mb-2 min-h-[40px] content-start">
                 {material.course && (
-                  <Badge variant="secondary" className="text-[10px] px-2 py-0.5 h-fit">
+                  <Badge variant="blue" className="text-[10px] px-2 py-0.5 h-fit">
                     {material.course}
                   </Badge>
                 )}
                 {material.subject && (
-                  <Badge variant="outline" className="text-[10px] px-2 py-0.5 h-fit">
+                  <Badge variant="purple" className="text-[10px] px-2 py-0.5 h-fit">
                     {material.subject}
                   </Badge>
                 )}
                 {material.language && (
-                  <Badge variant="outline" className="text-[10px] px-2 py-0.5 h-fit">
+                  <Badge variant="green" className="text-[10px] px-2 py-0.5 h-fit">
                     {material.language}
                   </Badge>
                 )}
@@ -97,12 +97,12 @@ const MaterialCard = ({
               {/* Uploader info */}
               <div className="flex items-center gap-3 text-[11px] text-muted-foreground mt-auto">
                 <span className="flex items-center gap-1">
-                  <User className="w-3 h-3" />
+                  <User className="w-3 h-3" strokeWidth={2.5} />
                   {material.contributor_name || 'Anonymous'}
                 </span>
                 {material.college && (
                   <span className="flex items-center gap-1 truncate">
-                    <Building className="w-3 h-3 flex-shrink-0" />
+                    <Building className="w-3 h-3 flex-shrink-0" strokeWidth={2.5} />
                     <span className="truncate">{material.college}</span>
                   </span>
                 )}
@@ -115,7 +115,7 @@ const MaterialCard = ({
             <div className="mt-3">
               <button
                 type="button"
-                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors font-medium"
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowDescription(!showDescription);
@@ -123,12 +123,12 @@ const MaterialCard = ({
               >
                 {showDescription ? (
                   <>
-                    <ChevronUp className="w-3 h-3" />
+                    <ChevronUp className="w-3 h-3" strokeWidth={2.5} />
                     Hide description
                   </>
                 ) : (
                   <>
-                    <ChevronDown className="w-3 h-3" />
+                    <ChevronDown className="w-3 h-3" strokeWidth={2.5} />
                     Show description
                   </>
                 )}
@@ -143,19 +143,19 @@ const MaterialCard = ({
         </div>
         
         {/* Footer Section - Always at bottom */}
-        <div className="px-6 pb-6 pt-4 mt-auto border-t-2 border-foreground/10">
+        <div className="px-6 pb-6 pt-4 mt-auto border-t border-border">
           {/* Engagement stats */}
-          <div className="flex items-center gap-4 text-[11px] text-muted-foreground mb-3">
+          <div className="flex items-center gap-4 text-[11px] text-muted-foreground mb-3 font-medium">
             <span className="flex items-center gap-1">
-              <Eye className="w-3 h-3" />
+              <Eye className="w-3.5 h-3.5" strokeWidth={2.5} />
               {formatNumber(material.views_count || 0)}
             </span>
             <span className="flex items-center gap-1">
-              <Download className="w-3 h-3" />
+              <Download className="w-3.5 h-3.5" strokeWidth={2.5} />
               {formatNumber(material.downloads_count || 0)}
             </span>
             <span className="flex items-center gap-1">
-              <Heart className={cn("w-3 h-3", material.user_has_liked && "fill-red-500 text-red-500")} />
+              <Heart className={cn("w-3.5 h-3.5", material.user_has_liked && "fill-red-500 text-red-500")} strokeWidth={2.5} />
               {formatNumber(material.likes_count || 0)}
             </span>
           </div>
@@ -166,8 +166,8 @@ const MaterialCard = ({
               variant="ghost"
               size="sm"
               className={cn(
-                "h-8 px-2 rounded-full",
-                material.user_has_liked && "text-red-500 hover:text-red-600"
+                "h-9 w-9 p-0 rounded-full",
+                material.user_has_liked && "text-red-500 hover:text-red-600 bg-red-50 dark:bg-red-900/20"
               )}
               onClick={(e) => {
                 e.stopPropagation();
@@ -175,19 +175,19 @@ const MaterialCard = ({
               }}
               disabled={isLiking}
             >
-              <Heart className={cn("w-4 h-4", material.user_has_liked && "fill-current")} />
+              <Heart className={cn("w-4 h-4", material.user_has_liked && "fill-current")} strokeWidth={2.5} />
             </Button>
             
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 px-2 rounded-full"
+              className="h-9 w-9 p-0 rounded-full"
               onClick={(e) => {
                 e.stopPropagation();
                 onShare(material);
               }}
             >
-              <Share2 className="w-4 h-4" />
+              <Share2 className="w-4 h-4" strokeWidth={2.5} />
             </Button>
             
             <div className="flex-1" />
@@ -202,25 +202,25 @@ const MaterialCard = ({
             <Button
               variant="outline"
               size="sm"
-              className="h-8 text-xs"
+              className="h-9 text-xs font-semibold"
               onClick={(e) => {
                 e.stopPropagation();
                 onPreview(material);
               }}
             >
-              <Eye className="w-3.5 h-3.5 mr-1" />
+              <Eye className="w-3.5 h-3.5 mr-1" strokeWidth={2.5} />
               Preview
             </Button>
             
             <Button
               size="sm"
-              className="h-8 text-xs"
+              className="h-9 text-xs font-semibold"
               onClick={(e) => {
                 e.stopPropagation();
                 onDownload(material);
               }}
             >
-              <Download className="w-3.5 h-3.5 mr-1" />
+              <Download className="w-3.5 h-3.5 mr-1" strokeWidth={2.5} />
               Download
             </Button>
           </div>

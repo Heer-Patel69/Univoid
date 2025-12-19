@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { Heart } from "lucide-react";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -22,16 +23,16 @@ const Footer = () => {
   };
 
   return (
-    <footer className="border-t-2 border-foreground bg-card">
+    <footer className="border-t border-border bg-card/50">
       <div className="container-wide py-12">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
-            <Link to="/" className="flex items-center gap-2.5 mb-4">
-              <div className="w-8 h-8 bg-foreground rounded-xl flex items-center justify-center">
-                <span className="text-background font-bold text-sm">U</span>
+            <Link to="/" className="flex items-center gap-2.5 mb-4 group">
+              <div className="w-10 h-10 bg-foreground rounded-2xl flex items-center justify-center transition-all group-hover:scale-105 group-hover:rotate-3 shadow-soft">
+                <span className="text-background font-extrabold text-lg font-display">U</span>
               </div>
-              <span className="font-bold text-lg text-foreground">UniVoid</span>
+              <span className="font-extrabold text-lg text-foreground font-display">UniVoid</span>
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed">
               A trusted student platform for learning, sharing, and growing together.
@@ -40,13 +41,13 @@ const Footer = () => {
 
           {/* Platform Links */}
           <div>
-            <h4 className="font-bold text-foreground text-sm mb-4">Platform</h4>
+            <h4 className="font-bold text-foreground text-sm mb-4 font-display">Platform</h4>
             <ul className="space-y-2.5">
               {footerLinks.platform.map((link) => (
                 <li key={link.href}>
                   <Link 
                     to={link.href} 
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium"
                   >
                     {link.label}
                   </Link>
@@ -57,13 +58,13 @@ const Footer = () => {
 
           {/* Community Links */}
           <div>
-            <h4 className="font-bold text-foreground text-sm mb-4">Community</h4>
+            <h4 className="font-bold text-foreground text-sm mb-4 font-display">Community</h4>
             <ul className="space-y-2.5">
               {footerLinks.community.map((link) => (
                 <li key={link.href}>
                   <Link 
                     to={link.href} 
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium"
                   >
                     {link.label}
                   </Link>
@@ -74,13 +75,13 @@ const Footer = () => {
 
           {/* Legal Links */}
           <div>
-            <h4 className="font-bold text-foreground text-sm mb-4">Legal</h4>
+            <h4 className="font-bold text-foreground text-sm mb-4 font-display">Legal</h4>
             <ul className="space-y-2.5">
               {footerLinks.legal.map((link) => (
                 <li key={link.href}>
                   <Link 
                     to={link.href} 
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium"
                   >
                     {link.label}
                   </Link>
@@ -91,7 +92,7 @@ const Footer = () => {
 
           {/* Trust */}
           <div>
-            <h4 className="font-bold text-foreground text-sm mb-4">Trust & Quality</h4>
+            <h4 className="font-bold text-foreground text-sm mb-4 font-display">Trust & Quality</h4>
             <p className="text-sm text-muted-foreground leading-relaxed">
               All content is reviewed by our admin team to ensure quality and reliability.
             </p>
@@ -99,9 +100,9 @@ const Footer = () => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-10 pt-6 border-t-2 border-foreground/10">
-          <p className="text-sm text-muted-foreground text-center">
-            © {currentYear} UniVoid. Built for students, by students.
+        <div className="mt-10 pt-6 border-t border-border">
+          <p className="text-sm text-muted-foreground text-center flex items-center justify-center gap-1 font-medium">
+            © {currentYear} UniVoid. Built with <Heart className="w-4 h-4 text-red-500 fill-red-500 inline" /> for students, by students.
           </p>
         </div>
       </div>
