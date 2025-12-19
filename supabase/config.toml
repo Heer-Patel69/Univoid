@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.fetch-auto-news]
 verify_jwt = false
+
+[functions.phone-verification]
+verify_jwt = true
