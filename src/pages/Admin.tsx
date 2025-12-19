@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { 
-  Check, X, FileText, Newspaper, PenLine, BookOpen, Loader2, 
+  Check, X, FileText, Newspaper, BookOpen, Loader2, 
   Flag, Trash2, Eye, Users, Shield, AlertTriangle, Ban, KeyRound,
   Mail, MessageSquare, Sparkles
 } from "lucide-react";
@@ -20,7 +20,6 @@ import {
   getAllUsers,
   getContentCounts,
   adminDeleteMaterial,
-  adminDeleteBlog,
   adminDeleteNews,
   adminDeleteBook,
   adminDeleteUser,
@@ -82,7 +81,6 @@ const Admin = () => {
   
   // Content state
   const [allMaterials, setAllMaterials] = useState<ContentItem[]>([]);
-  const [allBlogs, setAllBlogs] = useState<ContentItem[]>([]);
   const [allNews, setAllNews] = useState<ContentItem[]>([]);
   const [allBooks, setAllBooks] = useState<ContentItem[]>([]);
   const [allUsers, setAllUsers] = useState<UserItem[]>([]);
@@ -91,8 +89,8 @@ const Admin = () => {
   const [organizerApps, setOrganizerApps] = useState<any[]>([]);
   
   // Counts
-  const [counts, setCounts] = useState({ materials: 0, blogs: 0, news: 0, books: 0, users: 0 });
-  const [pendingCounts, setPendingCounts] = useState({ materials: 0, blogs: 0, news: 0, books: 0 });
+  const [counts, setCounts] = useState({ materials: 0, news: 0, books: 0, users: 0 });
+  const [pendingCounts, setPendingCounts] = useState({ materials: 0, news: 0, books: 0 });
   const [reportCount, setReportCount] = useState(0);
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
   const [organizerAppsCount, setOrganizerAppsCount] = useState(0);
@@ -106,7 +104,6 @@ const Admin = () => {
     try {
       const [
         materialsData,
-        blogsData,
         newsData,
         booksData,
         usersData,
@@ -118,7 +115,6 @@ const Admin = () => {
         organizerAppsData,
       ] = await Promise.all([
         getAllContent('materials'),
-        getAllContent('blogs'),
         getAllContent('news'),
         getAllContent('books'),
         getAllUsers(),
@@ -131,7 +127,6 @@ const Admin = () => {
       ]);
       
       setAllMaterials(materialsData as ContentItem[]);
-      setAllBlogs(blogsData as ContentItem[]);
       setAllNews(newsData as ContentItem[]);
       setAllBooks(booksData as ContentItem[]);
       setAllUsers(usersData as UserItem[]);
@@ -160,13 +155,6 @@ const Admin = () => {
         supabase.channel('admin-materials')
           .on('postgres_changes', { event: '*', schema: 'public', table: 'materials' }, () => {
             getAllContent('materials').then(data => setAllMaterials(data as ContentItem[]));
-            getContentCounts().then(setCounts);
-          })
-          .subscribe(),
-        
-        supabase.channel('admin-blogs')
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'blogs' }, () => {
-            getAllContent('blogs').then(data => setAllBlogs(data as ContentItem[]));
             getContentCounts().then(setCounts);
           })
           .subscribe(),
@@ -235,9 +223,6 @@ const Admin = () => {
       case 'materials':
         ({ error } = await adminDeleteMaterial(id));
         break;
-      case 'blogs':
-        ({ error } = await adminDeleteBlog(id));
-        break;
       case 'news':
         ({ error } = await adminDeleteNews(id));
         break;
@@ -260,7 +245,7 @@ const Admin = () => {
     toast.success(`${type.slice(0, -1).charAt(0).toUpperCase() + type.slice(1, -1)} deleted successfully`);
   };
 
-  const handleApprove = async (type: 'materials' | 'news' | 'blogs' | 'books', item: ContentItem) => {
+  const handleApprove = async (type: 'materials' | 'news' | 'books', item: ContentItem) => {
     setProcessingId(item.id);
     const { error } = await updateContentStatus(type, item.id, 'approved', item.created_by);
     setProcessingId(null);
@@ -274,7 +259,7 @@ const Admin = () => {
     setPendingCounts(prev => ({ ...prev, [type]: prev[type as keyof typeof prev] - 1 }));
   };
 
-  const handleReject = async (type: 'materials' | 'news' | 'blogs' | 'books', item: ContentItem) => {
+  const handleReject = async (type: 'materials' | 'news' | 'books', item: ContentItem) => {
     setProcessingId(item.id);
     const { error } = await updateContentStatus(type, item.id, 'rejected', item.created_by);
     setProcessingId(null);
@@ -346,7 +331,7 @@ const Admin = () => {
     }
   };
 
-  const renderContentTable = (items: ContentItem[], type: 'materials' | 'blogs' | 'news' | 'books') => {
+  const renderContentTable = (items: ContentItem[], type: 'materials' | 'news' | 'books') => {
     if (items.length === 0) {
       return <p className="text-muted-foreground text-center py-8">No {type} found</p>;
     }
@@ -761,7 +746,7 @@ const Admin = () => {
     );
   };
 
-  const totalPending = pendingCounts.materials + pendingCounts.blogs + pendingCounts.news + pendingCounts.books;
+  const totalPending = pendingCounts.materials + pendingCounts.news + pendingCounts.books;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -792,15 +777,6 @@ const Admin = () => {
                 <div>
                   <p className="text-2xl font-bold text-foreground">{counts.materials}</p>
                   <p className="text-xs text-muted-foreground">Materials</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 flex items-center gap-3">
-                <PenLine className="w-8 h-8 text-primary" />
-                <div>
-                  <p className="text-2xl font-bold text-foreground">{counts.blogs}</p>
-                  <p className="text-xs text-muted-foreground">Blogs</p>
                 </div>
               </CardContent>
             </Card>
@@ -862,9 +838,6 @@ const Admin = () => {
                   <TabsTrigger value="materials" className="text-xs sm:text-sm">
                     Materials
                   </TabsTrigger>
-                  <TabsTrigger value="blogs" className="text-xs sm:text-sm">
-                    Blogs
-                  </TabsTrigger>
                   <TabsTrigger value="news" className="text-xs sm:text-sm">
                     News
                   </TabsTrigger>
@@ -890,10 +863,6 @@ const Admin = () => {
               <CardContent className="pt-6">
                 <TabsContent value="materials" className="mt-0">
                   {renderContentTable(allMaterials, 'materials')}
-                </TabsContent>
-
-                <TabsContent value="blogs" className="mt-0">
-                  {renderContentTable(allBlogs, 'blogs')}
                 </TabsContent>
 
                 <TabsContent value="news" className="mt-0">
