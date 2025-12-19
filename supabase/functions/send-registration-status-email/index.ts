@@ -94,15 +94,15 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const approvedContent = `
-      <p>Great news! Your ticket is now confirmed. Here's what you need to know:</p>
-      <ul style="color: #374151; margin: 16px 0;">
-        <li><strong>Event:</strong> ${event.title}</li>
-        <li><strong>Date:</strong> ${eventDate}</li>
-        ${event.venue_name ? `<li><strong>Venue:</strong> ${event.venue_name}</li>` : ""}
-        ${event.venue_address ? `<li><strong>Address:</strong> ${event.venue_address}</li>` : ""}
-      </ul>
+      <p>Great news! Your registration has been approved. Here's your entry pass:</p>
       ${qrCodeImageHtml}
-      <p>You can also view your ticket in the <a href="https://univoid.lovable.app/my-tickets" style="color: #6366f1;">My Tickets</a> section of your account.</p>
+      <div style="background: #f3f4f6; padding: 16px; border-radius: 8px; margin: 20px 0;">
+        <p style="margin: 0 0 8px 0; color: #374151;"><strong>📅 Event:</strong> ${event.title}</p>
+        <p style="margin: 0 0 8px 0; color: #374151;"><strong>🗓️ Date:</strong> ${eventDate}</p>
+        ${event.venue_name ? `<p style="margin: 0 0 8px 0; color: #374151;"><strong>📍 Venue:</strong> ${event.venue_name}</p>` : ""}
+        ${event.venue_address ? `<p style="margin: 0; color: #374151;"><strong>🏠 Address:</strong> ${event.venue_address}</p>` : ""}
+      </div>
+      <p style="color: #dc2626; font-weight: 600; text-align: center;">⚠️ Do NOT share this QR code with anyone!</p>
     `;
 
     const rejectedContent = `
