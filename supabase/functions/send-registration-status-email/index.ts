@@ -3,8 +3,6 @@ import { Resend } from "https://esm.sh/resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import QRCode from "https://esm.sh/qrcode@1.5.3";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -26,6 +24,15 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // CRITICAL: Check API key at runtime
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    if (!resendApiKey) {
+      console.error("CRITICAL: RESEND_API_KEY is missing at runtime!");
+      throw new Error("RESEND_API_KEY not configured");
+    }
+    const resend = new Resend(resendApiKey);
+    console.log("Resend API key verified ✓");
+
     const { registrationId, status, eventId, userId, qrCode }: StatusEmailRequest = await req.json();
     console.log("Processing status email:", { registrationId, status, eventId, userId, hasQR: !!qrCode });
 
@@ -72,24 +79,29 @@ const handler = async (req: Request): Promise<Response> => {
       minute: "2-digit",
     });
 
-    // Generate QR code image if qrCode is provided
+    // Generate QR code image if qrCode is provided - FORCE SMALL SIZE
     let qrCodeImageHtml = "";
     if (qrCode && isApproved) {
       try {
+        console.log("Generating QR code for payload:", qrCode.substring(0, 50) + "...");
         const qrDataUrl = await QRCode.toDataURL(qrCode, {
-          width: 200,
-          margin: 2,
+          width: 240,  // Fixed size for email safety
+          margin: 1,   // Minimal margin to reduce size
           color: { dark: '#000000', light: '#ffffff' }
         });
+        console.log("QR code generated successfully, base64 length:", qrDataUrl.length);
+        
         qrCodeImageHtml = `
           <div style="text-align: center; margin: 24px 0; padding: 20px; background: #f9fafb; border-radius: 12px;">
             <p style="color: #374151; font-weight: 600; margin-bottom: 16px;">🎫 Your Entry QR Code</p>
-            <img src="${qrDataUrl}" alt="Event Entry QR Code" style="width: 200px; height: 200px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" />
+            <img src="${qrDataUrl}" alt="Event Entry QR Code" style="width: 240px; height: 240px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" />
             <p style="color: #6b7280; font-size: 12px; margin-top: 12px;">Show this QR code at the entry gate</p>
           </div>
         `;
       } catch (qrError) {
         console.error("QR generation error:", qrError);
+        // Don't fail the email, just skip QR
+        qrCodeImageHtml = `<p style="color: #ef4444; text-align: center;">QR code could not be generated. Please contact support.</p>`;
       }
     }
 
@@ -137,24 +149,46 @@ const handler = async (req: Request): Promise<Response> => {
     `;
 
     console.log("Sending status email to:", profile.email);
+    console.log("Email HTML length:", emailHtml.length);
 
-    const emailResponse = await resend.emails.send({
+    // CRITICAL: Send email and CHECK for actual errors
+    const { data, error: emailError } = await resend.emails.send({
       from: "Univoid <onboarding@resend.dev>",
       to: [profile.email],
       subject: `${statusEmoji} Registration ${statusText}: ${event.title}`,
       html: emailHtml,
     });
 
-    console.log("Email sent successfully:", emailResponse);
+    // FORCE ERROR CHECK - No silent failures!
+    if (emailError) {
+      console.error("RESEND EMAIL FAILED:", JSON.stringify(emailError, null, 2));
+      throw new Error(`Email delivery failed: ${emailError.message || JSON.stringify(emailError)}`);
+    }
 
-    return new Response(JSON.stringify({ success: true, emailResponse }), {
+    if (!data || !data.id) {
+      console.error("RESEND NO DATA RETURNED:", data);
+      throw new Error("Email sent but no confirmation received");
+    }
+
+    console.log("✅ EMAIL SENT SUCCESSFULLY:", { emailId: data.id, to: profile.email });
+
+    return new Response(JSON.stringify({ 
+      success: true, 
+      emailId: data.id,
+      recipient: profile.email 
+    }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (error: any) {
-    console.error("Error in send-registration-status-email:", error);
+    console.error("❌ ERROR in send-registration-status-email:", error.message);
+    console.error("Full error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        success: false,
+        error: error.message,
+        details: "Email could not be sent. Please check Resend dashboard for details."
+      }),
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
