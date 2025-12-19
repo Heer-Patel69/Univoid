@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import AuthModal from "@/components/auth/AuthModal";
+import QRScanner from "@/components/events/QRScanner";
 import { 
   Plus, Calendar, Users, CheckCircle, XCircle, Eye, 
   ScanLine, Pencil, TicketCheck, Clock, TrendingUp 
@@ -382,27 +383,76 @@ const OrganizerDashboard = () => {
       </main>
 
       {/* QR Scanner Dialog */}
-      <Dialog open={scannerOpen} onOpenChange={setScannerOpen}>
-        <DialogContent>
+      <Dialog open={scannerOpen} onOpenChange={(open) => {
+        setScannerOpen(open);
+        if (!open) setQrInput("");
+      }}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Check-in Scanner</DialogTitle>
-            <DialogDescription>Enter or scan the ticket QR code</DialogDescription>
+            <DialogTitle className="flex items-center gap-2">
+              <ScanLine className="w-5 h-5" />
+              Check-in Scanner
+            </DialogTitle>
+            <DialogDescription>
+              Scan attendee QR codes to check them in
+            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={qrInput}
-                onChange={(e) => setQrInput(e.target.value)}
-                placeholder="Enter QR code..."
-                className="flex-1 px-3 py-2 border rounded-lg bg-background"
-              />
-              <Button onClick={() => checkInMutation.mutate(qrInput)} disabled={!qrInput || checkInMutation.isPending}>
-                {checkInMutation.isPending ? "..." : "Check In"}
-              </Button>
+          
+          <Tabs defaultValue="camera" className="mt-2">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="camera">Camera Scan</TabsTrigger>
+              <TabsTrigger value="manual">Manual Entry</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="camera" className="mt-4">
+              {selectedEvent && (
+                <QRScanner
+                  eventId={selectedEvent}
+                  onScan={async (qrCode) => {
+                    await checkInMutation.mutateAsync(qrCode);
+                  }}
+                />
+              )}
+            </TabsContent>
+            
+            <TabsContent value="manual" className="mt-4">
+              <div className="space-y-4">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={qrInput}
+                    onChange={(e) => setQrInput(e.target.value)}
+                    placeholder="Enter or paste QR code..."
+                    className="flex-1 px-3 py-2 border rounded-lg bg-background text-sm"
+                  />
+                  <Button 
+                    onClick={() => checkInMutation.mutate(qrInput)} 
+                    disabled={!qrInput || checkInMutation.isPending}
+                  >
+                    {checkInMutation.isPending ? "..." : "Check In"}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground text-center">
+                  Paste the QR code text from the attendee's ticket
+                </p>
+              </div>
+            </TabsContent>
+          </Tabs>
+
+          {/* Check-in Stats */}
+          {checkInStats && (
+            <div className="flex items-center justify-center gap-4 pt-4 border-t mt-4">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-green-600">{checkInStats.checkedIn}</p>
+                <p className="text-xs text-muted-foreground">Checked In</p>
+              </div>
+              <div className="h-8 w-px bg-border" />
+              <div className="text-center">
+                <p className="text-2xl font-bold">{checkInStats.total}</p>
+                <p className="text-xs text-muted-foreground">Total Tickets</p>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground text-center">Paste the QR code text or scan with your device</p>
-          </div>
+          )}
         </DialogContent>
       </Dialog>
 
