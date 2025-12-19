@@ -1,0 +1,384 @@
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
+import { BottomNav } from "@/components/layout/BottomNav";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { fetchEventById } from "@/services/eventsService";
+import AuthModal from "@/components/auth/AuthModal";
+import { ArrowLeft, Save, Image, Loader2 } from "lucide-react";
+
+const CATEGORIES = ["Tech", "Cultural", "Sports", "Academic", "Workshop", "Seminar"];
+const EVENT_TYPES = ["Hackathon", "Party", "Conference", "Workshop", "Competition", "Meetup", "Festival"];
+const STATUSES = ["draft", "published", "cancelled", "completed"];
+
+const EditEvent = () => {
+  const { eventId } = useParams<{ eventId: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    title: "",
+    category: "",
+    event_type: "",
+    status: "draft",
+    is_location_decided: false,
+    venue_name: "",
+    venue_address: "",
+    maps_link: "",
+    start_date: "",
+    end_date: "",
+    description: "",
+    terms_conditions: "",
+    is_paid: false,
+    price: 0,
+    max_capacity: "",
+    upi_vpa: "",
+  });
+
+  const [flyerFile, setFlyerFile] = useState<File | null>(null);
+  const [qrFile, setQrFile] = useState<File | null>(null);
+
+  const { data: event, isLoading } = useQuery({
+    queryKey: ["event", eventId],
+    queryFn: () => fetchEventById(eventId!),
+    enabled: !!eventId,
+  });
+
+  useEffect(() => {
+    if (event) {
+      setFormData({
+        title: event.title || "",
+        category: event.category || "",
+        event_type: event.event_type || "",
+        status: event.status || "draft",
+        is_location_decided: event.is_location_decided || false,
+        venue_name: event.venue_name || "",
+        venue_address: event.venue_address || "",
+        maps_link: event.maps_link || "",
+        start_date: event.start_date ? new Date(event.start_date).toISOString().slice(0, 16) : "",
+        end_date: event.end_date ? new Date(event.end_date).toISOString().slice(0, 16) : "",
+        description: event.description || "",
+        terms_conditions: event.terms_conditions || "",
+        is_paid: event.is_paid || false,
+        price: event.price || 0,
+        max_capacity: event.max_capacity?.toString() || "",
+        upi_vpa: event.upi_vpa || "",
+      });
+    }
+  }, [event]);
+
+  const updateForm = (field: string, value: unknown) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const updateEventMutation = useMutation({
+    mutationFn: async () => {
+      if (!user || !event) throw new Error("Not authorized");
+
+      let flyerUrl = event.flyer_url;
+      let upiQrUrl = event.upi_qr_url;
+
+      // Upload new flyer if provided
+      if (flyerFile) {
+        const ext = flyerFile.name.split(".").pop();
+        const path = `${user.id}/flyers/${Date.now()}.${ext}`;
+        const { error } = await supabase.storage.from("event-assets").upload(path, flyerFile);
+        if (error) throw error;
+        const { data: { publicUrl } } = supabase.storage.from("event-assets").getPublicUrl(path);
+        flyerUrl = publicUrl;
+      }
+
+      // Upload new UPI QR if provided
+      if (qrFile && formData.is_paid) {
+        const ext = qrFile.name.split(".").pop();
+        const path = `${user.id}/upi-qr/${Date.now()}.${ext}`;
+        const { error } = await supabase.storage.from("event-assets").upload(path, qrFile);
+        if (error) throw error;
+        const { data: { publicUrl } } = supabase.storage.from("event-assets").getPublicUrl(path);
+        upiQrUrl = publicUrl;
+      }
+
+      const { error } = await supabase
+        .from("events")
+        .update({
+          title: formData.title,
+          category: formData.category,
+          event_type: formData.event_type,
+          status: formData.status as 'draft' | 'published' | 'cancelled' | 'completed',
+          flyer_url: flyerUrl,
+          is_location_decided: formData.is_location_decided,
+          venue_name: formData.is_location_decided ? formData.venue_name : null,
+          venue_address: formData.is_location_decided ? formData.venue_address : null,
+          maps_link: formData.is_location_decided ? formData.maps_link : null,
+          start_date: formData.start_date,
+          end_date: formData.end_date || null,
+          description: formData.description || null,
+          terms_conditions: formData.terms_conditions || null,
+          is_paid: formData.is_paid,
+          price: formData.is_paid ? formData.price : 0,
+          max_capacity: formData.max_capacity ? parseInt(formData.max_capacity) : null,
+          upi_qr_url: formData.is_paid ? upiQrUrl : null,
+          upi_vpa: formData.is_paid ? formData.upi_vpa : null,
+        })
+        .eq("id", eventId!);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Event Updated!", description: "Your changes have been saved." });
+      queryClient.invalidateQueries({ queryKey: ["event", eventId] });
+      queryClient.invalidateQueries({ queryKey: ["organizer-events"] });
+      navigate("/organizer/dashboard");
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header onAuthClick={() => setShowAuthModal(true)} />
+        <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+        <main className="flex-1 container mx-auto px-4 py-20 text-center">
+          <h1 className="text-2xl font-bold mb-4">Login Required</h1>
+          <Button onClick={() => setShowAuthModal(true)}>Login</Button>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header onAuthClick={() => setShowAuthModal(true)} />
+        <main className="flex-1 container mx-auto px-4 py-20 text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto" />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!event || event.organizer_id !== user.id) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header onAuthClick={() => setShowAuthModal(true)} />
+        <main className="flex-1 container mx-auto px-4 py-20 text-center">
+          <h1 className="text-2xl font-bold mb-4">Not Authorized</h1>
+          <p className="text-muted-foreground mb-6">You can only edit your own events.</p>
+          <Button onClick={() => navigate("/organizer/dashboard")}>Back to Dashboard</Button>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col bg-background">
+      <Header onAuthClick={() => setShowAuthModal(true)} />
+      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+
+      <main className="flex-1 container mx-auto px-4 py-6 pb-24 md:pb-8 max-w-3xl">
+        <Button variant="ghost" className="mb-6 gap-2" onClick={() => navigate("/organizer/dashboard")}>
+          <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+        </Button>
+
+        <h1 className="font-display text-3xl font-bold mb-8">Edit Event</h1>
+
+        <div className="space-y-6">
+          {/* Basic Info */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Basic Information</CardTitle>
+              <CardDescription>Update event details</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Event Name *</Label>
+                <Input value={formData.title} onChange={(e) => updateForm("title", e.target.value)} />
+              </div>
+              
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Category *</Label>
+                  <Select value={formData.category} onValueChange={(v) => updateForm("category", v)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {CATEGORIES.map(c => <SelectItem key={c} value={c.toLowerCase()}>{c}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Event Type *</Label>
+                  <Select value={formData.event_type} onValueChange={(v) => updateForm("event_type", v)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {EVENT_TYPES.map(t => <SelectItem key={t} value={t.toLowerCase()}>{t}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select value={formData.status} onValueChange={(v) => updateForm("status", v)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {STATUSES.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Event Flyer</Label>
+                {event.flyer_url && (
+                  <img src={event.flyer_url} alt="Current flyer" className="w-32 h-20 object-cover rounded-lg mb-2" />
+                )}
+                <div className="border-2 border-dashed rounded-xl p-4 text-center">
+                  <Input type="file" accept="image/*" onChange={(e) => setFlyerFile(e.target.files?.[0] || null)} className="hidden" id="flyer" />
+                  <label htmlFor="flyer" className="cursor-pointer flex flex-col items-center gap-2">
+                    <Image className="w-8 h-8 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">{flyerFile ? flyerFile.name : "Upload new flyer"}</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Start Date & Time *</Label>
+                  <Input type="datetime-local" value={formData.start_date} onChange={(e) => updateForm("start_date", e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>End Date & Time</Label>
+                  <Input type="datetime-local" value={formData.end_date} onChange={(e) => updateForm("end_date", e.target.value)} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Location */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Location</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-muted rounded-xl">
+                <Label>Is location decided?</Label>
+                <Switch checked={formData.is_location_decided} onCheckedChange={(c) => updateForm("is_location_decided", c)} />
+              </div>
+
+              {formData.is_location_decided && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Venue Name</Label>
+                    <Input value={formData.venue_name} onChange={(e) => updateForm("venue_name", e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Address</Label>
+                    <Input value={formData.venue_address} onChange={(e) => updateForm("venue_address", e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Google Maps Link</Label>
+                    <Input value={formData.maps_link} onChange={(e) => updateForm("maps_link", e.target.value)} />
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Description */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Description</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Description</Label>
+                <Textarea value={formData.description} onChange={(e) => updateForm("description", e.target.value)} rows={6} />
+              </div>
+              <div className="space-y-2">
+                <Label>Terms & Conditions</Label>
+                <Textarea value={formData.terms_conditions} onChange={(e) => updateForm("terms_conditions", e.target.value)} rows={4} />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Ticketing */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Ticketing & Payment</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-muted rounded-xl">
+                <div>
+                  <Label className="text-base">Paid Event</Label>
+                  <p className="text-sm text-muted-foreground">Toggle on if this is a paid event</p>
+                </div>
+                <Switch checked={formData.is_paid} onCheckedChange={(c) => updateForm("is_paid", c)} />
+              </div>
+
+              {formData.is_paid && (
+                <>
+                  <div className="space-y-2">
+                    <Label>Ticket Price (₹) *</Label>
+                    <Input type="number" value={formData.price} onChange={(e) => updateForm("price", parseFloat(e.target.value) || 0)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>UPI VPA ID</Label>
+                    <Input value={formData.upi_vpa} onChange={(e) => updateForm("upi_vpa", e.target.value)} placeholder="yourname@upi" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>UPI QR Code</Label>
+                    {event.upi_qr_url && (
+                      <img src={event.upi_qr_url} alt="Current QR" className="w-24 h-24 object-contain rounded-lg mb-2" />
+                    )}
+                    <div className="border-2 border-dashed rounded-xl p-4 text-center">
+                      <Input type="file" accept="image/*" onChange={(e) => setQrFile(e.target.files?.[0] || null)} className="hidden" id="qr" />
+                      <label htmlFor="qr" className="cursor-pointer flex flex-col items-center gap-2">
+                        <Image className="w-8 h-8 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">{qrFile ? qrFile.name : "Upload new QR"}</span>
+                      </label>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <div className="space-y-2">
+                <Label>Max Capacity (optional)</Label>
+                <Input type="number" value={formData.max_capacity} onChange={(e) => updateForm("max_capacity", e.target.value)} />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Save Button */}
+          <div className="flex justify-end gap-4">
+            <Button variant="outline" onClick={() => navigate("/organizer/dashboard")}>Cancel</Button>
+            <Button onClick={() => updateEventMutation.mutate()} disabled={updateEventMutation.isPending}>
+              {updateEventMutation.isPending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</> : <><Save className="w-4 h-4 mr-2" /> Save Changes</>}
+            </Button>
+          </div>
+        </div>
+      </main>
+
+      <Footer />
+      <BottomNav />
+    </div>
+  );
+};
+
+export default EditEvent;
