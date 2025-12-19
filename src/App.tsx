@@ -36,6 +36,7 @@ import ProjectDetail from "./pages/ProjectDetail";
 import Tasks from "./pages/Tasks";
 import TaskDetail from "./pages/TaskDetail";
 import CreateTask from "./pages/CreateTask";
+import EventCheckIn from "./pages/EventCheckIn";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -86,6 +87,7 @@ const App = () => (
             <Route path="/organizer/dashboard" element={<ProtectedRoute><OrganizerDashboard /></ProtectedRoute>} />
             <Route path="/organizer/create-event" element={<ProtectedRoute><CreateEvent /></ProtectedRoute>} />
             <Route path="/organizer/edit-event/:eventId" element={<ProtectedRoute><EditEvent /></ProtectedRoute>} />
+            <Route path="/organizer/check-in/:eventId" element={<ProtectedRoute><EventCheckIn /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/profile/edit" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
             <Route path="/profile/:userId" element={<Profile />} />

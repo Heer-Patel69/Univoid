@@ -316,9 +316,11 @@ const OrganizerDashboard = () => {
                         <Link to={`/organizer/edit-event/${selectedEventData.id}`}>
                           <Button variant="outline" size="sm"><Pencil className="w-4 h-4 mr-1" /> Edit</Button>
                         </Link>
-                        <Button size="sm" onClick={() => setScannerOpen(true)} className="gap-1">
-                          <ScanLine className="w-4 h-4" /> Scan QR
-                        </Button>
+                        <Link to={`/organizer/check-in/${selectedEventData.id}`}>
+                          <Button size="sm" className="gap-1">
+                            <ScanLine className="w-4 h-4" /> Check-in
+                          </Button>
+                        </Link>
                       </div>
                     </div>
                   </CardHeader>
