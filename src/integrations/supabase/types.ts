@@ -152,6 +152,223 @@ export type Database = {
         }
         Relationships: []
       }
+      event_materials: {
+        Row: {
+          created_at: string
+          downloads_count: number
+          event_id: string
+          file_type: string
+          file_url: string
+          id: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          downloads_count?: number
+          event_id: string
+          file_type: string
+          file_url: string
+          id?: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          downloads_count?: number
+          event_id?: string
+          file_type?: string
+          file_url?: string
+          id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_materials_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_registrations: {
+        Row: {
+          created_at: string
+          custom_data: Json | null
+          event_id: string
+          id: string
+          payment_screenshot_url: string | null
+          payment_status: Database["public"]["Enums"]["ticket_status"]
+          reviewed_at: string | null
+          team_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          custom_data?: Json | null
+          event_id: string
+          id?: string
+          payment_screenshot_url?: string | null
+          payment_status?: Database["public"]["Enums"]["ticket_status"]
+          reviewed_at?: string | null
+          team_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          custom_data?: Json | null
+          event_id?: string
+          id?: string
+          payment_screenshot_url?: string | null
+          payment_status?: Database["public"]["Enums"]["ticket_status"]
+          reviewed_at?: string | null
+          team_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_registrations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_tickets: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          is_used: boolean
+          qr_code: string
+          registration_id: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          is_used?: boolean
+          qr_code: string
+          registration_id: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          is_used?: boolean
+          qr_code?: string
+          registration_id?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_tickets_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_tickets_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: true
+            referencedRelation: "event_registrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          category: string
+          created_at: string
+          custom_fields: Json | null
+          description: string | null
+          end_date: string | null
+          event_type: string
+          flyer_url: string | null
+          id: string
+          is_location_decided: boolean
+          is_paid: boolean
+          maps_link: string | null
+          max_capacity: number | null
+          organizer_id: string
+          price: number | null
+          registrations_count: number
+          start_date: string
+          status: Database["public"]["Enums"]["event_status"]
+          terms_conditions: string | null
+          title: string
+          updated_at: string
+          upi_qr_url: string | null
+          upi_vpa: string | null
+          venue_address: string | null
+          venue_name: string | null
+          views_count: number
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          custom_fields?: Json | null
+          description?: string | null
+          end_date?: string | null
+          event_type: string
+          flyer_url?: string | null
+          id?: string
+          is_location_decided?: boolean
+          is_paid?: boolean
+          maps_link?: string | null
+          max_capacity?: number | null
+          organizer_id: string
+          price?: number | null
+          registrations_count?: number
+          start_date: string
+          status?: Database["public"]["Enums"]["event_status"]
+          terms_conditions?: string | null
+          title: string
+          updated_at?: string
+          upi_qr_url?: string | null
+          upi_vpa?: string | null
+          venue_address?: string | null
+          venue_name?: string | null
+          views_count?: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          custom_fields?: Json | null
+          description?: string | null
+          end_date?: string | null
+          event_type?: string
+          flyer_url?: string | null
+          id?: string
+          is_location_decided?: boolean
+          is_paid?: boolean
+          maps_link?: string | null
+          max_capacity?: number | null
+          organizer_id?: string
+          price?: number | null
+          registrations_count?: number
+          start_date?: string
+          status?: Database["public"]["Enums"]["event_status"]
+          terms_conditions?: string | null
+          title?: string
+          updated_at?: string
+          upi_qr_url?: string | null
+          upi_vpa?: string | null
+          venue_address?: string | null
+          venue_name?: string | null
+          views_count?: number
+        }
+        Relationships: []
+      }
       material_likes: {
         Row: {
           created_at: string
@@ -286,6 +503,42 @@ export type Database = {
           status?: Database["public"]["Enums"]["content_status"]
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      organizer_applications: {
+        Row: {
+          created_at: string
+          id: string
+          proof_url: string
+          reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["organizer_application_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          proof_url: string
+          reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["organizer_application_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          proof_url?: string
+          reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["organizer_application_status"]
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -621,6 +874,9 @@ export type Database = {
     Enums: {
       app_role: "admin" | "student" | "organizer"
       content_status: "pending" | "approved" | "rejected"
+      event_status: "draft" | "published" | "cancelled" | "completed"
+      organizer_application_status: "pending" | "approved" | "rejected"
+      ticket_status: "pending" | "approved" | "rejected" | "used"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -750,6 +1006,9 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "student", "organizer"],
       content_status: ["pending", "approved", "rejected"],
+      event_status: ["draft", "published", "cancelled", "completed"],
+      organizer_application_status: ["pending", "approved", "rejected"],
+      ticket_status: ["pending", "approved", "rejected", "used"],
     },
   },
 } as const
