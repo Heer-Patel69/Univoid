@@ -861,7 +861,30 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      leaderboard_profiles: {
+        Row: {
+          college_name: string | null
+          full_name: string | null
+          id: string | null
+          profile_photo_url: string | null
+          total_xp: number | null
+        }
+        Insert: {
+          college_name?: string | null
+          full_name?: string | null
+          id?: string | null
+          profile_photo_url?: string | null
+          total_xp?: number | null
+        }
+        Update: {
+          college_name?: string | null
+          full_name?: string | null
+          id?: string | null
+          profile_photo_url?: string | null
+          total_xp?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       approve_organizer: {
