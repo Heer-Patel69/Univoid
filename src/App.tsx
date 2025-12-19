@@ -31,6 +31,7 @@ import BecomeOrganizer from "./pages/BecomeOrganizer";
 import EditEvent from "./pages/EditEvent";
 import Projects from "./pages/Projects";
 import CreateProject from "./pages/CreateProject";
+import ProjectDetail from "./pages/ProjectDetail";
 import Tasks from "./pages/Tasks";
 import CreateTask from "./pages/CreateTask";
 
@@ -62,6 +63,7 @@ const App = () => (
             <Route path="/events/:eventId" element={<EventDetail />} />
             <Route path="/projects" element={<Projects />} />
             <Route path="/projects/create" element={<ProtectedRoute><CreateProject /></ProtectedRoute>} />
+            <Route path="/projects/:projectId" element={<ProjectDetail />} />
             <Route path="/tasks" element={<Tasks />} />
             <Route path="/tasks/create" element={<ProtectedRoute><CreateTask /></ProtectedRoute>} />
             <Route path="/become-organizer" element={<BecomeOrganizer />} />

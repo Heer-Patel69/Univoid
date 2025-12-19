@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { 
   Check, X, FileText, Newspaper, BookOpen, Loader2, 
   Flag, Trash2, Eye, Users, Shield, AlertTriangle, Ban, KeyRound,
-  Mail, MessageSquare, Sparkles
+  Mail, MessageSquare, Sparkles, Calendar, ToggleLeft, ToggleRight
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
@@ -84,16 +84,19 @@ const Admin = () => {
   const [allNews, setAllNews] = useState<ContentItem[]>([]);
   const [allBooks, setAllBooks] = useState<ContentItem[]>([]);
   const [allUsers, setAllUsers] = useState<UserItem[]>([]);
+  const [allEvents, setAllEvents] = useState<any[]>([]);
+  const [allRegistrations, setAllRegistrations] = useState<any[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
   const [contactMessages, setContactMessages] = useState<ContactMessage[]>([]);
   const [organizerApps, setOrganizerApps] = useState<any[]>([]);
   
   // Counts
-  const [counts, setCounts] = useState({ materials: 0, news: 0, books: 0, users: 0 });
+  const [counts, setCounts] = useState({ materials: 0, news: 0, books: 0, users: 0, events: 0 });
   const [pendingCounts, setPendingCounts] = useState({ materials: 0, news: 0, books: 0 });
   const [reportCount, setReportCount] = useState(0);
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
   const [organizerAppsCount, setOrganizerAppsCount] = useState(0);
+  const [eventsCount, setEventsCount] = useState(0);
   
   // UI state
   const [isLoading, setIsLoading] = useState(true);
@@ -113,6 +116,8 @@ const Admin = () => {
         pendingCountsData,
         unreadCount,
         organizerAppsData,
+        eventsData,
+        registrationsData,
       ] = await Promise.all([
         getAllContent('materials'),
         getAllContent('news'),
@@ -124,6 +129,8 @@ const Admin = () => {
         getAllPendingCounts(),
         getUnreadCount(),
         supabase.from('organizer_applications').select('*').eq('status', 'pending').order('created_at', { ascending: true }),
+        supabase.from('events').select('*').order('created_at', { ascending: false }),
+        supabase.from('event_registrations').select('*, event:events(title)').order('created_at', { ascending: false }).limit(100),
       ]);
       
       setAllMaterials(materialsData as ContentItem[]);
@@ -132,12 +139,15 @@ const Admin = () => {
       setAllUsers(usersData as UserItem[]);
       setReports(reportsData);
       setContactMessages(messagesData);
-      setCounts(contentCounts);
+      setCounts({ ...contentCounts, events: eventsData.data?.length || 0 });
       setPendingCounts(pendingCountsData);
       setReportCount(reportsData.length);
       setUnreadMessagesCount(unreadCount);
       setOrganizerApps(organizerAppsData.data || []);
       setOrganizerAppsCount((organizerAppsData.data || []).length);
+      setAllEvents(eventsData.data || []);
+      setAllRegistrations(registrationsData.data || []);
+      setEventsCount(eventsData.data?.length || 0);
     } catch (error) {
       console.error('Error fetching admin data:', error);
       toast.error('Failed to load admin data');
@@ -155,28 +165,37 @@ const Admin = () => {
         supabase.channel('admin-materials')
           .on('postgres_changes', { event: '*', schema: 'public', table: 'materials' }, () => {
             getAllContent('materials').then(data => setAllMaterials(data as ContentItem[]));
-            getContentCounts().then(setCounts);
+            getContentCounts().then(c => setCounts(prev => ({ ...prev, ...c })));
           })
           .subscribe(),
         
         supabase.channel('admin-news')
           .on('postgres_changes', { event: '*', schema: 'public', table: 'news' }, () => {
             getAllContent('news').then(data => setAllNews(data as ContentItem[]));
-            getContentCounts().then(setCounts);
+            getContentCounts().then(c => setCounts(prev => ({ ...prev, ...c })));
           })
           .subscribe(),
         
         supabase.channel('admin-books')
           .on('postgres_changes', { event: '*', schema: 'public', table: 'books' }, () => {
             getAllContent('books').then(data => setAllBooks(data as ContentItem[]));
-            getContentCounts().then(setCounts);
+            getContentCounts().then(c => setCounts(prev => ({ ...prev, ...c })));
           })
           .subscribe(),
         
         supabase.channel('admin-users')
           .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => {
             getAllUsers().then(data => setAllUsers(data as UserItem[]));
-            getContentCounts().then(setCounts);
+            getContentCounts().then(c => setCounts(prev => ({ ...prev, ...c })));
+          })
+          .subscribe(),
+        
+        supabase.channel('admin-events')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, () => {
+            supabase.from('events').select('*').order('created_at', { ascending: false }).then(({ data }) => {
+              setAllEvents(data || []);
+              setCounts(prev => ({ ...prev, events: data?.length || 0 }));
+            });
           })
           .subscribe(),
         
@@ -746,6 +765,144 @@ const Admin = () => {
     );
   };
 
+  const handleToggleEventStatus = async (event: any) => {
+    setProcessingId(event.id);
+    const newStatus = event.status === 'published' ? 'cancelled' : 'published';
+    
+    const { error } = await supabase
+      .from('events')
+      .update({ status: newStatus })
+      .eq('id', event.id);
+    
+    setProcessingId(null);
+
+    if (error) {
+      toast.error('Failed to update event status');
+      return;
+    }
+
+    toast.success(`Event ${newStatus === 'published' ? 'published' : 'cancelled'}`);
+    setAllEvents(prev => prev.map(e => 
+      e.id === event.id ? { ...e, status: newStatus } : e
+    ));
+  };
+
+  const renderEventsTab = () => {
+    if (allEvents.length === 0) {
+      return <p className="text-muted-foreground text-center py-8">No events found</p>;
+    }
+
+    return (
+      <div className="space-y-6">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-border">
+                <th className="text-left p-3 text-sm font-medium text-muted-foreground">Event</th>
+                <th className="text-left p-3 text-sm font-medium text-muted-foreground hidden sm:table-cell">Status</th>
+                <th className="text-left p-3 text-sm font-medium text-muted-foreground hidden md:table-cell">Registrations</th>
+                <th className="text-left p-3 text-sm font-medium text-muted-foreground hidden md:table-cell">Date</th>
+                <th className="text-right p-3 text-sm font-medium text-muted-foreground">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {allEvents.map((event) => (
+                <tr key={event.id} className="border-b border-border last:border-0 hover:bg-muted/50">
+                  <td className="p-3">
+                    <div>
+                      <p className="font-medium text-foreground">{event.title}</p>
+                      <p className="text-xs text-muted-foreground">{event.category} • {event.event_type}</p>
+                    </div>
+                  </td>
+                  <td className="p-3 hidden sm:table-cell">
+                    <Badge variant={
+                      event.status === 'published' ? 'default' :
+                      event.status === 'cancelled' ? 'destructive' :
+                      event.status === 'completed' ? 'secondary' : 'outline'
+                    }>
+                      {event.status}
+                    </Badge>
+                  </td>
+                  <td className="p-3 hidden md:table-cell">
+                    <span className="text-sm">{event.registrations_count || 0}</span>
+                  </td>
+                  <td className="p-3 text-muted-foreground hidden md:table-cell text-sm">
+                    {formatDate(event.start_date)}
+                  </td>
+                  <td className="p-3 text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant={event.status === 'published' ? 'destructive' : 'default'}
+                        size="sm"
+                        onClick={() => handleToggleEventStatus(event)}
+                        disabled={processingId === event.id}
+                        title={event.status === 'published' ? 'Cancel event' : 'Publish event'}
+                      >
+                        {processingId === event.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : event.status === 'published' ? (
+                          <ToggleRight className="w-4 h-4" />
+                        ) : (
+                          <ToggleLeft className="w-4 h-4" />
+                        )}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(`/events/${event.id}`, '_blank')}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Global Registrations */}
+        <div className="mt-8">
+          <h3 className="text-lg font-semibold mb-4">Recent Registrations</h3>
+          {allRegistrations.length === 0 ? (
+            <p className="text-muted-foreground text-center py-4">No registrations yet</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">Event</th>
+                    <th className="text-left p-3 text-sm font-medium text-muted-foreground hidden sm:table-cell">User</th>
+                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">Status</th>
+                    <th className="text-left p-3 text-sm font-medium text-muted-foreground hidden md:table-cell">Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allRegistrations.slice(0, 20).map((reg) => (
+                    <tr key={reg.id} className="border-b border-border last:border-0 hover:bg-muted/50">
+                      <td className="p-3 text-sm text-foreground">{reg.event?.title || 'Unknown'}</td>
+                      <td className="p-3 text-sm text-muted-foreground hidden sm:table-cell">{reg.user_id.slice(0, 8)}...</td>
+                      <td className="p-3">
+                        <Badge variant={
+                          reg.payment_status === 'approved' ? 'default' :
+                          reg.payment_status === 'rejected' ? 'destructive' :
+                          reg.payment_status === 'used' ? 'secondary' : 'outline'
+                        } className="text-xs">
+                          {reg.payment_status}
+                        </Badge>
+                      </td>
+                      <td className="p-3 text-sm text-muted-foreground hidden md:table-cell">{formatDate(reg.created_at)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const totalPending = pendingCounts.materials + pendingCounts.news + pendingCounts.books;
 
   return (
@@ -816,6 +973,15 @@ const Admin = () => {
                 </div>
               </CardContent>
             </Card>
+            <Card>
+              <CardContent className="p-4 flex items-center gap-3">
+                <Calendar className="w-8 h-8 text-primary" />
+                <div>
+                  <p className="text-2xl font-bold text-foreground">{counts.events}</p>
+                  <p className="text-xs text-muted-foreground">Events</p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Pending Alert */}
@@ -857,6 +1023,10 @@ const Admin = () => {
                     <Sparkles className="w-3 h-3 mr-1" />
                     Organizers {organizerAppsCount > 0 && <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 text-xs">{organizerAppsCount}</Badge>}
                   </TabsTrigger>
+                  <TabsTrigger value="events" className="text-xs sm:text-sm">
+                    <Calendar className="w-3 h-3 mr-1" />
+                    Events
+                  </TabsTrigger>
                 </TabsList>
               </CardHeader>
 
@@ -887,6 +1057,10 @@ const Admin = () => {
 
                 <TabsContent value="organizers" className="mt-0">
                   {renderOrganizerAppsTab()}
+                </TabsContent>
+
+                <TabsContent value="events" className="mt-0">
+                  {renderEventsTab()}
                 </TabsContent>
               </CardContent>
             </Tabs>
