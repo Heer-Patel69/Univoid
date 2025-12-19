@@ -1,7 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import QRCode from "https://esm.sh/qrcode@1.5.3";
+// Use qrcode-svg which works without canvas (Deno compatible)
+import QRCode from "https://esm.sh/qrcode-svg@1.1.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,6 +15,25 @@ interface StatusEmailRequest {
   eventId: string;
   userId: string;
   qrCode?: string; // The generated QR code string
+}
+
+// Generate QR code as base64 PNG using SVG conversion
+function generateQRCodeSVG(data: string): string {
+  try {
+    const qr = new QRCode({
+      content: data,
+      padding: 4,
+      width: 240,
+      height: 240,
+      color: "#000000",
+      background: "#ffffff",
+      ecl: "M",
+    });
+    return qr.svg();
+  } catch (error) {
+    console.error("QR SVG generation error:", error);
+    throw error;
+  }
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -79,22 +99,22 @@ const handler = async (req: Request): Promise<Response> => {
       minute: "2-digit",
     });
 
-    // Generate QR code image if qrCode is provided - FORCE SMALL SIZE
+    // Generate QR code as inline SVG (no canvas needed - Deno compatible!)
     let qrCodeImageHtml = "";
     if (qrCode && isApproved) {
       try {
-        console.log("Generating QR code for payload:", qrCode.substring(0, 50) + "...");
-        const qrDataUrl = await QRCode.toDataURL(qrCode, {
-          width: 240,  // Fixed size for email safety
-          margin: 1,   // Minimal margin to reduce size
-          color: { dark: '#000000', light: '#ffffff' }
-        });
-        console.log("QR code generated successfully, base64 length:", qrDataUrl.length);
+        console.log("Generating QR code SVG for payload:", qrCode.substring(0, 50) + "...");
+        const qrSvg = generateQRCodeSVG(qrCode);
+        console.log("QR code SVG generated successfully, length:", qrSvg.length);
+        
+        // Convert SVG to base64 for email embedding
+        const svgBase64 = btoa(qrSvg);
+        const svgDataUrl = `data:image/svg+xml;base64,${svgBase64}`;
         
         qrCodeImageHtml = `
           <div style="text-align: center; margin: 24px 0; padding: 20px; background: #f9fafb; border-radius: 12px;">
             <p style="color: #374151; font-weight: 600; margin-bottom: 16px;">🎫 Your Entry QR Code</p>
-            <img src="${qrDataUrl}" alt="Event Entry QR Code" style="width: 240px; height: 240px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" />
+            <img src="${svgDataUrl}" alt="Event Entry QR Code" style="width: 240px; height: 240px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" />
             <p style="color: #6b7280; font-size: 12px; margin-top: 12px;">Show this QR code at the entry gate</p>
           </div>
         `;
