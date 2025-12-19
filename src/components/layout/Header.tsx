@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, User, LogOut, Shield, BookOpen, Newspaper, FileText, Repeat2, Trophy, Calendar } from "lucide-react";
+import { Menu, X, User, LogOut, Shield, BookOpen, Newspaper, FileText, Repeat2, Trophy, Calendar, LayoutDashboard } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -18,7 +18,7 @@ interface HeaderProps {
 
 const Header = ({ onAuthClick }: HeaderProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { user, profile, isAdmin, signOut } = useAuth();
+  const { user, profile, isAdmin, isOrganizer, signOut } = useAuth();
   const location = useLocation();
 
   const navLinks = [
@@ -105,6 +105,14 @@ const Header = ({ onAuthClick }: HeaderProps) => {
                       Dashboard
                     </Link>
                   </DropdownMenuItem>
+                  {isOrganizer && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/organizer" className="cursor-pointer font-semibold rounded-xl">
+                        <LayoutDashboard className="mr-2 h-4 w-4" strokeWidth={2.5} />
+                        Organizer Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   {isAdmin && (
                     <DropdownMenuItem asChild>
                       <Link to="/admin" className="cursor-pointer font-semibold rounded-xl">
@@ -176,6 +184,14 @@ const Header = ({ onAuthClick }: HeaderProps) => {
                         Dashboard
                       </Button>
                     </Link>
+                    {isOrganizer && (
+                      <Link to="/organizer" onClick={() => setMobileMenuOpen(false)}>
+                        <Button variant="outline" size="sm" className="w-full">
+                          <LayoutDashboard className="w-4 h-4 mr-2" strokeWidth={2.5} />
+                          Organizer Dashboard
+                        </Button>
+                      </Link>
+                    )}
                     {isAdmin && (
                       <Link to="/admin" onClick={() => setMobileMenuOpen(false)}>
                         <Button variant="outline" size="sm" className="w-full">
