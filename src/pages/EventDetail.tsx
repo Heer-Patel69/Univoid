@@ -78,7 +78,39 @@ const EventDetail = () => {
         payment_screenshot_url: screenshotUrl || undefined,
       });
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      // Send confirmation email in background
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('email, full_name')
+          .eq('id', user!.id)
+          .single();
+
+        if (profile?.email) {
+          await supabase.functions.invoke('send-registration-email', {
+            body: {
+              userEmail: profile.email,
+              userName: profile.full_name,
+              eventTitle: event?.title,
+              eventDate: event?.start_date ? new Date(event.start_date).toLocaleDateString('en-IN', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              }) : '',
+              eventLocation: event?.venue_name || 'TBA',
+              isPaid: event?.is_paid || false,
+              ticketPrice: event?.price,
+            },
+          });
+        }
+      } catch (emailError) {
+        console.error('Failed to send confirmation email:', emailError);
+      }
+
       toast({
         title: event?.is_paid ? "Registration Submitted!" : "Registration Confirmed!",
         description: event?.is_paid 
