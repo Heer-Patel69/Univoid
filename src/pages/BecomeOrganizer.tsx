@@ -10,8 +10,8 @@ import {
   XCircle,
   Loader2,
 } from 'lucide-react';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
+import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -174,7 +174,7 @@ export default function BecomeOrganizer() {
   if (!user || isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
+        <Header onAuthClick={() => {}} />
         <main className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center py-16">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -186,7 +186,7 @@ export default function BecomeOrganizer() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Header />
+      <Header onAuthClick={() => {}} />
 
       <main className="flex-1 container mx-auto px-4 py-8 pb-24 md:pb-8 max-w-2xl">
         <Button

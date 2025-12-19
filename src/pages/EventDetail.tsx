@@ -21,8 +21,8 @@ import {
   Globe,
   MapPinned,
 } from 'lucide-react';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
+import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,7 +30,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SectionLoader } from '@/components/common/SectionLoader';
-import { AuthModal } from '@/components/auth/AuthModal';
+import AuthModal from '@/components/auth/AuthModal';
 import { EventRegistrationModal } from '@/components/events/EventRegistrationModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -43,7 +43,7 @@ import {
 } from '@/services/eventsService';
 import type { Event, EventRegistration, EventTicket, EventUpdate, EventCustomQuestion } from '@/types/events';
 import { EVENT_CATEGORIES, EVENT_TYPES } from '@/types/events';
-import { ReportButton } from '@/components/reports/ReportButton';
+import ReportButton from '@/components/reports/ReportButton';
 
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
@@ -147,7 +147,7 @@ export default function EventDetail() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
+        <Header onAuthClick={() => setAuthOpen(true)} />
         <main className="container mx-auto px-4 py-8">
           <SectionLoader />
         </main>
@@ -164,7 +164,7 @@ export default function EventDetail() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Header />
+      <Header onAuthClick={() => setAuthOpen(true)} />
 
       <main className="flex-1 container mx-auto px-4 py-8 pb-24 md:pb-8">
         {/* Back Button */}
@@ -213,8 +213,8 @@ export default function EventDetail() {
                 </Button>
                 <ReportButton
                   contentId={event.id}
-                  contentType="event"
-                  reportedUserId={event.organizer_id}
+                  contentType="blogs"
+                  contentOwnerId={event.organizer_id}
                 />
               </div>
             </div>
@@ -460,7 +460,7 @@ export default function EventDetail() {
 
       <Footer />
       <BottomNav />
-      <AuthModal open={authOpen} onOpenChange={setAuthOpen} />
+      <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} />
       {event && (
         <EventRegistrationModal
           event={event}

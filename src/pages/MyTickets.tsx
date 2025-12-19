@@ -11,8 +11,8 @@ import {
   Clock,
   XCircle,
 } from 'lucide-react';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
+import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -104,7 +104,7 @@ export default function MyTickets() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Header />
+      <Header onAuthClick={() => {}} />
 
       <main className="flex-1 container mx-auto px-4 py-8 pb-24 md:pb-8">
         <Button
