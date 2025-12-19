@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Material, Blog, News, Book } from '@/types/database';
+import { Material, News, Book } from '@/types/database';
 import { toast } from 'sonner';
 
 // Delete material (with file cleanup)
@@ -45,52 +45,6 @@ export async function deleteMaterial(materialId: string, userId: string): Promis
   }
 
   toast.success('Material deleted');
-  return true;
-}
-
-// Delete blog (with image cleanup)
-export async function deleteBlog(blogId: string, userId: string): Promise<boolean> {
-  const { data: blog, error: fetchError } = await supabase
-    .from('blogs')
-    .select('created_by, cover_image_url')
-    .eq('id', blogId)
-    .single();
-
-  if (fetchError || !blog) {
-    toast.error('Blog not found');
-    return false;
-  }
-
-  if (blog.created_by !== userId) {
-    toast.error('You can only delete your own content');
-    return false;
-  }
-
-  // Delete cover image if exists
-  if (blog.cover_image_url) {
-    try {
-      const url = new URL(blog.cover_image_url);
-      const pathMatch = url.pathname.match(/\/blog-images\/(.+)/);
-      if (pathMatch) {
-        await supabase.storage.from('blog-images').remove([pathMatch[1]]);
-      }
-    } catch {
-      // Continue
-    }
-  }
-
-  const { error } = await supabase
-    .from('blogs')
-    .delete()
-    .eq('id', blogId)
-    .eq('created_by', userId);
-
-  if (error) {
-    toast.error('Failed to delete blog');
-    return false;
-  }
-
-  toast.success('Blog deleted');
   return true;
 }
 
@@ -200,17 +154,6 @@ export async function getUserMaterials(userId: string): Promise<Material[]> {
 
   if (error) throw error;
   return data as Material[];
-}
-
-export async function getUserBlogs(userId: string): Promise<Blog[]> {
-  const { data, error } = await supabase
-    .from('blogs')
-    .select('*')
-    .eq('created_by', userId)
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data as Blog[];
 }
 
 export async function getUserNews(userId: string): Promise<News[]> {

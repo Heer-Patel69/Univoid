@@ -32,39 +32,6 @@ export type Database = {
         }
         Relationships: []
       }
-      blogs: {
-        Row: {
-          content: string
-          cover_image_url: string | null
-          created_at: string
-          created_by: string
-          id: string
-          status: Database["public"]["Enums"]["content_status"]
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          content: string
-          cover_image_url?: string | null
-          created_at?: string
-          created_by: string
-          id?: string
-          status?: Database["public"]["Enums"]["content_status"]
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          content?: string
-          cover_image_url?: string | null
-          created_at?: string
-          created_by?: string
-          id?: string
-          status?: Database["public"]["Enums"]["content_status"]
-          title?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       books: {
         Row: {
           author: string | null

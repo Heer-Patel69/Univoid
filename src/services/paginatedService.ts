@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Material, Blog, News, Book } from '@/types/database';
+import { Material, News, Book } from '@/types/database';
 
 const DEFAULT_PAGE_SIZE = 20;
 
@@ -102,38 +102,6 @@ export async function getMaterialsPaginated(
   };
 }
 
-// Blogs
-export async function getBlogsPaginated(
-  page = 0,
-  pageSize = DEFAULT_PAGE_SIZE
-): Promise<PaginatedResult<Blog>> {
-  const from = page * pageSize;
-  const to = from + pageSize - 1;
-
-  const { data, error, count } = await supabase
-    .from('blogs')
-    .select('*', { count: 'exact' })
-    .eq('status', 'approved')
-    .order('created_at', { ascending: false })
-    .range(from, to);
-
-  if (error) throw error;
-
-  const blogs = data as Blog[];
-  
-  const userIds = blogs.map(b => b.created_by);
-  const nameMap = await fetchContributorNames(userIds);
-  blogs.forEach(b => {
-    b.contributor_name = nameMap.get(b.created_by) || 'Anonymous';
-  });
-
-  return {
-    data: blogs,
-    hasMore: (count ?? 0) > from + blogs.length,
-    total: count ?? 0,
-  };
-}
-
 // News
 export async function getNewsPaginated(
   page = 0,
@@ -215,7 +183,7 @@ export async function getBooksPaginated(
 // Leaderboard - optimized to only fetch top users
 export async function getLeaderboardPaginated(
   limit = 20
-): Promise<{ data: Array<{ id: string; full_name: string; total_xp: number; profile_photo_url: string | null; rank: number; level: number; materials_count: number; blogs_count: number }>; }> {
+): Promise<{ data: Array<{ id: string; full_name: string; total_xp: number; profile_photo_url: string | null; rank: number; level: number; materials_count: number }>; }> {
   const { data, error } = await supabase
     .from('profiles')
     .select('id, full_name, total_xp, profile_photo_url')
@@ -227,26 +195,18 @@ export async function getLeaderboardPaginated(
   // Calculate stats in parallel for each user
   const enrichedData = await Promise.all(
     (data || []).map(async (profile, index) => {
-      // Fetch material and blog counts in parallel
-      const [materialsRes, blogsRes] = await Promise.all([
-        supabase
-          .from('materials')
-          .select('id', { count: 'exact', head: true })
-          .eq('created_by', profile.id)
-          .eq('status', 'approved'),
-        supabase
-          .from('blogs')
-          .select('id', { count: 'exact', head: true })
-          .eq('created_by', profile.id)
-          .eq('status', 'approved'),
-      ]);
+      // Fetch material counts
+      const materialsRes = await supabase
+        .from('materials')
+        .select('id', { count: 'exact', head: true })
+        .eq('created_by', profile.id)
+        .eq('status', 'approved');
 
       return {
         ...profile,
         rank: index + 1,
         level: Math.floor(profile.total_xp / 250) + 1,
         materials_count: materialsRes.count ?? 0,
-        blogs_count: blogsRes.count ?? 0,
       };
     })
   );

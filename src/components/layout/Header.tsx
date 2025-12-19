@@ -107,7 +107,7 @@ const Header = ({ onAuthClick }: HeaderProps) => {
                   </DropdownMenuItem>
                   {isOrganizer && (
                     <DropdownMenuItem asChild>
-                      <Link to="/organizer" className="cursor-pointer font-semibold rounded-xl">
+                      <Link to="/organizer/dashboard" className="cursor-pointer font-semibold rounded-xl">
                         <LayoutDashboard className="mr-2 h-4 w-4" strokeWidth={2.5} />
                         Organizer Dashboard
                       </Link>
@@ -185,7 +185,7 @@ const Header = ({ onAuthClick }: HeaderProps) => {
                       </Button>
                     </Link>
                     {isOrganizer && (
-                      <Link to="/organizer" onClick={() => setMobileMenuOpen(false)}>
+                      <Link to="/organizer/dashboard" onClick={() => setMobileMenuOpen(false)}>
                         <Button variant="outline" size="sm" className="w-full">
                           <LayoutDashboard className="w-4 h-4 mr-2" strokeWidth={2.5} />
                           Organizer Dashboard

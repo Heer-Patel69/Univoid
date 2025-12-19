@@ -4,7 +4,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { User, Trophy, FileText, PenLine, Newspaper, BookOpen, ArrowLeft, Loader2 } from "lucide-react";
+import { User, Trophy, FileText, Newspaper, BookOpen, ArrowLeft, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -17,7 +17,6 @@ interface ProfileData {
 
 interface ContributionStats {
   materials: number;
-  blogs: number;
   news: number;
   books: number;
 }
@@ -26,7 +25,7 @@ const Profile = () => {
   const { userId } = useParams();
   const { user, profile, isLoading: authLoading } = useAuth();
   const [publicProfile, setPublicProfile] = useState<ProfileData | null>(null);
-  const [stats, setStats] = useState<ContributionStats>({ materials: 0, blogs: 0, news: 0, books: 0 });
+  const [stats, setStats] = useState<ContributionStats>({ materials: 0, news: 0, books: 0 });
   const [isLoading, setIsLoading] = useState(true);
 
   const isOwnProfile = !userId || userId === user?.id;
@@ -52,16 +51,14 @@ const Profile = () => {
         }
 
         // Fetch contribution stats
-        const [materialsRes, blogsRes, newsRes, booksRes] = await Promise.all([
+        const [materialsRes, newsRes, booksRes] = await Promise.all([
           supabase.from('materials').select('id', { count: 'exact', head: true }).eq('created_by', targetUserId),
-          supabase.from('blogs').select('id', { count: 'exact', head: true }).eq('created_by', targetUserId),
           supabase.from('news').select('id', { count: 'exact', head: true }).eq('created_by', targetUserId),
           supabase.from('books').select('id', { count: 'exact', head: true }).eq('created_by', targetUserId),
         ]);
 
         setStats({
           materials: materialsRes.count ?? 0,
-          blogs: blogsRes.count ?? 0,
           news: newsRes.count ?? 0,
           books: booksRes.count ?? 0,
         });
@@ -96,7 +93,6 @@ const Profile = () => {
 
   const statItems = [
     { label: "Materials", value: stats.materials, icon: FileText },
-    { label: "Blogs", value: stats.blogs, icon: PenLine },
     { label: "News", value: stats.news, icon: Newspaper },
     { label: "Books", value: stats.books, icon: BookOpen },
   ];
@@ -153,7 +149,6 @@ const Profile = () => {
                 )}
                 <h1 className="text-2xl font-bold text-foreground mb-1">{displayProfile?.full_name ?? 'User'}</h1>
                 <p className="text-muted-foreground">Level {level}</p>
-                {/* Note: We intentionally hide college_name, email, mobile for privacy */}
               </div>
 
               {/* XP and Rank */}
@@ -177,7 +172,7 @@ const Profile = () => {
               {/* Contribution Stats */}
               <div>
                 <h2 className="text-sm font-medium text-muted-foreground mb-4 text-center">Contributions</h2>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   {statItems.map((stat) => (
                     <div key={stat.label} className="text-center p-4 bg-secondary/50 rounded-lg">
                       <stat.icon className="w-5 h-5 text-primary mx-auto mb-2" />

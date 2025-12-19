@@ -25,16 +25,14 @@ export async function getGlobalLeaderboard(limit = 100): Promise<PublicProfile[]
   
   // Get all counts in parallel for all users
   const countPromises = userIds.map(async (userId) => {
-    const [materials, blogs, news, books] = await Promise.all([
+    const [materials, news, books] = await Promise.all([
       supabase.from('materials').select('id', { count: 'exact', head: true }).eq('created_by', userId).eq('status', 'approved'),
-      supabase.from('blogs').select('id', { count: 'exact', head: true }).eq('created_by', userId).eq('status', 'approved'),
       supabase.from('news').select('id', { count: 'exact', head: true }).eq('created_by', userId).eq('status', 'approved'),
       supabase.from('books').select('id', { count: 'exact', head: true }).eq('created_by', userId).eq('status', 'approved'),
     ]);
     return {
       userId,
       materials_count: materials.count || 0,
-      blogs_count: blogs.count || 0,
       news_count: news.count || 0,
       books_count: books.count || 0,
     };
@@ -44,7 +42,7 @@ export async function getGlobalLeaderboard(limit = 100): Promise<PublicProfile[]
   const countsMap = new Map(counts.map(c => [c.userId, c]));
 
   for (const profile of rows) {
-    const userCounts = countsMap.get(profile.id) || { materials_count: 0, blogs_count: 0, news_count: 0, books_count: 0 };
+    const userCounts = countsMap.get(profile.id) || { materials_count: 0, news_count: 0, books_count: 0 };
     
     profiles.push({
       id: profile.id,
@@ -54,7 +52,6 @@ export async function getGlobalLeaderboard(limit = 100): Promise<PublicProfile[]
       level: calculateLevel(profile.total_xp),
       rank,
       materials_count: userCounts.materials_count,
-      blogs_count: userCounts.blogs_count,
       news_count: userCounts.news_count,
       books_count: userCounts.books_count,
     });
@@ -78,16 +75,14 @@ export async function getCollegeLeaderboard(collegeName: string, limit = 100): P
 
   const userIds = rows.map(r => r.id);
   const countPromises = userIds.map(async (userId) => {
-    const [materials, blogs, news, books] = await Promise.all([
+    const [materials, news, books] = await Promise.all([
       supabase.from('materials').select('id', { count: 'exact', head: true }).eq('created_by', userId).eq('status', 'approved'),
-      supabase.from('blogs').select('id', { count: 'exact', head: true }).eq('created_by', userId).eq('status', 'approved'),
       supabase.from('news').select('id', { count: 'exact', head: true }).eq('created_by', userId).eq('status', 'approved'),
       supabase.from('books').select('id', { count: 'exact', head: true }).eq('created_by', userId).eq('status', 'approved'),
     ]);
     return {
       userId,
       materials_count: materials.count || 0,
-      blogs_count: blogs.count || 0,
       news_count: news.count || 0,
       books_count: books.count || 0,
     };
@@ -97,7 +92,7 @@ export async function getCollegeLeaderboard(collegeName: string, limit = 100): P
   const countsMap = new Map(counts.map(c => [c.userId, c]));
 
   for (const profile of rows) {
-    const userCounts = countsMap.get(profile.id) || { materials_count: 0, blogs_count: 0, news_count: 0, books_count: 0 };
+    const userCounts = countsMap.get(profile.id) || { materials_count: 0, news_count: 0, books_count: 0 };
     
     profiles.push({
       id: profile.id,
@@ -107,7 +102,6 @@ export async function getCollegeLeaderboard(collegeName: string, limit = 100): P
       level: calculateLevel(profile.total_xp),
       rank,
       materials_count: userCounts.materials_count,
-      blogs_count: userCounts.blogs_count,
       news_count: userCounts.news_count,
       books_count: userCounts.books_count,
     });
@@ -140,9 +134,8 @@ export async function getPublicProfile(userId: string): Promise<PublicProfile | 
   
   if (!profile) return null;
 
-  const [materials, blogs, news, books, rank] = await Promise.all([
+  const [materials, news, books, rank] = await Promise.all([
     supabase.from('materials').select('id', { count: 'exact', head: true }).eq('created_by', userId).eq('status', 'approved'),
-    supabase.from('blogs').select('id', { count: 'exact', head: true }).eq('created_by', userId).eq('status', 'approved'),
     supabase.from('news').select('id', { count: 'exact', head: true }).eq('created_by', userId).eq('status', 'approved'),
     supabase.from('books').select('id', { count: 'exact', head: true }).eq('created_by', userId).eq('status', 'approved'),
     getUserRank(userId),
@@ -156,7 +149,6 @@ export async function getPublicProfile(userId: string): Promise<PublicProfile | 
     level: calculateLevel(profile.total_xp),
     rank,
     materials_count: materials.count || 0,
-    blogs_count: blogs.count || 0,
     news_count: news.count || 0,
     books_count: books.count || 0,
   };
