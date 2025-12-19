@@ -55,17 +55,17 @@ const EventDetail = () => {
       if (event.is_paid && paymentScreenshot) {
         setUploading(true);
         const fileExt = paymentScreenshot.name.split(".").pop();
-        const fileName = `${user.id}/${eventId}/${Date.now()}.${fileExt}`;
+        const fileName = `${user.id}/payments/${eventId}/${Date.now()}.${fileExt}`;
         
         const { error: uploadError } = await supabase.storage
           .from("event-assets")
-          .upload(`payment-screenshots/${fileName}`, paymentScreenshot);
+          .upload(fileName, paymentScreenshot);
         
         if (uploadError) throw uploadError;
         
         const { data: { publicUrl } } = supabase.storage
           .from("event-assets")
-          .getPublicUrl(`payment-screenshots/${fileName}`);
+          .getPublicUrl(fileName);
         
         screenshotUrl = publicUrl;
         setUploading(false);
