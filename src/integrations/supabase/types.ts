@@ -476,6 +476,28 @@ export type Database = {
         Returns: undefined
       }
       generate_ticket_qr: { Args: never; Returns: string }
+      get_book_by_id_safe: {
+        Args: { p_book_id: string }
+        Returns: {
+          author: string
+          category: string
+          condition: string
+          created_at: string
+          created_by: string
+          description: string
+          id: string
+          image_urls: string[]
+          is_sold: boolean
+          price: number
+          seller_address: string
+          seller_email: string
+          seller_mobile: string
+          status: Database["public"]["Enums"]["content_status"]
+          title: string
+          updated_at: string
+          views_count: number
+        }[]
+      }
       get_book_recommendations: {
         Args: { p_book_id: string; p_limit?: number }
         Returns: {
@@ -503,6 +525,32 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      get_books_safe: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_status?: Database["public"]["Enums"]["content_status"]
+        }
+        Returns: {
+          author: string
+          category: string
+          condition: string
+          created_at: string
+          created_by: string
+          description: string
+          id: string
+          image_urls: string[]
+          is_sold: boolean
+          price: number
+          seller_address: string
+          seller_email: string
+          seller_mobile: string
+          status: Database["public"]["Enums"]["content_status"]
+          title: string
+          updated_at: string
+          views_count: number
+        }[]
       }
       get_contributor_name: { Args: { user_id: string }; Returns: string }
       get_public_leaderboard: {

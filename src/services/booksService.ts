@@ -12,16 +12,12 @@ function isBookExpired(createdAt: string): boolean {
 }
 
 export async function getBooks(status: 'approved' | 'all' = 'approved'): Promise<Book[]> {
-  let query = supabase
-    .from('books')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (status === 'approved') {
-    query = query.eq('status', 'approved');
-  }
-
-  const { data, error } = await query;
+  // Use secure RPC function that masks contact info for non-owners
+  const { data, error } = await supabase.rpc('get_books_safe', {
+    p_status: status === 'approved' ? 'approved' : null,
+    p_limit: 100,
+    p_offset: 0
+  });
 
   if (error) throw error;
 
@@ -39,15 +35,14 @@ export async function getBooks(status: 'approved' | 'all' = 'approved'): Promise
 }
 
 export async function getBookById(id: string): Promise<Book | null> {
-  const { data, error } = await supabase
-    .from('books')
-    .select('*')
-    .eq('id', id)
-    .single();
+  // Use secure RPC function that masks contact info for non-owners
+  const { data, error } = await supabase.rpc('get_book_by_id_safe', {
+    p_book_id: id
+  });
 
-  if (error) return null;
+  if (error || !data || data.length === 0) return null;
 
-  const book = data as Book;
+  const book = data[0] as Book;
   const { data: nameData } = await supabase.rpc('get_contributor_name', {
     user_id: book.created_by,
   });
