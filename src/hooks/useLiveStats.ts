@@ -66,7 +66,7 @@ export function useLiveStats(): LiveStats {
     let debounceTimer: NodeJS.Timeout;
     const debouncedFetch = () => {
       clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(fetchStats, 2000);
+      debounceTimer = setTimeout(fetchStats, 300);
     };
 
     channelRef.current = supabase
