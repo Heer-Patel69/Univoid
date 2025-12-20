@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 
 interface HeaderProps {
   onAuthClick: () => void;
@@ -81,7 +82,8 @@ const Header = ({ onAuthClick }: HeaderProps) => {
           </nav>
 
           {/* Auth Buttons */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-2">
+            {user && <NotificationCenter />}
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
