@@ -85,11 +85,11 @@ const Dashboard = () => {
           <div className="w-9" /> {/* Spacer for centering */}
         </header>
 
-        <div className="p-6 lg:p-8 max-w-5xl mx-auto space-y-8">
+        <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-5xl mx-auto space-y-6">
           {/* Welcome Header */}
           <div>
             <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
-              Welcome back, {profile?.full_name?.split(' ')[0] || 'Student'}! 👋
+              Welcome back, {profile?.full_name?.split(' ')[0] || 'Student'}
             </h1>
             <p className="text-muted-foreground mt-1">
               Here's what's happening with your account today.
@@ -110,16 +110,16 @@ const Dashboard = () => {
 
           {/* Quick Actions */}
           <section>
-            <h2 className="text-lg font-semibold text-foreground mb-4">Quick Actions</h2>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <h2 className="text-lg font-semibold text-foreground mb-3">Quick Actions</h2>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {quickActions.map((action) => (
                 <Link key={action.label} to={action.href}>
                   <Card className="hover:shadow-md transition-all group cursor-pointer h-full">
-                    <CardContent className="p-4 text-center">
-                      <div className={`w-12 h-12 rounded-xl mx-auto mb-3 flex items-center justify-center ${action.color} group-hover:scale-110 transition-transform`}>
-                        <action.icon className="w-6 h-6" />
+                    <CardContent className="p-4 flex flex-col items-center justify-center">
+                      <div className={`w-11 h-11 rounded-xl mb-2.5 flex items-center justify-center ${action.color} group-hover:scale-110 transition-transform`}>
+                        <action.icon className="w-5 h-5" />
                       </div>
-                      <p className="text-sm font-medium text-foreground">{action.label}</p>
+                      <p className="text-sm font-medium text-foreground text-center">{action.label}</p>
                     </CardContent>
                   </Card>
                 </Link>
@@ -128,7 +128,7 @@ const Dashboard = () => {
           </section>
 
           {/* Two Column Layout */}
-          <div className="grid lg:grid-cols-3 gap-6">
+          <div className="grid lg:grid-cols-3 gap-4 lg:gap-6">
             {/* Main Content - 2 cols */}
             <div className="lg:col-span-2 space-y-6">
               {/* Recommendations */}
@@ -190,25 +190,29 @@ const Dashboard = () => {
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base">Explore</CardTitle>
                 </CardHeader>
-                <CardContent className="pt-0 space-y-2">
+                <CardContent className="pt-0 space-y-1">
                   <Link to="/materials">
-                    <Button variant="ghost" size="sm" className="w-full justify-start">
-                      📚 Browse Materials
+                    <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
+                      <BookOpen className="w-4 h-4" />
+                      Browse Materials
                     </Button>
                   </Link>
                   <Link to="/books">
-                    <Button variant="ghost" size="sm" className="w-full justify-start">
-                      📖 Book Exchange
+                    <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
+                      <BookOpen className="w-4 h-4" />
+                      Book Exchange
                     </Button>
                   </Link>
                   <Link to="/events">
-                    <Button variant="ghost" size="sm" className="w-full justify-start">
-                      🎉 Upcoming Events
+                    <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
+                      <Calendar className="w-4 h-4" />
+                      Upcoming Events
                     </Button>
                   </Link>
                   <Link to="/news">
-                    <Button variant="ghost" size="sm" className="w-full justify-start">
-                      📰 Campus News
+                    <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
+                      <BookOpen className="w-4 h-4" />
+                      Campus News
                     </Button>
                   </Link>
                 </CardContent>
