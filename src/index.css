@@ -2,47 +2,49 @@
 @tailwind components;
 @tailwind utilities;
 
-/* UniVoid Design System - Playful, Warm, Soft Neubrutalism */
+/* UniVoid Design System - Digital Student Sketchbook */
 
 @layer base {
   :root {
-    /* Warm Cream Background - Cozy journal feel */
-    --background: 48 60% 97%;
-    --foreground: 0 0% 9%;
+    /* Warm Cream Background #F9F7F1 */
+    --background: 43 33% 96%;
+    --foreground: 0 0% 18%;
 
-    /* White cards with warmth */
+    /* White cards */
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 9%;
+    --card-foreground: 0 0% 18%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 9%;
+    --popover-foreground: 0 0% 18%;
 
-    /* Black primary for CTAs */
-    --primary: 0 0% 9%;
-    --primary-foreground: 48 60% 97%;
+    /* Sketch border color #2D2D2D */
+    --sketch-border: 0 0% 18%;
+    
+    /* Mustard Yellow Primary #FFD54F */
+    --primary: 45 100% 65%;
+    --primary-foreground: 0 0% 18%;
 
-    /* Soft warm secondary */
+    /* Soft secondary */
     --secondary: 40 30% 94%;
-    --secondary-foreground: 0 0% 9%;
+    --secondary-foreground: 0 0% 18%;
 
     --muted: 40 20% 92%;
     --muted-foreground: 0 0% 45%;
 
-    /* Pastel accent */
-    --accent: 270 50% 95%;
-    --accent-foreground: 0 0% 9%;
+    /* Soft Blue accent */
+    --accent: 210 60% 92%;
+    --accent-foreground: 0 0% 18%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Soft borders (not harsh black) */
     --border: 0 0% 85%;
-    --border-strong: 0 0% 20%;
+    --border-strong: 0 0% 18%;
     --input: 40 20% 92%;
-    --ring: 0 0% 9%;
+    --ring: 0 0% 18%;
 
-    /* Heavy rounded corners */
-    --radius: 1.5rem;
+    /* Rounded corners */
+    --radius: 1rem;
 
     /* Status colors */
     --success: 152 69% 45%;
@@ -65,14 +67,14 @@
     --category-yellow: 45 93% 50%;
     --category-purple: 270 70% 60%;
 
-    --sidebar-background: 48 40% 96%;
-    --sidebar-foreground: 0 0% 9%;
-    --sidebar-primary: 0 0% 9%;
-    --sidebar-primary-foreground: 48 60% 97%;
-    --sidebar-accent: 270 50% 95%;
-    --sidebar-accent-foreground: 0 0% 9%;
+    --sidebar-background: 43 33% 96%;
+    --sidebar-foreground: 0 0% 18%;
+    --sidebar-primary: 45 100% 65%;
+    --sidebar-primary-foreground: 0 0% 18%;
+    --sidebar-accent: 210 60% 92%;
+    --sidebar-accent-foreground: 0 0% 18%;
     --sidebar-border: 0 0% 85%;
-    --sidebar-ring: 0 0% 9%;
+    --sidebar-ring: 0 0% 18%;
   }
 
   .dark {
@@ -85,8 +87,10 @@
     --popover: 20 10% 12%;
     --popover-foreground: 48 20% 95%;
 
-    --primary: 48 20% 95%;
-    --primary-foreground: 20 10% 8%;
+    --sketch-border: 48 20% 80%;
+
+    --primary: 45 100% 65%;
+    --primary-foreground: 0 0% 9%;
 
     --secondary: 20 10% 18%;
     --secondary-foreground: 48 20% 95%;
@@ -94,7 +98,7 @@
     --muted: 20 10% 18%;
     --muted-foreground: 48 10% 55%;
 
-    --accent: 270 30% 25%;
+    --accent: 210 40% 25%;
     --accent-foreground: 48 20% 95%;
 
     --destructive: 0 62% 50%;
@@ -114,9 +118,9 @@
 
     --sidebar-background: 20 10% 10%;
     --sidebar-foreground: 48 20% 95%;
-    --sidebar-primary: 48 20% 95%;
-    --sidebar-primary-foreground: 20 10% 8%;
-    --sidebar-accent: 270 30% 25%;
+    --sidebar-primary: 45 100% 65%;
+    --sidebar-primary-foreground: 0 0% 9%;
+    --sidebar-accent: 210 40% 25%;
     --sidebar-accent-foreground: 48 20% 95%;
     --sidebar-border: 20 10% 25%;
     --sidebar-ring: 48 20% 95%;
@@ -130,16 +134,22 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'Outfit', system-ui, sans-serif;
     font-feature-settings: "cv11", "ss01";
-    /* Subtle dot pattern background */
-    background-image: radial-gradient(circle, hsl(var(--foreground) / 0.03) 1px, transparent 1px);
-    background-size: 24px 24px;
+  }
+
+  /* Warm cream background utility */
+  .bg-sketch {
+    background-color: hsl(43 33% 96%);
+  }
+
+  .dark .bg-sketch {
+    background-color: hsl(20 10% 8%);
   }
 
   /* Friendly rounded typography */
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Nunito', system-ui, sans-serif;
+    font-family: 'Outfit', system-ui, sans-serif;
     @apply font-bold tracking-tight;
   }
 
@@ -157,6 +167,67 @@
 }
 
 @layer components {
+  /* Sketch Card Style - Neo-brutalist with hard shadow */
+  .card-sketch {
+    @apply bg-card rounded-xl p-6;
+    border: 1px solid hsl(var(--sketch-border));
+    box-shadow: 4px 4px 0px hsl(var(--sketch-border));
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .card-sketch:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0px hsl(var(--sketch-border));
+  }
+
+  /* Sketch border utility */
+  .border-sketch-border {
+    border-color: hsl(var(--sketch-border));
+  }
+
+  /* Hard shadow utilities */
+  .shadow-sketch {
+    box-shadow: 4px 4px 0px hsl(var(--sketch-border));
+  }
+
+  .shadow-sketch-sm {
+    box-shadow: 2px 2px 0px hsl(var(--sketch-border));
+  }
+
+  /* Neo-brutalist Button Styles */
+  .btn-sketch {
+    @apply rounded-xl font-semibold;
+    border: 1px solid hsl(var(--sketch-border));
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+  }
+
+  .btn-sketch:hover {
+    transform: translate(-2px, -2px);
+  }
+
+  .btn-sketch:active {
+    transform: translate(0, 0);
+    box-shadow: none !important;
+  }
+
+  .btn-sketch-primary {
+    @apply bg-primary text-primary-foreground;
+    box-shadow: 4px 4px 0px hsl(var(--sketch-border));
+  }
+
+  .btn-sketch-primary:hover {
+    box-shadow: 6px 6px 0px hsl(var(--sketch-border));
+  }
+
+  .btn-sketch-secondary {
+    @apply bg-card text-foreground;
+    box-shadow: 4px 4px 0px hsl(var(--sketch-border));
+  }
+
+  .btn-sketch-secondary:hover {
+    box-shadow: 6px 6px 0px hsl(var(--sketch-border));
+  }
+
   /* GPU-accelerated performance optimizations */
   .gpu-accelerate {
     transform: translateZ(0);
@@ -209,29 +280,27 @@
     @apply max-w-3xl mx-auto px-4 sm:px-6;
   }
 
-  /* Soft Neubrutalist Card - Heavy rounding, tactile feel */
+  /* Legacy card styles for other pages */
   .card-univoid {
-    @apply bg-card rounded-3xl border-2 border-border-strong/10 p-6;
-    box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.08);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    @apply card-sketch;
   }
 
   .card-univoid:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.15);
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0px hsl(var(--sketch-border));
   }
 
   /* Bento Grid Card Variants */
   .bento-card {
-    @apply bg-card rounded-3xl p-6 relative overflow-hidden;
-    border: 2px solid hsl(var(--border-strong) / 0.08);
-    box-shadow: 0 2px 12px -2px rgba(0, 0, 0, 0.06);
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    @apply bg-card rounded-xl p-6 relative overflow-hidden;
+    border: 1px solid hsl(var(--sketch-border));
+    box-shadow: 4px 4px 0px hsl(var(--sketch-border));
+    transition: all 0.15s ease;
   }
 
   .bento-card:hover {
-    transform: translateY(-2px) scale(1.01);
-    box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.12);
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0px hsl(var(--sketch-border));
   }
 
   /* Pastel Background Cards */
