@@ -3,6 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { getGlobalLeaderboard } from "@/services/leaderboardService";
 import { PublicProfile } from "@/types/database";
 
+// In-memory cache for leaderboard (10 minutes TTL)
+const leaderboardCache: { data: PublicProfile[]; timestamp: number } = { data: [], timestamp: 0 };
+const LEADERBOARD_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+
 export function useLeaderboard(limit = 50) {
   const [leaderboard, setLeaderboard] = useState<PublicProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -11,7 +15,16 @@ export function useLeaderboard(limit = 50) {
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const fetchLeaderboard = useCallback(async () => {
+  const fetchLeaderboard = useCallback(async (forceRefresh = false) => {
+    // Check cache first (unless force refresh)
+    if (!forceRefresh && Date.now() - leaderboardCache.timestamp < LEADERBOARD_CACHE_TTL && leaderboardCache.data.length > 0) {
+      if (isMounted.current) {
+        setLeaderboard(leaderboardCache.data);
+        setIsLoading(false);
+      }
+      return;
+    }
+
     try {
       // Add timeout for fetch
       const controller = new AbortController();
@@ -20,6 +33,10 @@ export function useLeaderboard(limit = 50) {
       const data = await getGlobalLeaderboard(limit);
       clearTimeout(timeoutId);
       
+      // Update cache
+      leaderboardCache.data = data;
+      leaderboardCache.timestamp = Date.now();
+
       if (isMounted.current) {
         setLeaderboard(data);
         setError(null);
@@ -36,14 +53,14 @@ export function useLeaderboard(limit = 50) {
     }
   }, [limit]);
 
-  // Debounced fetch for real-time updates
+  // Debounced fetch for real-time updates (with force refresh)
   const debouncedFetch = useCallback(() => {
     if (fetchTimeoutRef.current) {
       clearTimeout(fetchTimeoutRef.current);
     }
     fetchTimeoutRef.current = setTimeout(() => {
-      fetchLeaderboard();
-    }, 1000); // Debounce 1 second
+      fetchLeaderboard(true); // Force refresh on realtime update
+    }, 2000); // Debounce 2 seconds
   }, [fetchLeaderboard]);
 
   useEffect(() => {

@@ -5,6 +5,7 @@ interface UseOptimizedFetchOptions<T> {
   defaultValue: T;
   timeoutMs?: number;
   cacheKey?: string;
+  cacheTtl?: number; // Custom cache TTL in milliseconds
 }
 
 interface UseOptimizedFetchResult<T> {
@@ -14,15 +15,25 @@ interface UseOptimizedFetchResult<T> {
   refetch: () => Promise<void>;
 }
 
-// Simple in-memory cache
+// Simple in-memory cache with configurable TTL
 const cache = new Map<string, { data: unknown; timestamp: number }>();
-const CACHE_TTL = 30000; // 30 seconds
+
+// Cache TTL configurations for different content types
+export const CACHE_TTL = {
+  SHORT: 30 * 1000,          // 30 seconds - user-specific data
+  MEDIUM: 2 * 60 * 1000,     // 2 minutes - frequently updated public data
+  LONG: 5 * 60 * 1000,       // 5 minutes - stable public data (materials, news)
+  EXTRA_LONG: 15 * 60 * 1000 // 15 minutes - rarely changing data (stats, leaderboard)
+};
+
+const DEFAULT_CACHE_TTL = CACHE_TTL.MEDIUM;
 
 export function useOptimizedFetch<T>({
   fetchFn,
   defaultValue,
   timeoutMs = 8000,
   cacheKey,
+  cacheTtl = DEFAULT_CACHE_TTL,
 }: UseOptimizedFetchOptions<T>): UseOptimizedFetchResult<T> {
   const [data, setData] = useState<T>(defaultValue);
   const [isLoading, setIsLoading] = useState(true);
@@ -34,7 +45,7 @@ export function useOptimizedFetch<T>({
     // Check cache first
     if (cacheKey) {
       const cached = cache.get(cacheKey);
-      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      if (cached && Date.now() - cached.timestamp < cacheTtl) {
         setData(cached.data as T);
         setIsLoading(false);
         return;
@@ -75,7 +86,7 @@ export function useOptimizedFetch<T>({
         setIsLoading(false);
       }
     }
-  }, [fetchFn, timeoutMs, cacheKey]);
+  }, [fetchFn, timeoutMs, cacheKey, cacheTtl]);
 
   useEffect(() => {
     isMounted.current = true;

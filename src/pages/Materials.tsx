@@ -16,7 +16,7 @@ import { useVerification } from "@/hooks/useVerification";
 import { getDownloadUrl } from "@/services/materialsService";
 import { getMaterialsPaginated } from "@/services/paginatedService";
 import { SectionLoader, EmptyState, LoadMoreButton } from "@/components/common/SectionLoader";
-import { useOptimizedFetch } from "@/hooks/useOptimizedFetch";
+import { useOptimizedFetch, CACHE_TTL } from "@/hooks/useOptimizedFetch";
 import { Material } from "@/types/database";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -49,6 +49,7 @@ const Materials = () => {
     defaultValue: [] as Material[],
     timeoutMs: 8000,
     cacheKey: 'materials-page-0',
+    cacheTtl: CACHE_TTL.LONG, // 5 minutes cache for materials
   });
 
   const applyFilters = async (newFilters: MaterialFiltersState) => {
