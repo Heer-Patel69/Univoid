@@ -104,7 +104,7 @@ const Events = () => {
   }, [events]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background paper-texture">
       <Header onAuthClick={() => setShowAuthModal(true)} />
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
 

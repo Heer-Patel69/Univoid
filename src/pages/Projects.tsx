@@ -71,7 +71,7 @@ const Projects = () => {
         <meta name="description" content="Find teammates for hackathons, projects, and startups. Collaborate with students who have the skills you need." />
       </Helmet>
 
-      <div className="min-h-screen flex flex-col bg-background">
+      <div className="min-h-screen flex flex-col bg-background paper-texture">
         <Header onAuthClick={() => setShowAuthModal(true)} />
         
         <main className="flex-1 py-8">

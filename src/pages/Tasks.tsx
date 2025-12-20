@@ -189,7 +189,7 @@ const Tasks = () => {
         <meta name="description" content="A marketplace where students can help each other with assignments, manuals, and presentations. Semi-anonymous and secure." />
       </Helmet>
 
-      <div className="min-h-screen flex flex-col bg-background">
+      <div className="min-h-screen flex flex-col bg-background paper-texture">
         <Header onAuthClick={() => setShowAuthModal(true)} />
         
         <main className="flex-1 py-8">

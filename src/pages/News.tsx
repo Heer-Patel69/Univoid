@@ -147,7 +147,7 @@ const News = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background pb-20 md:pb-0">
+    <div className="min-h-screen flex flex-col bg-background paper-texture pb-20 md:pb-0">
       <Header onAuthClick={() => setAuthOpen(true)} />
 
       <main className="flex-1 py-10 md:py-14">
