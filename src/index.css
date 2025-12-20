@@ -268,14 +268,32 @@
     will-change: opacity;
   }
 
-  /* Optimized skeleton pulse - GPU only */
+  /* Ultra-fast skeleton shimmer - GPU accelerated */
+  @keyframes skeleton-shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  .skeleton-optimized {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--muted)) 0%,
+      hsl(var(--muted) / 0.4) 50%,
+      hsl(var(--muted)) 100%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1s linear infinite;
+    will-change: background-position;
+  }
+
+  /* Fast pulse alternative for simpler skeletons */
   @keyframes skeleton-pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
   }
 
-  .skeleton-optimized {
-    animation: skeleton-pulse 1.5s ease-in-out infinite;
+  .skeleton-pulse {
+    animation: skeleton-pulse 1s ease-in-out infinite;
     will-change: opacity;
   }
 
