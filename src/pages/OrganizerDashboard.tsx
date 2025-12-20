@@ -99,31 +99,24 @@ const OrganizerDashboard = () => {
   // Approve/Reject mutation
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status, userId }: { id: string; status: "approved" | "rejected"; userId: string }) => {
-      let qrCode = null;
-      
-      if (status === "approved") {
-        qrCode = `UV-${selectedEvent}-${id}-${Date.now()}`;
-        
-        const { error: ticketError } = await supabase
-          .from("event_tickets")
-          .insert({
-            registration_id: id,
-            event_id: selectedEvent!,
-            user_id: userId,
-            qr_code: qrCode,
-          });
-        
-        if (ticketError) {
-          console.error("Ticket creation error:", ticketError);
-          throw new Error("Failed to generate ticket");
-        }
-      }
-      
+      // First update the registration status - this triggers the database function
+      // to automatically create a ticket via the create_ticket_on_approval trigger
       const { error } = await supabase
         .from("event_registrations")
         .update({ payment_status: status, reviewed_at: new Date().toISOString() })
         .eq("id", id);
       if (error) throw error;
+
+      // Fetch the generated ticket's QR code for the email
+      let qrCode = null;
+      if (status === "approved") {
+        const { data: ticket } = await supabase
+          .from("event_tickets")
+          .select("qr_code")
+          .eq("registration_id", id)
+          .single();
+        qrCode = ticket?.qr_code;
+      }
 
       try {
         await supabase.functions.invoke("send-registration-status-email", {
