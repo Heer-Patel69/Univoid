@@ -13,13 +13,13 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="border-t-2 border-sketch-border bg-card">
+    <footer className="border-t border-border bg-card relative z-10">
       <div className="container-wide py-10">
         {/* Brand and Social */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
           <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-10 h-10 bg-foreground rounded-xl border-2 border-sketch-border flex items-center justify-center transition-all group-hover:scale-105 group-hover:rotate-3 shadow-sketch-sm">
-              <span className="text-background font-extrabold text-lg font-display">U</span>
+            <div className="w-10 h-10 bg-primary rounded-xl border border-border flex items-center justify-center transition-all group-hover:translate-x-[-2px] group-hover:translate-y-[-2px] shadow-sketch-sm group-hover:shadow-sketch">
+              <span className="text-primary-foreground font-extrabold text-lg font-display">U</span>
             </div>
             <span className="font-extrabold text-xl text-foreground font-display">UniVoid</span>
           </Link>
@@ -28,7 +28,7 @@ const Footer = () => {
             href="https://www.instagram.com/univoid_community/" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="w-10 h-10 rounded-xl bg-card border-2 border-sketch-border shadow-sketch-sm flex items-center justify-center hover:bg-secondary transition-colors"
+            className="w-10 h-10 rounded-xl bg-card border border-border shadow-sketch-sm flex items-center justify-center hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-sketch transition-all"
             aria-label="Follow us on Instagram"
           >
             <Instagram className="w-5 h-5 text-foreground" strokeWidth={2} />
