@@ -316,6 +316,42 @@
     box-shadow: 6px 6px 0px hsl(var(--sketch-border));
   }
 
+  /* ===== Floating Doodle Animation ===== */
+  @keyframes float-doodle {
+    0%, 100% {
+      transform: translateY(0px) rotate(0deg);
+    }
+    25% {
+      transform: translateY(-8px) rotate(2deg);
+    }
+    50% {
+      transform: translateY(-4px) rotate(-1deg);
+    }
+    75% {
+      transform: translateY(-10px) rotate(1deg);
+    }
+  }
+
+  .animate-float-doodle {
+    animation: float-doodle 6s ease-in-out infinite;
+  }
+
+  /* ===== Card Sketch Hover Animation ===== */
+  .card-sketch-hover {
+    @apply bg-card rounded-xl border-2 border-sketch-border shadow-sketch p-6;
+    transition: all 0.2s ease-out;
+  }
+
+  .card-sketch-hover:hover {
+    transform: translate(-3px, -3px);
+    box-shadow: 6px 6px 0px hsl(var(--sketch-border));
+  }
+
+  .card-sketch-hover:active {
+    transform: translate(0, 0);
+    box-shadow: 2px 2px 0px hsl(var(--sketch-border));
+  }
+
   /* Bento Grid Card Variants */
   .bento-card {
     @apply bg-card rounded-xl p-6 relative overflow-hidden;
