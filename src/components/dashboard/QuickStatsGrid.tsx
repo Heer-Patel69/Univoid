@@ -24,7 +24,6 @@ const QuickStatsGrid = ({
       icon: Zap,
       color: "text-yellow-500",
       bgColor: "bg-yellow-500/10",
-      prefix: "⚡",
     },
     {
       label: "Campus Rank",
@@ -32,7 +31,6 @@ const QuickStatsGrid = ({
       icon: Trophy,
       color: "text-purple-500",
       bgColor: "bg-purple-500/10",
-      prefix: "🏆",
     },
     {
       label: "Events Registered",
@@ -40,7 +38,6 @@ const QuickStatsGrid = ({
       icon: Calendar,
       color: "text-blue-500",
       bgColor: "bg-blue-500/10",
-      prefix: "🎫",
     },
     {
       label: "Materials Shared",
@@ -48,13 +45,12 @@ const QuickStatsGrid = ({
       icon: BookOpen,
       color: "text-green-500",
       bgColor: "bg-green-500/10",
-      prefix: "📚",
     },
   ];
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[...Array(4)].map((_, i) => (
           <Card key={i}>
             <CardContent className="p-4">
@@ -68,21 +64,21 @@ const QuickStatsGrid = ({
   }
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
       {stats.map((stat) => (
         <Card key={stat.label} className="overflow-hidden">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div
-                className={`w-10 h-10 rounded-xl flex items-center justify-center ${stat.bgColor}`}
+                className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${stat.bgColor}`}
               >
                 <stat.icon className={`w-5 h-5 ${stat.color}`} />
               </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">
-                  {stat.prefix} {stat.value}
+              <div className="min-w-0">
+                <p className="text-xl sm:text-2xl font-bold text-foreground truncate">
+                  {stat.value}
                 </p>
-                <p className="text-xs text-muted-foreground">{stat.label}</p>
+                <p className="text-xs text-muted-foreground truncate">{stat.label}</p>
               </div>
             </div>
           </CardContent>
