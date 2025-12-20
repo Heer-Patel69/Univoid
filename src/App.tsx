@@ -31,6 +31,8 @@ import SubmitNews from "./pages/SubmitNews";
 import ListBook from "./pages/ListBook";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Terms from "./pages/Terms";
+import RefundPolicy from "./pages/RefundPolicy";
+import LegalDisclaimer from "./pages/LegalDisclaimer";
 import Contact from "./pages/Contact";
 import Events from "./pages/Events";
 import EventDetail from "./pages/EventDetail";
@@ -96,6 +98,8 @@ const App = () => (
                     <Route path="/leaderboard" element={<Leaderboard />} />
                     <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                     <Route path="/terms" element={<Terms />} />
+                    <Route path="/refund-policy" element={<RefundPolicy />} />
+                    <Route path="/legal-disclaimer" element={<LegalDisclaimer />} />
                     <Route path="/contact" element={<Contact />} />
                     <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                     <Route path="/dashboard/upload-material" element={<ProtectedRoute><UploadMaterial /></ProtectedRoute>} />
