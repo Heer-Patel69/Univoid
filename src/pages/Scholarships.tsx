@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet";
-import { Search, MapPin, GraduationCap, Calendar, ExternalLink, Filter, Sparkles, CheckCircle2 } from "lucide-react";
+import { Search, MapPin, GraduationCap, Calendar, ExternalLink, Filter, Sparkles, CheckCircle2, Bell, BellOff, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -11,10 +11,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useRealtimeScholarships } from "@/hooks/useRealtimeScholarships";
 import { useAuth } from "@/contexts/AuthContext";
 import { format, differenceInDays } from "date-fns";
+import { toast } from "sonner";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { BottomNav } from "@/components/layout/BottomNav";
 import AuthModal from "@/components/auth/AuthModal";
+import { scholarshipRemindersService } from "@/services/scholarshipRemindersService";
 
 const INDIAN_STATES = [
   "All States", "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
@@ -29,12 +31,60 @@ const COURSE_LEVELS = ["All Courses", "UG", "PG", "Diploma"];
 
 export default function Scholarships() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
   
   const [search, setSearch] = useState("");
   const [stateFilter, setStateFilter] = useState<string>(profile?.state || "All States");
   const [courseFilter, setCourseFilter] = useState<string>("All Courses");
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [userReminders, setUserReminders] = useState<Set<string>>(new Set());
+  const [loadingReminders, setLoadingReminders] = useState<Set<string>>(new Set());
+
+  // Fetch user's existing reminders
+  useEffect(() => {
+    if (user) {
+      scholarshipRemindersService.getUserReminders(user.id)
+        .then(ids => setUserReminders(new Set(ids)))
+        .catch(console.error);
+    }
+  }, [user]);
+
+  const handleToggleReminder = async (scholarshipId: string, scholarshipTitle: string) => {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+
+    setLoadingReminders(prev => new Set(prev).add(scholarshipId));
+    
+    try {
+      const hasReminder = userReminders.has(scholarshipId);
+      const newState = await scholarshipRemindersService.toggleReminder(scholarshipId, hasReminder);
+      
+      setUserReminders(prev => {
+        const newSet = new Set(prev);
+        if (newState) {
+          newSet.add(scholarshipId);
+          toast.success(`Reminder set for "${scholarshipTitle}"`, {
+            description: "You'll be notified 7 days before the deadline."
+          });
+        } else {
+          newSet.delete(scholarshipId);
+          toast.success("Reminder removed");
+        }
+        return newSet;
+      });
+    } catch (error) {
+      console.error("Error toggling reminder:", error);
+      toast.error("Failed to update reminder");
+    } finally {
+      setLoadingReminders(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(scholarshipId);
+        return newSet;
+      });
+    }
+  };
 
   const filters = {
     search: search || undefined,
@@ -228,23 +278,48 @@ export default function Scholarships() {
                       </div>
 
                       {/* Actions */}
-                      <div className="mt-4 pt-4 border-t">
-                        {scholarship.application_link ? (
-                          <Button asChild className="w-full">
-                            <a href={scholarship.application_link} target="_blank" rel="noopener noreferrer">
-                              Apply Now <ExternalLink className="h-4 w-4 ml-2" />
-                            </a>
+                      <div className="mt-4 pt-4 border-t space-y-2">
+                        <div className="flex gap-2">
+                          {scholarship.application_link ? (
+                            <Button asChild className="flex-1">
+                              <a href={scholarship.application_link} target="_blank" rel="noopener noreferrer">
+                                Apply Now <ExternalLink className="h-4 w-4 ml-2" />
+                              </a>
+                            </Button>
+                          ) : scholarship.source_url ? (
+                            <Button variant="outline" asChild className="flex-1">
+                              <a href={scholarship.source_url} target="_blank" rel="noopener noreferrer">
+                                View Source <ExternalLink className="h-4 w-4 ml-2" />
+                              </a>
+                            </Button>
+                          ) : (
+                            <Button variant="outline" disabled className="flex-1">
+                              No Link Available
+                            </Button>
+                          )}
+                          
+                          {/* Reminder Button */}
+                          <Button
+                            variant={userReminders.has(scholarship.id) ? "secondary" : "outline"}
+                            size="icon"
+                            onClick={() => handleToggleReminder(scholarship.id, scholarship.title)}
+                            disabled={loadingReminders.has(scholarship.id)}
+                            title={userReminders.has(scholarship.id) ? "Remove reminder" : "Set deadline reminder"}
+                          >
+                            {loadingReminders.has(scholarship.id) ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : userReminders.has(scholarship.id) ? (
+                              <BellOff className="h-4 w-4" />
+                            ) : (
+                              <Bell className="h-4 w-4" />
+                            )}
                           </Button>
-                        ) : scholarship.source_url ? (
-                          <Button variant="outline" asChild className="w-full">
-                            <a href={scholarship.source_url} target="_blank" rel="noopener noreferrer">
-                              View Source <ExternalLink className="h-4 w-4 ml-2" />
-                            </a>
-                          </Button>
-                        ) : (
-                          <Button variant="outline" disabled className="w-full">
-                            No Link Available
-                          </Button>
+                        </div>
+                        
+                        {userReminders.has(scholarship.id) && (
+                          <p className="text-xs text-muted-foreground text-center">
+                            🔔 Reminder set - 7 days before deadline
+                          </p>
                         )}
                       </div>
                     </CardContent>
