@@ -9,14 +9,48 @@ const corsHeaders = {
 const SYSTEM_USER_EMAIL = "system@univoid.local";
 const SYSTEM_USER_NAME = "UniVoid System";
 
-// Keywords for filtering scholarship/job/placement news
-const SEARCH_QUERIES = [
-  "scholarship India students",
-  "government scholarship 2024 2025",
-  "college scholarship deadline",
-  "engineering scholarship",
-  "merit scholarship India",
+// INDIA-ONLY scholarship keywords (MANDATORY)
+const INDIA_SEARCH_QUERIES = [
+  "India scholarship",
+  "Indian students scholarship",
+  "state government scholarship India",
+  "AICTE scholarship",
+  "UGC scholarship",
+  "NSP scholarship",
+  "higher education scheme India",
+  "merit scholarship India 2024 2025",
 ];
+
+// FOREIGN/GLOBAL keywords to AUTO-REJECT
+const FOREIGN_REJECT_KEYWORDS = [
+  "usa", "uk", "canada", "australia", "europe", "germany", "france",
+  "foreign students", "international students", "overseas", "abroad",
+  "study abroad", "american", "british", "australian", "european",
+  "fulbright", "chevening", "commonwealth", "rhodes"
+];
+
+// TRUSTED Indian domains (WHITELIST)
+const TRUSTED_DOMAINS = [
+  "gov.in", "nic.in", "ac.in", "edu.in",
+  "scholarships.gov.in", "nsp.gov.in", "ugc.ac.in", "aicte-india.org"
+];
+
+// Indian states for matching
+const INDIAN_STATES = [
+  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+  "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
+  "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram",
+  "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
+  "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
+  "Delhi", "Jammu and Kashmir", "Ladakh", "Puducherry", "Chandigarh"
+];
+
+// Course level keywords
+const COURSE_LEVELS = {
+  "UG": ["undergraduate", "bachelor", "btech", "b.tech", "bsc", "b.sc", "bba", "bcom", "b.com", "ba", "be", "ug"],
+  "PG": ["postgraduate", "master", "mtech", "m.tech", "msc", "m.sc", "mba", "mcom", "m.com", "ma", "pg", "phd"],
+  "Diploma": ["diploma", "polytechnic", "iti"],
+};
 
 interface NewsAPIArticle {
   title: string;
@@ -26,43 +60,143 @@ interface NewsAPIArticle {
   publishedAt: string;
 }
 
-interface NewsItem {
+interface ScholarshipItem {
   title: string;
   description: string;
-  source: string;
-  url: string;
-  category: "Student" | "Job" | "Placement" | "Trend";
-  isScholarship: boolean;
-  publishedAt: string;
+  source_name: string;
+  source_url: string;
+  source_domain: string;
+  deadline: string | null;
+  eligible_states: string[];
+  is_all_india: boolean;
+  eligible_courses: string[];
+  official_source: boolean;
+  application_link: string | null;
 }
 
-function categorizeNews(title: string, description: string): { category: NewsItem["category"]; isScholarship: boolean } {
-  const text = `${title} ${description}`.toLowerCase();
+function extractDomain(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    return urlObj.hostname.replace("www.", "");
+  } catch {
+    return "";
+  }
+}
+
+function isTrustedDomain(domain: string): boolean {
+  return TRUSTED_DOMAINS.some(trusted => domain.includes(trusted));
+}
+
+function containsForeignKeywords(text: string): boolean {
+  const lowerText = text.toLowerCase();
+  return FOREIGN_REJECT_KEYWORDS.some(keyword => lowerText.includes(keyword));
+}
+
+function extractStates(text: string): { states: string[]; isAllIndia: boolean } {
+  const lowerText = text.toLowerCase();
   
-  // Prioritize scholarship detection
-  if (text.includes("scholarship") || text.includes("fellowship") || text.includes("grant") || text.includes("stipend")) {
-    return { category: "Student", isScholarship: true };
+  // Check for All India
+  if (lowerText.includes("all india") || lowerText.includes("pan india") || 
+      lowerText.includes("national level") || lowerText.includes("nationwide")) {
+    return { states: [], isAllIndia: true };
   }
-  if (text.includes("placement") || text.includes("campus") || text.includes("recruit")) {
-    return { category: "Placement", isScholarship: false };
+  
+  // Extract specific states
+  const foundStates: string[] = [];
+  for (const state of INDIAN_STATES) {
+    if (lowerText.includes(state.toLowerCase())) {
+      foundStates.push(state);
+    }
   }
-  if (text.includes("job") || text.includes("hiring") || text.includes("career") || text.includes("internship")) {
-    return { category: "Job", isScholarship: false };
-  }
-  if (text.includes("trend") || text.includes("salary") || text.includes("skill") || text.includes("demand")) {
-    return { category: "Trend", isScholarship: false };
-  }
-  return { category: "Student", isScholarship: false };
+  
+  return { states: foundStates, isAllIndia: foundStates.length === 0 };
 }
 
-function generateSummary(description: string): string {
-  if (!description) return "";
-  const sentences = description.split(/[.!?]+/).filter(s => s.trim().length > 0);
-  return sentences.slice(0, 3).join(". ").trim() + ".";
+function extractCourses(text: string): string[] {
+  const lowerText = text.toLowerCase();
+  const courses: string[] = [];
+  
+  for (const [level, keywords] of Object.entries(COURSE_LEVELS)) {
+    if (keywords.some(kw => lowerText.includes(kw))) {
+      courses.push(level);
+    }
+  }
+  
+  return courses.length > 0 ? courses : ["Any"];
+}
+
+function extractDeadline(text: string): string | null {
+  // Common deadline patterns
+  const patterns = [
+    /deadline[:\s]+(\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4})/i,
+    /last date[:\s]+(\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4})/i,
+    /apply by[:\s]+(\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4})/i,
+    /(\d{1,2}(?:st|nd|rd|th)?\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+\d{4})/i,
+  ];
+  
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) {
+      try {
+        const date = new Date(match[1]);
+        if (!isNaN(date.getTime())) {
+          return date.toISOString().split('T')[0];
+        }
+      } catch {
+        continue;
+      }
+    }
+  }
+  
+  return null;
+}
+
+function isValidScholarship(article: NewsAPIArticle): boolean {
+  const text = `${article.title} ${article.description}`.toLowerCase();
+  
+  // MUST contain scholarship-related keywords
+  const scholarshipKeywords = ["scholarship", "fellowship", "grant", "stipend", "financial aid", "bursary"];
+  const hasScholarshipKeyword = scholarshipKeywords.some(kw => text.includes(kw));
+  if (!hasScholarshipKeyword) return false;
+  
+  // MUST NOT contain foreign keywords
+  if (containsForeignKeywords(text)) {
+    console.log(`Rejected (foreign): ${article.title.substring(0, 50)}...`);
+    return false;
+  }
+  
+  // MUST contain India-related content
+  const indiaKeywords = ["india", "indian", ...INDIAN_STATES.map(s => s.toLowerCase())];
+  const hasIndiaKeyword = indiaKeywords.some(kw => text.includes(kw));
+  if (!hasIndiaKeyword) {
+    console.log(`Rejected (no India): ${article.title.substring(0, 50)}...`);
+    return false;
+  }
+  
+  return true;
+}
+
+function processScholarship(article: NewsAPIArticle): ScholarshipItem {
+  const text = `${article.title} ${article.description}`;
+  const domain = extractDomain(article.url);
+  const { states, isAllIndia } = extractStates(text);
+  
+  return {
+    title: article.title,
+    description: article.description || "",
+    source_name: article.source?.name || "Unknown",
+    source_url: article.url,
+    source_domain: domain,
+    deadline: extractDeadline(text),
+    eligible_states: states,
+    is_all_india: isAllIndia,
+    eligible_courses: extractCourses(text),
+    official_source: isTrustedDomain(domain),
+    application_link: isTrustedDomain(domain) ? article.url : null,
+  };
 }
 
 async function getOrCreateSystemUser(supabase: any): Promise<string> {
-  // Check if system user already exists by email
   const { data: existingProfile } = await supabase
     .from("profiles")
     .select("id")
@@ -70,16 +204,12 @@ async function getOrCreateSystemUser(supabase: any): Promise<string> {
     .maybeSingle();
 
   if (existingProfile?.id) {
-    console.log(`Using existing system user: ${existingProfile.id}`);
     return existingProfile.id;
   }
 
-  // Create new system user via admin API
-  console.log("Creating new system user...");
-  
   const { data: authData, error: authError } = await supabase.auth.admin.createUser({
     email: SYSTEM_USER_EMAIL,
-    password: crypto.randomUUID(), // Random password - won't be used for login
+    password: crypto.randomUUID(),
     email_confirm: true,
     user_metadata: {
       full_name: SYSTEM_USER_NAME,
@@ -90,33 +220,34 @@ async function getOrCreateSystemUser(supabase: any): Promise<string> {
   });
 
   if (authError) {
-    console.error("Failed to create system user:", authError.message);
     throw new Error(`Failed to create system user: ${authError.message}`);
   }
 
-  console.log(`Created system user: ${authData.user.id}`);
   return authData.user.id;
 }
 
-async function fetchNewsFromNewsAPI(apiKey: string): Promise<NewsItem[]> {
-  const allNews: NewsItem[] = [];
+async function fetchIndiaScholarships(apiKey: string): Promise<ScholarshipItem[]> {
+  const scholarships: ScholarshipItem[] = [];
+  const seenTitles = new Set<string>();
   
-  // Fetch news for each search query
-  for (const query of SEARCH_QUERIES.slice(0, 2)) {
+  // Calculate date range (last 7 days)
+  const fromDate = new Date();
+  fromDate.setDate(fromDate.getDate() - 7);
+  const fromDateStr = fromDate.toISOString().split('T')[0];
+  
+  for (const query of INDIA_SEARCH_QUERIES.slice(0, 3)) {
     try {
-      const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&language=en&sortBy=publishedAt&pageSize=5`;
+      // INDIA-ONLY search parameters
+      const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&language=en&from=${fromDateStr}&sortBy=publishedAt&pageSize=10`;
       
-      console.log(`Fetching news for query: ${query}`);
+      console.log(`Fetching: ${query}`);
       
       const response = await fetch(url, {
-        headers: {
-          "X-Api-Key": apiKey,
-        },
+        headers: { "X-Api-Key": apiKey },
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`NewsAPI error for "${query}": ${response.status} - ${errorText}`);
+        console.error(`NewsAPI error: ${response.status}`);
         continue;
       }
 
@@ -126,35 +257,33 @@ async function fetchNewsFromNewsAPI(apiKey: string): Promise<NewsItem[]> {
         for (const article of data.articles as NewsAPIArticle[]) {
           if (!article.title || !article.description) continue;
           
-          const catResult = categorizeNews(article.title, article.description);
-          allNews.push({
-            title: article.title,
-            description: article.description,
-            source: article.source?.name || "Unknown",
-            url: article.url,
-            category: catResult.category,
-            isScholarship: catResult.isScholarship,
-            publishedAt: article.publishedAt,
-          });
+          // Skip duplicates
+          const titleKey = article.title.toLowerCase().substring(0, 50);
+          if (seenTitles.has(titleKey)) continue;
+          
+          // Validate India-only
+          if (!isValidScholarship(article)) continue;
+          
+          seenTitles.add(titleKey);
+          scholarships.push(processScholarship(article));
         }
       }
     } catch (error) {
-      console.error(`Error fetching news for "${query}":`, error);
+      console.error(`Error fetching "${query}":`, error);
     }
   }
 
-  console.log(`Total news items fetched: ${allNews.length}`);
-  return allNews;
+  console.log(`Total valid India scholarships: ${scholarships.length}`);
+  return scholarships;
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log("Starting auto-news fetch from NewsAPI.org...");
+    console.log("Starting India-only scholarship fetch...");
 
     const newsApiKey = Deno.env.get("NEWS_API_KEY");
     if (!newsApiKey) {
@@ -163,96 +292,86 @@ const handler = async (req: Request): Promise<Response> => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get or create system user for auto-generated content
     const systemUserId = await getOrCreateSystemUser(supabase);
-    console.log(`Using system user ID: ${systemUserId}`);
-
-    // Fetch news from NewsAPI.org
-    const newsItems = await fetchNewsFromNewsAPI(newsApiKey);
+    const scholarships = await fetchIndiaScholarships(newsApiKey);
     
-    if (newsItems.length === 0) {
+    if (scholarships.length === 0) {
       return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: "No news items fetched",
-          total: 0,
-          inserted: 0,
-        }),
-        {
-          status: 200,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
+        JSON.stringify({ success: true, message: "No new India scholarships found", total: 0, inserted: 0 }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
     let insertedCount = 0;
+    let needsReviewCount = 0;
 
-    for (const item of newsItems) {
-      // Check if similar news already exists (by title similarity)
-      const titlePrefix = item.title.substring(0, 50);
+    for (const scholarship of scholarships) {
+      // Check for duplicates
+      const titlePrefix = scholarship.title.substring(0, 50);
       const { data: existing } = await supabase
-        .from("news")
+        .from("scholarships")
         .select("id")
         .ilike("title", `%${titlePrefix}%`)
         .limit(1);
 
       if (existing && existing.length > 0) {
-        console.log(`Skipping duplicate: ${item.title.substring(0, 50)}...`);
+        console.log(`Skipping duplicate: ${titlePrefix}...`);
         continue;
       }
 
-      // Create news entry with category
-      const summary = generateSummary(item.description);
-      const content = `${summary}\n\n**Source:** ${item.source}\n\n*Auto-curated for students*`;
-      
-      // Map to database category
-      const dbCategory = item.isScholarship ? "scholarship" : 
-        item.category === "Job" ? "job" : 
-        item.category === "Placement" ? "placement" : "general";
+      // Determine status
+      let status = "pending";
+      if (scholarship.official_source) {
+        status = "approved"; // Auto-approve trusted sources
+      } else if (!scholarship.deadline) {
+        status = "pending"; // Needs review for deadline
+      }
 
-      const { error } = await supabase.from("news").insert({
-        title: item.title,
-        content,
-        external_link: item.url,
+      const { error } = await supabase.from("scholarships").insert({
+        title: scholarship.title,
+        description: scholarship.description,
+        source_name: scholarship.source_name,
+        source_url: scholarship.source_url,
+        source_domain: scholarship.source_domain,
+        deadline: scholarship.deadline,
+        deadline_status: scholarship.deadline ? "active" : "needs_review",
+        eligible_states: scholarship.eligible_states,
+        is_all_india: scholarship.is_all_india,
+        eligible_courses: scholarship.eligible_courses,
+        application_link: scholarship.application_link,
+        official_source: scholarship.official_source,
+        status,
         created_by: systemUserId,
-        status: "approved",
-        category: dbCategory,
       });
 
       if (error) {
-        console.error(`Failed to insert news: ${error.message}`);
+        console.error(`Failed to insert: ${error.message}`);
       } else {
         insertedCount++;
-        console.log(`Inserted: ${item.title.substring(0, 50)}...`);
+        if (status === "pending") needsReviewCount++;
+        console.log(`Inserted (${status}): ${scholarship.title.substring(0, 50)}...`);
       }
     }
 
-    console.log(`Completed: ${insertedCount} news items inserted`);
+    console.log(`Completed: ${insertedCount} inserted, ${needsReviewCount} need review`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `Fetched and inserted ${insertedCount} news items from NewsAPI.org`,
-        systemUserId,
-        total: newsItems.length,
+        message: `Fetched ${insertedCount} India-only scholarships`,
+        total: scholarships.length,
         inserted: insertedCount,
+        needsReview: needsReviewCount,
       }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   } catch (error: any) {
-    console.error("Auto-news fetch error:", error);
+    console.error("Scholarship fetch error:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
 };
