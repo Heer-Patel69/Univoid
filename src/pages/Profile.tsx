@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { User, Trophy, FileText, Newspaper, BookOpen, ArrowLeft, Loader2, Pencil } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { FloatingDoodles } from "@/components/common/FloatingDoodles";
 
 interface ProfileData {
   id: string;
@@ -101,7 +100,6 @@ const Profile = () => {
       <div className="min-h-screen flex flex-col bg-sketch paper-texture">
         <Header onAuthClick={() => {}} />
         <main className="flex-1 py-8 relative">
-          <FloatingDoodles density="low" />
           <div className="container-wide max-w-2xl text-center py-16 relative z-10">
             <p className="text-muted-foreground">Profile not found.</p>
             <Link to="/leaderboard">
@@ -122,8 +120,6 @@ const Profile = () => {
       <Header onAuthClick={() => {}} />
       
       <main className="flex-1 py-8 relative overflow-hidden">
-        <FloatingDoodles density="medium" />
-        
         <div className="container-wide max-w-2xl relative z-10">
           <Link to="/leaderboard">
             <Button variant="ghost" size="sm" className="mb-6 border-2 border-sketch-border shadow-sketch-sm hover:shadow-sketch hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all rounded-xl">

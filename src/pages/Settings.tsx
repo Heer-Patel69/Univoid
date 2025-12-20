@@ -37,7 +37,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { FloatingDoodles } from "@/components/common/FloatingDoodles";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -95,8 +94,6 @@ const Settings = () => {
       <Header onAuthClick={() => {}} />
 
       <main className="flex-1 py-8 relative overflow-hidden">
-        <FloatingDoodles density="medium" />
-        
         <div className="container-wide max-w-3xl relative z-10">
           <Button variant="ghost" size="sm" className="mb-6 border-2 border-sketch-border shadow-sketch-sm hover:shadow-sketch hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all rounded-xl" onClick={() => navigate("/dashboard")}>
             <ArrowLeft className="w-4 h-4 mr-1" strokeWidth={2} />

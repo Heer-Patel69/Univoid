@@ -18,7 +18,6 @@ import {
   DoodleSquiggle,
   DoodleUnderline
 } from "@/components/common/SketchDoodles";
-import { FloatingDoodles } from "@/components/common/FloatingDoodles";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
   ArrowRight,
@@ -146,9 +145,6 @@ const Index = () => {
       <main className="flex-1">
         {/* Hero Section with Parallax */}
         <section ref={heroRef} className="py-16 md:py-24 lg:py-32 relative overflow-hidden">
-          {/* Floating Doodles Background */}
-          <FloatingDoodles density="high" section="hero" />
-          
           {/* Parallax Background Elements */}
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
             {/* Floating shapes that move at different speeds */}
@@ -253,9 +249,6 @@ const Index = () => {
 
         {/* What is UniVoid */}
         <section className="py-16 md:py-24 relative overflow-hidden">
-          {/* Floating Doodles */}
-          <FloatingDoodles density="low" />
-          
           {/* Doodle decorations */}
           <DoodleLightbulb className="absolute top-10 left-8 w-16 h-20 opacity-60 hidden md:block animate-float-doodle" />
           <DoodleBook className="absolute bottom-10 right-12 w-14 h-14 opacity-60 hidden md:block animate-float-doodle" />
@@ -275,9 +268,6 @@ const Index = () => {
 
         {/* Core Features */}
         <section className="py-16 md:py-24 bg-card border-y-2 border-sketch-border relative overflow-hidden">
-          {/* Floating Doodles */}
-          <FloatingDoodles density="medium" />
-          
           {/* Doodle decorations */}
           <DoodleStar className="absolute top-16 right-10 w-12 h-12 opacity-50 hidden lg:block animate-float-doodle" />
           <DoodleRocket className="absolute bottom-20 left-8 w-14 h-16 opacity-50 hidden lg:block animate-float-doodle" />
