@@ -67,7 +67,7 @@ const Dashboard = () => {
           <Menu className="w-5 h-5" />
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="p-0 w-72">
+      <SheetContent side="left" className="p-0 w-72 overflow-y-auto">
         <DashboardSidebar isMobile />
       </SheetContent>
     </Sheet>

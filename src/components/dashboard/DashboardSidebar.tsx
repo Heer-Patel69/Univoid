@@ -12,6 +12,7 @@ import {
   Settings,
   CheckSquare,
   LogOut,
+  Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -41,13 +42,20 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
     ? [{ label: "Organizer Dashboard", icon: CheckSquare, href: "/organizer/dashboard" }]
     : [];
 
+  const adminItems = isAdmin
+    ? [{ label: "Admin Panel", icon: Shield, href: "/admin" }]
+    : [];
+
   const isActive = (href: string) => location.pathname === href;
 
   return (
     <aside className={cn(
-      "flex flex-col bg-card border-r border-border min-h-screen p-4",
-      isMobile ? "w-full" : "hidden lg:flex w-64"
+      "flex flex-col bg-card border-r border-border",
+      isMobile 
+        ? "w-full h-full overflow-y-auto" 
+        : "hidden lg:flex w-64 h-screen sticky top-0 overflow-y-auto"
     )}>
+      <div className="p-4 flex flex-col flex-1">
       {/* Logo */}
       <Link to="/" className="flex items-center gap-2 px-3 py-4 mb-6">
         <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
@@ -146,6 +154,30 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
           </>
         )}
 
+        {/* Admin Section */}
+        {adminItems.length > 0 && (
+          <>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mt-6 mb-2">
+              Admin
+            </p>
+            {adminItems.map((item) => (
+              <Link
+                key={item.href}
+                to={item.href}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
+                  isActive(item.href)
+                    ? "bg-primary text-primary-foreground"
+                    : "text-foreground hover:bg-secondary"
+                )}
+              >
+                <item.icon className="w-4 h-4" />
+                {item.label}
+              </Link>
+            ))}
+          </>
+        )}
+
         {/* Leaderboard */}
         <Link
           to="/leaderboard"
@@ -178,6 +210,7 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
           <LogOut className="w-4 h-4" />
           Sign Out
         </Button>
+      </div>
       </div>
     </aside>
   );
