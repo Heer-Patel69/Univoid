@@ -35,3 +35,18 @@ verify_jwt = false
 
 [functions.compress-pdf]
 verify_jwt = true
+
+[functions.send-web-push]
+verify_jwt = false
+
+[functions.send-scholarship-reminders]
+verify_jwt = false
+
+[functions.fetch-india-scholarships]
+verify_jwt = false
+
+[functions.send-deadline-reminders]
+verify_jwt = false
+
+[functions.send-registration-email]
+verify_jwt = false

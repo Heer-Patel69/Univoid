@@ -10,6 +10,7 @@ import { CookieConsent } from "@/components/common/CookieConsent";
 import CheckInRedirect from "@/components/common/CheckInRedirect";
 import { GlobalRealtimeProvider } from "@/components/common/GlobalRealtimeProvider";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
+import { PushNotificationPrompt } from "@/components/notifications/PushNotificationPrompt";
 import Index from "./pages/Index";
 import Materials from "./pages/Materials";
 import News from "./pages/News";
@@ -112,6 +113,7 @@ const App = () => (
                   </Routes>
                 </ErrorBoundary>
                 <CookieConsent />
+                <PushNotificationPrompt />
               </GlobalRealtimeProvider>
             </AuthProvider>
           </BrowserRouter>
