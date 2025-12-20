@@ -9,9 +9,11 @@ import { Badge } from "@/components/ui/badge";
 import { 
   Check, X, FileText, Newspaper, BookOpen, Loader2, 
   Flag, Trash2, Eye, Users, Shield, AlertTriangle, Ban, KeyRound,
-  Mail, MessageSquare, Sparkles, Calendar, ToggleLeft, ToggleRight, UserPlus
+  Mail, MessageSquare, Sparkles, Calendar, ToggleLeft, ToggleRight, UserPlus,
+  Bell, Send
 } from "lucide-react";
 import AdminAssistantManager from "@/components/admin/AdminAssistantManager";
+import { SystemToolsTab } from "@/components/admin/SystemToolsTab";
 import { isFullAdmin } from "@/services/adminInviteService";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
@@ -1194,6 +1196,10 @@ const Admin = () => {
                     <UserPlus className="w-3 h-3 mr-1" />
                     Assistants
                   </TabsTrigger>
+                  <TabsTrigger value="system" className="text-xs sm:text-sm">
+                    <Bell className="w-3 h-3 mr-1" />
+                    System
+                  </TabsTrigger>
                 </TabsList>
               </CardHeader>
 
@@ -1232,6 +1238,10 @@ const Admin = () => {
 
                 <TabsContent value="assistants" className="mt-0">
                   <AdminAssistantManager isFullAdmin={isUserFullAdmin} />
+                </TabsContent>
+
+                <TabsContent value="system" className="mt-0">
+                  <SystemToolsTab userId={user?.id} />
                 </TabsContent>
               </CardContent>
             </Tabs>
