@@ -6,43 +6,43 @@
 
 @layer base {
   :root {
-    /* Warm Cream Background - Cozy journal feel */
-    --background: 48 60% 97%;
-    --foreground: 0 0% 9%;
+    /* Sketchbook Aesthetic - Warm Cream Paper */
+    --background: 43 33% 97%; /* #F9F7F1 */
+    --foreground: 0 0% 10%; /* #1A1A1A */
 
-    /* White cards with warmth */
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 9%;
+    /* Pure white cards */
+    --card: 0 0% 100%; /* #FFFFFF */
+    --card-foreground: 0 0% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 9%;
+    --popover-foreground: 0 0% 10%;
 
-    /* Black primary for CTAs */
-    --primary: 0 0% 9%;
-    --primary-foreground: 48 60% 97%;
+    /* Dark primary for CTAs */
+    --primary: 0 0% 10%;
+    --primary-foreground: 0 0% 100%;
 
-    /* Soft warm secondary */
-    --secondary: 40 30% 94%;
-    --secondary-foreground: 0 0% 9%;
+    /* Soft secondary */
+    --secondary: 43 20% 96%;
+    --secondary-foreground: 0 0% 10%;
 
-    --muted: 40 20% 92%;
-    --muted-foreground: 0 0% 45%;
+    --muted: 43 15% 94%;
+    --muted-foreground: 0 0% 40%; /* #666666 */
 
-    /* Pastel accent */
-    --accent: 270 50% 95%;
-    --accent-foreground: 0 0% 9%;
+    /* Highlight yellow accent */
+    --accent: 50 100% 71%; /* #FFE66D */
+    --accent-foreground: 0 0% 10%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Soft borders (not harsh black) */
-    --border: 0 0% 85%;
-    --border-strong: 0 0% 20%;
-    --input: 40 20% 92%;
-    --ring: 0 0% 9%;
+    /* Strong black borders for sketch look */
+    --border: 0 0% 0%; /* #000000 */
+    --border-strong: 0 0% 0%;
+    --input: 43 15% 94%;
+    --ring: 0 0% 10%;
 
-    /* Heavy rounded corners */
-    --radius: 1.5rem;
+    /* 12px radius for sketch look */
+    --radius: 0.75rem;
 
     /* Status colors */
     --success: 152 69% 45%;
@@ -50,29 +50,29 @@
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
     
-    /* Pastel accent colors */
-    --pastel-blue: 210 80% 92%;
-    --pastel-green: 152 50% 90%;
-    --pastel-peach: 20 80% 92%;
-    --pastel-purple: 270 60% 92%;
-    --pastel-yellow: 45 80% 90%;
-    --pastel-pink: 340 60% 92%;
+    /* Pastel accent colors - Solid pastels */
+    --pastel-blue: 200 80% 85%; /* #A9DEF9 */
+    --pastel-green: 140 60% 88%; /* #D0F4DE */
+    --pastel-peach: 20 80% 88%;
+    --pastel-purple: 270 60% 88%;
+    --pastel-yellow: 50 100% 71%; /* #FFE66D */
+    --pastel-pink: 340 60% 88%;
     
     /* Category accent colors */
-    --category-blue: 210 100% 55%;
-    --category-green: 152 69% 45%;
+    --category-blue: 200 80% 60%;
+    --category-green: 140 60% 50%;
     --category-orange: 25 95% 55%;
-    --category-yellow: 45 93% 50%;
+    --category-yellow: 50 100% 50%;
     --category-purple: 270 70% 60%;
 
-    --sidebar-background: 48 40% 96%;
-    --sidebar-foreground: 0 0% 9%;
-    --sidebar-primary: 0 0% 9%;
-    --sidebar-primary-foreground: 48 60% 97%;
-    --sidebar-accent: 270 50% 95%;
-    --sidebar-accent-foreground: 0 0% 9%;
-    --sidebar-border: 0 0% 85%;
-    --sidebar-ring: 0 0% 9%;
+    --sidebar-background: 0 0% 100%; /* White sidebar */
+    --sidebar-foreground: 0 0% 10%; /* Dark text */
+    --sidebar-primary: 0 0% 10%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 43 15% 94%;
+    --sidebar-accent-foreground: 0 0% 10%;
+    --sidebar-border: 0 0% 0%;
+    --sidebar-ring: 0 0% 10%;
   }
 
   .dark {
@@ -94,13 +94,13 @@
     --muted: 20 10% 18%;
     --muted-foreground: 48 10% 55%;
 
-    --accent: 270 30% 25%;
-    --accent-foreground: 48 20% 95%;
+    --accent: 50 80% 50%;
+    --accent-foreground: 20 10% 8%;
 
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 20 10% 25%;
+    --border: 48 20% 30%;
     --border-strong: 48 20% 80%;
     --input: 20 10% 20%;
     --ring: 48 20% 95%;
@@ -130,17 +130,19 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'Nunito', 'Outfit', system-ui, sans-serif;
     font-feature-settings: "cv11", "ss01";
-    /* Subtle dot pattern background */
-    background-image: radial-gradient(circle, hsl(var(--foreground) / 0.03) 1px, transparent 1px);
-    background-size: 24px 24px;
+    /* Grid pattern for sketchbook feel */
+    background-image: 
+      linear-gradient(hsl(var(--border) / 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--border) / 0.05) 1px, transparent 1px);
+    background-size: 20px 20px;
   }
 
-  /* Friendly rounded typography */
+  /* Friendly typography */
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Nunito', system-ui, sans-serif;
-    @apply font-bold tracking-tight;
+    font-family: 'Nunito', 'Outfit', system-ui, sans-serif;
+    @apply font-bold tracking-tight text-foreground;
   }
 
   h1 {
@@ -165,49 +167,48 @@
     @apply max-w-3xl mx-auto px-4 sm:px-6;
   }
 
-  /* Soft Neubrutalist Card - Heavy rounding, tactile feel */
+  /* Sketchbook Card - Clean with solid borders */
   .card-univoid {
-    @apply bg-card rounded-3xl border-2 border-border-strong/10 p-6;
-    box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.08);
+    @apply bg-card rounded-xl p-6;
+    border: 1px solid hsl(var(--border));
     transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
 
   .card-univoid:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.1);
   }
 
-  /* Bento Grid Card Variants */
+  /* Bento Grid Card Variants - Sketch style */
   .bento-card {
-    @apply bg-card rounded-3xl p-6 relative overflow-hidden;
-    border: 2px solid hsl(var(--border-strong) / 0.08);
-    box-shadow: 0 2px 12px -2px rgba(0, 0, 0, 0.06);
+    @apply bg-card rounded-xl p-6 relative overflow-hidden;
+    border: 1px solid hsl(var(--border));
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .bento-card:hover {
-    transform: translateY(-2px) scale(1.01);
-    box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.1);
   }
 
-  /* Pastel Background Cards */
+  /* Pastel Background Cards - Solid colors, no gradients */
   .bento-card.pastel-blue {
-    background: linear-gradient(135deg, hsl(var(--pastel-blue)), hsl(var(--card)));
+    background: hsl(var(--pastel-blue));
   }
   .bento-card.pastel-green {
-    background: linear-gradient(135deg, hsl(var(--pastel-green)), hsl(var(--card)));
+    background: hsl(var(--pastel-green));
   }
   .bento-card.pastel-peach {
-    background: linear-gradient(135deg, hsl(var(--pastel-peach)), hsl(var(--card)));
+    background: hsl(var(--pastel-peach));
   }
   .bento-card.pastel-purple {
-    background: linear-gradient(135deg, hsl(var(--pastel-purple)), hsl(var(--card)));
+    background: hsl(var(--pastel-purple));
   }
   .bento-card.pastel-yellow {
-    background: linear-gradient(135deg, hsl(var(--pastel-yellow)), hsl(var(--card)));
+    background: hsl(var(--pastel-yellow));
   }
   .bento-card.pastel-pink {
-    background: linear-gradient(135deg, hsl(var(--pastel-pink)), hsl(var(--card)));
+    background: hsl(var(--pastel-pink));
   }
 
   /* Stats Card - Chunky horizontal style */
@@ -229,14 +230,16 @@
     @apply text-sm font-medium text-muted-foreground;
   }
 
-  /* Task Pills */
+  /* Task Pills - Sketch style */
   .task-pill {
-    @apply bg-card rounded-full px-5 py-3 flex items-center gap-3 border-2 border-border-strong/5;
+    @apply bg-card rounded-full px-5 py-3 flex items-center gap-3;
+    border: 1px solid hsl(var(--border));
     transition: all 0.2s ease;
   }
 
   .task-pill:hover {
-    @apply scale-[1.02] shadow-lg;
+    @apply scale-[1.02];
+    background: hsl(var(--secondary));
   }
 
   .task-pill .status-dot {
@@ -255,15 +258,17 @@
     @apply py-12 md:py-16;
   }
 
-  /* UniVoid Pill/Badge Style - Rounded full */
+  /* UniVoid Pill/Badge Style - Sketch style */
   .pill-univoid {
-    @apply inline-flex items-center rounded-full border-2 border-border-strong/10 bg-card px-4 py-1.5 text-xs font-semibold;
+    @apply inline-flex items-center rounded-full bg-card px-4 py-1.5 text-xs font-semibold text-foreground;
+    border: 1px solid hsl(var(--border));
     transition: all 0.15s ease;
   }
 
   .pill-univoid.active,
   .pill-univoid:hover {
-    @apply bg-foreground text-background border-foreground;
+    background: hsl(var(--pastel-yellow));
+    border-color: hsl(var(--border));
   }
 
   /* Category Pills */
@@ -301,10 +306,10 @@
     transform: translateY(0);
   }
 
-  /* Floating Island Nav */
+  /* Floating Island Nav - Sketch style */
   .floating-nav {
-    @apply fixed z-50 bg-card/80 backdrop-blur-xl rounded-full px-2 py-2 border-2 border-border-strong/10;
-    box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.12);
+    @apply fixed z-50 bg-card backdrop-blur-xl rounded-xl px-2 py-2;
+    border: 1px solid hsl(var(--border));
   }
 
   /* Timeline connector */
