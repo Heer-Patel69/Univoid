@@ -26,8 +26,10 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   // Check if email is verified
   // OAuth users (Google, etc.) are trusted and verified by default
+  // Check BOTH app_metadata.provider AND identities array for reliability
   const provider = user.app_metadata?.provider;
-  const isOAuthUser = provider && provider !== 'email';
+  const isOAuthUser = (provider && provider !== 'email') || 
+    (user.identities?.some((identity: any) => identity.provider && identity.provider !== 'email'));
   const emailConfirmed = user.email_confirmed_at !== null;
   const isVerified = isOAuthUser || emailConfirmed;
 
