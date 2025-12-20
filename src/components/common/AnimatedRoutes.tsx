@@ -1,5 +1,5 @@
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { Suspense, lazy } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { Suspense, lazy, useEffect } from "react";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import CheckInRedirect from "@/components/common/CheckInRedirect";
 import AppLayout from "@/components/layout/AppLayout";
@@ -45,10 +45,29 @@ const Settings = lazy(() => import("@/pages/Settings"));
 const Scholarships = lazy(() => import("@/pages/Scholarships"));
 const ScholarshipDetail = lazy(() => import("@/pages/ScholarshipDetail"));
 
-// Minimal loading fallback - no skeleton to avoid flash
+// Preload critical pages after initial render
+const preloadCriticalPages = () => {
+  // Preload most commonly visited pages
+  import("@/pages/Dashboard");
+  import("@/pages/Materials");
+  import("@/pages/Events");
+  import("@/pages/Scholarships");
+};
+
+// Minimal loading - null for instant feel
 const MinimalLoader = () => null;
 
 export const AnimatedRoutes = () => {
+  // Preload critical pages after initial mount
+  useEffect(() => {
+    // Use requestIdleCallback if available, otherwise setTimeout
+    if ('requestIdleCallback' in window) {
+      (window as any).requestIdleCallback(preloadCriticalPages);
+    } else {
+      setTimeout(preloadCriticalPages, 1000);
+    }
+  }, []);
+
   return (
     <Routes>
       {/* Landing page - no layout wrapper needed */}

@@ -16,11 +16,13 @@ import { AnimatedRoutes } from "@/components/common/AnimatedRoutes";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 300000, // 5 minutes - show cached data immediately
-      gcTime: 600000, // 10 minutes - keep in cache
+      staleTime: 1000 * 60 * 10, // 10 minutes - aggressive caching
+      gcTime: 1000 * 60 * 30, // 30 minutes - keep in cache longer
       retry: 1,
       refetchOnWindowFocus: false,
-      refetchOnMount: false, // Don't refetch when component mounts if data exists
+      refetchOnMount: false, // Never refetch if data exists - instant navigation
+      refetchOnReconnect: false,
+      networkMode: 'offlineFirst', // Prefer cache over network
     },
   },
 });

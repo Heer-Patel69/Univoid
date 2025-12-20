@@ -22,7 +22,7 @@ export const LazySection = memo(function LazySection({
   children,
   className,
   fallback,
-  rootMargin = '200px', // Pre-load 200px before entering viewport
+  rootMargin = '300px', // Increased pre-load distance for faster apparent loading
   threshold = 0,
   animateIn = true,
   staggerIndex = 0,
@@ -33,23 +33,25 @@ export const LazySection = memo(function LazySection({
     freezeOnceVisible: true,
   });
 
-  // Get stagger class for animation delay
-  const staggerClass = useMemo(() => {
-    if (!animateIn || staggerIndex <= 0 || staggerIndex > 6) return '';
-    return `stagger-${staggerIndex}`;
-  }, [animateIn, staggerIndex]);
+  // Stagger animation delay - faster timing
+  const staggerDelay = staggerIndex > 0 && staggerIndex <= 6 ? `${staggerIndex * 30}ms` : undefined;
+
+  // Once visible, render immediately without waiting
+  if (wasEverVisible) {
+    return (
+      <div
+        ref={ref}
+        className={cn(animateIn && 'animate-in fade-in-0 duration-200', className)}
+        style={staggerDelay ? { animationDelay: staggerDelay } : undefined}
+      >
+        {children}
+      </div>
+    );
+  }
 
   return (
-    <div
-      ref={ref}
-      className={cn(
-        animateIn && 'lazy-fade-in',
-        wasEverVisible && animateIn && 'visible',
-        staggerClass,
-        className
-      )}
-    >
-      {wasEverVisible ? children : fallback}
+    <div ref={ref} className={className}>
+      {fallback}
     </div>
   );
 });
