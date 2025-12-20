@@ -32,8 +32,8 @@ export function BottomNav() {
   }
 
   return (
-    <nav className="fixed bottom-4 left-4 right-4 z-50 md:hidden">
-      <div className="bg-card/90 backdrop-blur-xl rounded-full border border-border-strong/10 shadow-soft-lg flex items-center justify-around h-16 px-2">
+    <nav className="fixed bottom-3 left-3 right-3 z-50 md:hidden">
+      <div className="bg-card/95 backdrop-blur-xl rounded-2xl border border-border-strong/10 shadow-lg flex items-center justify-around py-2 px-1">
         {navItems.map((item) => {
           const isActive = location.pathname === item.href;
           const Icon = item.icon;
@@ -43,25 +43,25 @@ export function BottomNav() {
               key={item.href}
               to={item.href}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 flex-1 py-2 transition-all",
+                "flex flex-col items-center justify-center gap-0.5 flex-1 py-2 transition-all duration-200 active:scale-95",
                 isActive 
                   ? "text-foreground" 
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground"
               )}
             >
               <div
                 className={cn(
-                  "w-10 h-10 rounded-full flex items-center justify-center transition-all",
+                  "w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-200",
                   item.highlight && !isActive && "bg-pastel-purple",
-                  item.highlight && isActive && "bg-foreground text-background scale-110 shadow-soft",
-                  isActive && !item.highlight && "bg-foreground text-background scale-110 shadow-soft"
+                  item.highlight && isActive && "bg-foreground text-background shadow-md",
+                  isActive && !item.highlight && "bg-foreground text-background shadow-md"
                 )}
               >
                 <Icon className="w-5 h-5" strokeWidth={2.5} />
               </div>
               <span className={cn(
-                "text-[10px] font-bold transition-all",
-                isActive && "scale-105"
+                "text-[10px] font-semibold transition-all",
+                isActive && "font-bold"
               )}>{item.label}</span>
             </Link>
           );

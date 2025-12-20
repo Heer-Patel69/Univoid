@@ -21,9 +21,11 @@ import {
   BookOpen,
   Calendar,
   Plus,
-  Menu
+  Menu,
+  Newspaper
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 const Dashboard = () => {
   const { user, profile, isLoading } = useAuth();
@@ -79,10 +81,10 @@ const Dashboard = () => {
       {/* Main Content */}
       <main className="flex-1 min-h-screen overflow-auto">
         {/* Mobile Header */}
-        <header className="lg:hidden flex items-center justify-between p-4 border-b border-border bg-card">
+        <header className="lg:hidden flex items-center justify-between p-4 border-b border-border bg-card/80 backdrop-blur-lg sticky top-0 z-40">
           <MobileSidebar />
           <Link to="/" className="font-bold text-lg">UniVoid</Link>
-          <div className="w-9" /> {/* Spacer for centering */}
+          <ThemeToggle className="rounded-full" />
         </header>
 
         <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-5xl mx-auto space-y-6">
