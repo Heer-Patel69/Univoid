@@ -60,7 +60,7 @@ export function useLeaderboard(limit = 50) {
     }
     fetchTimeoutRef.current = setTimeout(() => {
       fetchLeaderboard(true); // Force refresh on realtime update
-    }, 2000); // Debounce 2 seconds
+    }, 300); // Reduced debounce for faster updates
   }, [fetchLeaderboard]);
 
   useEffect(() => {

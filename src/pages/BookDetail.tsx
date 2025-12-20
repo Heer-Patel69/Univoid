@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
 import AuthModal from "@/components/auth/AuthModal";
 import BookCarousel from "@/components/books/BookCarousel";
 import { Card, CardContent } from "@/components/ui/card";
@@ -70,121 +68,107 @@ const BookDetail = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <Header onAuthClick={() => setAuthOpen(true)} />
-        <main className="flex-1 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </main>
-        <Footer />
+      <div className="flex-1 flex items-center justify-center py-20">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
   if (!book) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <Header onAuthClick={() => setAuthOpen(true)} />
-        <main className="flex-1 py-10">
-          <div className="container-wide text-center">
-            <h1 className="text-2xl font-bold text-foreground mb-4">Book Not Found</h1>
-            <p className="text-muted-foreground mb-6">The book you're looking for doesn't exist or has been removed.</p>
-            <Link to="/books">
-              <Button>
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Books
-              </Button>
-            </Link>
-          </div>
-        </main>
-        <Footer />
+      <div className="py-10">
+        <div className="container-wide text-center">
+          <h1 className="text-2xl font-bold text-foreground mb-4">Book Not Found</h1>
+          <p className="text-muted-foreground mb-6">The book you're looking for doesn't exist or has been removed.</p>
+          <Link to="/books">
+            <Button>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Books
+            </Button>
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header onAuthClick={() => setAuthOpen(true)} />
+    <div className="py-8">
+      <div className="container-wide max-w-4xl">
+        <Link to="/books">
+          <Button variant="ghost" size="sm" className="mb-6">
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            Back to Books
+          </Button>
+        </Link>
 
-      <main className="flex-1 py-8">
-        <div className="container-wide max-w-4xl">
-          <Link to="/books">
-            <Button variant="ghost" size="sm" className="mb-6">
-              <ArrowLeft className="w-4 h-4 mr-1" />
-              Back to Books
-            </Button>
-          </Link>
+        <div className="grid md:grid-cols-2 gap-8">
+          {/* Image Carousel */}
+          <div>
+            <BookCarousel
+              images={book.image_urls || []}
+              title={book.title}
+            />
+          </div>
 
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* Image Carousel */}
-            <div>
-              <BookCarousel
-                images={book.image_urls || []}
-                title={book.title}
-              />
+          {/* Book Details */}
+          <div>
+            <h1 className="text-2xl font-bold text-foreground mb-3">{book.title}</h1>
+
+            <div className="flex flex-wrap gap-2 mb-4">
+              <Badge variant={book.price ? "default" : "outline"}>
+                {book.price ? "For Sale" : "Exchange"}
+              </Badge>
+              {book.condition && (
+                <Badge variant="secondary">{book.condition}</Badge>
+              )}
+              {book.is_sold && (
+                <Badge variant="destructive">Sold</Badge>
+              )}
             </div>
 
-            {/* Book Details */}
-            <div>
-              <h1 className="text-2xl font-bold text-foreground mb-3">{book.title}</h1>
+            {book.price && book.price > 0 && (
+              <p className="text-3xl font-bold text-primary mb-4">₹{book.price}</p>
+            )}
 
-              <div className="flex flex-wrap gap-2 mb-4">
-                <Badge variant={book.price ? "default" : "outline"}>
-                  {book.price ? "For Sale" : "Exchange"}
-                </Badge>
-                {book.condition && (
-                  <Badge variant="secondary">{book.condition}</Badge>
-                )}
-                {book.is_sold && (
-                  <Badge variant="destructive">Sold</Badge>
-                )}
+            {book.description && (
+              <div className="mb-6">
+                <h3 className="text-sm font-medium text-muted-foreground mb-2">Description</h3>
+                <p className="text-foreground whitespace-pre-wrap">{book.description}</p>
               </div>
+            )}
 
-              {book.price && book.price > 0 && (
-                <p className="text-3xl font-bold text-primary mb-4">₹{book.price}</p>
-              )}
-
-              {book.description && (
-                <div className="mb-6">
-                  <h3 className="text-sm font-medium text-muted-foreground mb-2">Description</h3>
-                  <p className="text-foreground whitespace-pre-wrap">{book.description}</p>
-                </div>
-              )}
-
-              <Card className="mb-6">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center">
-                      <User className="w-5 h-5 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground">{book.contributor_name || "Anonymous"}</p>
-                      <p className="text-sm text-muted-foreground">Seller</p>
-                    </div>
+            <Card className="mb-6">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center">
+                    <User className="w-5 h-5 text-muted-foreground" />
                   </div>
-                </CardContent>
-              </Card>
+                  <div>
+                    <p className="font-medium text-foreground">{book.contributor_name || "Anonymous"}</p>
+                    <p className="text-sm text-muted-foreground">Seller</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-              {!book.is_sold && (
-                <Button
-                  className="w-full"
-                  size="lg"
-                  onClick={handleContact}
-                  disabled={loadingContact}
-                >
-                  {loadingContact ? (
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  ) : (
-                    <MessageCircle className="w-4 h-4 mr-2" />
-                  )}
-                  {user ? "Contact Seller" : "Login to Contact Seller"}
-                </Button>
-              )}
-            </div>
+            {!book.is_sold && (
+              <Button
+                className="w-full"
+                size="lg"
+                onClick={handleContact}
+                disabled={loadingContact}
+              >
+                {loadingContact ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : (
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                )}
+                {user ? "Contact Seller" : "Login to Contact Seller"}
+              </Button>
+            )}
           </div>
         </div>
-      </main>
-
-      <Footer />
+      </div>
 
       <AuthModal
         isOpen={authOpen}

@@ -12,9 +12,8 @@ export const CookieConsent = () => {
   useEffect(() => {
     const consent = localStorage.getItem('cookie-consent');
     if (!consent) {
-      // Small delay to avoid layout shift on initial load
-      const timer = setTimeout(() => setShowBanner(true), 1000);
-      return () => clearTimeout(timer);
+      // Show immediately - no artificial delay
+      setShowBanner(true);
     }
   }, []);
 
