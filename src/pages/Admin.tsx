@@ -117,6 +117,7 @@ const Admin = () => {
   
   // UI state
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: string; id: string; title: string } | null>(null);
   const [previewMaterial, setPreviewMaterial] = useState<ContentItem | null>(null);
@@ -124,6 +125,7 @@ const Admin = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   const fetchAllData = useCallback(async () => {
+    setLoadError(null);
     try {
       const [
         materialsData,
@@ -170,6 +172,8 @@ const Admin = () => {
       setEventsCount(eventsData.data?.length || 0);
     } catch (error) {
       console.error('Error fetching admin data:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setLoadError(errorMessage);
       toast.error('Failed to load admin data');
     } finally {
       setIsLoading(false);
@@ -283,6 +287,35 @@ const Admin = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Show error fallback if data failed to load
+  if (loadError) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
+        <div className="text-center max-w-md">
+          <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            <AlertTriangle className="w-8 h-8 text-destructive" />
+          </div>
+          <h1 className="text-2xl font-bold text-foreground mb-2">Failed to Load Admin Data</h1>
+          <p className="text-muted-foreground mb-2">
+            There was a problem loading the admin dashboard data.
+          </p>
+          <p className="text-sm text-muted-foreground mb-6 font-mono bg-muted p-2 rounded">
+            {loadError}
+          </p>
+          <div className="flex gap-3 justify-center">
+            <Button onClick={() => { setIsLoading(true); fetchAllData(); }}>
+              <Loader2 className="w-4 h-4 mr-2" />
+              Retry
+            </Button>
+            <Button variant="outline" asChild>
+              <Link to="/">Go to Home</Link>
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
