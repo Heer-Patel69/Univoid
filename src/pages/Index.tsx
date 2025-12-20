@@ -6,6 +6,18 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import AuthModal from "@/components/auth/AuthModal";
 import { Button } from "@/components/ui/button";
 import { AnimatedSection } from "@/components/common/AnimatedSection";
+import { 
+  DoodleStar, 
+  DoodleBook, 
+  DoodleLightbulb, 
+  DoodleRocket, 
+  DoodleHeart, 
+  DoodlePencil,
+  DoodleChat,
+  DoodleGradCap,
+  DoodleSquiggle,
+  DoodleUnderline
+} from "@/components/common/SketchDoodles";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
   ArrowRight,
@@ -236,13 +248,18 @@ const Index = () => {
         </AnimatedSection>
 
         {/* What is UniVoid */}
-        <section className="py-16 md:py-24">
-          <div className="container-wide">
+        <section className="py-16 md:py-24 relative overflow-hidden">
+          {/* Doodle decorations */}
+          <DoodleLightbulb className="absolute top-10 left-8 w-16 h-20 opacity-60 hidden md:block" />
+          <DoodleBook className="absolute bottom-10 right-12 w-14 h-14 opacity-60 hidden md:block" />
+          
+          <div className="container-wide relative z-10">
             <AnimatedSection className="max-w-3xl mx-auto text-center">
-              <h2 className="font-display text-foreground mb-6 text-3xl md:text-4xl font-bold">
+              <h2 className="font-display text-foreground mb-6 text-3xl md:text-4xl font-bold relative inline-block">
                 What is UniVoid?
+                <DoodleUnderline className="absolute -bottom-2 left-0 w-full h-4 opacity-40" />
               </h2>
-              <p className="text-muted-foreground leading-relaxed text-lg md:text-xl">
+              <p className="text-muted-foreground leading-relaxed text-lg md:text-xl mt-4">
                 UniVoid is a student-first platform designed to simplify college life. Instead of using multiple apps and websites, UniVoid brings everything students actually need into one guided and personalized experience. No clutter. No confusion. Just useful features.
               </p>
             </AnimatedSection>
@@ -250,8 +267,13 @@ const Index = () => {
         </section>
 
         {/* Core Features */}
-        <section className="py-16 md:py-24 bg-card border-y-2 border-sketch-border">
-          <div className="container-wide">
+        <section className="py-16 md:py-24 bg-card border-y-2 border-sketch-border relative overflow-hidden">
+          {/* Doodle decorations */}
+          <DoodleStar className="absolute top-16 right-10 w-12 h-12 opacity-50 hidden lg:block" />
+          <DoodleRocket className="absolute bottom-20 left-8 w-14 h-16 opacity-50 hidden lg:block" />
+          <DoodlePencil className="absolute top-1/2 right-4 w-10 h-10 opacity-40 hidden xl:block" />
+          
+          <div className="container-wide relative z-10">
             <AnimatedSection className="text-center mb-12">
               <h2 className="font-display text-foreground mb-4 text-3xl md:text-4xl font-bold">
                 Core Features
@@ -277,8 +299,12 @@ const Index = () => {
         </section>
 
         {/* How It Works */}
-        <section className="py-16 md:py-24">
-          <div className="container-wide">
+        <section className="py-16 md:py-24 relative overflow-hidden">
+          {/* Doodle decorations */}
+          <DoodleSquiggle className="absolute top-20 right-0 w-24 h-8 opacity-40 hidden md:block" />
+          <DoodleChat className="absolute bottom-16 left-6 w-12 h-12 opacity-50 hidden md:block" />
+          
+          <div className="container-wide relative z-10">
             <AnimatedSection className="text-center mb-12">
               <h2 className="font-display text-foreground mb-4 text-3xl md:text-4xl font-bold">
                 How It Works
@@ -310,8 +336,12 @@ const Index = () => {
         </section>
 
         {/* Why Students Use UniVoid */}
-        <section className="py-16 md:py-24 bg-card border-y-2 border-sketch-border">
-          <div className="container-wide">
+        <section className="py-16 md:py-24 bg-card border-y-2 border-sketch-border relative overflow-hidden">
+          {/* Doodle decorations */}
+          <DoodleHeart className="absolute top-12 left-10 w-10 h-10 opacity-50 hidden md:block" />
+          <DoodleGradCap className="absolute bottom-12 right-8 w-16 h-14 opacity-50 hidden md:block" />
+          
+          <div className="container-wide relative z-10">
             <div className="max-w-3xl mx-auto">
               <AnimatedSection className="mb-8">
                 <h2 className="font-display text-foreground text-3xl md:text-4xl font-bold text-center">
