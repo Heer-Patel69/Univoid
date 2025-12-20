@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useVerification } from "@/hooks/useVerification";
 import { getDownloadUrl } from "@/services/materialsService";
 import { getMaterialsPaginated } from "@/services/paginatedService";
+import { forceDownloadFile } from "@/lib/downloadUtils";
 import { EmptyState, LoadMoreButton } from "@/components/common/SectionLoader";
 import { LazySection } from "@/components/common/LazySection";
 import { useDeviceCapability, deferAfterPaint } from "@/hooks/useDeviceCapability";
@@ -186,7 +187,9 @@ const Materials = () => {
       
       const url = await getDownloadUrl(material.id);
       if (url) {
-        window.open(url, '_blank');
+        // Force download instead of opening in new tab
+        const filename = `${material.title}.${material.file_type}`;
+        await forceDownloadFile(url, filename);
         setAllMaterials(prev => prev.map(m => 
           m.id === material.id 
             ? { ...m, downloads_count: (m.downloads_count || 0) + 1 }
