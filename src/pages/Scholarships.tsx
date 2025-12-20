@@ -11,6 +11,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useRealtimeScholarships } from "@/hooks/useRealtimeScholarships";
 import { useAuth } from "@/contexts/AuthContext";
 import { format, differenceInDays } from "date-fns";
+import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
+import { BottomNav } from "@/components/layout/BottomNav";
+import AuthModal from "@/components/auth/AuthModal";
 
 const INDIAN_STATES = [
   "All States", "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
@@ -30,6 +34,7 @@ export default function Scholarships() {
   const [search, setSearch] = useState("");
   const [stateFilter, setStateFilter] = useState<string>(profile?.state || "All States");
   const [courseFilter, setCourseFilter] = useState<string>("All Courses");
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const filters = {
     search: search || undefined,
@@ -70,7 +75,9 @@ export default function Scholarships() {
         <meta name="description" content="Find verified scholarships for Indian students. State-wise, course-wise personalized scholarship opportunities from government and trusted sources." />
       </Helmet>
 
-      <div className="min-h-screen bg-background">
+      <Header onAuthClick={() => setShowAuthModal(true)} />
+
+      <div className="min-h-screen bg-background pb-20 md:pb-0">
         <div className="container mx-auto px-4 py-8">
           {/* Header */}
           <div className="mb-8">
@@ -248,6 +255,14 @@ export default function Scholarships() {
           )}
         </div>
       </div>
+
+      <Footer />
+      <BottomNav />
+      
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={() => setShowAuthModal(false)} 
+      />
     </>
   );
 }
