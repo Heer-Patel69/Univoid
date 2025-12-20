@@ -58,8 +58,9 @@ const UploadMaterial = () => {
       toast.error("Video files are not allowed");
       return;
     }
-    if (selectedFile.size > 10 * 1024 * 1024) {
-      toast.error("File size must be less than 10MB");
+    // 100MB limit
+    if (selectedFile.size > 100 * 1024 * 1024) {
+      toast.error("File size must be less than 100MB");
       return;
     }
     setFile(selectedFile);
@@ -308,7 +309,7 @@ const UploadMaterial = () => {
                   disabled={!canUpload}
                   isUploading={isSubmitting}
                   uploadProgress={uploadProgress}
-                  hint="PDF, DOC, PPT, images (max 10MB, NO videos)"
+                  hint="PDF, DOC, PPT, images, ZIP (max 100MB, NO videos)"
                 />
 
                 <Button type="submit" className="w-full" disabled={isSubmitting || !canUpload}>
