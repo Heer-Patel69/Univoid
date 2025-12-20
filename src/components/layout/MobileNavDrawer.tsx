@@ -26,12 +26,9 @@ import {
   Briefcase,
   ChevronDown,
   Settings,
-  Home,
-  Upload,
-  Plus,
+  GraduationCap,
+  Newspaper,
   Ticket,
-  FileText,
-  Bell,
 } from "lucide-react";
 import { useState, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -43,25 +40,28 @@ interface MobileNavDrawerProps {
   onAuthClick: () => void;
 }
 
+interface NavItem {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+  requiresAuth?: boolean;
+  adminOnly?: boolean;
+  organizerOnly?: boolean;
+}
+
 interface NavSection {
   title: string;
   icon: React.ElementType;
-  items: {
-    href: string;
-    label: string;
-    icon: React.ElementType;
-    requiresAuth?: boolean;
-    adminOnly?: boolean;
-    organizerOnly?: boolean;
-  }[];
+  items: NavItem[];
   defaultOpen?: boolean;
+  showOnlyWhenHasItems?: boolean;
 }
 
 export const MobileNavDrawer = ({ onAuthClick }: MobileNavDrawerProps) => {
   const [open, setOpen] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    explore: true,
-    account: true,
+    browse: true,
+    account: false,
   });
   const { user, profile, isAdmin, isOrganizer, signOut } = useAuth();
   const location = useLocation();
@@ -82,7 +82,6 @@ export const MobileNavDrawer = ({ onAuthClick }: MobileNavDrawerProps) => {
 
   const handleTouchEnd = useCallback(() => {
     const deltaX = touchStartX.current - touchCurrentX.current;
-    // Swipe left to close (since drawer is on the left side)
     if (deltaX > SWIPE_THRESHOLD) {
       setOpen(false);
     }
@@ -117,44 +116,44 @@ export const MobileNavDrawer = ({ onAuthClick }: MobileNavDrawerProps) => {
 
   const navSections: NavSection[] = [
     {
-      title: "Explore",
-      icon: Home,
+      title: "Browse",
+      icon: BookOpen,
       defaultOpen: true,
       items: [
-        { href: "/materials", label: "Study Materials", icon: BookOpen },
+        { href: "/materials", label: "Materials", icon: BookOpen },
+        { href: "/scholarships", label: "Scholarships", icon: GraduationCap },
         { href: "/events", label: "Events", icon: Calendar },
         { href: "/projects", label: "Projects", icon: Folder },
         { href: "/tasks", label: "Task Plaza", icon: Briefcase },
-        { href: "/books", label: "Book Exchange", icon: Repeat2 },
+        { href: "/books", label: "Books", icon: Repeat2 },
+        { href: "/news", label: "Campus News", icon: Newspaper },
         { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
-      ],
-    },
-    {
-      title: "Create",
-      icon: Plus,
-      items: [
-        { href: "/upload", label: "Upload Material", icon: Upload, requiresAuth: true },
-        { href: "/list-book", label: "List a Book", icon: Repeat2, requiresAuth: true },
-        { href: "/create-project", label: "Create Project", icon: Folder, requiresAuth: true },
-        { href: "/create-task", label: "Post a Task", icon: Briefcase, requiresAuth: true },
-        { href: "/create-event", label: "Create Event", icon: Calendar, organizerOnly: true },
       ],
     },
     {
       title: "My Account",
       icon: User,
-      defaultOpen: true,
+      showOnlyWhenHasItems: true,
       items: [
         { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, requiresAuth: true },
-        { href: "/my-tickets", label: "My Tickets", icon: Ticket, requiresAuth: true },
+        { href: "/my-events", label: "My Tickets", icon: Ticket, requiresAuth: true },
         { href: "/settings", label: "Settings", icon: Settings, requiresAuth: true },
       ],
     },
     {
-      title: "Management",
-      icon: Shield,
+      title: "Organizer",
+      icon: Calendar,
+      showOnlyWhenHasItems: true,
       items: [
-        { href: "/organizer/dashboard", label: "Organizer Dashboard", icon: LayoutDashboard, organizerOnly: true },
+        { href: "/organizer/dashboard", label: "Organizer Panel", icon: LayoutDashboard, organizerOnly: true },
+        { href: "/organizer/create-event", label: "Create Event", icon: Calendar, organizerOnly: true },
+      ],
+    },
+    {
+      title: "Admin",
+      icon: Shield,
+      showOnlyWhenHasItems: true,
+      items: [
         { href: "/admin", label: "Admin Panel", icon: Shield, adminOnly: true },
       ],
     },
@@ -164,14 +163,18 @@ export const MobileNavDrawer = ({ onAuthClick }: MobileNavDrawerProps) => {
   const getFilteredItems = (section: NavSection) => {
     return section.items.filter(item => {
       if (item.adminOnly && !isAdmin) return false;
-      if (item.organizerOnly && !isOrganizer) return false;
+      if (item.organizerOnly && !(isOrganizer || isAdmin)) return false;
       if (item.requiresAuth && !user) return false;
       return true;
     });
   };
 
   // Only show sections that have visible items
-  const visibleSections = navSections.filter(section => getFilteredItems(section).length > 0);
+  const visibleSections = navSections.filter(section => {
+    const items = getFilteredItems(section);
+    if (section.showOnlyWhenHasItems && items.length === 0) return false;
+    return items.length > 0;
+  });
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -209,7 +212,11 @@ export const MobileNavDrawer = ({ onAuthClick }: MobileNavDrawerProps) => {
         {/* User Profile Section */}
         {user && profile && (
           <div className="p-4 border-b border-border bg-secondary/30">
-            <div className="flex items-center gap-3">
+            <Link 
+              to="/profile" 
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+            >
               <Avatar className="h-12 w-12 border-2 border-border-strong/20 shadow-soft">
                 <AvatarImage src={profile.profile_photo_url || undefined} alt={profile.full_name} />
                 <AvatarFallback className="bg-pastel-purple text-foreground font-bold">
@@ -224,7 +231,7 @@ export const MobileNavDrawer = ({ onAuthClick }: MobileNavDrawerProps) => {
                   <span className="text-xs font-semibold text-primary">{profile.total_xp || 0} XP</span>
                 </div>
               </div>
-            </div>
+            </Link>
           </div>
         )}
 
@@ -233,13 +240,14 @@ export const MobileNavDrawer = ({ onAuthClick }: MobileNavDrawerProps) => {
           {visibleSections.map((section) => {
             const filteredItems = getFilteredItems(section);
             const SectionIcon = section.icon;
-            const isExpanded = expandedSections[section.title.toLowerCase()] ?? section.defaultOpen;
+            const sectionKey = section.title.toLowerCase().replace(/\s+/g, '');
+            const isExpanded = expandedSections[sectionKey] ?? section.defaultOpen;
 
             return (
               <Collapsible
                 key={section.title}
                 open={isExpanded}
-                onOpenChange={() => toggleSection(section.title.toLowerCase())}
+                onOpenChange={() => toggleSection(sectionKey)}
                 className="border-b border-border/50 last:border-b-0"
               >
                 <CollapsibleTrigger className="flex items-center justify-between w-full px-4 py-3 hover:bg-secondary/50 transition-colors">

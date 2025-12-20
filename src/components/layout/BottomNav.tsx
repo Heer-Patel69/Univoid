@@ -1,41 +1,56 @@
 import { Link, useLocation } from "react-router-dom";
-import { BookOpen, Trophy, Calendar, Repeat2, GraduationCap } from "lucide-react";
+import { BookOpen, Calendar, GraduationCap, LayoutDashboard, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
+  { href: "/dashboard", label: "Home", icon: LayoutDashboard, requiresAuth: true },
   { href: "/materials", label: "Materials", icon: BookOpen },
-  { href: "/events", label: "Events", icon: Calendar },
   { href: "/scholarships", label: "Scholarships", icon: GraduationCap, highlight: true },
-  { href: "/books", label: "Books", icon: Repeat2 },
-  { href: "/leaderboard", label: "Ranks", icon: Trophy },
+  { href: "/events", label: "Events", icon: Calendar },
+  { href: "/profile", label: "Profile", icon: User, requiresAuth: true },
 ];
 
 // Paths where bottom nav should NOT appear
 const HIDDEN_PATHS = [
-  "/dashboard",
-  "/upload-material",
-  "/submit-blog",
-  "/submit-news",
-  "/sell-book",
   "/admin",
-  "/profile",
+  "/organizer",
+  "/onboarding",
 ];
 
 export function BottomNav() {
   const location = useLocation();
+  const { user } = useAuth();
 
-  // Hide on dashboard and protected action pages
+  // Hide on admin and organizer pages
   const shouldHide = HIDDEN_PATHS.some(path => location.pathname.startsWith(path));
   
   if (shouldHide) {
     return null;
   }
 
+  // Filter items based on auth
+  const visibleItems = navItems.filter(item => {
+    if (item.requiresAuth && !user) {
+      // Replace Dashboard with "/" for non-auth users
+      if (item.href === "/dashboard") return false;
+      if (item.href === "/profile") return false;
+    }
+    return true;
+  });
+
+  // Add home for non-auth users
+  const finalItems = user ? visibleItems : [
+    { href: "/", label: "Home", icon: LayoutDashboard },
+    ...visibleItems.filter(i => i.href !== "/profile"),
+  ];
+
   return (
     <nav className="fixed bottom-3 left-3 right-3 z-50 md:hidden">
       <div className="bg-card/95 backdrop-blur-xl rounded-2xl border border-border-strong/10 shadow-lg flex items-center justify-around py-2 px-1">
-        {navItems.map((item) => {
-          const isActive = location.pathname === item.href;
+        {finalItems.map((item) => {
+          const isActive = location.pathname === item.href || 
+            (item.href !== "/" && location.pathname.startsWith(item.href));
           const Icon = item.icon;
 
           return (
