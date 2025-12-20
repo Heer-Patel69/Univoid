@@ -39,7 +39,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const [userRoles, setUserRoles] = useState<string[]>([]);
 
-  const fetchUserData = async (userId: string) => {
+  // Sync OAuth user verification status to profiles table
+  const syncOAuthVerification = async (authUser: User) => {
+    const provider = authUser.app_metadata?.provider;
+    const isOAuthUser = (provider && provider !== 'email') || 
+      authUser.identities?.some((identity: any) => identity.provider && identity.provider !== 'email');
+    
+    if (isOAuthUser) {
+      // Auto-mark OAuth users as email verified in profiles table
+      await supabase
+        .from('profiles')
+        .update({ email_verified: true })
+        .eq('id', authUser.id);
+      console.log('OAuth user verification synced to profiles table');
+    }
+  };
+
+  const fetchUserData = async (userId: string, authUser?: User) => {
+    // If OAuth user, sync verification status first
+    if (authUser) {
+      await syncOAuthVerification(authUser);
+    }
+
     const [profileResult, roleResult] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
       supabase.from('user_roles').select('role').eq('user_id', userId),
@@ -83,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Use setTimeout to avoid blocking
           setTimeout(() => {
             if (isMounted) {
-              fetchUserData(session.user.id).catch(console.error);
+              fetchUserData(session.user.id, session.user).catch(console.error);
             }
           }, 0);
         } else {
@@ -105,7 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          await fetchUserData(session.user.id);
+          await fetchUserData(session.user.id, session.user);
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
