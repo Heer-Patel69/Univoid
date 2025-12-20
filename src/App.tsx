@@ -45,6 +45,7 @@ import CreateTask from "./pages/CreateTask";
 import EventCheckIn from "./pages/EventCheckIn";
 import Settings from "./pages/Settings";
 import Scholarships from "./pages/Scholarships";
+import ScholarshipDetail from "./pages/ScholarshipDetail";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -80,6 +81,7 @@ const App = () => (
                     <Route path="/events" element={<Events />} />
                     <Route path="/events/:eventId" element={<EventDetail />} />
                     <Route path="/scholarships" element={<Scholarships />} />
+                    <Route path="/scholarships/:scholarshipId" element={<ScholarshipDetail />} />
                     <Route path="/projects" element={<Projects />} />
                     <Route path="/projects/create" element={<ProtectedRoute><CreateProject /></ProtectedRoute>} />
                     <Route path="/projects/:projectId" element={<ProjectDetail />} />

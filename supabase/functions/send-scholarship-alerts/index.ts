@@ -159,16 +159,37 @@ const handler = async (req: Request): Promise<Response> => {
         continue;
       }
 
-      // Create in-app notification
+      // Create in-app notification + trigger web push
       for (const scholarship of eligibleScholarships.slice(0, 3)) {
         await supabase.from("notifications").insert({
           user_id: profile.id,
           title: "🎓 New Scholarship Match!",
           message: `${scholarship.title} - ${scholarship.is_all_india ? "All India" : scholarship.eligible_states.join(", ")}`,
           type: "scholarship",
-          link: `/scholarships?id=${scholarship.id}`,
+          link: `/scholarships/${scholarship.id}`,
         });
         inAppNotifications++;
+      }
+
+      // Send web push notification for the first scholarship
+      const topScholarship = eligibleScholarships[0];
+      try {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        await fetch(`${supabaseUrl}/functions/v1/send-web-push`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+          },
+          body: JSON.stringify({
+            user_ids: [profile.id],
+            title: "🎓 New Scholarship Match!",
+            body: `${topScholarship.title} - Apply before deadline!`,
+            url: `/scholarships/${topScholarship.id}`,
+          }),
+        });
+      } catch (pushError) {
+        console.error(`Web push failed for ${profile.id}:`, pushError);
       }
 
       // Send email
