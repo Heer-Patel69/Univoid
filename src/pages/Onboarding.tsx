@@ -16,7 +16,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, GraduationCap, X, Plus } from "lucide-react";
+import { Loader2, GraduationCap, X, Plus, Phone } from "lucide-react";
 import { SearchableSelect } from "@/components/common/SearchableSelect";
 
 const DEGREE_OPTIONS = [
@@ -84,6 +84,7 @@ const Onboarding = () => {
   const [customInterest, setCustomInterest] = useState("");
   const [formData, setFormData] = useState({
     full_name: profile?.full_name || user?.user_metadata?.full_name || user?.user_metadata?.name || "",
+    mobile_number: profile?.mobile_number || "",
     college_name: profile?.college_name || "",
     college_id: "",
     degree: "",
@@ -102,6 +103,7 @@ const Onboarding = () => {
   function calculateProgress() {
     const fields = [
       formData.full_name,
+      formData.mobile_number,
       formData.college_name,
       formData.degree,
       formData.branch,
@@ -111,7 +113,7 @@ const Onboarding = () => {
     ];
     const filledFields = fields.filter((f) => f && f.trim() !== "").length;
     const interestFilled = formData.interests.length > 0 ? 1 : 0;
-    return ((filledFields + interestFilled) / 8) * 100;
+    return ((filledFields + interestFilled) / 9) * 100;
   }
 
   const toggleInterest = (interest: string) => {
@@ -148,11 +150,19 @@ const Onboarding = () => {
     return formData.degree;
   };
 
+  const isValidMobileNumber = (number: string) => {
+    // Indian mobile number validation: 10 digits starting with 6-9
+    const mobileRegex = /^[6-9]\d{9}$/;
+    return mobileRegex.test(number.replace(/\s/g, ''));
+  };
+
   const isFormValid = () => {
     const degreeValid = formData.degree !== "" && 
       (formData.degree !== "Other" || customDegree.trim() !== "");
     return (
       formData.full_name.trim() !== "" &&
+      formData.mobile_number.trim() !== "" &&
+      isValidMobileNumber(formData.mobile_number) &&
       formData.college_name.trim() !== "" &&
       degreeValid &&
       formData.branch.trim() !== "" &&
@@ -181,11 +191,13 @@ const Onboarding = () => {
 
     try {
       const finalDegree = formData.degree === "Other" ? customDegree.trim() : formData.degree;
+      const cleanMobile = formData.mobile_number.replace(/\s/g, '');
       
       const { error } = await supabase
         .from("profiles")
         .update({
           full_name: formData.full_name,
+          mobile_number: cleanMobile,
           college_name: formData.college_name,
           degree: finalDegree,
           branch: formData.branch,
@@ -260,6 +272,35 @@ const Onboarding = () => {
                   placeholder="Your full name"
                   required
                 />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="mobile_number">Mobile Number *</Label>
+                <div className="flex gap-2">
+                  <div className="flex items-center px-3 bg-muted rounded-l-md border border-r-0 border-input">
+                    <Phone className="w-4 h-4 text-muted-foreground mr-1" />
+                    <span className="text-sm text-muted-foreground">+91</span>
+                  </div>
+                  <Input
+                    id="mobile_number"
+                    type="tel"
+                    value={formData.mobile_number}
+                    onChange={(e) => {
+                      // Only allow digits
+                      const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      setFormData({ ...formData, mobile_number: value });
+                    }}
+                    placeholder="10-digit mobile number"
+                    className="rounded-l-none"
+                    maxLength={10}
+                    required
+                  />
+                </div>
+                {formData.mobile_number && !isValidMobileNumber(formData.mobile_number) && (
+                  <p className="text-xs text-destructive">
+                    Please enter a valid 10-digit Indian mobile number
+                  </p>
+                )}
               </div>
             </div>
 
