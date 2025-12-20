@@ -1143,6 +1143,78 @@ export type Database = {
         }
         Relationships: []
       }
+      scholarships: {
+        Row: {
+          application_link: string | null
+          created_at: string
+          created_by: string | null
+          deadline: string | null
+          deadline_status: string | null
+          description: string | null
+          eligible_categories: string[] | null
+          eligible_courses: string[] | null
+          eligible_states: string[] | null
+          id: string
+          is_all_india: boolean | null
+          official_source: boolean | null
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source_domain: string | null
+          source_name: string
+          source_url: string | null
+          status: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          application_link?: string | null
+          created_at?: string
+          created_by?: string | null
+          deadline?: string | null
+          deadline_status?: string | null
+          description?: string | null
+          eligible_categories?: string[] | null
+          eligible_courses?: string[] | null
+          eligible_states?: string[] | null
+          id?: string
+          is_all_india?: boolean | null
+          official_source?: boolean | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_domain?: string | null
+          source_name: string
+          source_url?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          application_link?: string | null
+          created_at?: string
+          created_by?: string | null
+          deadline?: string | null
+          deadline_status?: string | null
+          description?: string | null
+          eligible_categories?: string[] | null
+          eligible_courses?: string[] | null
+          eligible_states?: string[] | null
+          id?: string
+          is_all_india?: boolean | null
+          official_source?: boolean | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_domain?: string | null
+          source_name?: string
+          source_url?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       task_bids: {
         Row: {
           created_at: string
@@ -1315,6 +1387,7 @@ export type Database = {
         Args: { admin_id: string; application_id: string }
         Returns: undefined
       }
+      auto_expire_scholarships: { Args: never; Returns: undefined }
       award_xp: {
         Args: {
           _amount: number
