@@ -7,12 +7,15 @@ const Footer = () => {
   const footerLinks = {
     platform: [
       { href: "/materials", label: "Study Materials" },
+      { href: "/scholarships", label: "Scholarships" },
+      { href: "/events", label: "Events" },
       { href: "/news", label: "News" },
-      { href: "/blogs", label: "Blogs" },
       { href: "/books", label: "Book Exchange" },
     ],
     community: [
       { href: "/leaderboard", label: "Leaderboard" },
+      { href: "/projects", label: "Projects" },
+      { href: "/tasks", label: "Tasks" },
       { href: "/dashboard", label: "Dashboard" },
       { href: "/contact", label: "Contact Us" },
     ],
