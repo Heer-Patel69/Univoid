@@ -682,49 +682,70 @@ export type Database = {
       }
       profiles: {
         Row: {
+          branch: string | null
+          city: string | null
           college_name: string | null
           course_stream: string | null
           created_at: string
+          current_year: number | null
+          degree: string | null
           email: string
           email_verified: boolean | null
           full_name: string
           id: string
+          interests: string[] | null
           is_disabled: boolean
           mobile_number: string | null
           phone_verified: boolean | null
+          profile_complete: boolean | null
           profile_photo_url: string | null
+          state: string | null
           total_xp: number
           updated_at: string
           year_semester: string | null
         }
         Insert: {
+          branch?: string | null
+          city?: string | null
           college_name?: string | null
           course_stream?: string | null
           created_at?: string
+          current_year?: number | null
+          degree?: string | null
           email: string
           email_verified?: boolean | null
           full_name: string
           id: string
+          interests?: string[] | null
           is_disabled?: boolean
           mobile_number?: string | null
           phone_verified?: boolean | null
+          profile_complete?: boolean | null
           profile_photo_url?: string | null
+          state?: string | null
           total_xp?: number
           updated_at?: string
           year_semester?: string | null
         }
         Update: {
+          branch?: string | null
+          city?: string | null
           college_name?: string | null
           course_stream?: string | null
           created_at?: string
+          current_year?: number | null
+          degree?: string | null
           email?: string
           email_verified?: boolean | null
           full_name?: string
           id?: string
+          interests?: string[] | null
           is_disabled?: boolean
           mobile_number?: string | null
           phone_verified?: boolean | null
+          profile_complete?: boolean | null
           profile_photo_url?: string | null
+          state?: string | null
           total_xp?: number
           updated_at?: string
           year_semester?: string | null

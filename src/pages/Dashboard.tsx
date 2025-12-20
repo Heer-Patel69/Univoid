@@ -1,51 +1,47 @@
-import { Link, Navigate } from "react-router-dom";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useLeaderboard } from "@/hooks/useLeaderboard";
+import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
+import ProfileSnapshot from "@/components/dashboard/ProfileSnapshot";
+import QuickStatsGrid from "@/components/dashboard/QuickStatsGrid";
+import RecommendationsSection from "@/components/dashboard/RecommendationsSection";
 import UserContentManager from "@/components/dashboard/UserContentManager";
-import { AnimatedCounter } from "@/components/common/AnimatedCounter";
-import { calculateLevel, getLevelProgress } from "@/types/database";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 import { 
-  User, 
-  Trophy, 
-  FileText,
-  Newspaper,
-  BookOpen,
-  Upload,
-  Plus,
-  Loader2,
+  Loader2, 
+  Trophy,
   ArrowRight,
   Crown,
   Medal,
   Award,
-  Folder,
-  Briefcase,
+  Upload,
+  BookOpen,
   Calendar,
-  CheckSquare
+  Plus,
+  Menu
 } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const Dashboard = () => {
-  const { user, profile, isLoading, isOrganizer, isAdmin } = useAuth();
-  const { stats } = useDashboardStats(user?.id);
+  const { user, profile, isLoading } = useAuth();
+  const { stats, isLoading: statsLoading } = useDashboardStats(user?.id);
   const { leaderboard } = useLeaderboard(5);
 
-  // Redirect to home if not authenticated (but only after loading is done)
+  // Redirect to home if not authenticated
   if (!isLoading && !user) {
     return <Navigate to="/" replace />;
   }
 
-  // Show minimal loading indicator inline, not blocking
-  const showLoadingOverlay = isLoading && !user;
-
-  const xp = profile?.total_xp ?? 0;
-  const level = calculateLevel(xp);
-  const levelProgress = getLevelProgress(xp);
-  const xpProgress = (levelProgress.current / levelProgress.max) * 100;
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   const getRankIcon = (rank: number) => {
     if (rank === 1) return <Crown className="w-4 h-4 text-yellow-500" />;
@@ -54,153 +50,95 @@ const Dashboard = () => {
     return <span className="text-xs font-medium text-muted-foreground">#{rank}</span>;
   };
 
-  const statCards = [
-    { label: "Materials Uploaded", value: stats.materialsCount, icon: FileText },
-    { label: "News Submitted", value: stats.newsCount, icon: Newspaper },
-    { label: "Books Listed", value: stats.booksCount, icon: BookOpen },
+  const quickActions = [
+    { label: "Upload Material", icon: Upload, href: "/upload-material", color: "bg-blue-500/10 text-blue-500" },
+    { label: "List Book", icon: BookOpen, href: "/sell-book", color: "bg-green-500/10 text-green-500" },
+    { label: "Create Event", icon: Calendar, href: "/organizer/create-event", color: "bg-purple-500/10 text-purple-500" },
+    { label: "Create Project", icon: Plus, href: "/projects/create", color: "bg-orange-500/10 text-orange-500" },
   ];
 
-  const contributeActions = [
-    { label: "Upload Material", icon: Upload, href: "/upload-material" },
-    { label: "Submit News", icon: Newspaper, href: "/submit-news" },
-    { label: "List Book", icon: Plus, href: "/sell-book" },
-  ];
-
-  // Base collaboration actions available to all users
-  const collaborationActions = [
-    { label: "My Projects", icon: Folder, href: "/projects", color: "text-purple-500", bgColor: "bg-purple-500/10" },
-    { label: "Task Plaza", icon: Briefcase, href: "/tasks", color: "text-orange-500", bgColor: "bg-orange-500/10" },
-    { label: "My Events", icon: Calendar, href: "/my-events", color: "text-blue-500", bgColor: "bg-blue-500/10" },
-    // Organizer Dashboard only shows for users with organizer role (unlocked after event is published)
-    ...(isOrganizer || isAdmin ? [{ label: "Organizer Dashboard", icon: CheckSquare, href: "/organizer/dashboard", color: "text-green-500", bgColor: "bg-green-500/10" }] : []),
-  ];
-
-  if (showLoadingOverlay) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  // Mobile sidebar component
+  const MobileSidebar = () => (
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="icon" className="lg:hidden">
+          <Menu className="w-5 h-5" />
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="left" className="p-0 w-72">
+        <DashboardSidebar />
+      </SheetContent>
+    </Sheet>
+  );
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header onAuthClick={() => {}} />
-      
-      <main className="flex-1 py-8">
-        <div className="container-wide">
-          {/* User Header */}
-          <Card className="mb-8">
-            <CardContent className="p-6">
-              <div className="flex flex-col md:flex-row md:items-center gap-6">
-                {/* Avatar */}
-                <div className="flex-shrink-0">
-                  {profile?.profile_photo_url ? (
-                    <img 
-                      src={profile.profile_photo_url} 
-                      alt={profile.full_name}
-                      className="w-20 h-20 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center">
-                      <User className="w-10 h-10 text-primary" />
-                    </div>
-                  )}
-                </div>
-                
-                {/* User Info */}
-                <div className="flex-1">
-                  <h1 className="text-2xl font-bold text-foreground mb-1">{profile?.full_name ?? 'User'}</h1>
-                  <p className="text-muted-foreground mb-4">Level {level} • {profile?.college_name}</p>
-                  
-                  {/* XP Progress */}
-                  <div className="max-w-md">
-                    <div className="flex justify-between text-sm mb-2">
-                      <span className="text-muted-foreground">XP Progress</span>
-                      <span className="font-medium text-primary">
-                        <AnimatedCounter value={levelProgress.current} duration={800} /> / {levelProgress.max}
-                      </span>
-                    </div>
-                    <Progress value={xpProgress} className="h-2 transition-all duration-500" />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {levelProgress.max - levelProgress.current} XP to Level {levelProgress.nextLevel}
-                    </p>
-                  </div>
-                </div>
+    <div className="min-h-screen flex bg-background">
+      {/* Sidebar - Desktop */}
+      <DashboardSidebar />
 
-                {/* XP & Rank Badge */}
-                <div className="flex-shrink-0 text-center">
-                  <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center mx-auto mb-2 transition-transform hover:scale-110">
-                    <Trophy className="w-8 h-8 text-yellow-500" />
-                  </div>
-                  <p className="text-sm font-medium text-foreground">
-                    <AnimatedCounter value={xp} duration={1000} /> XP
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {stats.globalRank ? `#${stats.globalRank} Global` : 'Total XP'}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      {/* Main Content */}
+      <main className="flex-1 min-h-screen overflow-auto">
+        {/* Mobile Header */}
+        <header className="lg:hidden flex items-center justify-between p-4 border-b border-border bg-card">
+          <MobileSidebar />
+          <Link to="/" className="font-bold text-lg">UniVoid</Link>
+          <div className="w-9" /> {/* Spacer for centering */}
+        </header>
 
-          <div className="grid lg:grid-cols-3 gap-8">
-            {/* Main Content */}
-            <div className="lg:col-span-2 space-y-8">
-              {/* Contribution Stats */}
-              <section>
-                <h2 className="text-lg font-semibold text-foreground mb-4">Your Contributions</h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {statCards.map((stat) => (
-                    <Card key={stat.label}>
-                      <CardContent className="p-4 text-center">
-                        <stat.icon className="w-6 h-6 text-primary mx-auto mb-2" />
-                        <p className="text-2xl font-bold text-foreground">{stat.value}</p>
-                        <p className="text-xs text-muted-foreground">{stat.label}</p>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </section>
+        <div className="p-6 lg:p-8 max-w-5xl mx-auto space-y-8">
+          {/* Welcome Header */}
+          <div>
+            <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
+              Welcome back, {profile?.full_name?.split(' ')[0] || 'Student'}! 👋
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Here's what's happening with your account today.
+            </p>
+          </div>
 
-              {/* Contribute Section */}
-              <section>
-                <h2 className="text-lg font-semibold text-foreground mb-4">Contribute</h2>
-                <div className="grid grid-cols-3 gap-4">
-                  {contributeActions.map((action) => (
-                    <Link key={action.label} to={action.href}>
-                      <Card className="hover:border-primary/50 transition-colors cursor-pointer h-full">
-                        <CardContent className="p-4 text-center">
-                          <action.icon className="w-8 h-8 text-primary mx-auto mb-2" />
-                          <p className="text-sm font-medium text-foreground">{action.label}</p>
-                        </CardContent>
-                      </Card>
-                    </Link>
-                  ))}
-                </div>
-              </section>
+          {/* Profile Snapshot */}
+          <ProfileSnapshot profile={profile} />
 
-              {/* Collaboration Section */}
-              <section>
-                <h2 className="text-lg font-semibold text-foreground mb-4">Collaborate</h2>
-                <div className="grid grid-cols-3 gap-4">
-                  {collaborationActions.map((action) => (
-                    <Link key={action.label} to={action.href}>
-                      <Card className="hover:border-primary/50 transition-all cursor-pointer h-full group hover:shadow-md">
-                        <CardContent className="p-4 text-center">
-                          <div className={`w-12 h-12 ${action.bgColor} rounded-full flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform`}>
-                            <action.icon className={`w-6 h-6 ${action.color}`} />
-                          </div>
-                          <p className="text-sm font-medium text-foreground">{action.label}</p>
-                        </CardContent>
-                      </Card>
-                    </Link>
-                  ))}
-                </div>
-              </section>
+          {/* Quick Stats */}
+          <QuickStatsGrid
+            xp={profile?.total_xp || 0}
+            rank={stats.globalRank}
+            eventsRegistered={0}
+            materialsUploaded={stats.materialsCount}
+            isLoading={statsLoading}
+          />
+
+          {/* Quick Actions */}
+          <section>
+            <h2 className="text-lg font-semibold text-foreground mb-4">Quick Actions</h2>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {quickActions.map((action) => (
+                <Link key={action.label} to={action.href}>
+                  <Card className="hover:shadow-md transition-all group cursor-pointer h-full">
+                    <CardContent className="p-4 text-center">
+                      <div className={`w-12 h-12 rounded-xl mx-auto mb-3 flex items-center justify-center ${action.color} group-hover:scale-110 transition-transform`}>
+                        <action.icon className="w-6 h-6" />
+                      </div>
+                      <p className="text-sm font-medium text-foreground">{action.label}</p>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          </section>
+
+          {/* Two Column Layout */}
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Main Content - 2 cols */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Recommendations */}
+              <RecommendationsSection profile={profile} />
+
+              {/* User Content Manager */}
+              <UserContentManager userId={user?.id || ''} />
             </div>
 
-            {/* Sidebar */}
+            {/* Sidebar - 1 col */}
             <div className="space-y-6">
               {/* Leaderboard Preview */}
               <Card className="overflow-hidden">
@@ -247,37 +185,38 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
 
-              {/* Quick Links */}
+              {/* Explore Section */}
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Quick Links</CardTitle>
+                  <CardTitle className="text-base">Explore</CardTitle>
                 </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="space-y-2">
-                    <Link to="/materials">
-                      <Button variant="ghost" size="sm" className="w-full justify-start transition-transform hover:translate-x-1">
-                        <FileText className="w-4 h-4 mr-2" />
-                        Browse Materials
-                      </Button>
-                    </Link>
-                    <Link to="/books">
-                      <Button variant="ghost" size="sm" className="w-full justify-start transition-transform hover:translate-x-1">
-                        <BookOpen className="w-4 h-4 mr-2" />
-                        Book Exchange
-                      </Button>
-                    </Link>
-                  </div>
+                <CardContent className="pt-0 space-y-2">
+                  <Link to="/materials">
+                    <Button variant="ghost" size="sm" className="w-full justify-start">
+                      📚 Browse Materials
+                    </Button>
+                  </Link>
+                  <Link to="/books">
+                    <Button variant="ghost" size="sm" className="w-full justify-start">
+                      📖 Book Exchange
+                    </Button>
+                  </Link>
+                  <Link to="/events">
+                    <Button variant="ghost" size="sm" className="w-full justify-start">
+                      🎉 Upcoming Events
+                    </Button>
+                  </Link>
+                  <Link to="/news">
+                    <Button variant="ghost" size="sm" className="w-full justify-start">
+                      📰 Campus News
+                    </Button>
+                  </Link>
                 </CardContent>
               </Card>
-
-              {/* User Content Manager */}
-              <UserContentManager userId={user.id} />
             </div>
           </div>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 };
