@@ -1,17 +1,22 @@
-import { useState, useEffect } from 'react';
-import { Bell, Check, Trash2, Calendar, BookOpen, Info, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useCallback, memo } from 'react';
+import { 
+  Bell, Check, Trash2, Calendar, BookOpen, Info, AlertCircle, 
+  FolderKanban, ListTodo, ChevronDown, ArrowLeft, X
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Notification {
   id: string;
@@ -23,16 +28,196 @@ interface Notification {
   created_at: string;
 }
 
+type NotificationCategory = 'all' | 'event' | 'project' | 'task' | 'system';
+
+const NOTIFICATION_LIMIT = 20;
+
+const categoryConfig: Record<NotificationCategory, { label: string; icon: React.ReactNode }> = {
+  all: { label: 'All', icon: <Bell className="h-3.5 w-3.5" /> },
+  event: { label: 'Events', icon: <Calendar className="h-3.5 w-3.5" /> },
+  project: { label: 'Projects', icon: <FolderKanban className="h-3.5 w-3.5" /> },
+  task: { label: 'Tasks', icon: <ListTodo className="h-3.5 w-3.5" /> },
+  system: { label: 'System', icon: <AlertCircle className="h-3.5 w-3.5" /> },
+};
+
+const NotificationItem = memo(({ 
+  notification, 
+  onMarkAsRead, 
+  onDelete, 
+  onClose,
+  getIcon 
+}: { 
+  notification: Notification; 
+  onMarkAsRead: (id: string) => void; 
+  onDelete: (id: string) => void;
+  onClose: () => void;
+  getIcon: (type: string) => React.ReactNode;
+}) => (
+  <div
+    className={cn(
+      'p-3 hover:bg-muted/50 transition-colors relative group gpu-accelerated',
+      !notification.is_read && 'bg-primary/5'
+    )}
+  >
+    <div className="flex gap-3">
+      <div className="flex-shrink-0 mt-0.5">
+        {getIcon(notification.type)}
+      </div>
+      <div className="flex-1 min-w-0">
+        {notification.link ? (
+          <Link
+            to={notification.link}
+            onClick={() => {
+              onMarkAsRead(notification.id);
+              onClose();
+            }}
+            className="block"
+          >
+            <p className="text-sm font-semibold truncate hover:text-primary transition-colors">
+              {notification.title}
+            </p>
+          </Link>
+        ) : (
+          <p className="text-sm font-semibold truncate">
+            {notification.title}
+          </p>
+        )}
+        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+          {notification.message}
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">
+          {formatDistanceToNow(new Date(notification.created_at), {
+            addSuffix: true,
+          })}
+        </p>
+      </div>
+      <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        {!notification.is_read && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={() => onMarkAsRead(notification.id)}
+          >
+            <Check className="h-3 w-3" />
+          </Button>
+        )}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6 text-muted-foreground hover:text-destructive"
+          onClick={() => onDelete(notification.id)}
+        >
+          <Trash2 className="h-3 w-3" />
+        </Button>
+      </div>
+    </div>
+    {!notification.is_read && (
+      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r" />
+    )}
+  </div>
+));
+
+NotificationItem.displayName = 'NotificationItem';
+
+const CategoryFilter = memo(({ 
+  activeCategory, 
+  onCategoryChange,
+  categoryCounts 
+}: { 
+  activeCategory: NotificationCategory; 
+  onCategoryChange: (category: NotificationCategory) => void;
+  categoryCounts: Record<NotificationCategory, number>;
+}) => (
+  <div className="flex gap-1 px-3 py-2 border-b border-border overflow-x-auto scrollbar-hide">
+    {(Object.keys(categoryConfig) as NotificationCategory[]).map((category) => (
+      <Button
+        key={category}
+        variant={activeCategory === category ? 'secondary' : 'ghost'}
+        size="sm"
+        className={cn(
+          'h-7 px-2.5 text-xs shrink-0 gap-1.5 transition-colors',
+          activeCategory === category && 'bg-primary/10 text-primary'
+        )}
+        onClick={() => onCategoryChange(category)}
+      >
+        {categoryConfig[category].icon}
+        {categoryConfig[category].label}
+        {category !== 'all' && categoryCounts[category] > 0 && (
+          <span className="ml-0.5 text-[10px] bg-muted rounded-full px-1.5 py-0.5">
+            {categoryCounts[category]}
+          </span>
+        )}
+      </Button>
+    ))}
+  </div>
+));
+
+CategoryFilter.displayName = 'CategoryFilter';
+
 export const NotificationCenter = () => {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<NotificationCategory>('all');
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [offset, setOffset] = useState(0);
+
+  const fetchNotifications = useCallback(async (reset = false) => {
+    if (!user) return;
+
+    const currentOffset = reset ? 0 : offset;
+    
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .range(currentOffset, currentOffset + NOTIFICATION_LIMIT - 1);
+
+    if (!error && data) {
+      if (reset) {
+        setNotifications(data);
+        setOffset(data.length);
+      } else {
+        setNotifications(prev => [...prev, ...data]);
+        setOffset(prev => prev + data.length);
+      }
+      setHasMore(data.length === NOTIFICATION_LIMIT);
+    }
+  }, [user, offset]);
+
+  const fetchUnreadCount = useCallback(async () => {
+    if (!user) return;
+
+    const { count, error } = await supabase
+      .from('notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('is_read', false);
+
+    if (!error && count !== null) {
+      setUnreadCount(count);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
 
-    fetchNotifications();
+    // Fetch after first paint using requestIdleCallback
+    const fetchData = () => {
+      fetchNotifications(true);
+      fetchUnreadCount();
+    };
+
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(fetchData);
+    } else {
+      setTimeout(fetchData, 100);
+    }
 
     // Subscribe to realtime updates
     const channel = supabase
@@ -46,7 +231,8 @@ export const NotificationCenter = () => {
           filter: `user_id=eq.${user.id}`,
         },
         () => {
-          fetchNotifications();
+          fetchNotifications(true);
+          fetchUnreadCount();
         }
       )
       .subscribe();
@@ -54,25 +240,16 @@ export const NotificationCenter = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, fetchNotifications, fetchUnreadCount]);
 
-  const fetchNotifications = async () => {
-    if (!user) return;
+  const loadMore = useCallback(async () => {
+    if (isLoadingMore || !hasMore) return;
+    setIsLoadingMore(true);
+    await fetchNotifications(false);
+    setIsLoadingMore(false);
+  }, [isLoadingMore, hasMore, fetchNotifications]);
 
-    const { data, error } = await supabase
-      .from('notifications')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(20);
-
-    if (!error && data) {
-      setNotifications(data);
-      setUnreadCount(data.filter((n) => !n.is_read).length);
-    }
-  };
-
-  const markAsRead = async (id: string) => {
+  const markAsRead = useCallback(async (id: string) => {
     await supabase
       .from('notifications')
       .update({ is_read: true })
@@ -82,9 +259,9 @@ export const NotificationCenter = () => {
       prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
     );
     setUnreadCount((prev) => Math.max(0, prev - 1));
-  };
+  }, []);
 
-  const markAllAsRead = async () => {
+  const markAllAsRead = useCallback(async () => {
     if (!user) return;
 
     await supabase
@@ -95,9 +272,9 @@ export const NotificationCenter = () => {
 
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
     setUnreadCount(0);
-  };
+  }, [user]);
 
-  const deleteNotification = async (id: string) => {
+  const deleteNotification = useCallback(async (id: string) => {
     const notification = notifications.find((n) => n.id === id);
     
     await supabase.from('notifications').delete().eq('id', id);
@@ -106,23 +283,166 @@ export const NotificationCenter = () => {
     if (notification && !notification.is_read) {
       setUnreadCount((prev) => Math.max(0, prev - 1));
     }
-  };
+  }, [notifications]);
 
-  const getIcon = (type: string) => {
+  const getIcon = useCallback((type: string) => {
     switch (type) {
       case 'event':
         return <Calendar className="h-4 w-4 text-primary" />;
       case 'scholarship':
         return <BookOpen className="h-4 w-4 text-green-500" />;
+      case 'project':
+        return <FolderKanban className="h-4 w-4 text-violet-500" />;
+      case 'task':
+        return <ListTodo className="h-4 w-4 text-amber-500" />;
       case 'system':
         return <AlertCircle className="h-4 w-4 text-orange-500" />;
       default:
         return <Info className="h-4 w-4 text-blue-500" />;
     }
-  };
+  }, []);
+
+  const handleClose = useCallback(() => setOpen(false), []);
+
+  // Filter notifications by category
+  const filteredNotifications = activeCategory === 'all' 
+    ? notifications 
+    : notifications.filter(n => n.type === activeCategory);
+
+  // Calculate category counts for unread
+  const categoryCounts = notifications.reduce((acc, n) => {
+    if (!n.is_read) {
+      const type = n.type as NotificationCategory;
+      if (type in acc) {
+        acc[type]++;
+      }
+    }
+    return acc;
+  }, { all: 0, event: 0, project: 0, task: 0, system: 0 } as Record<NotificationCategory, number>);
+  categoryCounts.all = unreadCount;
 
   if (!user) return null;
 
+  const notificationContent = (
+    <>
+      <CategoryFilter 
+        activeCategory={activeCategory} 
+        onCategoryChange={setActiveCategory}
+        categoryCounts={categoryCounts}
+      />
+
+      <ScrollArea className={cn("flex-1", isMobile ? "h-[calc(100vh-180px)]" : "h-80")}>
+        {filteredNotifications.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full py-12 text-muted-foreground">
+            <Bell className="h-12 w-12 mb-4 opacity-30" />
+            <p className="text-sm font-medium">No notifications</p>
+            <p className="text-xs mt-1 text-center px-4">
+              {activeCategory === 'all' 
+                ? "We'll notify you about events, projects & tasks"
+                : `No ${categoryConfig[activeCategory].label.toLowerCase()} notifications`}
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y divide-border">
+            {filteredNotifications.map((notification) => (
+              <NotificationItem
+                key={notification.id}
+                notification={notification}
+                onMarkAsRead={markAsRead}
+                onDelete={deleteNotification}
+                onClose={handleClose}
+                getIcon={getIcon}
+              />
+            ))}
+            {hasMore && activeCategory === 'all' && (
+              <div className="p-3 text-center">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs"
+                  onClick={loadMore}
+                  disabled={isLoadingMore}
+                >
+                  {isLoadingMore ? (
+                    <span className="animate-pulse">Loading...</span>
+                  ) : (
+                    <>
+                      <ChevronDown className="h-3 w-3 mr-1" />
+                      Load more
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+      </ScrollArea>
+
+      <div className="p-2 border-t border-border mt-auto">
+        <Link to="/edit-profile" onClick={handleClose}>
+          <Button variant="ghost" size="sm" className="w-full text-xs">
+            Notification settings
+          </Button>
+        </Link>
+      </div>
+    </>
+  );
+
+  // Mobile: Full screen sheet
+  if (isMobile) {
+    return (
+      <>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative h-10 w-10 rounded-full hover:bg-secondary"
+          onClick={() => setOpen(true)}
+        >
+          <Bell className="h-5 w-5" strokeWidth={2} />
+          {unreadCount > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 h-5 w-5 rounded-full bg-destructive text-destructive-foreground text-xs font-bold flex items-center justify-center animate-pulse">
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          )}
+        </Button>
+
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetContent 
+            side="right" 
+            className="w-full sm:max-w-full p-0 flex flex-col"
+          >
+            <SheetHeader className="px-4 py-3 border-b border-border flex-row items-center justify-between space-y-0">
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={handleClose}
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+                <SheetTitle className="text-base font-bold">Notifications</SheetTitle>
+              </div>
+              {unreadCount > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs h-7 px-2"
+                  onClick={markAllAsRead}
+                >
+                  <Check className="h-3 w-3 mr-1" />
+                  Mark all read
+                </Button>
+              )}
+            </SheetHeader>
+            {notificationContent}
+          </SheetContent>
+        </Sheet>
+      </>
+    );
+  }
+
+  // Desktop: Popover
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -134,13 +454,13 @@ export const NotificationCenter = () => {
           <Bell className="h-5 w-5" strokeWidth={2} />
           {unreadCount > 0 && (
             <span className="absolute -top-0.5 -right-0.5 h-5 w-5 rounded-full bg-destructive text-destructive-foreground text-xs font-bold flex items-center justify-center animate-pulse">
-              {unreadCount > 9 ? '9+' : unreadCount}
+              {unreadCount > 99 ? '99+' : unreadCount}
             </span>
           )}
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-80 p-0 rounded-2xl border border-border-strong/10 shadow-soft-lg"
+        className="w-96 p-0 rounded-2xl border border-border-strong/10 shadow-soft-lg flex flex-col"
         align="end"
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
@@ -157,93 +477,7 @@ export const NotificationCenter = () => {
             </Button>
           )}
         </div>
-
-        <ScrollArea className="h-80">
-          {notifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full py-8 text-muted-foreground">
-              <Bell className="h-10 w-10 mb-3 opacity-30" />
-              <p className="text-sm font-medium">No notifications yet</p>
-              <p className="text-xs mt-1">We'll notify you about events & updates</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-border">
-              {notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className={cn(
-                    'p-3 hover:bg-muted/50 transition-colors relative group',
-                    !notification.is_read && 'bg-primary/5'
-                  )}
-                >
-                  <div className="flex gap-3">
-                    <div className="flex-shrink-0 mt-0.5">
-                      {getIcon(notification.type)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      {notification.link ? (
-                        <Link
-                          to={notification.link}
-                          onClick={() => {
-                            markAsRead(notification.id);
-                            setOpen(false);
-                          }}
-                          className="block"
-                        >
-                          <p className="text-sm font-semibold truncate hover:text-primary">
-                            {notification.title}
-                          </p>
-                        </Link>
-                      ) : (
-                        <p className="text-sm font-semibold truncate">
-                          {notification.title}
-                        </p>
-                      )}
-                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-                        {notification.message}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {formatDistanceToNow(new Date(notification.created_at), {
-                          addSuffix: true,
-                        })}
-                      </p>
-                    </div>
-                    <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {!notification.is_read && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6"
-                          onClick={() => markAsRead(notification.id)}
-                        >
-                          <Check className="h-3 w-3" />
-                        </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                        onClick={() => deleteNotification(notification.id)}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                  {!notification.is_read && (
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r" />
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </ScrollArea>
-
-        <div className="p-2 border-t border-border">
-          <Link to="/edit-profile" onClick={() => setOpen(false)}>
-            <Button variant="ghost" size="sm" className="w-full text-xs">
-              Notification settings
-            </Button>
-          </Link>
-        </div>
+        {notificationContent}
       </PopoverContent>
     </Popover>
   );
