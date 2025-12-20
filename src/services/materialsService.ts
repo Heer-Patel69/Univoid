@@ -149,6 +149,13 @@ export async function uploadMaterial(
 
   const fileUrl = urlData?.signedUrl || '';
 
+  // Determine preview URL based on file type
+  // For images: use the same URL as file_url (no conversion needed)
+  // For PDFs/docs: would need separate preview generation (future enhancement)
+  const isImageFile = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(fileExt.toLowerCase());
+  const previewFileUrl = isImageFile ? fileUrl : null;
+  const previewPageLimit = isImageFile ? 1 : 5;
+
   options?.onProgress?.(80);
 
   // Create material record - pending review
@@ -167,6 +174,9 @@ export async function uploadMaterial(
       subject: options?.subject || null,
       language: options?.language || null,
       college: options?.college || null,
+      preview_file_url: previewFileUrl,
+      preview_page_limit: previewPageLimit,
+      preview_ready: isImageFile, // Images are ready immediately
     })
     .select('id')
     .single();
