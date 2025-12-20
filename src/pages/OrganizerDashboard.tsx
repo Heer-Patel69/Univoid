@@ -188,6 +188,70 @@ const OrganizerDashboard = () => {
     }
   }, [events, selectedEvent]);
 
+  // Real-time subscription for new registrations
+  useEffect(() => {
+    if (!user || !events || events.length === 0) return;
+
+    const eventIds = events.map(e => e.id);
+
+    // Subscribe to registration changes for organizer's events
+    const registrationChannel = supabase
+      .channel('organizer-registrations')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'event_registrations',
+          filter: `event_id=in.(${eventIds.join(',')})`
+        },
+        (payload) => {
+          console.log('Registration update:', payload);
+          // Invalidate queries to refetch data
+          queryClient.invalidateQueries({ queryKey: ["event-registrations", selectedEvent] });
+          queryClient.invalidateQueries({ queryKey: ["organizer-events", user.id] });
+          
+          if (payload.eventType === 'INSERT') {
+            toast({
+              title: "🎉 New Registration!",
+              description: "Someone just registered for your event",
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    // Subscribe to ticket changes (for check-in updates)
+    const ticketChannel = supabase
+      .channel('organizer-tickets')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'event_tickets',
+          filter: `event_id=in.(${eventIds.join(',')})`
+        },
+        (payload) => {
+          console.log('Ticket update:', payload);
+          queryClient.invalidateQueries({ queryKey: ["event-checkin-stats", selectedEvent] });
+          
+          if (payload.eventType === 'UPDATE' && (payload.new as { is_used?: boolean }).is_used) {
+            toast({
+              title: "✅ Attendee Checked In!",
+              description: "Someone just checked in to your event",
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(registrationChannel);
+      supabase.removeChannel(ticketChannel);
+    };
+  }, [user, events, selectedEvent, queryClient, toast]);
+
   if (!user) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
