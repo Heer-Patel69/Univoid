@@ -636,6 +636,7 @@ export type Database = {
       }
       materials: {
         Row: {
+          admin_previewed: boolean | null
           branch: string | null
           college: string | null
           course: string | null
@@ -650,6 +651,9 @@ export type Database = {
           id: string
           language: string | null
           likes_count: number
+          preview_file_url: string | null
+          preview_page_limit: number | null
+          preview_ready: boolean | null
           shares_count: number
           status: Database["public"]["Enums"]["content_status"]
           subject: string | null
@@ -659,6 +663,7 @@ export type Database = {
           views_count: number
         }
         Insert: {
+          admin_previewed?: boolean | null
           branch?: string | null
           college?: string | null
           course?: string | null
@@ -673,6 +678,9 @@ export type Database = {
           id?: string
           language?: string | null
           likes_count?: number
+          preview_file_url?: string | null
+          preview_page_limit?: number | null
+          preview_ready?: boolean | null
           shares_count?: number
           status?: Database["public"]["Enums"]["content_status"]
           subject?: string | null
@@ -682,6 +690,7 @@ export type Database = {
           views_count?: number
         }
         Update: {
+          admin_previewed?: boolean | null
           branch?: string | null
           college?: string | null
           course?: string | null
@@ -696,6 +705,9 @@ export type Database = {
           id?: string
           language?: string | null
           likes_count?: number
+          preview_file_url?: string | null
+          preview_page_limit?: number | null
+          preview_ready?: boolean | null
           shares_count?: number
           status?: Database["public"]["Enums"]["content_status"]
           subject?: string | null
