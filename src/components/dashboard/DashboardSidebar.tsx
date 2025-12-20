@@ -1,5 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useScholarshipBadge } from "@/hooks/useScholarshipBadge";
+import { useEffect } from "react";
 import {
   LayoutDashboard,
   User,
@@ -28,13 +30,21 @@ interface DashboardSidebarProps {
 const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
   const { profile, isOrganizer, isAdmin, signOut } = useAuth();
   const location = useLocation();
+  const { hasNewScholarships, newCount, markAsSeen } = useScholarshipBadge();
+
+  // Clear badge when on scholarships page
+  useEffect(() => {
+    if (location.pathname.startsWith("/scholarships") && hasNewScholarships) {
+      markAsSeen();
+    }
+  }, [location.pathname, hasNewScholarships, markAsSeen]);
 
   const isActive = (href: string) => location.pathname === href || location.pathname.startsWith(href + '/');
 
   // Core Browse Items - Always visible
   const browseItems = [
     { label: "Materials", icon: BookOpen, href: "/materials" },
-    { label: "Scholarships", icon: GraduationCap, href: "/scholarships" },
+    { label: "Scholarships", icon: GraduationCap, href: "/scholarships", showBadge: true },
     { label: "Events", icon: Calendar, href: "/events" },
     { label: "Projects", icon: Folder, href: "/projects" },
     { label: "Task Plaza", icon: Briefcase, href: "/tasks" },
@@ -126,21 +136,29 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mt-6 mb-2">
             Browse
           </p>
-          {browseItems.map((item) => (
-            <Link
-              key={item.href}
-              to={item.href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
-                isActive(item.href)
-                  ? "bg-primary text-primary-foreground"
-                  : "text-foreground hover:bg-secondary"
-              )}
-            >
-              <item.icon className="w-4 h-4" />
-              {item.label}
-            </Link>
-          ))}
+          {browseItems.map((item) => {
+            const showBadge = item.showBadge && hasNewScholarships && !isActive(item.href);
+            return (
+              <Link
+                key={item.href}
+                to={item.href}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all relative",
+                  isActive(item.href)
+                    ? "bg-primary text-primary-foreground"
+                    : "text-foreground hover:bg-secondary"
+                )}
+              >
+                <item.icon className="w-4 h-4" />
+                {item.label}
+                {showBadge && (
+                  <span className="ml-auto min-w-[20px] h-[20px] bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center px-1.5">
+                    {newCount > 9 ? "9+" : newCount}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
 
           {/* Contribute Section */}
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mt-6 mb-2">
