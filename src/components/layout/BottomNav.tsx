@@ -1,13 +1,13 @@
 import { Link, useLocation } from "react-router-dom";
-import { BookOpen, Newspaper, Trophy, Calendar, Repeat2 } from "lucide-react";
+import { BookOpen, Trophy, Calendar, Repeat2, GraduationCap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/materials", label: "Materials", icon: BookOpen },
   { href: "/events", label: "Events", icon: Calendar },
-  { href: "/leaderboard", label: "Ranks", icon: Trophy, highlight: true },
-  { href: "/news", label: "News", icon: Newspaper },
+  { href: "/scholarships", label: "Scholarships", icon: GraduationCap, highlight: true },
   { href: "/books", label: "Books", icon: Repeat2 },
+  { href: "/leaderboard", label: "Ranks", icon: Trophy },
 ];
 
 // Paths where bottom nav should NOT appear
