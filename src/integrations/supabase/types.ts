@@ -480,6 +480,131 @@ export type Database = {
         }
         Relationships: []
       }
+      lookup_branches: {
+        Row: {
+          created_at: string
+          id: string
+          is_popular: boolean | null
+          name: string
+          short_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_popular?: boolean | null
+          name: string
+          short_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_popular?: boolean | null
+          name?: string
+          short_name?: string | null
+        }
+        Relationships: []
+      }
+      lookup_cities: {
+        Row: {
+          created_at: string
+          id: string
+          is_popular: boolean | null
+          name: string
+          state_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_popular?: boolean | null
+          name: string
+          state_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_popular?: boolean | null
+          name?: string
+          state_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lookup_cities_state_id_fkey"
+            columns: ["state_id"]
+            isOneToOne: false
+            referencedRelation: "lookup_states"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lookup_states: {
+        Row: {
+          code: string | null
+          created_at: string
+          id: string
+          is_popular: boolean | null
+          name: string
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string
+          id?: string
+          is_popular?: boolean | null
+          name: string
+        }
+        Update: {
+          code?: string | null
+          created_at?: string
+          id?: string
+          is_popular?: boolean | null
+          name?: string
+        }
+        Relationships: []
+      }
+      lookup_universities: {
+        Row: {
+          city_id: string | null
+          created_at: string
+          id: string
+          is_popular: boolean | null
+          name: string
+          state_id: string | null
+          type: string | null
+        }
+        Insert: {
+          city_id?: string | null
+          created_at?: string
+          id?: string
+          is_popular?: boolean | null
+          name: string
+          state_id?: string | null
+          type?: string | null
+        }
+        Update: {
+          city_id?: string | null
+          created_at?: string
+          id?: string
+          is_popular?: boolean | null
+          name?: string
+          state_id?: string | null
+          type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lookup_universities_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "lookup_cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lookup_universities_state_id_fkey"
+            columns: ["state_id"]
+            isOneToOne: false
+            referencedRelation: "lookup_states"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       material_likes: {
         Row: {
           created_at: string

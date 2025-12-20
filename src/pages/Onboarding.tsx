@@ -16,6 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, GraduationCap } from "lucide-react";
+import { SearchableSelect } from "@/components/common/SearchableSelect";
 
 const DEGREE_OPTIONS = [
   "B.Tech",
@@ -64,11 +65,15 @@ const Onboarding = () => {
   const [formData, setFormData] = useState({
     full_name: profile?.full_name || user?.user_metadata?.full_name || user?.user_metadata?.name || "",
     college_name: profile?.college_name || "",
+    college_id: "",
     degree: "",
     branch: profile?.course_stream || "",
+    branch_id: "",
     current_year: "",
     city: "",
+    city_id: "",
     state: "",
+    state_id: "",
     interests: [] as string[],
   });
 
@@ -213,18 +218,23 @@ const Onboarding = () => {
             <div className="space-y-4">
               <h3 className="text-sm font-semibold text-foreground">Academic</h3>
 
-              <div className="space-y-2">
-                <Label htmlFor="college_name">College Name *</Label>
-                <Input
-                  id="college_name"
-                  value={formData.college_name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, college_name: e.target.value })
-                  }
-                  placeholder="e.g. IIT Delhi"
-                  required
-                />
-              </div>
+              <SearchableSelect
+                label="College/University"
+                tableName="lookup_universities"
+                placeholder="Search your college..."
+                value={formData.college_id}
+                displayValue={formData.college_name}
+                dependencyColumn={formData.state_id ? "state_id" : undefined}
+                dependencyValue={formData.state_id || undefined}
+                onSelect={(item) =>
+                  setFormData({
+                    ...formData,
+                    college_id: item.id,
+                    college_name: item.name,
+                  })
+                }
+                required
+              />
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -270,48 +280,62 @@ const Onboarding = () => {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="branch">Branch / Stream *</Label>
-                <Input
-                  id="branch"
-                  value={formData.branch}
-                  onChange={(e) =>
-                    setFormData({ ...formData, branch: e.target.value })
-                  }
-                  placeholder="e.g. Computer Science"
-                  required
-                />
-              </div>
+              <SearchableSelect
+                label="Branch/Stream"
+                tableName="lookup_branches"
+                placeholder="Search your branch..."
+                value={formData.branch_id}
+                displayValue={formData.branch}
+                onSelect={(item) =>
+                  setFormData({
+                    ...formData,
+                    branch_id: item.id,
+                    branch: item.name,
+                  })
+                }
+                required
+              />
             </div>
 
             {/* Location Section */}
             <div className="space-y-4">
               <h3 className="text-sm font-semibold text-foreground">Location</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="city">City *</Label>
-                  <Input
-                    id="city"
-                    value={formData.city}
-                    onChange={(e) =>
-                      setFormData({ ...formData, city: e.target.value })
-                    }
-                    placeholder="e.g. Mumbai"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="state">State *</Label>
-                  <Input
-                    id="state"
-                    value={formData.state}
-                    onChange={(e) =>
-                      setFormData({ ...formData, state: e.target.value })
-                    }
-                    placeholder="e.g. Maharashtra"
-                    required
-                  />
-                </div>
+              <div className="grid grid-cols-1 gap-4">
+                <SearchableSelect
+                  label="State"
+                  tableName="lookup_states"
+                  placeholder="Select your state..."
+                  value={formData.state_id}
+                  displayValue={formData.state}
+                  onSelect={(item) =>
+                    setFormData({
+                      ...formData,
+                      state_id: item.id,
+                      state: item.name,
+                      city_id: "", // Reset city when state changes
+                      city: "",
+                    })
+                  }
+                  required
+                />
+                <SearchableSelect
+                  label="City"
+                  tableName="lookup_cities"
+                  placeholder="Search your city..."
+                  value={formData.city_id}
+                  displayValue={formData.city}
+                  dependencyColumn="state_id"
+                  dependencyValue={formData.state_id || null}
+                  onSelect={(item) =>
+                    setFormData({
+                      ...formData,
+                      city_id: item.id,
+                      city: item.name,
+                    })
+                  }
+                  disabled={!formData.state_id}
+                  required
+                />
               </div>
             </div>
 
