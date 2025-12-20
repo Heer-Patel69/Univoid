@@ -1194,6 +1194,41 @@ export type Database = {
         }
         Relationships: []
       }
+      scholarship_reminders: {
+        Row: {
+          created_at: string
+          id: string
+          remind_days_before: number
+          reminder_sent: boolean
+          scholarship_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          remind_days_before?: number
+          reminder_sent?: boolean
+          scholarship_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          remind_days_before?: number
+          reminder_sent?: boolean
+          scholarship_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scholarship_reminders_scholarship_id_fkey"
+            columns: ["scholarship_id"]
+            isOneToOne: false
+            referencedRelation: "scholarships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scholarships: {
         Row: {
           application_link: string | null
