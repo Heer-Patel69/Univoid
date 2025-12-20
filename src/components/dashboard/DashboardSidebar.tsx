@@ -78,14 +78,14 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
       <div className="p-4 flex flex-col flex-1">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 px-3 py-4 mb-4">
-          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
+          <div className="w-10 h-10 bg-primary border border-border rounded-xl flex items-center justify-center shadow-sketch-sm">
             <span className="text-primary-foreground font-bold text-lg">U</span>
           </div>
           <span className="font-bold text-xl text-foreground">UniVoid</span>
         </Link>
 
-        {/* User Card */}
-        <Link to="/profile" className="bg-secondary/50 rounded-2xl p-4 mb-6 hover:bg-secondary transition-colors">
+        {/* User Card - Sticky Note style */}
+        <Link to="/profile" className="bg-card border border-border rounded-xl p-4 mb-6 shadow-sketch-sm hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-sketch transition-all">
           <div className="flex items-center gap-3">
             {profile?.profile_photo_url ? (
               <img
@@ -122,13 +122,13 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
               to={item.href}
               id={item.id}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
+                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all border",
                 isActive(item.href)
-                  ? "bg-primary text-primary-foreground"
-                  : "text-foreground hover:bg-secondary"
+                  ? "bg-secondary border-border font-bold"
+                  : "text-foreground border-transparent hover:bg-secondary/50"
               )}
             >
-              <item.icon className="w-4 h-4" />
+              <item.icon className="w-4 h-4 stroke-[2px]" />
               {item.label}
             </Link>
           ))}
@@ -145,16 +145,16 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
                 to={item.href}
                 id={item.id}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all relative",
+                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all relative border",
                   isActive(item.href)
-                    ? "bg-primary text-primary-foreground"
-                    : "text-foreground hover:bg-secondary"
+                    ? "bg-secondary border-border font-bold"
+                    : "text-foreground border-transparent hover:bg-secondary/50"
                 )}
               >
-                <item.icon className="w-4 h-4" />
+                <item.icon className="w-4 h-4 stroke-[2px]" />
                 {item.label}
                 {showBadge && (
-                  <span className="ml-auto min-w-[20px] h-[20px] bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center px-1.5">
+                  <span className="ml-auto min-w-[20px] h-[20px] bg-foreground text-background text-[10px] font-bold rounded-full flex items-center justify-center px-1.5">
                     {newCount > 9 ? "9+" : newCount}
                   </span>
                 )}
@@ -173,13 +173,13 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
               to={item.href}
               id={item.id}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
+                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all border",
                 isActive(item.href)
-                  ? "bg-primary text-primary-foreground"
-                  : "text-foreground hover:bg-secondary"
+                  ? "bg-secondary border-border font-bold"
+                  : "text-foreground border-transparent hover:bg-secondary/50"
               )}
             >
-              <item.icon className="w-4 h-4" />
+              <item.icon className="w-4 h-4 stroke-[2px]" />
               {item.label}
             </Link>
           ))}
@@ -193,13 +193,13 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
               <Link
                 to="/organizer/dashboard"
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
+                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all border",
                   isActive("/organizer/dashboard")
-                    ? "bg-primary text-primary-foreground"
-                    : "text-foreground hover:bg-secondary"
+                    ? "bg-secondary border-border font-bold"
+                    : "text-foreground border-transparent hover:bg-secondary/50"
                 )}
               >
-                <Calendar className="w-4 h-4" />
+                <Calendar className="w-4 h-4 stroke-[2px]" />
                 Organizer Panel
               </Link>
             </>
@@ -214,13 +214,13 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
               <Link
                 to="/admin"
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
+                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all border",
                   isActive("/admin")
-                    ? "bg-primary text-primary-foreground"
-                    : "text-foreground hover:bg-secondary"
+                    ? "bg-secondary border-border font-bold"
+                    : "text-foreground border-transparent hover:bg-secondary/50"
                 )}
               >
-                <Shield className="w-4 h-4" />
+                <Shield className="w-4 h-4 stroke-[2px]" />
                 Admin Panel
               </Link>
             </>
@@ -232,9 +232,9 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
           <Link
             to="/settings"
             id="nav-settings"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-secondary transition-all"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-secondary/50 transition-all"
           >
-            <Settings className="w-4 h-4" />
+            <Settings className="w-4 h-4 stroke-[2px]" />
             Settings
           </Link>
           <Button
@@ -242,7 +242,7 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
             onClick={signOut}
             className="w-full justify-start gap-3 px-3 py-2.5 h-auto font-medium text-destructive hover:text-destructive hover:bg-destructive/10"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-4 h-4 stroke-[2px]" />
             Sign Out
           </Button>
         </div>

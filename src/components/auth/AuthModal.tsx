@@ -86,13 +86,13 @@ const AuthModal = ({ isOpen, onClose, onSuccess, message }: AuthModalProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md p-0 overflow-hidden border-0 shadow-premium-xl">
-        {/* Header */}
-        <div className="bg-primary px-6 py-8 text-center">
-          <div className="w-14 h-14 bg-primary-foreground/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <span className="text-primary-foreground font-bold text-xl">U</span>
+      <DialogContent className="sm:max-w-md p-0 overflow-hidden">
+        {/* Header - Sketch style */}
+        <div className="bg-primary px-6 py-8 text-center border-b border-border">
+          <div className="w-14 h-14 bg-card border border-border rounded-xl flex items-center justify-center mx-auto mb-4 shadow-sketch-sm">
+            <span className="text-foreground font-bold text-xl">U</span>
           </div>
-          <DialogTitle className="text-xl font-display font-semibold text-primary-foreground mb-2">
+          <DialogTitle className="text-xl font-display font-bold text-primary-foreground mb-2">
             Welcome to UniVoid
           </DialogTitle>
           {message && (
@@ -101,18 +101,18 @@ const AuthModal = ({ isOpen, onClose, onSuccess, message }: AuthModalProps) => {
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 bg-card">
           <div className="text-center">
             <p className="text-muted-foreground text-sm mb-6">
               Sign in with your Google account to continue
             </p>
           </div>
 
-          {/* Google Sign-In Button */}
+          {/* Google Sign-In Button - Sketch style */}
           <Button
             type="button"
             variant="outline"
-            className="w-full h-12 font-medium text-base border-2"
+            className="w-full h-12 font-bold text-base"
             onClick={handleGoogleSignIn}
             disabled={isGoogleLoading}
           >
@@ -126,9 +126,9 @@ const AuthModal = ({ isOpen, onClose, onSuccess, message }: AuthModalProps) => {
 
           <p className="text-xs text-muted-foreground text-center">
             By signing in, you agree to our{" "}
-            <a href="/terms" className="text-primary hover:underline">Terms</a>
+            <a href="/terms" className="text-foreground font-semibold hover:underline">Terms</a>
             {" "}and{" "}
-            <a href="/privacy-policy" className="text-primary hover:underline">Privacy Policy</a>
+            <a href="/privacy-policy" className="text-foreground font-semibold hover:underline">Privacy Policy</a>
           </p>
         </div>
       </DialogContent>

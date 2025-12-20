@@ -5,17 +5,17 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-bold ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-bold ring-offset-background transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-border",
   {
     variants: {
       variant: {
-        default: "bg-foreground text-background hover:translate-y-[-2px] hover:shadow-lg active:translate-y-0 active:shadow-none",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 hover:translate-y-[-1px]",
-        outline: "border-2 border-border-strong/20 bg-card hover:bg-foreground hover:text-background hover:border-foreground",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:translate-y-[-1px]",
-        ghost: "hover:bg-secondary hover:text-secondary-foreground",
-        link: "text-foreground underline-offset-4 hover:underline",
-        pastel: "bg-pastel-purple text-foreground hover:translate-y-[-2px] hover:shadow-soft",
+        default: "bg-primary text-primary-foreground shadow-sketch hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-sketch-lg active:translate-x-0 active:translate-y-0 active:shadow-none",
+        destructive: "bg-destructive text-destructive-foreground shadow-sketch hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-sketch-lg active:translate-x-0 active:translate-y-0",
+        outline: "bg-card hover:bg-secondary hover:translate-x-[-2px] hover:translate-y-[-2px] shadow-sketch-sm hover:shadow-sketch",
+        secondary: "bg-secondary text-secondary-foreground shadow-sketch-sm hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-sketch",
+        ghost: "border-0 hover:bg-secondary hover:text-secondary-foreground",
+        link: "border-0 text-foreground underline-offset-4 hover:underline",
+        sketch: "bg-card text-foreground shadow-sketch hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-sketch-lg active:translate-x-0 active:translate-y-0 active:shadow-none",
       },
       size: {
         default: "h-11 px-6 py-2",

@@ -6,45 +6,46 @@
 
 @layer base {
   :root {
-    /* Warm Cream Background #F9F7F1 */
+    /* Warm Cream Background #F9F7F1 - ENFORCED GLOBALLY */
     --background: 43 33% 96%;
     --foreground: 0 0% 18%;
 
-    /* White cards */
+    /* Pure White cards/surfaces #FFFFFF */
     --card: 0 0% 100%;
     --card-foreground: 0 0% 18%;
 
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 18%;
 
-    /* Sketch border color #2D2D2D */
+    /* Sketch border color #2D2D2D - Used for all borders */
     --sketch-border: 0 0% 18%;
     
     /* Mustard Yellow Primary #FFD54F */
     --primary: 45 100% 65%;
     --primary-foreground: 0 0% 18%;
 
-    /* Soft secondary */
-    --secondary: 40 30% 94%;
+    /* Soft Yellow for active states #FFF9C4 */
+    --secondary: 54 100% 88%;
     --secondary-foreground: 0 0% 18%;
 
     --muted: 40 20% 92%;
     --muted-foreground: 0 0% 45%;
 
     /* Soft Blue accent */
-    --accent: 210 60% 92%;
+    --accent: 54 100% 88%;
     --accent-foreground: 0 0% 18%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 85%;
+    /* All borders use sketch-border by default */
+    --border: 0 0% 18%;
     --border-strong: 0 0% 18%;
-    --input: 40 20% 92%;
+    --input: 0 0% 100%;
     --ring: 0 0% 18%;
 
-    /* Rounded corners */
-    --radius: 1rem;
+    /* Consistent rounded corners 12px-16px */
+    --radius: 0.75rem;
 
     /* Status colors */
     --success: 152 69% 45%;
@@ -57,7 +58,7 @@
     --pastel-green: 152 50% 90%;
     --pastel-peach: 20 80% 92%;
     --pastel-purple: 270 60% 92%;
-    --pastel-yellow: 45 80% 90%;
+    --pastel-yellow: 54 100% 88%;
     --pastel-pink: 340 60% 92%;
     
     /* Category accent colors */
@@ -67,13 +68,14 @@
     --category-yellow: 45 93% 50%;
     --category-purple: 270 70% 60%;
 
-    --sidebar-background: 43 33% 96%;
+    /* Sidebar - White background with black border */
+    --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 0 0% 18%;
     --sidebar-primary: 45 100% 65%;
     --sidebar-primary-foreground: 0 0% 18%;
-    --sidebar-accent: 210 60% 92%;
+    --sidebar-accent: 54 100% 88%;
     --sidebar-accent-foreground: 0 0% 18%;
-    --sidebar-border: 0 0% 85%;
+    --sidebar-border: 0 0% 18%;
     --sidebar-ring: 0 0% 18%;
   }
 
@@ -212,6 +214,10 @@
 
   .shadow-sketch-sm {
     box-shadow: 2px 2px 0px hsl(var(--sketch-border));
+  }
+
+  .shadow-sketch-lg {
+    box-shadow: 6px 6px 0px hsl(var(--sketch-border));
   }
 
   /* Neo-brutalist Button Styles */
