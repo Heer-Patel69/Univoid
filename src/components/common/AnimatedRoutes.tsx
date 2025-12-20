@@ -1,10 +1,13 @@
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useState, useCallback, memo } from "react";
 import { PageTransition } from "./PageTransition";
 import { PageSkeleton } from "./PageSkeleton";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import CheckInRedirect from "@/components/common/CheckInRedirect";
+import AppLayout from "@/components/layout/AppLayout";
+import PublicLayout from "@/components/layout/PublicLayout";
+import AuthModal from "@/components/auth/AuthModal";
 
 // Lazy load pages for better code splitting
 const Index = lazy(() => import("@/pages/Index"));
@@ -46,274 +49,300 @@ const Settings = lazy(() => import("@/pages/Settings"));
 const Scholarships = lazy(() => import("@/pages/Scholarships"));
 const ScholarshipDetail = lazy(() => import("@/pages/ScholarshipDetail"));
 
-// Skeleton wrapper for different page types
-const GridPageSkeleton = () => <PageSkeleton variant="grid" showFilters />;
-const DetailPageSkeleton = () => <PageSkeleton variant="detail" showFilters={false} />;
-const DashboardPageSkeleton = () => <PageSkeleton variant="dashboard" showFilters={false} />;
-const ListPageSkeleton = () => <PageSkeleton variant="list" showFilters />;
+// Skeleton wrapper for different page types - memoized
+const GridPageSkeleton = memo(() => <PageSkeleton variant="grid" showFilters />);
+const DetailPageSkeleton = memo(() => <PageSkeleton variant="detail" showFilters={false} />);
+const DashboardPageSkeleton = memo(() => <PageSkeleton variant="dashboard" showFilters={false} />);
+const ListPageSkeleton = memo(() => <PageSkeleton variant="list" showFilters />);
 
-export const AnimatedRoutes = () => {
+GridPageSkeleton.displayName = "GridPageSkeleton";
+DetailPageSkeleton.displayName = "DetailPageSkeleton";
+DashboardPageSkeleton.displayName = "DashboardPageSkeleton";
+ListPageSkeleton.displayName = "ListPageSkeleton";
+
+// Wrapper for page content with suspense and transition
+const PageWrapper = memo(({ 
+  children, 
+  skeleton: Skeleton = GridPageSkeleton 
+}: { 
+  children: React.ReactNode; 
+  skeleton?: React.ComponentType;
+}) => (
+  <Suspense fallback={<Skeleton />}>
+    <PageTransition>{children}</PageTransition>
+  </Suspense>
+));
+PageWrapper.displayName = "PageWrapper";
+
+export const AnimatedRoutes = memo(() => {
   const location = useLocation();
+  const [authOpen, setAuthOpen] = useState(false);
+  
+  const handleAuthClick = useCallback(() => setAuthOpen(true), []);
+  const handleAuthClose = useCallback(() => setAuthOpen(false), []);
 
   return (
-    <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
-        <Route path="/" element={
-          <Suspense fallback={<GridPageSkeleton />}>
-            <PageTransition><Index /></PageTransition>
-          </Suspense>
-        } />
-        <Route path="/onboarding" element={
-          <ProtectedRoute skipOnboarding>
-            <Suspense fallback={<ListPageSkeleton />}>
-              <PageTransition><Onboarding /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        <Route path="/my-events" element={
-          <ProtectedRoute>
-            <Suspense fallback={<ListPageSkeleton />}>
-              <PageTransition><MyTickets /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        <Route path="/checkin/:token" element={<CheckInRedirect />} />
-        <Route path="/materials" element={
-          <Suspense fallback={<GridPageSkeleton />}>
-            <PageTransition><Materials /></PageTransition>
-          </Suspense>
-        } />
-        <Route path="/news" element={
-          <Suspense fallback={<GridPageSkeleton />}>
-            <PageTransition><News /></PageTransition>
-          </Suspense>
-        } />
-        <Route path="/books" element={
-          <Suspense fallback={<GridPageSkeleton />}>
-            <PageTransition><Books /></PageTransition>
-          </Suspense>
-        } />
-        <Route path="/books/:bookId" element={
-          <Suspense fallback={<DetailPageSkeleton />}>
-            <PageTransition><BookDetail /></PageTransition>
-          </Suspense>
-        } />
-        <Route path="/events" element={
-          <Suspense fallback={<GridPageSkeleton />}>
-            <PageTransition><Events /></PageTransition>
-          </Suspense>
-        } />
-        <Route path="/events/:eventId" element={
-          <Suspense fallback={<DetailPageSkeleton />}>
-            <PageTransition><EventDetail /></PageTransition>
-          </Suspense>
-        } />
-        <Route path="/scholarships" element={
-          <Suspense fallback={<GridPageSkeleton />}>
-            <PageTransition><Scholarships /></PageTransition>
-          </Suspense>
-        } />
-        <Route path="/scholarships/:scholarshipId" element={
-          <Suspense fallback={<DetailPageSkeleton />}>
-            <PageTransition><ScholarshipDetail /></PageTransition>
-          </Suspense>
-        } />
-        <Route path="/projects" element={
-          <Suspense fallback={<GridPageSkeleton />}>
-            <PageTransition><Projects /></PageTransition>
-          </Suspense>
-        } />
-        <Route path="/projects/create" element={
-          <ProtectedRoute>
-            <Suspense fallback={<ListPageSkeleton />}>
-              <PageTransition><CreateProject /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        <Route path="/projects/:projectId" element={
-          <Suspense fallback={<DetailPageSkeleton />}>
-            <PageTransition><ProjectDetail /></PageTransition>
-          </Suspense>
-        } />
-        <Route path="/tasks" element={
-          <Suspense fallback={<GridPageSkeleton />}>
-            <PageTransition><Tasks /></PageTransition>
-          </Suspense>
-        } />
-        <Route path="/tasks/my-requests" element={
-          <ProtectedRoute>
-            <Suspense fallback={<GridPageSkeleton />}>
-              <PageTransition><Tasks /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        <Route path="/tasks/:taskId" element={
-          <Suspense fallback={<DetailPageSkeleton />}>
-            <PageTransition><TaskDetail /></PageTransition>
-          </Suspense>
-        } />
-        <Route path="/tasks/create" element={
-          <ProtectedRoute>
-            <Suspense fallback={<ListPageSkeleton />}>
-              <PageTransition><CreateTask /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        <Route path="/become-organizer" element={
-          <Suspense fallback={<ListPageSkeleton />}>
-            <PageTransition><BecomeOrganizer /></PageTransition>
-          </Suspense>
-        } />
-        <Route path="/leaderboard" element={
-          <Suspense fallback={<ListPageSkeleton />}>
-            <PageTransition><Leaderboard /></PageTransition>
-          </Suspense>
-        } />
-        <Route path="/privacy-policy" element={
-          <Suspense fallback={<ListPageSkeleton />}>
-            <PageTransition><PrivacyPolicy /></PageTransition>
-          </Suspense>
-        } />
-        <Route path="/terms" element={
-          <Suspense fallback={<ListPageSkeleton />}>
-            <PageTransition><Terms /></PageTransition>
-          </Suspense>
-        } />
-        <Route path="/refund-policy" element={
-          <Suspense fallback={<ListPageSkeleton />}>
-            <PageTransition><RefundPolicy /></PageTransition>
-          </Suspense>
-        } />
-        <Route path="/legal-disclaimer" element={
-          <Suspense fallback={<ListPageSkeleton />}>
-            <PageTransition><LegalDisclaimer /></PageTransition>
-          </Suspense>
-        } />
-        <Route path="/cookie-policy" element={
-          <Suspense fallback={<ListPageSkeleton />}>
-            <PageTransition><CookiePolicy /></PageTransition>
-          </Suspense>
-        } />
-        <Route path="/contact" element={
-          <Suspense fallback={<ListPageSkeleton />}>
-            <PageTransition><Contact /></PageTransition>
-          </Suspense>
-        } />
-        <Route path="/dashboard" element={
-          <ProtectedRoute>
-            <Suspense fallback={<DashboardPageSkeleton />}>
-              <PageTransition><Dashboard /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        <Route path="/dashboard/upload-material" element={
-          <ProtectedRoute>
-            <Suspense fallback={<ListPageSkeleton />}>
-              <PageTransition><UploadMaterial /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        <Route path="/dashboard/submit-news" element={
-          <ProtectedRoute>
-            <Suspense fallback={<ListPageSkeleton />}>
-              <PageTransition><SubmitNews /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        <Route path="/dashboard/list-book" element={
-          <ProtectedRoute>
-            <Suspense fallback={<ListPageSkeleton />}>
-              <PageTransition><ListBook /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        <Route path="/dashboard/my-tickets" element={<Navigate to="/my-events" replace />} />
-        <Route path="/upload-material" element={
-          <ProtectedRoute>
-            <Suspense fallback={<ListPageSkeleton />}>
-              <PageTransition><UploadMaterial /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        <Route path="/submit-news" element={
-          <ProtectedRoute>
-            <Suspense fallback={<ListPageSkeleton />}>
-              <PageTransition><SubmitNews /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        <Route path="/sell-book" element={
-          <ProtectedRoute>
-            <Suspense fallback={<ListPageSkeleton />}>
-              <PageTransition><ListBook /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        <Route path="/organizer/dashboard" element={
-          <ProtectedRoute>
-            <Suspense fallback={<DashboardPageSkeleton />}>
-              <PageTransition><OrganizerDashboard /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        <Route path="/organizer/create-event" element={
-          <ProtectedRoute>
-            <Suspense fallback={<ListPageSkeleton />}>
-              <PageTransition><CreateEvent /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        <Route path="/organizer/edit-event/:eventId" element={
-          <ProtectedRoute>
-            <Suspense fallback={<DetailPageSkeleton />}>
-              <PageTransition><EditEvent /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        <Route path="/organizer/check-in/:eventId" element={
-          <ProtectedRoute>
-            <Suspense fallback={<ListPageSkeleton />}>
-              <PageTransition><EventCheckIn /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        <Route path="/profile" element={
-          <ProtectedRoute>
-            <Suspense fallback={<DetailPageSkeleton />}>
-              <PageTransition><Profile /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        <Route path="/profile/edit" element={
-          <ProtectedRoute>
-            <Suspense fallback={<ListPageSkeleton />}>
-              <PageTransition><EditProfile /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        <Route path="/settings" element={
-          <ProtectedRoute>
-            <Suspense fallback={<ListPageSkeleton />}>
-              <PageTransition><Settings /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        <Route path="/profile/:userId" element={
-          <Suspense fallback={<DetailPageSkeleton />}>
-            <PageTransition><Profile /></PageTransition>
-          </Suspense>
-        } />
-        <Route path="/admin" element={
-          <Suspense fallback={<DashboardPageSkeleton />}>
-            <PageTransition><Admin /></PageTransition>
-          </Suspense>
-        } />
-        <Route path="*" element={
-          <Suspense fallback={<GridPageSkeleton />}>
-            <PageTransition><NotFound /></PageTransition>
-          </Suspense>
-        } />
-      </Routes>
-    </AnimatePresence>
+    <>
+      <AnimatePresence mode="wait">
+        <Routes location={location} key={location.pathname}>
+          {/* Landing page - standalone with its own layout */}
+          <Route path="/" element={
+            <PageWrapper skeleton={GridPageSkeleton}>
+              <Index />
+            </PageWrapper>
+          } />
+
+          {/* Public routes with PublicLayout shell */}
+          <Route element={<PublicLayout onAuthClick={handleAuthClick} />}>
+            <Route path="/materials" element={
+              <PageWrapper skeleton={GridPageSkeleton}>
+                <Materials />
+              </PageWrapper>
+            } />
+            <Route path="/news" element={
+              <PageWrapper skeleton={GridPageSkeleton}>
+                <News />
+              </PageWrapper>
+            } />
+            <Route path="/books" element={
+              <PageWrapper skeleton={GridPageSkeleton}>
+                <Books />
+              </PageWrapper>
+            } />
+            <Route path="/books/:bookId" element={
+              <PageWrapper skeleton={DetailPageSkeleton}>
+                <BookDetail />
+              </PageWrapper>
+            } />
+            <Route path="/events" element={
+              <PageWrapper skeleton={GridPageSkeleton}>
+                <Events />
+              </PageWrapper>
+            } />
+            <Route path="/events/:eventId" element={
+              <PageWrapper skeleton={DetailPageSkeleton}>
+                <EventDetail />
+              </PageWrapper>
+            } />
+            <Route path="/scholarships" element={
+              <PageWrapper skeleton={GridPageSkeleton}>
+                <Scholarships />
+              </PageWrapper>
+            } />
+            <Route path="/scholarships/:scholarshipId" element={
+              <PageWrapper skeleton={DetailPageSkeleton}>
+                <ScholarshipDetail />
+              </PageWrapper>
+            } />
+            <Route path="/projects" element={
+              <PageWrapper skeleton={GridPageSkeleton}>
+                <Projects />
+              </PageWrapper>
+            } />
+            <Route path="/projects/:projectId" element={
+              <PageWrapper skeleton={DetailPageSkeleton}>
+                <ProjectDetail />
+              </PageWrapper>
+            } />
+            <Route path="/tasks" element={
+              <PageWrapper skeleton={GridPageSkeleton}>
+                <Tasks />
+              </PageWrapper>
+            } />
+            <Route path="/tasks/:taskId" element={
+              <PageWrapper skeleton={DetailPageSkeleton}>
+                <TaskDetail />
+              </PageWrapper>
+            } />
+            <Route path="/leaderboard" element={
+              <PageWrapper skeleton={ListPageSkeleton}>
+                <Leaderboard />
+              </PageWrapper>
+            } />
+            <Route path="/become-organizer" element={
+              <PageWrapper skeleton={ListPageSkeleton}>
+                <BecomeOrganizer />
+              </PageWrapper>
+            } />
+            <Route path="/profile/:userId" element={
+              <PageWrapper skeleton={DetailPageSkeleton}>
+                <Profile />
+              </PageWrapper>
+            } />
+            {/* Legal pages */}
+            <Route path="/privacy-policy" element={
+              <PageWrapper skeleton={ListPageSkeleton}>
+                <PrivacyPolicy />
+              </PageWrapper>
+            } />
+            <Route path="/terms" element={
+              <PageWrapper skeleton={ListPageSkeleton}>
+                <Terms />
+              </PageWrapper>
+            } />
+            <Route path="/refund-policy" element={
+              <PageWrapper skeleton={ListPageSkeleton}>
+                <RefundPolicy />
+              </PageWrapper>
+            } />
+            <Route path="/legal-disclaimer" element={
+              <PageWrapper skeleton={ListPageSkeleton}>
+                <LegalDisclaimer />
+              </PageWrapper>
+            } />
+            <Route path="/cookie-policy" element={
+              <PageWrapper skeleton={ListPageSkeleton}>
+                <CookiePolicy />
+              </PageWrapper>
+            } />
+            <Route path="/contact" element={
+              <PageWrapper skeleton={ListPageSkeleton}>
+                <Contact />
+              </PageWrapper>
+            } />
+          </Route>
+
+          {/* Protected routes with AppLayout shell (sidebar) */}
+          <Route element={
+            <ProtectedRoute>
+              <AppLayout />
+            </ProtectedRoute>
+          }>
+            <Route path="/dashboard" element={
+              <PageWrapper skeleton={DashboardPageSkeleton}>
+                <Dashboard />
+              </PageWrapper>
+            } />
+            <Route path="/profile" element={
+              <PageWrapper skeleton={DetailPageSkeleton}>
+                <Profile />
+              </PageWrapper>
+            } />
+            <Route path="/profile/edit" element={
+              <PageWrapper skeleton={ListPageSkeleton}>
+                <EditProfile />
+              </PageWrapper>
+            } />
+            <Route path="/settings" element={
+              <PageWrapper skeleton={ListPageSkeleton}>
+                <Settings />
+              </PageWrapper>
+            } />
+            <Route path="/my-events" element={
+              <PageWrapper skeleton={ListPageSkeleton}>
+                <MyTickets />
+              </PageWrapper>
+            } />
+            <Route path="/upload-material" element={
+              <PageWrapper skeleton={ListPageSkeleton}>
+                <UploadMaterial />
+              </PageWrapper>
+            } />
+            <Route path="/dashboard/upload-material" element={
+              <PageWrapper skeleton={ListPageSkeleton}>
+                <UploadMaterial />
+              </PageWrapper>
+            } />
+            <Route path="/submit-news" element={
+              <PageWrapper skeleton={ListPageSkeleton}>
+                <SubmitNews />
+              </PageWrapper>
+            } />
+            <Route path="/dashboard/submit-news" element={
+              <PageWrapper skeleton={ListPageSkeleton}>
+                <SubmitNews />
+              </PageWrapper>
+            } />
+            <Route path="/sell-book" element={
+              <PageWrapper skeleton={ListPageSkeleton}>
+                <ListBook />
+              </PageWrapper>
+            } />
+            <Route path="/dashboard/list-book" element={
+              <PageWrapper skeleton={ListPageSkeleton}>
+                <ListBook />
+              </PageWrapper>
+            } />
+            <Route path="/projects/create" element={
+              <PageWrapper skeleton={ListPageSkeleton}>
+                <CreateProject />
+              </PageWrapper>
+            } />
+            <Route path="/tasks/create" element={
+              <PageWrapper skeleton={ListPageSkeleton}>
+                <CreateTask />
+              </PageWrapper>
+            } />
+            <Route path="/tasks/my-requests" element={
+              <PageWrapper skeleton={GridPageSkeleton}>
+                <Tasks />
+              </PageWrapper>
+            } />
+          </Route>
+
+          {/* Organizer routes with AppLayout */}
+          <Route element={
+            <ProtectedRoute>
+              <AppLayout />
+            </ProtectedRoute>
+          }>
+            <Route path="/organizer/dashboard" element={
+              <PageWrapper skeleton={DashboardPageSkeleton}>
+                <OrganizerDashboard />
+              </PageWrapper>
+            } />
+            <Route path="/organizer/create-event" element={
+              <PageWrapper skeleton={ListPageSkeleton}>
+                <CreateEvent />
+              </PageWrapper>
+            } />
+            <Route path="/organizer/edit-event/:eventId" element={
+              <PageWrapper skeleton={DetailPageSkeleton}>
+                <EditEvent />
+              </PageWrapper>
+            } />
+            <Route path="/organizer/check-in/:eventId" element={
+              <PageWrapper skeleton={ListPageSkeleton}>
+                <EventCheckIn />
+              </PageWrapper>
+            } />
+          </Route>
+
+          {/* Onboarding - special protected route */}
+          <Route path="/onboarding" element={
+            <ProtectedRoute skipOnboarding>
+              <PageWrapper skeleton={ListPageSkeleton}>
+                <Onboarding />
+              </PageWrapper>
+            </ProtectedRoute>
+          } />
+
+          {/* Admin route */}
+          <Route path="/admin" element={
+            <PageWrapper skeleton={DashboardPageSkeleton}>
+              <Admin />
+            </PageWrapper>
+          } />
+
+          {/* Check-in redirect */}
+          <Route path="/checkin/:token" element={<CheckInRedirect />} />
+
+          {/* Legacy redirects */}
+          <Route path="/dashboard/my-tickets" element={<Navigate to="/my-events" replace />} />
+
+          {/* 404 */}
+          <Route path="*" element={
+            <PageWrapper skeleton={GridPageSkeleton}>
+              <NotFound />
+            </PageWrapper>
+          } />
+        </Routes>
+      </AnimatePresence>
+
+      {/* Auth Modal - Global */}
+      <AuthModal isOpen={authOpen} onClose={handleAuthClose} />
+    </>
   );
-};
+});
+
+AnimatedRoutes.displayName = "AnimatedRoutes";
