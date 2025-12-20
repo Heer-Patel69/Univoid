@@ -267,8 +267,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .from('profile-photos')
       .getPublicUrl(filePath);
 
-    // Update profile with new photo URL
-    await updateProfile({ profile_photo_url: publicUrl });
+    // Update profile in database (this works for both email and Google users)
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ profile_photo_url: publicUrl })
+      .eq('id', user.id);
+
+    if (updateError) {
+      return { url: null, error: updateError as Error };
+    }
+
+    // Update local profile state immediately
+    if (profile) {
+      setProfile({ ...profile, profile_photo_url: publicUrl });
+    }
 
     return { url: publicUrl, error: null };
   };

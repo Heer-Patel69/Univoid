@@ -23,7 +23,7 @@ const SKILL_SUGGESTIONS = [
 
 const EditProfile = () => {
   const navigate = useNavigate();
-  const { user, profile, isLoading: authLoading, updateProfile, uploadProfilePhoto } = useAuth();
+  const { user, profile, isLoading: authLoading, uploadProfilePhoto, refreshProfile } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [isSaving, setIsSaving] = useState(false);
@@ -135,6 +135,9 @@ const EditProfile = () => {
         .eq("id", user?.id);
 
       if (error) throw error;
+
+      // Refresh auth context profile to sync state across app
+      await refreshProfile();
 
       toast.success("Profile updated successfully!");
       navigate("/profile");
