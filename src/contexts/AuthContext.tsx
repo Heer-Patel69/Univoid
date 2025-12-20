@@ -16,6 +16,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   updateProfile: (data: Partial<Profile>) => Promise<{ error: Error | null }>;
   uploadProfilePhoto: (file: File) => Promise<{ url: string | null; error: Error | null }>;
+  refreshProfile: () => Promise<void>;
 }
 
 interface SignUpData {
@@ -244,6 +245,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { url: publicUrl, error: null };
   };
 
+  const refreshProfile = async () => {
+    if (user) {
+      await fetchUserData(user.id, user);
+    }
+  };
+
   const value: AuthContextType = {
     user,
     session,
@@ -257,6 +264,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signOut,
     updateProfile,
     uploadProfilePhoto,
+    refreshProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

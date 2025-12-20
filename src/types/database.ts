@@ -15,6 +15,14 @@ export interface Profile {
   total_xp: number;
   created_at: string;
   updated_at: string;
+  // New onboarding fields
+  profile_complete?: boolean;
+  degree?: string | null;
+  branch?: string | null;
+  current_year?: number | null;
+  city?: string | null;
+  state?: string | null;
+  interests?: string[] | null;
 }
 
 export interface UserRole {

@@ -14,6 +14,7 @@ import Books from "./pages/Books";
 import BookDetail from "./pages/BookDetail";
 import Leaderboard from "./pages/Leaderboard";
 import Dashboard from "./pages/Dashboard";
+import Onboarding from "./pages/Onboarding";
 import Profile from "./pages/Profile";
 import EditProfile from "./pages/EditProfile";
 import Admin from "./pages/Admin";
@@ -59,6 +60,7 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/onboarding" element={<ProtectedRoute skipOnboarding><Onboarding /></ProtectedRoute>} />
             <Route path="/my-events" element={<ProtectedRoute><MyTickets /></ProtectedRoute>} />
             <Route path="/checkin/:token" element={<CheckInRedirect />} />
             <Route path="/materials" element={<Materials />} />

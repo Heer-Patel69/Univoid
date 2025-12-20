@@ -5,10 +5,11 @@ import { EmailVerificationPending } from "./EmailVerificationPending";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  skipOnboarding?: boolean;
 }
 
-const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { user, isLoading } = useAuth();
+const ProtectedRoute = ({ children, skipOnboarding = false }: ProtectedRouteProps) => {
+  const { user, profile, isLoading } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
@@ -35,6 +36,11 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   if (!isVerified) {
     return <EmailVerificationPending email={user.email || ''} />;
+  }
+
+  // Check if profile is complete (skip this check for onboarding page itself)
+  if (!skipOnboarding && profile && !profile.profile_complete) {
+    return <Navigate to="/onboarding" replace />;
   }
 
   return <>{children}</>;
