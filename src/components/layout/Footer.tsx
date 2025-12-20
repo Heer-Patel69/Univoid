@@ -24,6 +24,7 @@ const Footer = () => {
       { href: "/terms", label: "Terms & Conditions" },
       { href: "/refund-policy", label: "Refund Policy" },
       { href: "/legal-disclaimer", label: "Legal Disclaimer" },
+      { href: "/cookie-policy", label: "Cookie Policy" },
     ],
   };
 
