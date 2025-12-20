@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 const PUSH_ENABLED_KEY = 'push_notifications_enabled';
+const PERMISSION_ASKED_KEY = 'push_permission_asked';
 
 type NotificationPermission = 'default' | 'granted' | 'denied';
 
@@ -19,6 +20,7 @@ export const usePushNotifications = () => {
     return localStorage.getItem(PUSH_ENABLED_KEY) === 'true';
   });
   const [swRegistration, setSwRegistration] = useState<ServiceWorkerRegistration | null>(null);
+  const [showPermissionDialog, setShowPermissionDialog] = useState(false);
 
   // Check support and register service worker
   useEffect(() => {
@@ -49,11 +51,18 @@ export const usePushNotifications = () => {
     init();
   }, []);
 
-  // Permission prompt message for all notification types
-  const PERMISSION_MESSAGE = "Don't miss important updates.\n\nAllow notifications to get instant updates about scholarships, events, projects, tasks, and campus announcements.";
-  
-  // Request permission - only called on user interaction, never on page load
-  const requestPermission = useCallback(async (): Promise<boolean> => {
+  // Check if permission was already asked
+  const hasAskedPermission = useCallback(() => {
+    return localStorage.getItem(PERMISSION_ASKED_KEY) === 'true';
+  }, []);
+
+  // Mark permission as asked
+  const markPermissionAsked = useCallback(() => {
+    localStorage.setItem(PERMISSION_ASKED_KEY, 'true');
+  }, []);
+
+  // Request browser permission - called after user accepts custom dialog
+  const requestBrowserPermission = useCallback(async (): Promise<boolean> => {
     if (!isSupported) return false;
 
     // Don't re-prompt if already denied
@@ -63,9 +72,7 @@ export const usePushNotifications = () => {
     }
 
     try {
-      // Log the permission request context
-      console.log('[Push] Requesting permission with message:', PERMISSION_MESSAGE);
-      
+      markPermissionAsked();
       const result = await Notification.requestPermission();
       setPermission(result);
       
@@ -79,7 +86,32 @@ export const usePushNotifications = () => {
       console.error('[Push] Permission request failed:', error);
       return false;
     }
+  }, [isSupported, markPermissionAsked]);
+
+  // Open custom permission dialog - this is what components should call
+  const openPermissionDialog = useCallback(() => {
+    if (!isSupported) return;
+    
+    // If already granted, just enable
+    if (Notification.permission === 'granted') {
+      setIsEnabled(true);
+      localStorage.setItem(PUSH_ENABLED_KEY, 'true');
+      return;
+    }
+    
+    // If denied, don't show dialog
+    if (Notification.permission === 'denied') {
+      console.log('[Push] Permission was previously denied');
+      return;
+    }
+    
+    setShowPermissionDialog(true);
   }, [isSupported]);
+
+  // Close permission dialog
+  const closePermissionDialog = useCallback(() => {
+    setShowPermissionDialog(false);
+  }, []);
 
   // Show notification via service worker (works in background)
   const showNotification = useCallback(async (payload: PushNotificationPayload) => {
@@ -111,25 +143,31 @@ export const usePushNotifications = () => {
     }
   }, [isEnabled, permission, swRegistration]);
 
-  // Toggle push notifications
+  // Toggle push notifications - shows custom dialog first
   const togglePushNotifications = useCallback(async () => {
     if (isEnabled) {
       setIsEnabled(false);
       localStorage.setItem(PUSH_ENABLED_KEY, 'false');
     } else {
-      const granted = await requestPermission();
-      if (granted) {
+      // If permission already granted, just enable
+      if (Notification.permission === 'granted') {
         setIsEnabled(true);
         localStorage.setItem(PUSH_ENABLED_KEY, 'true');
+      } else {
+        // Show custom dialog first
+        openPermissionDialog();
       }
     }
-  }, [isEnabled, requestPermission]);
+  }, [isEnabled, openPermissionDialog]);
 
   return {
     isSupported,
     isEnabled,
     permission,
-    requestPermission,
+    showPermissionDialog,
+    openPermissionDialog,
+    closePermissionDialog,
+    requestBrowserPermission,
     showNotification,
     togglePushNotifications
   };

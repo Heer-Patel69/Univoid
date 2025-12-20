@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useNotificationSound } from '@/hooks/useNotificationSound';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { PushPermissionDialog } from './PushPermissionDialog';
 
 interface Notification {
   id: string;
@@ -216,7 +217,15 @@ export const NotificationCenter = () => {
 
   // Sound and push notification hooks
   const { playNotificationSound, isSoundEnabled, toggleSound } = useNotificationSound();
-  const { isSupported: isPushSupported, isEnabled: isPushEnabled, togglePushNotifications, showNotification } = usePushNotifications();
+  const { 
+    isSupported: isPushSupported, 
+    isEnabled: isPushEnabled, 
+    togglePushNotifications, 
+    showNotification,
+    showPermissionDialog,
+    closePermissionDialog,
+    requestBrowserPermission
+  } = usePushNotifications();
 
   const fetchNotifications = useCallback(async (reset = false) => {
     if (!user) return;
@@ -595,6 +604,13 @@ export const NotificationCenter = () => {
         </div>
         {notificationContent}
       </PopoverContent>
+      
+      {/* Push Permission Dialog */}
+      <PushPermissionDialog
+        open={showPermissionDialog}
+        onOpenChange={closePermissionDialog}
+        onAllow={requestBrowserPermission}
+      />
     </Popover>
   );
 };
