@@ -241,7 +241,8 @@ const Admin = () => {
     }
   }, [user, isAdmin, fetchAllData]);
 
-  if (authLoading || isLoading) {
+  // Check auth loading first
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -249,7 +250,7 @@ const Admin = () => {
     );
   }
 
-  // Show login prompt if not logged in
+  // Show login prompt if not logged in (before checking isLoading)
   if (!user) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
@@ -262,11 +263,20 @@ const Admin = () => {
             Please sign in with an admin account to access the admin panel.
           </p>
           <Button asChild>
-            <a href="/" className="inline-flex items-center gap-2">
+            <a href="/?auth=login" className="inline-flex items-center gap-2">
               Go to Home & Sign In
             </a>
           </Button>
         </div>
+      </div>
+    );
+  }
+
+  // Show data loading spinner only after auth is confirmed
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
