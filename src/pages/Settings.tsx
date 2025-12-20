@@ -18,10 +18,12 @@ import {
   Eye, 
   EyeOff,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
+  RotateCcw
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { NotificationPreferences } from "@/components/dashboard/NotificationPreferences";
+import { useOnboardingTour } from "@/components/onboarding/OnboardingTour";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
@@ -39,6 +41,7 @@ import {
 const Settings = () => {
   const navigate = useNavigate();
   const { user, profile, isLoading, signOut } = useAuth();
+  const { restartTour } = useOnboardingTour();
   const [privacySettings, setPrivacySettings] = useState({
     showProfile: true,
     showOnLeaderboard: true,
@@ -242,6 +245,26 @@ const Settings = () => {
                         className="bg-muted" 
                       />
                     </div>
+                  </div>
+
+                  {/* Restart Tour */}
+                  <Separator />
+                  <div className="flex items-center justify-between gap-4 p-3 rounded-lg bg-muted/50">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-md bg-primary/10 text-primary">
+                        <RotateCcw className="h-4 w-4" />
+                      </div>
+                      <div className="space-y-0.5">
+                        <Label className="font-medium">Onboarding Tour</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Restart the guided tour to learn about all features
+                        </p>
+                      </div>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={restartTour}>
+                      <RotateCcw className="w-4 h-4 mr-2" />
+                      Restart
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
