@@ -122,12 +122,30 @@ export async function uploadMaterial(
     return { id: null, error: uploadError as Error };
   }
 
+  // Server-side PDF compression via edge function
+  let finalFilePath = filePath;
+  if (fileExt === 'pdf') {
+    options?.onCompressionProgress?.('Compressing PDF on server...', 50);
+    try {
+      const { data: compressionResult, error: compressionError } = await supabase.functions.invoke('compress-pdf', {
+        body: { filePath, bucket: 'materials' },
+      });
+      
+      if (!compressionError && compressionResult?.success) {
+        finalFilePath = compressionResult.newFilePath;
+        console.log(`Server-side PDF compression: ${compressionResult.compressionRatio}% reduction`);
+      }
+    } catch (err) {
+      console.warn('Server-side PDF compression failed, using original:', err);
+    }
+  }
+
   options?.onProgress?.(70);
 
   // Get file URL (signed URL for private bucket)
   const { data: urlData } = await supabase.storage
     .from('materials')
-    .createSignedUrl(filePath, 60 * 60 * 24 * 365); // 1 year
+    .createSignedUrl(finalFilePath, 60 * 60 * 24 * 365); // 1 year
 
   const fileUrl = urlData?.signedUrl || '';
 
