@@ -1,5 +1,5 @@
 import { Link, LinkProps } from "react-router-dom";
-import { useCallback, memo } from "react";
+import { useCallback, useEffect, useRef, memo } from "react";
 
 // Map routes to their lazy import functions
 const routePreloaders: Record<string, () => Promise<unknown>> = {
@@ -27,9 +27,49 @@ const routePreloaders: Record<string, () => Promise<unknown>> = {
 // Track what's already been preloaded
 const preloadedRoutes = new Set<string>();
 
+// Shared IntersectionObserver for all PrefetchLinks
+let sharedObserver: IntersectionObserver | null = null;
+const observedElements = new Map<Element, string>();
+
+const getSharedObserver = () => {
+  if (!sharedObserver && typeof IntersectionObserver !== "undefined") {
+    sharedObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const path = observedElements.get(entry.target);
+            if (path && routePreloaders[path] && !preloadedRoutes.has(path)) {
+              preloadedRoutes.add(path);
+              // Use requestIdleCallback for non-blocking preload
+              if ("requestIdleCallback" in window) {
+                (window as any).requestIdleCallback(
+                  () => routePreloaders[path]?.(),
+                  { timeout: 2000 }
+                );
+              } else {
+                setTimeout(() => routePreloaders[path]?.(), 100);
+              }
+            }
+            // Unobserve after preloading
+            sharedObserver?.unobserve(entry.target);
+            observedElements.delete(entry.target);
+          }
+        });
+      },
+      {
+        // Start prefetching when link is 200px from viewport
+        rootMargin: "200px",
+        threshold: 0,
+      }
+    );
+  }
+  return sharedObserver;
+};
+
 /**
- * PrefetchLink - Link component that preloads the destination page on hover
- * Provides instant navigation feel by loading the page before click
+ * PrefetchLink - Link component that preloads the destination page
+ * - On intersection: preloads when link comes into view
+ * - On hover/focus: immediate preload for instant navigation
  */
 export const PrefetchLink = memo(function PrefetchLink({
   to,
@@ -38,25 +78,39 @@ export const PrefetchLink = memo(function PrefetchLink({
   onFocus,
   ...props
 }: LinkProps) {
-  const prefetch = useCallback(() => {
+  const linkRef = useRef<HTMLAnchorElement>(null);
+
+  // Extract base path for preloading
+  const getBasePath = useCallback(() => {
     const path = typeof to === "string" ? to : to.pathname || "";
+    return path.split("/").slice(0, 2).join("/") || path;
+  }, [to]);
+
+  // Set up intersection observer
+  useEffect(() => {
+    const element = linkRef.current;
+    const basePath = getBasePath();
+    const observer = getSharedObserver();
+
+    if (element && observer && routePreloaders[basePath] && !preloadedRoutes.has(basePath)) {
+      observedElements.set(element, basePath);
+      observer.observe(element);
+
+      return () => {
+        observer.unobserve(element);
+        observedElements.delete(element);
+      };
+    }
+  }, [getBasePath]);
+
+  const prefetch = useCallback(() => {
+    const basePath = getBasePath();
     
-    // Extract base path (without params)
-    const basePath = path.split("/").slice(0, 2).join("/") || path;
-    
-    // Check if we have a preloader and haven't already loaded
     if (routePreloaders[basePath] && !preloadedRoutes.has(basePath)) {
       preloadedRoutes.add(basePath);
-      // Use requestIdleCallback for non-blocking preload
-      if ("requestIdleCallback" in window) {
-        (window as any).requestIdleCallback(() => {
-          routePreloaders[basePath]?.();
-        });
-      } else {
-        routePreloaders[basePath]?.();
-      }
+      routePreloaders[basePath]?.();
     }
-  }, [to]);
+  }, [getBasePath]);
 
   const handleMouseEnter = useCallback(
     (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -76,6 +130,7 @@ export const PrefetchLink = memo(function PrefetchLink({
 
   return (
     <Link
+      ref={linkRef}
       to={to}
       onMouseEnter={handleMouseEnter}
       onFocus={handleFocus}
