@@ -1,6 +1,43 @@
 import { Link, LinkProps } from "react-router-dom";
 import { useCallback, useEffect, useRef, memo } from "react";
 
+// Network Information API types
+interface NetworkInformation {
+  effectiveType?: "slow-2g" | "2g" | "3g" | "4g";
+  saveData?: boolean;
+  downlink?: number;
+}
+
+declare global {
+  interface Navigator {
+    connection?: NetworkInformation;
+    mozConnection?: NetworkInformation;
+    webkitConnection?: NetworkInformation;
+  }
+}
+
+// Check if prefetching should be allowed based on network conditions
+const shouldPrefetch = (): boolean => {
+  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  
+  if (!connection) return true; // No API support, allow prefetching
+  
+  // Disable on data saver mode
+  if (connection.saveData) return false;
+  
+  // Disable on slow connections (2g or slower)
+  if (connection.effectiveType === "slow-2g" || connection.effectiveType === "2g") {
+    return false;
+  }
+  
+  // Disable if downlink is very low (less than 0.5 Mbps)
+  if (connection.downlink !== undefined && connection.downlink < 0.5) {
+    return false;
+  }
+  
+  return true;
+};
+
 // Map routes to their lazy import functions
 const routePreloaders: Record<string, () => Promise<unknown>> = {
   "/": () => import("@/pages/Index"),
@@ -35,6 +72,9 @@ const getSharedObserver = () => {
   if (!sharedObserver && typeof IntersectionObserver !== "undefined") {
     sharedObserver = new IntersectionObserver(
       (entries) => {
+        // Skip if network conditions are poor
+        if (!shouldPrefetch()) return;
+        
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             const path = observedElements.get(entry.target);
@@ -104,6 +144,9 @@ export const PrefetchLink = memo(function PrefetchLink({
   }, [getBasePath]);
 
   const prefetch = useCallback(() => {
+    // Skip if network conditions are poor
+    if (!shouldPrefetch()) return;
+    
     const basePath = getBasePath();
     
     if (routePreloaders[basePath] && !preloadedRoutes.has(basePath)) {
