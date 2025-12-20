@@ -49,11 +49,23 @@ export const usePushNotifications = () => {
     init();
   }, []);
 
-  // Request permission
+  // Permission prompt message for all notification types
+  const PERMISSION_MESSAGE = "Don't miss important updates.\n\nAllow notifications to get instant updates about scholarships, events, projects, tasks, and campus announcements.";
+  
+  // Request permission - only called on user interaction, never on page load
   const requestPermission = useCallback(async (): Promise<boolean> => {
     if (!isSupported) return false;
 
+    // Don't re-prompt if already denied
+    if (Notification.permission === 'denied') {
+      console.log('[Push] Permission was previously denied by user');
+      return false;
+    }
+
     try {
+      // Log the permission request context
+      console.log('[Push] Requesting permission with message:', PERMISSION_MESSAGE);
+      
       const result = await Notification.requestPermission();
       setPermission(result);
       
