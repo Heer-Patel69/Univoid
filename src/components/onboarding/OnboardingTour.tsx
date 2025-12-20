@@ -2,28 +2,22 @@ import { useEffect, useCallback, useRef } from "react";
 import { driver, DriveStep } from "driver.js";
 import "driver.js/dist/driver.css";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { useLocation, useNavigate } from "react-router-dom";
 
-// Tour steps configuration
-const tourSteps: DriveStep[] = [
-  // PHASE 1: THE HUB (Dashboard)
-  {
-    element: "#nav-dashboard",
-    popover: {
-      title: "Your Command Center",
-      description: "Track your daily activity, XP progress, and latest updates here.",
-      side: "right",
-      align: "start",
-    },
-  },
+// Check if device is mobile
+const isMobileDevice = () => {
+  return window.innerWidth < 768;
+};
+
+// Desktop tour steps
+const desktopTourSteps: DriveStep[] = [
   {
     element: "#nav-materials",
     popover: {
       title: "Resource Library",
       description: "Download notes and study materials shared by peers.",
-      side: "right",
-      align: "start",
+      side: "bottom",
+      align: "center",
     },
   },
   {
@@ -31,8 +25,8 @@ const tourSteps: DriveStep[] = [
     popover: {
       title: "Fund Your Studies",
       description: "Exclusive India-only scholarships curated for your profile.",
-      side: "right",
-      align: "start",
+      side: "bottom",
+      align: "center",
     },
   },
   {
@@ -40,16 +34,6 @@ const tourSteps: DriveStep[] = [
     popover: {
       title: "Campus Life",
       description: "Register for hackathons, fests, and grab your tickets.",
-      side: "right",
-      align: "start",
-    },
-  },
-  // PHASE 2: CONTRIBUTE
-  {
-    element: "#btn-upload-material",
-    popover: {
-      title: "Share & Earn",
-      description: "Upload notes or PDFs here. Help others and earn XP!",
       side: "bottom",
       align: "center",
     },
@@ -59,15 +43,6 @@ const tourSteps: DriveStep[] = [
     popover: {
       title: "Project Lab",
       description: "Collaborate on innovations. Find teammates or join existing builds.",
-      side: "right",
-      align: "start",
-    },
-  },
-  {
-    element: "#btn-create-project",
-    popover: {
-      title: "Build Something",
-      description: "Have an idea? Click here to launch your startup or project page.",
       side: "bottom",
       align: "center",
     },
@@ -77,46 +52,26 @@ const tourSteps: DriveStep[] = [
     popover: {
       title: "Task Plaza",
       description: "Find gigs, internships, and student collaborations.",
-      side: "right",
-      align: "start",
-    },
-  },
-  {
-    element: "#btn-post-task",
-    popover: {
-      title: "Get Help",
-      description: "Need a designer or coder? Post a task here to recruit talent.",
       side: "bottom",
       align: "center",
     },
   },
-  // PHASE 3: BOOK EXCHANGE
   {
     element: "#nav-books",
     popover: {
       title: "Book Exchange",
       description: "Buy, sell, or swap books with students on your campus.",
-      side: "right",
-      align: "start",
-    },
-  },
-  {
-    element: "#btn-sell-book",
-    popover: {
-      title: "Declutter & Earn",
-      description: "List your old textbooks for sale in seconds.",
       side: "bottom",
       align: "center",
     },
   },
-  // PHASE 4: STAY UPDATED
   {
-    element: "#nav-news",
+    element: "#nav-leaderboard",
     popover: {
-      title: "Campus Feed",
-      description: "Placements, news, and college announcements live here.",
-      side: "right",
-      align: "start",
+      title: "Rankings",
+      description: "See top contributors and climb the leaderboard!",
+      side: "bottom",
+      align: "center",
     },
   },
   {
@@ -128,23 +83,59 @@ const tourSteps: DriveStep[] = [
       align: "end",
     },
   },
-  // PHASE 5: YOU
+];
+
+// Mobile tour steps (targeting bottom nav)
+const mobileTourSteps: DriveStep[] = [
   {
-    element: "#nav-profile",
+    element: "#mobile-nav-dashboard",
     popover: {
-      title: "Your Identity",
-      description: "Showcase your skills, interests, and badging.",
-      side: "right",
-      align: "start",
+      title: "Your Dashboard",
+      description: "Track your activity, XP progress, and latest updates here.",
+      side: "top",
+      align: "center",
     },
   },
   {
-    element: "#nav-settings",
+    element: "#mobile-nav-materials",
     popover: {
-      title: "Control Center",
-      description: "Manage preferences. You can also restart this tour from here!",
-      side: "right",
-      align: "start",
+      title: "Study Materials",
+      description: "Download notes and resources shared by peers.",
+      side: "top",
+      align: "center",
+    },
+  },
+  {
+    element: "#mobile-nav-scholarships",
+    popover: {
+      title: "Scholarships",
+      description: "Find scholarships curated for Indian students.",
+      side: "top",
+      align: "center",
+    },
+  },
+  {
+    element: "#mobile-nav-events",
+    popover: {
+      title: "Events",
+      description: "Register for hackathons, fests, and campus events.",
+      side: "top",
+      align: "center",
+    },
+  },
+  {
+    element: "#mobile-nav-profile",
+    popover: {
+      title: "Your Profile",
+      description: "View and edit your profile, skills, and badges.",
+      side: "top",
+      align: "center",
+    },
+  },
+  {
+    popover: {
+      title: "Explore More!",
+      description: "Use the menu (☰) to access Projects, Tasks, Books, News and Leaderboard. Enjoy UniVoid! 🎉",
     },
   },
 ];
@@ -160,19 +151,18 @@ export function OnboardingTour() {
     if (!user) return;
     
     try {
-      // Store in localStorage for immediate effect
       localStorage.setItem(`onboarding_tour_seen_${user.id}`, "true");
-      
-      // Also update profile metadata if we have a metadata column
-      // For now, just use localStorage
     } catch (error) {
       console.error("Failed to mark tour as seen:", error);
     }
   }, [user]);
 
   const startTour = useCallback(() => {
+    const isMobile = isMobileDevice();
+    const steps = isMobile ? mobileTourSteps : desktopTourSteps;
+    
     // Filter out steps whose elements don't exist
-    const validSteps = tourSteps.filter((step) => {
+    const validSteps = steps.filter((step) => {
       if (!step.element) return true;
       return document.querySelector(step.element as string) !== null;
     });
@@ -183,13 +173,13 @@ export function OnboardingTour() {
       showProgress: true,
       showButtons: ["next", "previous", "close"],
       steps: validSteps,
-      progressText: "Step {{current}} of {{total}}",
-      nextBtnText: "Next →",
-      prevBtnText: "← Back",
-      doneBtnText: "Finish",
+      progressText: "{{current}} / {{total}}",
+      nextBtnText: "Next",
+      prevBtnText: "Back",
+      doneBtnText: "Done",
       popoverClass: "univoid-tour-popover",
-      overlayColor: "rgba(0, 0, 0, 0.7)",
-      stagePadding: 8,
+      overlayColor: "rgba(0, 0, 0, 0.75)",
+      stagePadding: isMobile ? 4 : 8,
       stageRadius: 12,
       animate: true,
       allowClose: true,
@@ -223,11 +213,12 @@ export function OnboardingTour() {
     // Don't start twice
     if (hasStartedRef.current) return;
     
-    // Give the DOM time to render all elements
+    // Give the DOM time to render all elements (longer delay for mobile)
+    const delay = isMobileDevice() ? 1500 : 1000;
     const timer = setTimeout(() => {
       hasStartedRef.current = true;
       startTour();
-    }, 1000);
+    }, delay);
 
     return () => {
       clearTimeout(timer);

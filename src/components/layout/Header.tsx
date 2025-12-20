@@ -65,9 +65,11 @@ const Header = ({ onAuthClick }: HeaderProps) => {
           <nav className="hidden md:flex items-center gap-1 bg-card/60 backdrop-blur-lg rounded-full px-2 py-1.5 border border-border-strong/10 shadow-soft">
             {navLinks.map((link) => {
               const Icon = link.icon;
+              const navId = `nav-${link.href.replace('/', '')}`;
               return (
                 <Link
                   key={link.href}
+                  id={navId}
                   to={link.href}
                   className={`px-4 py-2 text-sm font-semibold rounded-full transition-all duration-200 flex items-center gap-2 ${
                     isActiveLink(link.href)

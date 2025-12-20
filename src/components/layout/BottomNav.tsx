@@ -63,9 +63,13 @@ export function BottomNav() {
           const Icon = item.icon;
           const showBadge = 'showBadge' in item && item.showBadge && hasNewScholarships && !isActive;
 
+          // Generate tour ID based on href
+          const tourId = `mobile-nav-${item.href.replace('/', '')}`;
+          
           return (
             <Link
               key={item.href}
+              id={tourId}
               to={item.href}
               className={cn(
                 "flex flex-col items-center justify-center gap-0.5 flex-1 py-2 transition-all duration-200 active:scale-95",
