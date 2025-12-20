@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import { Search, MapPin, GraduationCap, Calendar, ExternalLink, Filter, Sparkles, CheckCircle2, Bell, BellOff, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -31,6 +31,7 @@ const COURSE_LEVELS = ["All Courses", "UG", "PG", "Diploma"];
 
 export default function Scholarships() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { user, profile } = useAuth();
   
   const [search, setSearch] = useState("");
@@ -229,7 +230,11 @@ export default function Scholarships() {
               
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {scholarships.map((scholarship) => (
-                  <Card key={scholarship.id} className="flex flex-col hover:shadow-lg transition-shadow">
+                  <Card 
+                    key={scholarship.id} 
+                    className="flex flex-col hover:shadow-lg transition-shadow cursor-pointer group"
+                    onClick={() => navigate(`/scholarships/${scholarship.id}`)}
+                  >
                     <CardHeader className="pb-2">
                       <div className="flex items-start justify-between gap-2">
                         <CardTitle className="text-lg line-clamp-2">{scholarship.title}</CardTitle>
@@ -278,7 +283,7 @@ export default function Scholarships() {
                       </div>
 
                       {/* Actions */}
-                      <div className="mt-4 pt-4 border-t space-y-2">
+                      <div className="mt-4 pt-4 border-t space-y-2" onClick={(e) => e.stopPropagation()}>
                         <div className="flex gap-2">
                           {scholarship.application_link ? (
                             <Button asChild className="flex-1">
@@ -293,8 +298,8 @@ export default function Scholarships() {
                               </a>
                             </Button>
                           ) : (
-                            <Button variant="outline" disabled className="flex-1">
-                              No Link Available
+                            <Button variant="secondary" className="flex-1" onClick={() => navigate(`/scholarships/${scholarship.id}`)}>
+                              View Details
                             </Button>
                           )}
                           

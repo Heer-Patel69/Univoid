@@ -1,18 +1,28 @@
 import { useState, useEffect, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { scholarshipsService, Scholarship, ScholarshipFilters } from "@/services/scholarshipsService";
+import { scholarshipsService, Scholarship, ScholarshipFilters, UserProfile } from "@/services/scholarshipsService";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function useRealtimeScholarships(filters?: ScholarshipFilters) {
   const queryClient = useQueryClient();
   const [isRealtime, setIsRealtime] = useState(false);
+  const { profile } = useAuth();
 
-  const queryKey = ["scholarships", filters];
+  // Build user profile for personalization
+  const userProfile: UserProfile | null = profile ? {
+    state: profile.state,
+    degree: profile.degree,
+    course_stream: profile.course_stream,
+    interests: profile.interests,
+  } : null;
+
+  const queryKey = ["scholarships", filters, userProfile?.state];
 
   const { data: scholarships = [], isLoading, error, refetch } = useQuery({
     queryKey,
-    queryFn: () => scholarshipsService.getApprovedScholarships(filters),
-    staleTime: 30 * 1000, // 30 seconds
+    queryFn: () => scholarshipsService.getApprovedScholarships(filters, userProfile),
+    staleTime: 30 * 1000,
   });
 
   // Real-time subscription
