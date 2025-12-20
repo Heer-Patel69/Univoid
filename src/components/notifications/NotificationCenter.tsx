@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, memo } from 'react';
+import { useState, useEffect, useCallback, memo, useRef } from 'react';
 import { 
   Bell, Check, Trash2, Calendar, BookOpen, Info, AlertCircle, 
-  FolderKanban, ListTodo, ChevronDown, ArrowLeft, X
+  FolderKanban, ListTodo, ChevronDown, ArrowLeft, Volume2, VolumeX, BellRing
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,12 +11,15 @@ import {
 } from '@/components/ui/popover';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useNotificationSound } from '@/hooks/useNotificationSound';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 interface Notification {
   id: string;
@@ -155,16 +158,65 @@ const CategoryFilter = memo(({
 
 CategoryFilter.displayName = 'CategoryFilter';
 
+const NotificationSettings = memo(({
+  isSoundEnabled,
+  toggleSound,
+  isPushEnabled,
+  isPushSupported,
+  togglePush
+}: {
+  isSoundEnabled: boolean;
+  toggleSound: () => void;
+  isPushEnabled: boolean;
+  isPushSupported: boolean;
+  togglePush: () => void;
+}) => (
+  <div className="px-3 py-2 border-b border-border space-y-2">
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        {isSoundEnabled ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+        <span>Sound</span>
+      </div>
+      <Switch 
+        checked={isSoundEnabled} 
+        onCheckedChange={toggleSound}
+        className="scale-75"
+      />
+    </div>
+    {isPushSupported && (
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <BellRing className="h-3.5 w-3.5" />
+          <span>Push alerts</span>
+        </div>
+        <Switch 
+          checked={isPushEnabled} 
+          onCheckedChange={togglePush}
+          className="scale-75"
+        />
+      </div>
+    )}
+  </div>
+));
+
+NotificationSettings.displayName = 'NotificationSettings';
+
 export const NotificationCenter = () => {
   const { user } = useAuth();
   const isMobile = useIsMobile();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [activeCategory, setActiveCategory] = useState<NotificationCategory>('all');
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [offset, setOffset] = useState(0);
+  const lastNotificationIdRef = useRef<string | null>(null);
+
+  // Sound and push notification hooks
+  const { playNotificationSound, isSoundEnabled, toggleSound } = useNotificationSound();
+  const { isSupported: isPushSupported, isEnabled: isPushEnabled, togglePushNotifications, showNotification } = usePushNotifications();
 
   const fetchNotifications = useCallback(async (reset = false) => {
     if (!user) return;
@@ -182,6 +234,9 @@ export const NotificationCenter = () => {
       if (reset) {
         setNotifications(data);
         setOffset(data.length);
+        if (data.length > 0) {
+          lastNotificationIdRef.current = data[0].id;
+        }
       } else {
         setNotifications(prev => [...prev, ...data]);
         setOffset(prev => prev + data.length);
@@ -225,7 +280,46 @@ export const NotificationCenter = () => {
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const newNotification = payload.new as Notification;
+          
+          // Play sound for new notification
+          playNotificationSound();
+          
+          // Show push notification if in background
+          showNotification({
+            title: newNotification.title,
+            body: newNotification.message,
+            link: newNotification.link || '/'
+          });
+          
+          // Update state
+          setNotifications(prev => [newNotification, ...prev]);
+          setUnreadCount(prev => prev + 1);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          fetchNotifications(true);
+          fetchUnreadCount();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
           schema: 'public',
           table: 'notifications',
           filter: `user_id=eq.${user.id}`,
@@ -240,7 +334,7 @@ export const NotificationCenter = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, fetchNotifications, fetchUnreadCount]);
+  }, [user, fetchNotifications, fetchUnreadCount, playNotificationSound, showNotification]);
 
   const loadMore = useCallback(async () => {
     if (isLoadingMore || !hasMore) return;
@@ -302,7 +396,10 @@ export const NotificationCenter = () => {
     }
   }, []);
 
-  const handleClose = useCallback(() => setOpen(false), []);
+  const handleClose = useCallback(() => {
+    setOpen(false);
+    setShowSettings(false);
+  }, []);
 
   // Filter notifications by category
   const filteredNotifications = activeCategory === 'all' 
@@ -325,13 +422,23 @@ export const NotificationCenter = () => {
 
   const notificationContent = (
     <>
+      {showSettings && (
+        <NotificationSettings
+          isSoundEnabled={isSoundEnabled}
+          toggleSound={toggleSound}
+          isPushEnabled={isPushEnabled}
+          isPushSupported={isPushSupported}
+          togglePush={togglePushNotifications}
+        />
+      )}
+
       <CategoryFilter 
         activeCategory={activeCategory} 
         onCategoryChange={setActiveCategory}
         categoryCounts={categoryCounts}
       />
 
-      <ScrollArea className={cn("flex-1", isMobile ? "h-[calc(100vh-180px)]" : "h-80")}>
+      <ScrollArea className={cn("flex-1", isMobile ? "h-[calc(100vh-220px)]" : "h-72")}>
         {filteredNotifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full py-12 text-muted-foreground">
             <Bell className="h-12 w-12 mb-4 opacity-30" />
@@ -378,10 +485,19 @@ export const NotificationCenter = () => {
         )}
       </ScrollArea>
 
-      <div className="p-2 border-t border-border mt-auto">
-        <Link to="/edit-profile" onClick={handleClose}>
+      <div className="p-2 border-t border-border mt-auto flex gap-2">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="flex-1 text-xs"
+          onClick={() => setShowSettings(!showSettings)}
+        >
+          {isSoundEnabled ? <Volume2 className="h-3 w-3 mr-1" /> : <VolumeX className="h-3 w-3 mr-1" />}
+          {showSettings ? 'Hide settings' : 'Settings'}
+        </Button>
+        <Link to="/edit-profile" onClick={handleClose} className="flex-1">
           <Button variant="ghost" size="sm" className="w-full text-xs">
-            Notification settings
+            Preferences
           </Button>
         </Link>
       </div>
