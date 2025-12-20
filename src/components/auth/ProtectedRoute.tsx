@@ -12,6 +12,7 @@ const ProtectedRoute = ({ children, skipOnboarding = false }: ProtectedRouteProp
   const { user, profile, isLoading } = useAuth();
   const location = useLocation();
 
+  // Show loading while auth is initializing
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -20,14 +21,13 @@ const ProtectedRoute = ({ children, skipOnboarding = false }: ProtectedRouteProp
     );
   }
 
+  // Redirect to login if not authenticated
   if (!user) {
-    // Store the attempted URL for redirect after login
     return <Navigate to="/?auth=login" state={{ from: location.pathname }} replace />;
   }
 
   // Check if email is verified
   // OAuth users (Google, etc.) are trusted and verified by default
-  // Check BOTH app_metadata.provider AND identities array for reliability
   const provider = user.app_metadata?.provider;
   const isOAuthUser = (provider && provider !== 'email') || 
     (user.identities?.some((identity: any) => identity.provider && identity.provider !== 'email'));
@@ -38,8 +38,19 @@ const ProtectedRoute = ({ children, skipOnboarding = false }: ProtectedRouteProp
     return <EmailVerificationPending email={user.email || ''} />;
   }
 
+  // Wait for profile to load before checking completion
+  // This prevents redirect race conditions for new OAuth users
+  if (!profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   // Check if profile is complete (skip this check for onboarding page itself)
-  if (!skipOnboarding && profile && !profile.profile_complete) {
+  // Use explicit boolean check for profile_complete flag
+  if (!skipOnboarding && profile.profile_complete !== true) {
     return <Navigate to="/onboarding" replace />;
   }
 

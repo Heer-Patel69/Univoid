@@ -9,7 +9,10 @@ interface ProfileSnapshotProps {
 }
 
 const ProfileSnapshot = ({ profile }: ProfileSnapshotProps) => {
-  if (!profile) {
+  // Show "Complete profile" prompt if profile is null OR profile_complete is false
+  const isProfileIncomplete = !profile || !profile.profile_complete;
+
+  if (isProfileIncomplete) {
     return (
       <Card className="overflow-hidden">
         <CardContent className="p-4 sm:p-5">
@@ -19,7 +22,9 @@ const ProfileSnapshot = ({ profile }: ProfileSnapshotProps) => {
                 <User className="w-7 h-7 sm:w-8 sm:h-8 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <h2 className="font-bold text-base sm:text-lg text-foreground">Welcome</h2>
+                <h2 className="font-bold text-base sm:text-lg text-foreground">
+                  {profile?.full_name ? `Welcome, ${profile.full_name.split(' ')[0]}` : 'Welcome'}
+                </h2>
                 <p className="text-sm text-muted-foreground">
                   Complete your profile to get started
                 </p>

@@ -250,8 +250,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .update(data)
       .eq('id', user.id);
 
-    if (!error && profile) {
-      setProfile({ ...profile, ...data });
+    if (!error) {
+      // Immediately update local profile state with new data
+      setProfile(prev => prev ? { ...prev, ...data } : null);
+      
+      // Also refresh from database to ensure consistency
+      setTimeout(() => {
+        fetchUserData(user.id, user).catch(console.error);
+      }, 100);
     }
 
     return { error: error as Error | null };
@@ -296,9 +302,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { url: publicUrl, error: null };
   };
 
-  const refreshProfile = async () => {
-    if (user) {
-      await fetchUserData(user.id, user);
+  const refreshProfile = async (): Promise<void> => {
+    if (!user) return;
+    
+    // Fetch fresh profile data directly
+    const { data: freshProfile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+    
+    if (freshProfile) {
+      setProfile(freshProfile as Profile);
+    }
+    
+    // Also refresh roles
+    const { data: roleData } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id);
+    
+    if (roleData && roleData.length > 0) {
+      const roles = roleData.map(r => r.role);
+      setUserRoles(roles);
+      const hasAdmin = roles.includes('admin');
+      const hasOrganizer = roles.includes('organizer');
+      setRole(hasAdmin ? 'admin' : hasOrganizer ? 'organizer' : (roleData[0].role as AppRole));
     }
   };
 
