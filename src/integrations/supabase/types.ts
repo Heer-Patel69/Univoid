@@ -1198,6 +1198,23 @@ export type Database = {
         }[]
       }
       get_contributor_name: { Args: { user_id: string }; Returns: string }
+      get_event_registrations_with_profiles: {
+        Args: { p_event_id: string }
+        Returns: {
+          college_name: string
+          created_at: string
+          custom_data: Json
+          email: string
+          full_name: string
+          mobile_number: string
+          payment_screenshot_url: string
+          payment_status: string
+          profile_photo_url: string
+          registration_id: string
+          reviewed_at: string
+          user_id: string
+        }[]
+      }
       get_public_leaderboard: {
         Args: { limit_count?: number }
         Returns: {

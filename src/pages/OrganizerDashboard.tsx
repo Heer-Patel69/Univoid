@@ -46,17 +46,30 @@ const OrganizerDashboard = () => {
     enabled: !!user,
   });
 
-  // Fetch registrations for selected event
+  // Define type for registration with profile
+  interface RegistrationWithProfile {
+    registration_id: string;
+    user_id: string;
+    payment_status: string;
+    payment_screenshot_url: string | null;
+    created_at: string;
+    reviewed_at: string | null;
+    custom_data: Record<string, unknown> | null;
+    full_name: string | null;
+    email: string | null;
+    profile_photo_url: string | null;
+    mobile_number: string | null;
+    college_name: string | null;
+  }
+
+  // Fetch registrations for selected event with attendee profiles
   const { data: registrations } = useQuery({
     queryKey: ["event-registrations", selectedEvent],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("event_registrations")
-        .select("*")
-        .eq("event_id", selectedEvent!)
-        .order("created_at", { ascending: false });
+        .rpc("get_event_registrations_with_profiles", { p_event_id: selectedEvent! });
       if (error) throw error;
-      return data as EventRegistration[];
+      return data as RegistrationWithProfile[];
     },
     enabled: !!selectedEvent,
   });
@@ -80,8 +93,8 @@ const OrganizerDashboard = () => {
   // Calculate stats
   const totalEvents = events?.length || 0;
   const totalRegistrations = events?.reduce((sum, e) => sum + (e.registrations_count || 0), 0) || 0;
-  const pendingCount = registrations?.filter(r => r.payment_status === "pending").length || 0;
-  const approvedCount = registrations?.filter(r => r.payment_status === "approved").length || 0;
+  const pendingCount = registrations?.filter((r: RegistrationWithProfile) => r.payment_status === "pending").length || 0;
+  const approvedCount = registrations?.filter((r: RegistrationWithProfile) => r.payment_status === "approved").length || 0;
 
   // Approve/Reject mutation
   const updateStatusMutation = useMutation({
@@ -341,15 +354,22 @@ const OrganizerDashboard = () => {
                             <p className="text-center py-8 text-muted-foreground text-sm">No {status} registrations</p>
                           ) : (
                             registrations?.filter(r => r.payment_status === status).map(reg => (
-                              <Card key={reg.id} className="border">
+                              <Card key={reg.registration_id} className="border">
                                 <CardContent className="p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                                   <div className="flex items-center gap-3">
                                     <Avatar className="h-9 w-9">
-                                      <AvatarFallback className="text-xs">U</AvatarFallback>
+                                      <AvatarImage src={reg.profile_photo_url || undefined} />
+                                      <AvatarFallback className="text-xs">
+                                        {reg.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+                                      </AvatarFallback>
                                     </Avatar>
                                     <div>
-                                      <p className="font-medium text-sm">User {reg.user_id.slice(0, 8)}...</p>
-                                      <p className="text-xs text-muted-foreground">{format(new Date(reg.created_at), "MMM d, h:mm a")}</p>
+                                      <p className="font-medium text-sm">{reg.full_name || 'Unknown User'}</p>
+                                      <p className="text-xs text-muted-foreground">{reg.email || 'No email'}</p>
+                                      {reg.mobile_number && (
+                                        <p className="text-xs text-muted-foreground">{reg.mobile_number}</p>
+                                      )}
+                                      <p className="text-xs text-muted-foreground/70">{format(new Date(reg.created_at), "MMM d, h:mm a")}</p>
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -360,10 +380,10 @@ const OrganizerDashboard = () => {
                                     )}
                                     {status === "pending" && (
                                       <>
-                                        <Button size="sm" className="flex-1 sm:flex-none text-xs" onClick={() => updateStatusMutation.mutate({ id: reg.id, status: "approved", userId: reg.user_id })}>
+                                        <Button size="sm" className="flex-1 sm:flex-none text-xs" onClick={() => updateStatusMutation.mutate({ id: reg.registration_id, status: "approved", userId: reg.user_id })}>
                                           <CheckCircle className="w-3 h-3 mr-1" /> Approve
                                         </Button>
-                                        <Button size="sm" variant="destructive" className="flex-1 sm:flex-none text-xs" onClick={() => updateStatusMutation.mutate({ id: reg.id, status: "rejected", userId: reg.user_id })}>
+                                        <Button size="sm" variant="destructive" className="flex-1 sm:flex-none text-xs" onClick={() => updateStatusMutation.mutate({ id: reg.registration_id, status: "rejected", userId: reg.user_id })}>
                                           <XCircle className="w-3 h-3 mr-1" /> Reject
                                         </Button>
                                       </>
