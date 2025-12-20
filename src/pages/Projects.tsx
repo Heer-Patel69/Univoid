@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
+import { Link, useSearchParams, useOutletContext } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,18 +8,21 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Users, Search, Folder, UserPlus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getProjects, Project } from "@/services/projectsService";
-import AuthModal from "@/components/auth/AuthModal";
 import { Helmet } from "react-helmet";
+
+interface LayoutContext {
+  onAuthClick?: () => void;
+}
 
 const Projects = () => {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const eventId = searchParams.get('event');
+  const context = useOutletContext<LayoutContext>();
   
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [showAuthModal, setShowAuthModal] = useState(false);
 
   useEffect(() => {
     loadProjects();
@@ -71,148 +72,142 @@ const Projects = () => {
         <meta name="description" content="Find teammates for hackathons, projects, and startups. Collaborate with students who have the skills you need." />
       </Helmet>
 
-      <div className="min-h-screen flex flex-col bg-background paper-texture">
-        <Header onAuthClick={() => setShowAuthModal(true)} />
-        
-        <main className="flex-1 py-8">
-          <div className="container-wide">
-            {/* Header */}
-            <div className="mb-8">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                  <h1 className="text-2xl md:text-3xl font-bold text-foreground flex items-center gap-3">
-                    <Folder className="w-8 h-8 text-primary" />
-                    Project Partner
-                  </h1>
-                  <p className="text-muted-foreground mt-1">
-                    Find teammates for hackathons, projects & startups
-                  </p>
-                </div>
-                
-                {user && (
-                  <Link to="/projects/create">
-                    <Button className="gap-2">
-                      <Plus className="w-4 h-4" />
-                      Create Project
-                    </Button>
-                  </Link>
-                )}
+      <div className="py-8">
+        <div className="container-wide">
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-foreground flex items-center gap-3">
+                  <Folder className="w-8 h-8 text-primary" />
+                  Project Partner
+                </h1>
+                <p className="text-muted-foreground mt-1">
+                  Find teammates for hackathons, projects & startups
+                </p>
               </div>
-
-              {eventId && (
-                <Badge variant="secondary" className="mt-4">
-                  Filtered by event
-                </Badge>
+              
+              {user ? (
+                <Link to="/projects/create">
+                  <Button className="gap-2">
+                    <Plus className="w-4 h-4" />
+                    Create Project
+                  </Button>
+                </Link>
+              ) : (
+                <Button className="gap-2" onClick={context?.onAuthClick}>
+                  <Plus className="w-4 h-4" />
+                  Create Project
+                </Button>
               )}
             </div>
 
-            {/* Search */}
-            <div className="mb-6">
-              <div className="relative max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search projects or skills..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-
-            {/* Projects Grid */}
-            {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[...Array(6)].map((_, i) => (
-                  <ProjectSkeleton key={i} />
-                ))}
-              </div>
-            ) : filteredProjects.length === 0 ? (
-              <Card className="border-dashed">
-                <CardContent className="py-12 text-center">
-                  <Folder className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium text-foreground mb-2">
-                    No projects found
-                  </h3>
-                  <p className="text-muted-foreground mb-4">
-                    {searchQuery ? "Try a different search term" : "Be the first to create a project!"}
-                  </p>
-                  {user && !searchQuery && (
-                    <Link to="/projects/create">
-                      <Button>Create Your Project</Button>
-                    </Link>
-                  )}
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredProjects.map((project) => (
-                  <Link key={project.id} to={`/projects/${project.id}`}>
-                    <Card className="border-border hover:border-primary/50 transition-colors h-full">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between gap-2">
-                          <CardTitle className="text-lg line-clamp-2">
-                            {project.title}
-                          </CardTitle>
-                          <Badge variant={project.is_open ? "default" : "secondary"}>
-                            {project.is_open ? "Open" : "Closed"}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          by {project.owner_name}
-                        </p>
-                      </CardHeader>
-                      <CardContent>
-                        {project.description && (
-                          <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-                            {project.description}
-                          </p>
-                        )}
-                        
-                        {/* Skills */}
-                        {project.skills_required.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mb-4">
-                            {project.skills_required.slice(0, 4).map((skill, idx) => (
-                              <Badge key={idx} variant="outline" className="text-xs">
-                                {skill}
-                              </Badge>
-                            ))}
-                            {project.skills_required.length > 4 && (
-                              <Badge variant="outline" className="text-xs">
-                                +{project.skills_required.length - 4}
-                              </Badge>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Footer */}
-                        <div className="flex items-center justify-between text-sm text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <Users className="w-4 h-4" />
-                            {project.member_count}/{project.max_members}
-                          </div>
-                          {project.is_open && (
-                            <div className="flex items-center gap-1 text-primary">
-                              <UserPlus className="w-4 h-4" />
-                              Join
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                ))}
-              </div>
+            {eventId && (
+              <Badge variant="secondary" className="mt-4">
+                Filtered by event
+              </Badge>
             )}
           </div>
-        </main>
 
-        <Footer />
+          {/* Search */}
+          <div className="mb-6">
+            <div className="relative max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search projects or skills..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+
+          {/* Projects Grid */}
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <ProjectSkeleton key={i} />
+              ))}
+            </div>
+          ) : filteredProjects.length === 0 ? (
+            <Card className="border-dashed">
+              <CardContent className="py-12 text-center">
+                <Folder className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium text-foreground mb-2">
+                  No projects found
+                </h3>
+                <p className="text-muted-foreground mb-4">
+                  {searchQuery ? "Try a different search term" : "Be the first to create a project!"}
+                </p>
+                {user && !searchQuery && (
+                  <Link to="/projects/create">
+                    <Button>Create Your Project</Button>
+                  </Link>
+                )}
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredProjects.map((project) => (
+                <Link key={project.id} to={`/projects/${project.id}`}>
+                  <Card className="border-border hover:border-primary/50 transition-colors h-full">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <CardTitle className="text-lg line-clamp-2">
+                          {project.title}
+                        </CardTitle>
+                        <Badge variant={project.is_open ? "default" : "secondary"}>
+                          {project.is_open ? "Open" : "Closed"}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        by {project.owner_name}
+                      </p>
+                    </CardHeader>
+                    <CardContent>
+                      {project.description && (
+                        <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+                          {project.description}
+                        </p>
+                      )}
+                      
+                      {/* Skills */}
+                      {project.skills_required.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-4">
+                          {project.skills_required.slice(0, 4).map((skill, idx) => (
+                            <Badge key={idx} variant="outline" className="text-xs">
+                              {skill}
+                            </Badge>
+                          ))}
+                          {project.skills_required.length > 4 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{project.skills_required.length - 4}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Footer */}
+                      <div className="flex items-center justify-between text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Users className="w-4 h-4" />
+                          {project.member_count}/{project.max_members}
+                        </div>
+                        {project.is_open && (
+                          <div className="flex items-center gap-1 text-primary">
+                            <UserPlus className="w-4 h-4" />
+                            Join
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-
-      <AuthModal 
-        isOpen={showAuthModal} 
-        onClose={() => setShowAuthModal(false)} 
-      />
     </>
   );
 };

@@ -1,9 +1,6 @@
 import { useState, useCallback } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
+import { useNavigate, Link, useOutletContext } from "react-router-dom";
 import { BottomNav } from "@/components/layout/BottomNav";
-import AuthModal from "@/components/auth/AuthModal";
 import ReportButton from "@/components/reports/ReportButton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,11 +14,14 @@ import { useOptimizedFetch, CACHE_TTL } from "@/hooks/useOptimizedFetch";
 import { Book } from "@/types/database";
 import { toast } from "sonner";
 
+interface LayoutContext {
+  onAuthClick?: () => void;
+}
+
 const Books = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [authOpen, setAuthOpen] = useState(false);
-  const [authMessage, setAuthMessage] = useState("");
+  const context = useOutletContext<LayoutContext>();
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(0);
   const [allBooks, setAllBooks] = useState<Book[]>([]);
@@ -63,8 +63,7 @@ const Books = () => {
     if (user) {
       navigate("/sell-book");
     } else {
-      setAuthMessage("Login to list your books");
-      setAuthOpen(true);
+      context?.onAuthClick?.();
     }
   };
 
@@ -74,10 +73,8 @@ const Books = () => {
   );
 
   return (
-    <div className="min-h-screen flex flex-col bg-background paper-texture pb-20 md:pb-0">
-      <Header onAuthClick={() => setAuthOpen(true)} />
-      
-      <main className="flex-1 py-10 md:py-14">
+    <div className="pb-20 md:pb-0">
+      <main className="py-10 md:py-14">
         <div className="container-wide">
           {/* Header */}
           <div className="mb-10">
@@ -216,14 +213,7 @@ const Books = () => {
         </div>
       </main>
 
-      <Footer />
       <BottomNav />
-      
-      <AuthModal 
-        isOpen={authOpen} 
-        onClose={() => setAuthOpen(false)}
-        message={authMessage}
-      />
     </div>
   );
 };
