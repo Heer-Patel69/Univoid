@@ -30,7 +30,7 @@ import {
 } from "lucide-react";
 
 const Dashboard = () => {
-  const { user, profile, isLoading } = useAuth();
+  const { user, profile, isLoading, isOrganizer, isAdmin } = useAuth();
   const { stats } = useDashboardStats(user?.id);
   const { leaderboard } = useLeaderboard(5);
 
@@ -66,11 +66,13 @@ const Dashboard = () => {
     { label: "List Book", icon: Plus, href: "/sell-book" },
   ];
 
+  // Base collaboration actions available to all users
   const collaborationActions = [
     { label: "My Projects", icon: Folder, href: "/projects", color: "text-purple-500", bgColor: "bg-purple-500/10" },
     { label: "Task Plaza", icon: Briefcase, href: "/tasks", color: "text-orange-500", bgColor: "bg-orange-500/10" },
     { label: "My Events", icon: Calendar, href: "/my-events", color: "text-blue-500", bgColor: "bg-blue-500/10" },
-    { label: "Organizer Dashboard", icon: Calendar, href: "/organizer/dashboard", color: "text-green-500", bgColor: "bg-green-500/10" },
+    // Organizer Dashboard only shows for users with organizer role (unlocked after event is published)
+    ...(isOrganizer || isAdmin ? [{ label: "Organizer Dashboard", icon: CheckSquare, href: "/organizer/dashboard", color: "text-green-500", bgColor: "bg-green-500/10" }] : []),
   ];
 
   if (showLoadingOverlay) {
