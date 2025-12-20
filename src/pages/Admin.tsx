@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Navigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -249,8 +249,54 @@ const Admin = () => {
     );
   }
 
-  if (!user || !isAdmin) {
-    return <Navigate to="/" replace />;
+  // Show login prompt if not logged in
+  if (!user) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
+        <div className="text-center max-w-md">
+          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Shield className="w-8 h-8 text-primary" />
+          </div>
+          <h1 className="text-2xl font-bold text-foreground mb-2">Admin Login Required</h1>
+          <p className="text-muted-foreground mb-6">
+            Please sign in with an admin account to access the admin panel.
+          </p>
+          <Button asChild>
+            <a href="/" className="inline-flex items-center gap-2">
+              Go to Home & Sign In
+            </a>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show access denied if logged in but not admin
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
+        <div className="text-center max-w-md">
+          <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Ban className="w-8 h-8 text-destructive" />
+          </div>
+          <h1 className="text-2xl font-bold text-foreground mb-2">Access Denied</h1>
+          <p className="text-muted-foreground mb-2">
+            You don't have admin privileges to access this page.
+          </p>
+          <p className="text-sm text-muted-foreground mb-6">
+            Signed in as: {user.email}
+          </p>
+          <div className="flex gap-3 justify-center">
+            <Button variant="outline" asChild>
+              <a href="/dashboard">Go to Dashboard</a>
+            </Button>
+            <Button asChild>
+              <a href="/">Go to Home</a>
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const handleDeleteContent = async (type: string, id: string) => {
