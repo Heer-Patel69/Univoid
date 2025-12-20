@@ -164,7 +164,7 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
       {/* Bottom Actions */}
       <div className="border-t border-border pt-4 mt-4 space-y-1">
         <Link
-          to="/profile/edit"
+          to="/settings"
           className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-secondary transition-all"
         >
           <Settings className="w-4 h-4" />
