@@ -49,6 +49,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import EnhancedMaterialPreview from "@/components/materials/EnhancedMaterialPreview";
 
 interface ContentItem {
   id: string;
@@ -62,6 +63,18 @@ interface ContentItem {
   condition?: string;
   price?: number;
   file_type?: string;
+  file_url?: string;
+  file_size?: number;
+  downloads_count?: number;
+  views_count?: number;
+  likes_count?: number;
+  subject?: string;
+  branch?: string;
+  course?: string;
+  college?: string;
+  language?: string;
+  thumbnail_url?: string;
+  admin_previewed?: boolean;
 }
 
 interface UserItem {
@@ -105,6 +118,8 @@ const Admin = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: string; id: string; title: string } | null>(null);
+  const [previewMaterial, setPreviewMaterial] = useState<ContentItem | null>(null);
+  const [previewedMaterialIds, setPreviewedMaterialIds] = useState<Set<string>>(new Set());
 
   const fetchAllData = useCallback(async () => {
     try {
@@ -354,10 +369,18 @@ const Admin = () => {
     }
   };
 
+  const handleAdminPreviewComplete = useCallback((materialId: string) => {
+    setPreviewedMaterialIds(prev => new Set(prev).add(materialId));
+    // Update in database
+    supabase.from('materials').update({ admin_previewed: true }).eq('id', materialId);
+  }, []);
+
   const renderContentTable = (items: ContentItem[], type: 'materials' | 'news' | 'books') => {
     if (items.length === 0) {
       return <p className="text-muted-foreground text-center py-8">No {type} found</p>;
     }
+
+    const isMaterial = type === 'materials';
 
     return (
       <div className="overflow-x-auto">
@@ -372,46 +395,79 @@ const Admin = () => {
             </tr>
           </thead>
           <tbody>
-            {items.map((item) => (
-              <tr key={item.id} className="border-b border-border last:border-0 hover:bg-muted/50">
-                <td className="p-3 font-medium text-foreground max-w-xs truncate">{item.title}</td>
-                <td className="p-3 hidden sm:table-cell">{getStatusBadge(item.status)}</td>
-                <td className="p-3 text-muted-foreground hidden md:table-cell">{item.contributor_name}</td>
-                <td className="p-3 text-muted-foreground hidden md:table-cell">{formatDate(item.created_at)}</td>
-                <td className="p-3 text-right">
-                  <div className="flex justify-end gap-2">
-                    {item.status === 'pending' && (
-                      <>
-                        <Button 
-                          variant="default" 
-                          size="sm" 
-                          onClick={() => handleApprove(type, item)}
-                          disabled={processingId === item.id}
-                        >
-                          {processingId === item.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                        </Button>
+            {items.map((item) => {
+              const isPreviewed = previewedMaterialIds.has(item.id) || item.admin_previewed;
+              const canApprove = !isMaterial || item.status !== 'pending' || isPreviewed;
+              
+              return (
+                <tr key={item.id} className="border-b border-border last:border-0 hover:bg-muted/50">
+                  <td className="p-3 font-medium text-foreground max-w-xs truncate">
+                    <div className="flex items-center gap-2">
+                      {item.title}
+                      {isMaterial && item.status === 'pending' && !isPreviewed && (
+                        <Badge variant="secondary" className="bg-amber-500/20 text-amber-700 text-xs">
+                          Preview Required
+                        </Badge>
+                      )}
+                      {isMaterial && isPreviewed && (
+                        <Badge variant="secondary" className="bg-green-500/20 text-green-700 text-xs">
+                          <Check className="w-3 h-3 mr-1" />
+                          Previewed
+                        </Badge>
+                      )}
+                    </div>
+                  </td>
+                  <td className="p-3 hidden sm:table-cell">{getStatusBadge(item.status)}</td>
+                  <td className="p-3 text-muted-foreground hidden md:table-cell">{item.contributor_name}</td>
+                  <td className="p-3 text-muted-foreground hidden md:table-cell">{formatDate(item.created_at)}</td>
+                  <td className="p-3 text-right">
+                    <div className="flex justify-end gap-2">
+                      {/* Preview button for materials */}
+                      {isMaterial && (
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          onClick={() => handleReject(type, item)}
-                          disabled={processingId === item.id}
+                          onClick={() => setPreviewMaterial(item)}
+                          className={isPreviewed ? 'border-green-500/50' : ''}
                         >
-                          <X className="w-4 h-4" />
+                          <Eye className="w-4 h-4" />
                         </Button>
-                      </>
-                    )}
-                    <Button 
-                      variant="destructive" 
-                      size="sm" 
-                      onClick={() => setDeleteConfirm({ type, id: item.id, title: item.title })}
-                      disabled={processingId === item.id}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                      )}
+                      
+                      {item.status === 'pending' && (
+                        <>
+                          <Button 
+                            variant="default" 
+                            size="sm" 
+                            onClick={() => handleApprove(type, item)}
+                            disabled={processingId === item.id || (isMaterial && !canApprove)}
+                            title={isMaterial && !canApprove ? 'Preview required before approval' : ''}
+                          >
+                            {processingId === item.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => handleReject(type, item)}
+                            disabled={processingId === item.id}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </>
+                      )}
+                      <Button 
+                        variant="destructive" 
+                        size="sm" 
+                        onClick={() => setDeleteConfirm({ type, id: item.id, title: item.title })}
+                        disabled={processingId === item.id}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -1107,6 +1163,27 @@ const Admin = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Material Preview Modal */}
+      <EnhancedMaterialPreview
+        material={previewMaterial ? {
+          ...previewMaterial,
+          file_url: previewMaterial.file_url || '',
+          file_type: previewMaterial.file_type || 'pdf',
+          downloads_count: previewMaterial.downloads_count || 0,
+          views_count: previewMaterial.views_count || 0,
+          likes_count: previewMaterial.likes_count || 0,
+        } : null}
+        isOpen={!!previewMaterial}
+        onClose={() => setPreviewMaterial(null)}
+        onDownload={() => {
+          if (previewMaterial?.file_url) {
+            window.open(previewMaterial.file_url, '_blank');
+          }
+        }}
+        isAdmin={true}
+        onAdminPreviewComplete={handleAdminPreviewComplete}
+      />
     </div>
   );
 };

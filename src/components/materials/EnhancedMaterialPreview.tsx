@@ -1,11 +1,12 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Download, FileText, Image, File, Lock, ChevronLeft, ChevronRight, 
-  Eye, Calendar, User, HardDrive, Loader2, BookOpen, AlertTriangle
+  Eye, Calendar, User, HardDrive, Loader2, BookOpen, AlertTriangle,
+  ExternalLink, CheckCircle2
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatFileSize } from "@/lib/fileCompression";
@@ -30,6 +31,10 @@ interface MaterialData {
   contributor_name?: string;
   status: string;
   thumbnail_url?: string;
+  preview_file_url?: string;
+  preview_page_limit?: number;
+  preview_ready?: boolean;
+  admin_previewed?: boolean;
 }
 
 interface EnhancedMaterialPreviewProps {
@@ -38,47 +43,8 @@ interface EnhancedMaterialPreviewProps {
   onClose: () => void;
   onDownload: () => void;
   isAdmin?: boolean;
+  onAdminPreviewComplete?: (materialId: string) => void;
 }
-
-// Simulated page content for Amazon-style preview
-const PreviewPage = ({ pageNum, isLocked, title }: { pageNum: number; isLocked: boolean; title: string }) => {
-  if (isLocked) {
-    return (
-      <div className="aspect-[3/4] bg-muted/50 rounded-lg flex flex-col items-center justify-center border border-dashed border-border relative overflow-hidden">
-        <div className="absolute inset-0 backdrop-blur-md bg-background/60" />
-        <div className="relative z-10 text-center p-6">
-          <Lock className="w-12 h-12 text-muted-foreground mb-4 mx-auto" />
-          <p className="text-sm text-muted-foreground font-medium">Page {pageNum}</p>
-          <p className="text-xs text-muted-foreground mt-2">Login to view more</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="aspect-[3/4] bg-card rounded-lg border border-border shadow-sm overflow-hidden">
-      <div className="h-full p-4 flex flex-col">
-        <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border">
-          <FileText className="w-4 h-4 text-primary" />
-          <span className="text-xs font-medium text-muted-foreground truncate">{title}</span>
-        </div>
-        <div className="flex-1 space-y-2">
-          {/* Simulated text lines */}
-          {[...Array(12)].map((_, i) => (
-            <div 
-              key={i} 
-              className="h-2 bg-muted-foreground/10 rounded" 
-              style={{ width: `${Math.random() * 30 + 70}%` }}
-            />
-          ))}
-        </div>
-        <div className="text-center pt-2 border-t border-border mt-auto">
-          <span className="text-xs text-muted-foreground">Page {pageNum}</span>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 export default function EnhancedMaterialPreview({
   material,
@@ -86,150 +52,194 @@ export default function EnhancedMaterialPreview({
   onClose,
   onDownload,
   isAdmin = false,
+  onAdminPreviewComplete,
 }: EnhancedMaterialPreviewProps) {
   const { user } = useAuth();
   const [currentPage, setCurrentPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [previewError, setPreviewError] = useState(false);
+  const [hasAdminPreviewed, setHasAdminPreviewed] = useState(false);
   
   if (!material) return null;
 
-  const isBook = ['pdf', 'epub', 'mobi'].includes(material.file_type.toLowerCase());
+  const isPdf = material.file_type.toLowerCase() === 'pdf';
   const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(material.file_type.toLowerCase());
+  const isDocument = ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].includes(material.file_type.toLowerCase());
+  const isZip = ['zip', 'rar', '7z'].includes(material.file_type.toLowerCase());
   
-  // Preview pages calculation (Amazon-style: first 15%)
-  const totalPages = 50; // Simulated - would come from actual document
-  const previewPages = isAdmin ? totalPages : Math.max(3, Math.ceil(totalPages * 0.15));
   const isLoggedIn = !!user;
-
-  const canViewPage = (pageNum: number) => {
-    if (isAdmin) return true;
-    if (!isLoggedIn) return pageNum <= 2;
-    return pageNum <= previewPages;
-  };
-
-  const handlePrevPage = () => {
-    setCurrentPage(p => Math.max(1, p - 1));
-  };
-
-  const handleNextPage = () => {
-    if (canViewPage(currentPage + 1) || isAdmin) {
-      setCurrentPage(p => Math.min(totalPages, p + 1));
+  const previewLimit = material.preview_page_limit || 5;
+  
+  // Determine which URL to use for preview
+  const previewUrl = isAdmin ? material.file_url : (material.preview_file_url || material.file_url);
+  
+  // Mark admin preview complete
+  useEffect(() => {
+    if (isAdmin && isOpen && !hasAdminPreviewed && material.status === 'pending') {
+      const timer = setTimeout(() => {
+        setHasAdminPreviewed(true);
+        onAdminPreviewComplete?.(material.id);
+      }, 2000); // Admin must view for at least 2 seconds
+      return () => clearTimeout(timer);
     }
+  }, [isAdmin, isOpen, hasAdminPreviewed, material.id, material.status, onAdminPreviewComplete]);
+
+  const handleIframeLoad = () => {
+    setIsLoading(false);
+  };
+
+  const handleIframeError = () => {
+    setIsLoading(false);
+    setPreviewError(true);
+  };
+
+  const renderPdfPreview = () => {
+    // For PDF files, use embedded viewer
+    const embedUrl = isAdmin 
+      ? `${material.file_url}#toolbar=1&navpanes=1&scrollbar=1`
+      : `${previewUrl}#toolbar=0&navpanes=0&scrollbar=1&page=1`;
+    
+    return (
+      <div className="relative w-full aspect-[3/4] min-h-[500px] bg-muted rounded-lg overflow-hidden border border-border">
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        )}
+        
+        {previewError ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <FileText className="w-16 h-16 text-muted-foreground/40 mb-4" />
+            <p className="text-muted-foreground">Preview unavailable</p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="mt-4"
+              onClick={() => window.open(material.file_url, '_blank')}
+            >
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Open in new tab
+            </Button>
+          </div>
+        ) : (
+          <iframe
+            src={embedUrl}
+            className="w-full h-full"
+            title={material.title}
+            onLoad={handleIframeLoad}
+            onError={handleIframeError}
+          />
+        )}
+        
+        {/* Preview limit overlay for non-admin users */}
+        {!isAdmin && isLoggedIn && (
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background/95 to-transparent p-6 text-center">
+            <Badge variant="secondary" className="mb-2 bg-primary/20 text-primary">
+              <Eye className="w-3 h-3 mr-1" />
+              Preview: First {previewLimit} pages
+            </Badge>
+            <p className="text-xs text-muted-foreground">
+              Download to view the complete document
+            </p>
+          </div>
+        )}
+        
+        {/* Login prompt for non-logged-in users */}
+        {!isLoggedIn && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/90 backdrop-blur-sm">
+            <Lock className="w-12 h-12 text-muted-foreground mb-4" />
+            <p className="text-lg font-medium mb-2">Login Required</p>
+            <p className="text-sm text-muted-foreground mb-4">
+              Sign in to preview this material
+            </p>
+          </div>
+        )}
+      </div>
+    );
   };
 
   const renderImagePreview = () => (
-    <div className="aspect-video bg-muted rounded-lg overflow-hidden border border-border">
-      {material.thumbnail_url || material.file_url ? (
-        <img 
-          src={material.thumbnail_url || material.file_url}
-          alt={material.title}
-          className="w-full h-full object-contain"
-        />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center">
-          <Image className="w-16 h-16 text-muted-foreground/40" />
+    <div className="aspect-video bg-muted rounded-lg overflow-hidden border border-border relative">
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      )}
+      
+      <img 
+        src={material.thumbnail_url || material.file_url}
+        alt={material.title}
+        className="w-full h-full object-contain"
+        onLoad={() => setIsLoading(false)}
+        onError={() => {
+          setIsLoading(false);
+          setPreviewError(true);
+        }}
+      />
+      
+      {!isLoggedIn && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
+          <Lock className="w-12 h-12 text-muted-foreground mb-4" />
+          <p className="text-lg font-medium">Login to view</p>
         </div>
       )}
     </div>
   );
 
-  const renderBookPreview = () => (
-    <div className="space-y-4">
-      {/* Page viewer */}
-      <div className="relative">
-        <PreviewPage 
-          pageNum={currentPage} 
-          isLocked={!canViewPage(currentPage)} 
-          title={material.title}
-        />
-        
-        {/* Navigation arrows */}
-        <Button
+  const renderDocPreview = () => (
+    <div className="aspect-[3/4] bg-muted rounded-lg flex flex-col items-center justify-center border border-border p-8">
+      <File className="w-20 h-20 text-muted-foreground/40 mb-4" />
+      <span className="text-lg font-medium text-foreground mb-2">
+        {material.file_type.toUpperCase()} Document
+      </span>
+      <span className="text-sm text-muted-foreground mb-4">
+        {material.file_size ? formatFileSize(material.file_size) : 'Unknown size'}
+      </span>
+      
+      {isAdmin && (
+        <Button 
           variant="outline"
-          size="icon"
-          className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full shadow-lg"
-          onClick={handlePrevPage}
-          disabled={currentPage === 1}
+          onClick={() => window.open(material.file_url, '_blank')}
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ExternalLink className="w-4 h-4 mr-2" />
+          Open Full Document
         </Button>
-        <Button
-          variant="outline"
-          size="icon"
-          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full shadow-lg"
-          onClick={handleNextPage}
-          disabled={currentPage >= totalPages || (!canViewPage(currentPage + 1) && !isAdmin)}
-        >
-          <ChevronRight className="w-4 h-4" />
-        </Button>
-      </div>
-
-      {/* Page indicator */}
-      <div className="flex items-center justify-center gap-4">
-        <span className="text-sm text-muted-foreground">
-          Page {currentPage} of {totalPages}
-        </span>
-        {!isAdmin && !isLoggedIn && (
-          <Badge variant="secondary" className="bg-amber-500/20 text-amber-700">
-            <Lock className="w-3 h-3 mr-1" />
-            Login to see {previewPages} pages
-          </Badge>
-        )}
-        {!isAdmin && isLoggedIn && currentPage >= previewPages && (
-          <Badge variant="secondary" className="bg-primary/20 text-primary">
-            Preview limit reached
-          </Badge>
-        )}
-      </div>
-
-      {/* Page thumbnails */}
-      <ScrollArea className="w-full">
-        <div className="flex gap-2 pb-2">
-          {[...Array(Math.min(10, totalPages))].map((_, i) => (
-            <button
-              key={i}
-              onClick={() => canViewPage(i + 1) && setCurrentPage(i + 1)}
-              disabled={!canViewPage(i + 1) && !isAdmin}
-              className={`shrink-0 w-12 h-16 rounded border transition-all ${
-                currentPage === i + 1 
-                  ? 'border-primary ring-2 ring-primary/20' 
-                  : canViewPage(i + 1) || isAdmin
-                    ? 'border-border hover:border-primary/50'
-                    : 'border-border opacity-50 cursor-not-allowed'
-              }`}
-            >
-              <div className="w-full h-full bg-muted rounded-sm flex items-center justify-center">
-                {canViewPage(i + 1) || isAdmin ? (
-                  <span className="text-[10px] text-muted-foreground">{i + 1}</span>
-                ) : (
-                  <Lock className="w-3 h-3 text-muted-foreground" />
-                )}
-              </div>
-            </button>
-          ))}
-          {totalPages > 10 && (
-            <div className="shrink-0 w-12 h-16 flex items-center justify-center text-muted-foreground">
-              ...
-            </div>
-          )}
+      )}
+      
+      {!isAdmin && !isLoggedIn && (
+        <div className="text-center mt-4">
+          <Lock className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+          <p className="text-sm text-muted-foreground">Login to download</p>
         </div>
-      </ScrollArea>
+      )}
     </div>
   );
 
-  const renderDocPreview = () => (
-    <div className="aspect-[3/4] bg-muted rounded-lg flex flex-col items-center justify-center border border-border">
-      <File className="w-16 h-16 text-muted-foreground/40 mb-3" />
-      <span className="text-sm text-muted-foreground">{material.file_type.toUpperCase()} Document</span>
-      <span className="text-xs text-muted-foreground mt-1">
+  const renderZipPreview = () => (
+    <div className="aspect-[3/4] bg-muted rounded-lg flex flex-col items-center justify-center border border-border p-8">
+      <File className="w-20 h-20 text-muted-foreground/40 mb-4" />
+      <span className="text-lg font-medium text-foreground mb-2">
+        Archive File
+      </span>
+      <span className="text-sm text-muted-foreground mb-4">
         {material.file_size ? formatFileSize(material.file_size) : 'Unknown size'}
       </span>
+      <p className="text-xs text-muted-foreground text-center mb-4">
+        Contains study materials, notes, or resources
+      </p>
+      
+      {isAdmin && (
+        <Badge variant="secondary" className="bg-green-500/20 text-green-700">
+          <CheckCircle2 className="w-3 h-3 mr-1" />
+          Admin: Full download allowed
+        </Badge>
+      )}
     </div>
   );
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-4xl max-h-[95vh] overflow-hidden flex flex-col">
         <DialogHeader className="shrink-0 border-b border-border pb-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
@@ -246,15 +256,43 @@ export default function EnhancedMaterialPreview({
                     Pending Review
                   </Badge>
                 )}
+                {isAdmin && (
+                  <Badge variant="secondary" className="bg-purple-500/20 text-purple-700">
+                    <Eye className="w-3 h-3 mr-1" />
+                    Admin View (Full Access)
+                  </Badge>
+                )}
               </div>
             </div>
           </div>
         </DialogHeader>
 
         <ScrollArea className="flex-1 overflow-auto">
-          <div className="p-6 space-y-6">
+          <div className="p-4 space-y-6">
             {/* Preview Area */}
-            {isImage ? renderImagePreview() : isBook ? renderBookPreview() : renderDocPreview()}
+            {isPdf ? renderPdfPreview() : 
+             isImage ? renderImagePreview() : 
+             isZip ? renderZipPreview() :
+             renderDocPreview()}
+
+            {/* Admin Preview Status */}
+            {isAdmin && material.status === 'pending' && (
+              <div className={`flex items-center gap-2 p-3 rounded-lg ${
+                hasAdminPreviewed ? 'bg-green-500/10 text-green-700' : 'bg-amber-500/10 text-amber-700'
+              }`}>
+                {hasAdminPreviewed ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span className="text-sm font-medium">Preview completed - Ready to approve</span>
+                  </>
+                ) : (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span className="text-sm font-medium">Viewing preview... (required before approval)</span>
+                  </>
+                )}
+              </div>
+            )}
 
             {/* Description */}
             {material.description && (
@@ -307,18 +345,22 @@ export default function EnhancedMaterialPreview({
         </ScrollArea>
 
         {/* Actions */}
-        <div className="shrink-0 flex gap-3 p-6 pt-4 border-t border-border">
+        <div className="shrink-0 flex gap-3 p-4 pt-4 border-t border-border">
           <Button variant="outline" className="flex-1" onClick={onClose}>
             Close
           </Button>
           {isAdmin || material.status === 'approved' ? (
-            <Button className="flex-1" onClick={onDownload} disabled={isLoading}>
+            <Button 
+              className="flex-1" 
+              onClick={onDownload} 
+              disabled={isAdmin && material.status === 'pending' && !hasAdminPreviewed}
+            >
               {isLoading ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               ) : (
                 <Download className="w-4 h-4 mr-2" />
               )}
-              Download
+              {isAdmin ? 'Download Full File' : 'Download'}
             </Button>
           ) : (
             <Button className="flex-1" disabled>
