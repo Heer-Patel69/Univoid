@@ -263,11 +263,11 @@ const Index = () => {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {features.map((feature, index) => (
                 <AnimatedSection key={index} delay={index * 100} animation="scale">
-                  <div className="card-sketch group h-full">
-                    <div className="w-12 h-12 rounded-xl bg-sketch flex items-center justify-center mb-4 transition-transform group-hover:scale-110 group-hover:rotate-3">
-                      <feature.icon className="w-6 h-6 text-foreground" strokeWidth={2} />
+                  <div className="card-sketch group h-full cursor-pointer hover:-translate-x-1 hover:-translate-y-1">
+                    <div className="w-12 h-12 rounded-xl bg-sketch flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-125 group-hover:rotate-6 group-hover:bg-primary/20">
+                      <feature.icon className="w-6 h-6 text-foreground transition-all duration-300 group-hover:animate-bounce" strokeWidth={2} />
                     </div>
-                    <h3 className="font-display font-bold text-foreground text-lg mb-2">{feature.title}</h3>
+                    <h3 className="font-display font-bold text-foreground text-lg mb-2 transition-colors group-hover:text-primary">{feature.title}</h3>
                     <p className="text-muted-foreground text-sm leading-relaxed">{feature.description}</p>
                   </div>
                 </AnimatedSection>
@@ -288,13 +288,13 @@ const Index = () => {
               <div className="space-y-6">
                 {steps.map((step, index) => (
                   <AnimatedSection key={index} delay={index * 150} animation="fade-left">
-                    <div className="flex items-start gap-6">
-                      <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-card border-2 border-sketch-border shadow-sketch flex items-center justify-center">
-                        <step.icon className="w-6 h-6 text-foreground" strokeWidth={2} />
+                    <div className="flex items-start gap-6 group cursor-pointer">
+                      <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-card border-2 border-sketch-border shadow-sketch flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:shadow-sketch-sm group-hover:bg-primary/10">
+                        <step.icon className="w-6 h-6 text-foreground transition-transform duration-300 group-hover:scale-110" strokeWidth={2} />
                       </div>
-                      <div className="flex-1 pt-2">
+                      <div className="flex-1 pt-2 transition-transform duration-200 group-hover:translate-x-1">
                         <div className="flex items-center gap-3 mb-1">
-                          <span className="text-xs font-bold text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
+                          <span className="text-xs font-bold text-muted-foreground bg-secondary px-2 py-0.5 rounded-full transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
                             Step {index + 1}
                           </span>
                         </div>
@@ -321,11 +321,11 @@ const Index = () => {
               <div className="space-y-4">
                 {benefits.map((benefit, index) => (
                   <AnimatedSection key={index} delay={index * 100} animation="fade-right">
-                    <div className="flex items-center gap-4 p-4 bg-sketch rounded-xl border-2 border-sketch-border shadow-sketch-sm">
-                      <div className="w-8 h-8 rounded-full bg-card border-2 border-sketch-border flex items-center justify-center flex-shrink-0">
-                        <CheckCircle className="w-5 h-5 text-foreground" strokeWidth={2} />
+                    <div className="flex items-center gap-4 p-4 bg-sketch rounded-xl border-2 border-sketch-border shadow-sketch-sm group cursor-pointer transition-all duration-200 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-sketch">
+                      <div className="w-8 h-8 rounded-full bg-card border-2 border-sketch-border flex items-center justify-center flex-shrink-0 transition-all duration-300 group-hover:scale-110 group-hover:bg-success/20 group-hover:border-success">
+                        <CheckCircle className="w-5 h-5 text-foreground transition-colors duration-300 group-hover:text-success" strokeWidth={2} />
                       </div>
-                      <span className="font-medium text-foreground">{benefit}</span>
+                      <span className="font-medium text-foreground transition-transform duration-200 group-hover:translate-x-1">{benefit}</span>
                     </div>
                   </AnimatedSection>
                 ))}
