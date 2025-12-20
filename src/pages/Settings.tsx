@@ -37,6 +37,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { FloatingDoodles } from "@/components/common/FloatingDoodles";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -51,7 +52,7 @@ const Settings = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center bg-sketch paper-texture">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
@@ -90,13 +91,15 @@ const Settings = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-sketch paper-texture">
       <Header onAuthClick={() => {}} />
 
-      <main className="flex-1 py-8">
-        <div className="container-wide max-w-3xl">
-          <Button variant="ghost" size="sm" className="mb-6" onClick={() => navigate("/dashboard")}>
-            <ArrowLeft className="w-4 h-4 mr-1" />
+      <main className="flex-1 py-8 relative overflow-hidden">
+        <FloatingDoodles density="medium" />
+        
+        <div className="container-wide max-w-3xl relative z-10">
+          <Button variant="ghost" size="sm" className="mb-6 border-2 border-sketch-border shadow-sketch-sm hover:shadow-sketch hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all rounded-xl" onClick={() => navigate("/dashboard")}>
+            <ArrowLeft className="w-4 h-4 mr-1" strokeWidth={2} />
             Back to Dashboard
           </Button>
 
@@ -108,17 +111,17 @@ const Settings = () => {
           </div>
 
           <Tabs defaultValue="notifications" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3 h-auto p-1">
-              <TabsTrigger value="notifications" className="flex items-center gap-2 py-3">
-                <Bell className="w-4 h-4" />
+            <TabsList className="grid w-full grid-cols-3 h-auto p-1 border-2 border-sketch-border shadow-sketch-sm rounded-xl bg-card">
+              <TabsTrigger value="notifications" className="flex items-center gap-2 py-3 rounded-lg data-[state=active]:bg-secondary data-[state=active]:shadow-sketch-sm data-[state=active]:border-2 data-[state=active]:border-sketch-border">
+                <Bell className="w-4 h-4" strokeWidth={2} />
                 <span className="hidden sm:inline">Notifications</span>
               </TabsTrigger>
-              <TabsTrigger value="privacy" className="flex items-center gap-2 py-3">
-                <Shield className="w-4 h-4" />
+              <TabsTrigger value="privacy" className="flex items-center gap-2 py-3 rounded-lg data-[state=active]:bg-secondary data-[state=active]:shadow-sketch-sm data-[state=active]:border-2 data-[state=active]:border-sketch-border">
+                <Shield className="w-4 h-4" strokeWidth={2} />
                 <span className="hidden sm:inline">Privacy</span>
               </TabsTrigger>
-              <TabsTrigger value="account" className="flex items-center gap-2 py-3">
-                <User className="w-4 h-4" />
+              <TabsTrigger value="account" className="flex items-center gap-2 py-3 rounded-lg data-[state=active]:bg-secondary data-[state=active]:shadow-sketch-sm data-[state=active]:border-2 data-[state=active]:border-sketch-border">
+                <User className="w-4 h-4" strokeWidth={2} />
                 <span className="hidden sm:inline">Account</span>
               </TabsTrigger>
             </TabsList>
@@ -130,10 +133,10 @@ const Settings = () => {
 
             {/* Privacy Tab */}
             <TabsContent value="privacy" className="space-y-6">
-              <Card>
+              <Card className="card-sketch-hover">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Shield className="h-5 w-5" />
+                    <Shield className="h-5 w-5" strokeWidth={2} />
                     Privacy Settings
                   </CardTitle>
                   <CardDescription>
@@ -141,10 +144,10 @@ const Settings = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="flex items-center justify-between gap-4 p-3 rounded-lg bg-muted/50">
+                  <div className="flex items-center justify-between gap-4 p-4 rounded-xl bg-sketch border-2 border-sketch-border shadow-sketch-sm">
                     <div className="flex items-start gap-3">
-                      <div className="p-2 rounded-md bg-primary/10 text-primary">
-                        <Eye className="h-4 w-4" />
+                      <div className="p-2 rounded-xl bg-secondary border-2 border-sketch-border">
+                        <Eye className="h-4 w-4 text-foreground" strokeWidth={2} />
                       </div>
                       <div className="space-y-0.5">
                         <Label className="font-medium">Public Profile</Label>
@@ -159,10 +162,10 @@ const Settings = () => {
                     />
                   </div>
 
-                  <div className="flex items-center justify-between gap-4 p-3 rounded-lg bg-muted/50">
+                  <div className="flex items-center justify-between gap-4 p-4 rounded-xl bg-sketch border-2 border-sketch-border shadow-sketch-sm">
                     <div className="flex items-start gap-3">
-                      <div className="p-2 rounded-md bg-primary/10 text-primary">
-                        <User className="h-4 w-4" />
+                      <div className="p-2 rounded-xl bg-secondary border-2 border-sketch-border">
+                        <User className="h-4 w-4 text-foreground" strokeWidth={2} />
                       </div>
                       <div className="space-y-0.5">
                         <Label className="font-medium">Show on Leaderboard</Label>
@@ -177,10 +180,10 @@ const Settings = () => {
                     />
                   </div>
 
-                  <div className="flex items-center justify-between gap-4 p-3 rounded-lg bg-muted/50">
+                  <div className="flex items-center justify-between gap-4 p-4 rounded-xl bg-sketch border-2 border-sketch-border shadow-sketch-sm">
                     <div className="flex items-start gap-3">
-                      <div className="p-2 rounded-md bg-primary/10 text-primary">
-                        <EyeOff className="h-4 w-4" />
+                      <div className="p-2 rounded-xl bg-secondary border-2 border-sketch-border">
+                        <EyeOff className="h-4 w-4 text-foreground" strokeWidth={2} />
                       </div>
                       <div className="space-y-0.5">
                         <Label className="font-medium">Activity Status</Label>
@@ -200,10 +203,10 @@ const Settings = () => {
 
             {/* Account Tab */}
             <TabsContent value="account" className="space-y-6">
-              <Card>
+              <Card className="card-sketch-hover">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <User className="h-5 w-5" />
+                    <User className="h-5 w-5" strokeWidth={2} />
                     Account Information
                   </CardTitle>
                   <CardDescription>
@@ -214,7 +217,7 @@ const Settings = () => {
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <Label>Email Address</Label>
-                      <Input value={user.email || ''} disabled className="bg-muted" />
+                      <Input value={user.email || ''} disabled className="bg-sketch" />
                       <p className="text-xs text-muted-foreground">
                         Email cannot be changed. Contact support for assistance.
                       </p>
@@ -223,8 +226,8 @@ const Settings = () => {
                     <div className="space-y-2">
                       <Label>Full Name</Label>
                       <div className="flex gap-2">
-                        <Input value={profile?.full_name || ''} disabled className="bg-muted" />
-                        <Button variant="outline" onClick={() => navigate('/edit-profile')}>
+                        <Input value={profile?.full_name || ''} disabled className="bg-sketch" />
+                        <Button variant="outline" onClick={() => navigate('/edit-profile')} className="border-2 border-sketch-border shadow-sketch-sm hover:shadow-sketch hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all">
                           Edit
                         </Button>
                       </div>
@@ -242,17 +245,17 @@ const Settings = () => {
                           : 'Unknown'
                         } 
                         disabled 
-                        className="bg-muted" 
+                        className="bg-sketch" 
                       />
                     </div>
                   </div>
 
                   {/* Restart Tour */}
-                  <Separator />
-                  <div className="flex items-center justify-between gap-4 p-3 rounded-lg bg-muted/50">
+                  <Separator className="border-sketch-border" />
+                  <div className="flex items-center justify-between gap-4 p-4 rounded-xl bg-sketch border-2 border-sketch-border shadow-sketch-sm">
                     <div className="flex items-start gap-3">
-                      <div className="p-2 rounded-md bg-primary/10 text-primary">
-                        <RotateCcw className="h-4 w-4" />
+                      <div className="p-2 rounded-xl bg-secondary border-2 border-sketch-border">
+                        <RotateCcw className="h-4 w-4 text-foreground" strokeWidth={2} />
                       </div>
                       <div className="space-y-0.5">
                         <Label className="font-medium">Onboarding Tour</Label>
@@ -261,8 +264,8 @@ const Settings = () => {
                         </p>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm" onClick={restartTour}>
-                      <RotateCcw className="w-4 h-4 mr-2" />
+                    <Button variant="outline" size="sm" onClick={restartTour} className="border-2 border-sketch-border shadow-sketch-sm hover:shadow-sketch hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all">
+                      <RotateCcw className="w-4 h-4 mr-2" strokeWidth={2} />
                       Restart
                     </Button>
                   </div>
@@ -270,7 +273,7 @@ const Settings = () => {
               </Card>
 
               {/* Danger Zone */}
-              <Card className="border-destructive/50">
+              <Card className="border-2 border-destructive/50 shadow-sketch-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-destructive">
                     <AlertTriangle className="h-5 w-5" />

@@ -18,6 +18,7 @@ import {
   DoodleSquiggle,
   DoodleUnderline
 } from "@/components/common/SketchDoodles";
+import { FloatingDoodles } from "@/components/common/FloatingDoodles";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
   ArrowRight,
@@ -145,6 +146,9 @@ const Index = () => {
       <main className="flex-1">
         {/* Hero Section with Parallax */}
         <section ref={heroRef} className="py-16 md:py-24 lg:py-32 relative overflow-hidden">
+          {/* Floating Doodles Background */}
+          <FloatingDoodles density="high" section="hero" />
+          
           {/* Parallax Background Elements */}
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
             {/* Floating shapes that move at different speeds */}
@@ -249,9 +253,12 @@ const Index = () => {
 
         {/* What is UniVoid */}
         <section className="py-16 md:py-24 relative overflow-hidden">
+          {/* Floating Doodles */}
+          <FloatingDoodles density="low" />
+          
           {/* Doodle decorations */}
-          <DoodleLightbulb className="absolute top-10 left-8 w-16 h-20 opacity-60 hidden md:block" />
-          <DoodleBook className="absolute bottom-10 right-12 w-14 h-14 opacity-60 hidden md:block" />
+          <DoodleLightbulb className="absolute top-10 left-8 w-16 h-20 opacity-60 hidden md:block animate-float-doodle" />
+          <DoodleBook className="absolute bottom-10 right-12 w-14 h-14 opacity-60 hidden md:block animate-float-doodle" />
           
           <div className="container-wide relative z-10">
             <AnimatedSection className="max-w-3xl mx-auto text-center">
@@ -268,10 +275,13 @@ const Index = () => {
 
         {/* Core Features */}
         <section className="py-16 md:py-24 bg-card border-y-2 border-sketch-border relative overflow-hidden">
+          {/* Floating Doodles */}
+          <FloatingDoodles density="medium" />
+          
           {/* Doodle decorations */}
-          <DoodleStar className="absolute top-16 right-10 w-12 h-12 opacity-50 hidden lg:block" />
-          <DoodleRocket className="absolute bottom-20 left-8 w-14 h-16 opacity-50 hidden lg:block" />
-          <DoodlePencil className="absolute top-1/2 right-4 w-10 h-10 opacity-40 hidden xl:block" />
+          <DoodleStar className="absolute top-16 right-10 w-12 h-12 opacity-50 hidden lg:block animate-float-doodle" />
+          <DoodleRocket className="absolute bottom-20 left-8 w-14 h-16 opacity-50 hidden lg:block animate-float-doodle" />
+          <DoodlePencil className="absolute top-1/2 right-4 w-10 h-10 opacity-40 hidden xl:block animate-float-doodle" />
           
           <div className="container-wide relative z-10">
             <AnimatedSection className="text-center mb-12">
@@ -285,11 +295,11 @@ const Index = () => {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {features.map((feature, index) => (
                 <AnimatedSection key={index} delay={index * 100} animation="scale">
-                  <div className="card-sketch group h-full cursor-pointer hover:-translate-x-1 hover:-translate-y-1">
-                    <div className="w-12 h-12 rounded-xl bg-sketch flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-125 group-hover:rotate-6 group-hover:bg-primary/20">
-                      <feature.icon className="w-6 h-6 text-foreground transition-all duration-300 group-hover:animate-bounce" strokeWidth={2} />
+                  <div className="card-sketch-hover group h-full cursor-pointer p-6">
+                    <div className="w-12 h-12 rounded-xl bg-sketch border-2 border-sketch-border shadow-sketch-sm flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 group-hover:bg-secondary">
+                      <feature.icon className="w-6 h-6 text-foreground transition-all duration-300" strokeWidth={2} />
                     </div>
-                    <h3 className="font-display font-bold text-foreground text-lg mb-2 transition-colors group-hover:text-primary">{feature.title}</h3>
+                    <h3 className="font-display font-bold text-foreground text-lg mb-2">{feature.title}</h3>
                     <p className="text-muted-foreground text-sm leading-relaxed">{feature.description}</p>
                   </div>
                 </AnimatedSection>
