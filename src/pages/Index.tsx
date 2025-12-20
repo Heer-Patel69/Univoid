@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -32,6 +32,8 @@ import {
 const Index = () => {
   const [authOpen, setAuthOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [scrollY, setScrollY] = useState(0);
+  const heroRef = useRef<HTMLElement>(null);
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
 
@@ -40,6 +42,20 @@ const Index = () => {
       navigate('/dashboard', { replace: true });
     }
   }, [user, isLoading, navigate]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (heroRef.current) {
+        const heroBottom = heroRef.current.offsetHeight;
+        if (window.scrollY < heroBottom) {
+          setScrollY(window.scrollY);
+        }
+      }
+    };
+    
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   if (!isLoading && user) {
     return null;
@@ -115,14 +131,60 @@ const Index = () => {
       <Header onAuthClick={() => setAuthOpen(true)} />
       
       <main className="flex-1">
-        {/* Hero Section */}
-        <section className="py-16 md:py-24 lg:py-32">
-          <div className="container-wide">
+        {/* Hero Section with Parallax */}
+        <section ref={heroRef} className="py-16 md:py-24 lg:py-32 relative overflow-hidden">
+          {/* Parallax Background Elements */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            {/* Floating shapes that move at different speeds */}
+            <div 
+              className="absolute -top-20 -left-20 w-64 h-64 rounded-full bg-primary/10 blur-3xl"
+              style={{ transform: `translateY(${scrollY * 0.3}px)` }}
+            />
+            <div 
+              className="absolute top-1/4 -right-32 w-80 h-80 rounded-full bg-accent/20 blur-3xl"
+              style={{ transform: `translateY(${scrollY * 0.2}px)` }}
+            />
+            <div 
+              className="absolute bottom-0 left-1/4 w-48 h-48 rounded-full bg-pastel-purple/30 blur-2xl"
+              style={{ transform: `translateY(${scrollY * 0.4}px)` }}
+            />
+            
+            {/* Decorative sketch elements */}
+            <svg 
+              className="absolute top-20 left-10 w-16 h-16 text-foreground/5"
+              style={{ transform: `translateY(${scrollY * 0.15}px) rotate(${scrollY * 0.02}deg)` }}
+              viewBox="0 0 100 100"
+            >
+              <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="8 4" />
+            </svg>
+            <svg 
+              className="absolute top-40 right-20 w-20 h-20 text-foreground/5"
+              style={{ transform: `translateY(${scrollY * 0.25}px) rotate(-${scrollY * 0.03}deg)` }}
+              viewBox="0 0 100 100"
+            >
+              <rect x="20" y="20" width="60" height="60" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="10 5" />
+            </svg>
+            <svg 
+              className="absolute bottom-32 left-1/3 w-12 h-12 text-foreground/5"
+              style={{ transform: `translateY(${scrollY * 0.35}px)` }}
+              viewBox="0 0 100 100"
+            >
+              <polygon points="50,10 90,90 10,90" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="6 3" />
+            </svg>
+          </div>
+
+          <div className="container-wide relative z-10">
             <AnimatedSection className="max-w-4xl mx-auto text-center">
-              <h1 className="font-display text-foreground mb-6 text-balance text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight">
+              <h1 
+                className="font-display text-foreground mb-6 text-balance text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight"
+                style={{ transform: `translateY(${scrollY * 0.1}px)` }}
+              >
                 Everything a College Student Needs — In One Place
               </h1>
-              <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-3xl mx-auto leading-relaxed">
+              <p 
+                className="text-lg md:text-xl text-muted-foreground mb-10 max-w-3xl mx-auto leading-relaxed"
+                style={{ transform: `translateY(${scrollY * 0.05}px)` }}
+              >
                 Study materials, scholarships, events, projects, tasks, and book exchange — personalized for Indian students.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
