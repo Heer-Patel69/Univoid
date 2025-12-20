@@ -74,17 +74,17 @@ const Dashboard = () => {
   );
 
   return (
-    <div className="min-h-screen flex bg-background">
+    <div className="min-h-screen flex bg-background paper-texture">
       {/* Sidebar - Desktop */}
       <DashboardSidebar />
 
       {/* Main Content */}
-      <main className="flex-1 min-h-screen overflow-auto">
+      <main className="flex-1 min-h-screen overflow-auto relative z-10">
         {/* Mobile Header */}
-        <header className="lg:hidden flex items-center justify-between p-4 border-b border-border bg-card/80 backdrop-blur-lg sticky top-0 z-40">
+        <header className="lg:hidden flex items-center justify-between p-4 border-b border-border bg-card sticky top-0 z-40">
           <MobileSidebar />
           <Link to="/" className="font-bold text-lg">UniVoid</Link>
-          <ThemeToggle className="rounded-full" />
+          <ThemeToggle className="rounded-xl" />
         </header>
 
         <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-5xl mx-auto space-y-6">

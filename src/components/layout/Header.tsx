@@ -50,19 +50,19 @@ const Header = ({ onAuthClick }: HeaderProps) => {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border-strong/10">
+    <header className="sticky top-0 z-50 bg-card border-b border-border">
       <div className="container-wide">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-10 h-10 bg-foreground rounded-2xl flex items-center justify-center transition-all group-hover:scale-105 group-hover:rotate-3 shadow-soft">
-              <span className="text-background font-extrabold text-lg font-display">U</span>
+            <div className="w-10 h-10 bg-primary border border-border rounded-xl flex items-center justify-center transition-all group-hover:translate-x-[-2px] group-hover:translate-y-[-2px] group-hover:shadow-sketch shadow-sketch-sm">
+              <span className="text-primary-foreground font-extrabold text-lg font-display">U</span>
             </div>
             <span className="font-extrabold text-xl text-foreground font-display">UniVoid</span>
           </Link>
 
-          {/* Desktop Navigation - Floating Island Style */}
-          <nav className="hidden md:flex items-center gap-1 bg-card/60 backdrop-blur-lg rounded-full px-2 py-1.5 border border-border-strong/10 shadow-soft">
+          {/* Desktop Navigation - Sketch Style */}
+          <nav className="hidden md:flex items-center gap-1 bg-card rounded-xl px-2 py-1.5 border border-border shadow-sketch-sm">
             {navLinks.map((link) => {
               const Icon = link.icon;
               const navId = `nav-${link.href.replace('/', '')}`;
@@ -71,13 +71,13 @@ const Header = ({ onAuthClick }: HeaderProps) => {
                   key={link.href}
                   id={navId}
                   to={link.href}
-                  className={`px-4 py-2 text-sm font-semibold rounded-full transition-all duration-200 flex items-center gap-2 ${
+                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-150 flex items-center gap-2 ${
                     isActiveLink(link.href)
-                      ? 'bg-foreground text-background shadow-soft'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+                      ? 'bg-secondary font-bold'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
                   }`}
                 >
-                  <Icon className="w-4 h-4" strokeWidth={2.5} />
+                  <Icon className="w-4 h-4" strokeWidth={2} />
                   <span className="hidden lg:inline">{link.label}</span>
                 </Link>
               );
