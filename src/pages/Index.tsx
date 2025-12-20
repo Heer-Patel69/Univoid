@@ -139,7 +139,7 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-sketch pb-20 md:pb-0">
+    <div className="min-h-screen flex flex-col bg-sketch pb-20 md:pb-0 paper-texture">
       <Header onAuthClick={() => setAuthOpen(true)} />
       
       <main className="flex-1">
