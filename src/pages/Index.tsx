@@ -16,6 +16,7 @@ import {
 } from "@/components/landing/DoodleElements";
 import { CollegeMarquee } from "@/components/landing/Marquee";
 import { BentoGrid } from "@/components/landing/BentoGrid";
+import { TestimonialsSection } from "@/components/landing/TestimonialsSection";
 import { 
   ArrowRight,
   Sparkles,
@@ -266,6 +267,9 @@ const Index = () => {
 
         {/* Social Proof Marquee */}
         <CollegeMarquee />
+
+        {/* Testimonials Section */}
+        <TestimonialsSection />
 
         {/* Trust Section */}
         <section className="py-20 px-4">
