@@ -112,25 +112,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let isMounted = true;
+    let hasInitialized = false;
 
-    // Safety timeout - never block app for more than 5 seconds
+    // Safety timeout - never block app for more than 8 seconds
     const safetyTimeout = setTimeout(() => {
-      if (isMounted && isLoading) {
+      if (isMounted && isLoading && !hasInitialized) {
         console.warn('Auth loading timeout - proceeding without auth');
         setIsLoading(false);
+        hasInitialized = true;
       }
-    }, 5000);
+    }, 8000);
 
-    // Set up auth state listener FIRST
+    // Set up auth state listener FIRST (synchronous callback - no async)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         if (!isMounted) return;
         
+        // Synchronous state updates only
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Use setTimeout to avoid blocking
+          // Defer data fetching with setTimeout to avoid deadlocks
           setTimeout(() => {
             if (isMounted) {
               fetchUserData(session.user.id, session.user).catch(console.error);
@@ -139,8 +142,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           setProfile(null);
           setRole('student');
+          setUserRoles([]);
         }
-        setIsLoading(false);
+        
+        // Mark loading as complete after auth state change
+        if (!hasInitialized) {
+          hasInitialized = true;
+          setIsLoading(false);
+        }
       }
     );
 
@@ -157,6 +166,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (session?.user) {
           await fetchUserData(session.user.id, session.user);
         }
+        
+        hasInitialized = true;
       } catch (error) {
         console.error('Auth initialization error:', error);
       } finally {
