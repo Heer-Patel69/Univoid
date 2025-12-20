@@ -33,6 +33,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Terms from "./pages/Terms";
 import RefundPolicy from "./pages/RefundPolicy";
 import LegalDisclaimer from "./pages/LegalDisclaimer";
+import CookiePolicy from "./pages/CookiePolicy";
 import Contact from "./pages/Contact";
 import Events from "./pages/Events";
 import EventDetail from "./pages/EventDetail";
@@ -100,6 +101,7 @@ const App = () => (
                     <Route path="/terms" element={<Terms />} />
                     <Route path="/refund-policy" element={<RefundPolicy />} />
                     <Route path="/legal-disclaimer" element={<LegalDisclaimer />} />
+                    <Route path="/cookie-policy" element={<CookiePolicy />} />
                     <Route path="/contact" element={<Contact />} />
                     <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                     <Route path="/dashboard/upload-material" element={<ProtectedRoute><UploadMaterial /></ProtectedRoute>} />

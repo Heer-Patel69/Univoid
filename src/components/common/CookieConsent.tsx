@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 type ConsentType = 'all' | 'necessary' | null;
 
@@ -54,28 +55,51 @@ export const CookieConsent = () => {
             </h3>
             <p className="text-sm text-muted-foreground mb-3">
               We use cookies to enhance your browsing experience, serve personalized ads, and analyze our traffic. 
-              By clicking "Accept All", you consent to our use of cookies.
+              By clicking "Accept All", you consent to our use of cookies.{' '}
+              <Link 
+                to="/cookie-policy" 
+                className="text-primary hover:underline font-medium"
+              >
+                Learn more
+              </Link>
             </p>
             
             {showDetails && (
               <div className="mt-4 p-4 bg-muted/50 rounded-lg text-sm space-y-3 animate-in fade-in duration-200">
-                <div>
-                  <h4 className="font-medium text-foreground">Necessary Cookies</h4>
-                  <p className="text-muted-foreground text-xs">
-                    Essential for the website to function properly. Cannot be disabled.
-                  </p>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h4 className="font-medium text-foreground">Necessary Cookies</h4>
+                    <p className="text-muted-foreground text-xs">
+                      Essential for the website to function properly. Cannot be disabled.
+                    </p>
+                  </div>
+                  <span className="text-xs text-green-600 dark:text-green-400 font-medium bg-green-500/10 px-2 py-0.5 rounded">Always Active</span>
                 </div>
-                <div>
-                  <h4 className="font-medium text-foreground">Analytics Cookies</h4>
-                  <p className="text-muted-foreground text-xs">
-                    Help us understand how visitors interact with our website.
-                  </p>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h4 className="font-medium text-foreground">Analytics Cookies</h4>
+                    <p className="text-muted-foreground text-xs">
+                      Help us understand how visitors interact with our website (Google Analytics).
+                    </p>
+                  </div>
+                  <span className="text-xs text-muted-foreground">Optional</span>
                 </div>
-                <div>
-                  <h4 className="font-medium text-foreground">Advertising Cookies</h4>
-                  <p className="text-muted-foreground text-xs">
-                    Used to deliver personalized advertisements via Google AdSense.
-                  </p>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h4 className="font-medium text-foreground">Advertising Cookies</h4>
+                    <p className="text-muted-foreground text-xs">
+                      Used to deliver personalized advertisements via Google AdSense.
+                    </p>
+                  </div>
+                  <span className="text-xs text-muted-foreground">Optional</span>
+                </div>
+                <div className="pt-2 border-t border-border">
+                  <Link 
+                    to="/cookie-policy" 
+                    className="text-xs text-primary hover:underline"
+                  >
+                    View full Cookie Policy →
+                  </Link>
                 </div>
               </div>
             )}
