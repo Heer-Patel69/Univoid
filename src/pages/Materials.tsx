@@ -4,7 +4,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { BottomNav } from "@/components/layout/BottomNav";
 import AuthModal from "@/components/auth/AuthModal";
-import MaterialPreviewModal from "@/components/materials/MaterialPreviewModal";
+import EnhancedMaterialPreview from "@/components/materials/EnhancedMaterialPreview";
 import MaterialCard from "@/components/materials/MaterialCard";
 import MaterialCardSkeleton from "@/components/materials/MaterialCardSkeleton";
 import MaterialFilters, { MaterialFiltersState, initialFilters } from "@/components/materials/MaterialFilters";
@@ -322,21 +322,30 @@ const Materials = () => {
     return 'other';
   }, []);
 
-  // Memoized preview modal data
+  // Enhanced preview modal data
   const previewModalData = useMemo(() => {
     if (!previewMaterial) return null;
     return {
-      id: parseInt(previewMaterial.id.substring(0, 8), 16),
+      id: previewMaterial.id,
       title: previewMaterial.title,
-      subject: previewMaterial.subject || 'Study Material',
-      type: previewMaterial.file_type.toUpperCase(),
-      fileType: getFileTypeDisplay(previewMaterial.file_type),
-      downloads: previewMaterial.downloads_count || 0,
-      date: formatDate(previewMaterial.created_at),
-      preview: previewMaterial.description || 'No description provided',
-      contributor: previewMaterial.contributor_name || 'Anonymous',
+      description: previewMaterial.description,
+      file_url: previewMaterial.file_url,
+      file_type: previewMaterial.file_type,
+      file_size: previewMaterial.file_size,
+      subject: previewMaterial.subject,
+      branch: previewMaterial.branch,
+      course: previewMaterial.course,
+      college: previewMaterial.college,
+      language: previewMaterial.language,
+      downloads_count: previewMaterial.downloads_count || 0,
+      views_count: previewMaterial.views_count || 0,
+      likes_count: previewMaterial.likes_count || 0,
+      created_at: previewMaterial.created_at,
+      contributor_name: previewMaterial.contributor_name || 'Anonymous',
+      status: previewMaterial.status,
+      thumbnail_url: previewMaterial.thumbnail_url,
     };
-  }, [previewMaterial, formatDate, getFileTypeDisplay]);
+  }, [previewMaterial]);
 
   const handlePreviewDownload = useCallback(() => {
     if (previewMaterial) {
@@ -423,7 +432,7 @@ const Materials = () => {
         message={authMessage}
       />
 
-      <MaterialPreviewModal
+      <EnhancedMaterialPreview
         material={previewModalData}
         isOpen={!!previewMaterial}
         onClose={handlePreviewClose}

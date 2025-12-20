@@ -1,11 +1,13 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Material, BLOCKED_VIDEO_FORMATS } from '@/types/database';
+import { compressFile, MAX_FILE_SIZE_BYTES, validateMaterialFile } from '@/lib/fileCompression';
 
 export async function getMaterials(status: 'approved' | 'all' = 'approved'): Promise<Material[]> {
   let query = supabase
     .from('materials')
-    .select('*')
-    .order('created_at', { ascending: false });
+    .select('id, title, description, file_type, file_size, subject, branch, course, college, language, downloads_count, views_count, likes_count, shares_count, status, created_at, created_by, thumbnail_url')
+    .order('created_at', { ascending: false })
+    .limit(50);
 
   if (status === 'approved') {
     query = query.eq('status', 'approved');
@@ -15,13 +17,20 @@ export async function getMaterials(status: 'approved' | 'all' = 'approved'): Pro
 
   if (error) throw error;
 
-  // Fetch contributor names
+  // Batch fetch contributor names
   const materials = data as Material[];
-  for (const material of materials) {
+  const userIds = [...new Set(materials.map(m => m.created_by))];
+  
+  const contributorNames: Record<string, string> = {};
+  for (const userId of userIds) {
     const { data: nameData } = await supabase.rpc('get_contributor_name', {
-      user_id: material.created_by,
+      user_id: userId,
     });
-    material.contributor_name = nameData || 'Anonymous';
+    contributorNames[userId] = nameData || 'Anonymous';
+  }
+
+  for (const material of materials) {
+    material.contributor_name = contributorNames[material.created_by] || 'Anonymous';
   }
 
   return materials;
@@ -47,6 +56,7 @@ export async function getMaterialById(id: string): Promise<Material | null> {
 
 interface UploadOptions {
   onProgress?: (progress: number) => void;
+  onCompressionProgress?: (stage: string, progress: number) => void;
   course?: string;
   branch?: string;
   subject?: string;
@@ -61,24 +71,50 @@ export async function uploadMaterial(
   userId: string,
   options?: UploadOptions
 ): Promise<{ id: string | null; error: Error | null }> {
+  // Validate file
+  const validationError = validateMaterialFile(file);
+  if (validationError) {
+    return { id: null, error: new Error(validationError) };
+  }
+
   // Check for blocked video formats
   const fileExt = file.name.split('.').pop()?.toLowerCase() || '';
   if (BLOCKED_VIDEO_FORMATS.includes(fileExt)) {
     return { id: null, error: new Error('Video files are not allowed') };
   }
 
-  // Check file size (10MB limit for cloud optimization)
-  if (file.size > 10 * 1024 * 1024) {
-    return { id: null, error: new Error('File size must be less than 10MB') };
+  // Check file size (100MB limit)
+  if (file.size > MAX_FILE_SIZE_BYTES) {
+    return { id: null, error: new Error('File size must be less than 100MB') };
   }
 
-  options?.onProgress?.(10);
+  options?.onProgress?.(5);
+
+  // Compress file if possible (images)
+  let uploadFile = file;
+  try {
+    const compressionResult = await compressFile(file, (p) => {
+      options?.onCompressionProgress?.(p.stage, p.progress);
+    });
+    uploadFile = compressionResult.file;
+    
+    if (compressionResult.compressionRatio > 0) {
+      console.log(`File compressed: ${compressionResult.compressionRatio.toFixed(1)}% reduction`);
+    }
+  } catch (e) {
+    console.warn('Compression failed, using original file:', e);
+  }
+
+  options?.onProgress?.(15);
 
   // Upload file to storage
-  const filePath = `${userId}/${Date.now()}-${file.name}`;
+  const filePath = `${userId}/${Date.now()}-${uploadFile.name}`;
   const { error: uploadError } = await supabase.storage
     .from('materials')
-    .upload(filePath, file);
+    .upload(filePath, uploadFile, {
+      cacheControl: '3600',
+      upsert: false,
+    });
 
   options?.onProgress?.(60);
 
@@ -105,7 +141,7 @@ export async function uploadMaterial(
       description,
       file_url: fileUrl,
       file_type: fileExt,
-      file_size: file.size,
+      file_size: uploadFile.size,
       created_by: userId,
       status: 'pending', // Requires admin approval
       course: options?.course || null,
@@ -140,9 +176,6 @@ export async function uploadMaterial(
     },
   }).catch((err) => console.error('Failed to send notification:', err));
 
-  // XP is awarded on APPROVAL, not on upload
-  // See adminService.ts updateContentStatus for XP award
-
   return { id: data.id, error: null };
 }
 
@@ -163,4 +196,24 @@ export async function getDownloadUrl(materialId: string): Promise<string | null>
   
   // The file_url already contains a signed URL
   return material.file_url;
+}
+
+export async function getPendingMaterials(): Promise<Material[]> {
+  const { data, error } = await supabase
+    .from('materials')
+    .select('*')
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+
+  const materials = data as Material[];
+  for (const material of materials) {
+    const { data: nameData } = await supabase.rpc('get_contributor_name', {
+      user_id: material.created_by,
+    });
+    material.contributor_name = nameData || 'Anonymous';
+  }
+
+  return materials;
 }
