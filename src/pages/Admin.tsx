@@ -50,6 +50,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import EnhancedMaterialPreview from "@/components/materials/EnhancedMaterialPreview";
+import AuthModal from "@/components/auth/AuthModal";
 
 interface ContentItem {
   id: string;
@@ -120,6 +121,7 @@ const Admin = () => {
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: string; id: string; title: string } | null>(null);
   const [previewMaterial, setPreviewMaterial] = useState<ContentItem | null>(null);
   const [previewedMaterialIds, setPreviewedMaterialIds] = useState<Set<string>>(new Set());
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const fetchAllData = useCallback(async () => {
     try {
@@ -262,12 +264,16 @@ const Admin = () => {
           <p className="text-muted-foreground mb-6">
             Please sign in with an admin account to access the admin panel.
           </p>
-          <Button asChild>
-            <a href="/?auth=login" className="inline-flex items-center gap-2">
-              Go to Home & Sign In
-            </a>
+          <Button onClick={() => setShowAuthModal(true)}>
+            Sign In
           </Button>
         </div>
+        
+        <AuthModal 
+          isOpen={showAuthModal} 
+          onClose={() => setShowAuthModal(false)}
+          message="Sign in to access the admin panel"
+        />
       </div>
     );
   }
