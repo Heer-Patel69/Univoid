@@ -117,8 +117,9 @@ const UploadMaterial = () => {
       return;
     }
 
+    // Success - material will appear in real-time via subscription
     setIsSuccess(true);
-    toast.success("Material submitted for review!");
+    toast.success("Material submitted for review! It will appear instantly after admin approval.");
   };
 
   if (isSuccess) {

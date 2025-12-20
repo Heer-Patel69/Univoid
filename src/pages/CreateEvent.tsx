@@ -118,7 +118,8 @@ const CreateEvent = () => {
       return data;
     },
     onSuccess: (data) => {
-      toast({ title: "Event Created!", description: "Your event is now live." });
+      // Event will appear in real-time via subscription - no refresh needed
+      toast({ title: "Event Created!", description: "Your event is now live and will appear instantly for all users." });
       navigate(`/events/${data.id}`);
     },
     onError: (error: Error) => {
