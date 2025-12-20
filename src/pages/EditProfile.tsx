@@ -6,14 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Loader2, Save, Camera, User, X, Plus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { NotificationPreferences } from "@/components/dashboard/NotificationPreferences";
-
+import { SearchableSelect } from "@/components/common/SearchableSelect";
 
 const SKILL_SUGGESTIONS = [
   "Python", "JavaScript", "React", "Node.js", "Java", "C++", "Machine Learning",
@@ -34,22 +33,25 @@ const EditProfile = () => {
   const [form, setForm] = useState({
     full_name: "",
     college_name: "",
-    course_stream: "",
+    college_id: "",
+    branch: "",
+    branch_id: "",
     year_semester: "",
     mobile_number: "",
-    bio: "",
     skills: [] as string[],
   });
 
+  // Hydrate form from profile data
   useEffect(() => {
     if (profile) {
       setForm({
         full_name: profile.full_name || "",
         college_name: profile.college_name || "",
-        course_stream: profile.course_stream || "",
+        college_id: "",
+        branch: profile.branch || profile.course_stream || "",
+        branch_id: "",
         year_semester: profile.year_semester || "",
         mobile_number: profile.mobile_number || "",
-        bio: "",
         skills: [],
       });
       setPreviewUrl(profile.profile_photo_url || null);
@@ -128,7 +130,8 @@ const EditProfile = () => {
         .update({
           full_name: form.full_name.trim(),
           college_name: form.college_name.trim() || null,
-          course_stream: form.course_stream.trim() || null,
+          branch: form.branch.trim() || null,
+          course_stream: form.branch.trim() || null, // Keep backward compat
           year_semester: form.year_semester.trim() || null,
           mobile_number: form.mobile_number.trim() || null,
         })
@@ -228,29 +231,33 @@ const EditProfile = () => {
                   />
                 </div>
 
-                {/* College */}
-                <div>
-                  <Label htmlFor="college_name">College / University</Label>
-                  <Input
-                    id="college_name"
-                    value={form.college_name}
-                    onChange={(e) => setForm(prev => ({ ...prev, college_name: e.target.value }))}
-                    placeholder="e.g. IIT Delhi"
-                    className="mt-1"
-                  />
-                </div>
+                {/* College - Using SearchableSelect for consistency */}
+                <SearchableSelect
+                  label="College / University"
+                  tableName="lookup_universities"
+                  placeholder="Search for your college..."
+                  value={form.college_id}
+                  displayValue={form.college_name}
+                  onSelect={(item) => setForm(prev => ({ 
+                    ...prev, 
+                    college_id: item.id,
+                    college_name: item.name 
+                  }))}
+                />
 
-                {/* Course */}
-                <div>
-                  <Label htmlFor="course_stream">Course / Stream</Label>
-                  <Input
-                    id="course_stream"
-                    value={form.course_stream}
-                    onChange={(e) => setForm(prev => ({ ...prev, course_stream: e.target.value }))}
-                    placeholder="e.g. B.Tech Computer Science"
-                    className="mt-1"
-                  />
-                </div>
+                {/* Branch - Using SearchableSelect for consistency */}
+                <SearchableSelect
+                  label="Branch / Stream"
+                  tableName="lookup_branches"
+                  placeholder="Search for your branch..."
+                  value={form.branch_id}
+                  displayValue={form.branch}
+                  onSelect={(item) => setForm(prev => ({ 
+                    ...prev, 
+                    branch_id: item.id,
+                    branch: item.name 
+                  }))}
+                />
 
                 {/* Year */}
                 <div>
