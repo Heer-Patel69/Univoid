@@ -7,6 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ArrowLeft, Loader2, Save, Camera, User, X, Plus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,10 +21,24 @@ import { toast } from "sonner";
 import { NotificationPreferences } from "@/components/dashboard/NotificationPreferences";
 import { SearchableSelect } from "@/components/common/SearchableSelect";
 
-const SKILL_SUGGESTIONS = [
-  "Python", "JavaScript", "React", "Node.js", "Java", "C++", "Machine Learning",
-  "Data Science", "Web Development", "Mobile Development", "UI/UX Design",
-  "Graphic Design", "Content Writing", "Marketing", "Finance", "Public Speaking"
+const DEGREE_OPTIONS = [
+  "B.Tech", "B.E", "B.Sc", "B.Com", "B.A", "BBA", "BCA", "B.Pharm", "MBBS", "LLB",
+  "B.Arch", "B.Des", "M.Tech", "M.E", "M.Sc", "M.Com", "M.A", "MBA", "MCA",
+  "M.Pharm", "MD", "LLM", "Ph.D", "Diploma", "Other",
+];
+
+const YEAR_OPTIONS = [
+  { value: "1", label: "1st Year" },
+  { value: "2", label: "2nd Year" },
+  { value: "3", label: "3rd Year" },
+  { value: "4", label: "4th Year" },
+  { value: "5", label: "5th Year" },
+];
+
+const INTEREST_OPTIONS = [
+  "Hackathons", "Internships", "Startups", "Coding", "Design", "AI/ML",
+  "Web Dev", "Mobile Dev", "Data Science", "Blockchain", "Gaming", "Research",
+  "Finance", "Marketing", "Content Writing", "Public Speaking",
 ];
 
 const EditProfile = () => {
@@ -28,32 +49,43 @@ const EditProfile = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [skillInput, setSkillInput] = useState("");
+  const [customDegree, setCustomDegree] = useState("");
+  const [customInterest, setCustomInterest] = useState("");
   
   const [form, setForm] = useState({
     full_name: "",
     college_name: "",
     college_id: "",
+    degree: "",
     branch: "",
     branch_id: "",
-    year_semester: "",
+    current_year: "",
     mobile_number: "",
-    skills: [] as string[],
+    interests: [] as string[],
   });
 
   // Hydrate form from profile data
   useEffect(() => {
     if (profile) {
+      const savedDegree = profile.degree || "";
+      const isCustomDegree = savedDegree && !DEGREE_OPTIONS.includes(savedDegree);
+      
       setForm({
         full_name: profile.full_name || "",
         college_name: profile.college_name || "",
         college_id: "",
+        degree: isCustomDegree ? "Other" : savedDegree,
         branch: profile.branch || profile.course_stream || "",
         branch_id: "",
-        year_semester: profile.year_semester || "",
+        current_year: profile.current_year?.toString() || "",
         mobile_number: profile.mobile_number || "",
-        skills: [],
+        interests: profile.interests || [],
       });
+      
+      if (isCustomDegree) {
+        setCustomDegree(savedDegree);
+      }
+      
       setPreviewUrl(profile.profile_photo_url || null);
     }
   }, [profile]);
@@ -78,17 +110,13 @@ const EditProfile = () => {
 
     setIsUploadingPhoto(true);
     try {
-      // Show preview immediately
       const reader = new FileReader();
       reader.onload = (e) => setPreviewUrl(e.target?.result as string);
       reader.readAsDataURL(file);
 
-      // Upload (AuthContext handles compression internally)
       const { url, error } = await uploadProfilePhoto(file);
       
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
       
       if (url) {
         setPreviewUrl(url);
@@ -103,16 +131,31 @@ const EditProfile = () => {
     }
   };
 
-  const addSkill = (skill: string) => {
-    const normalized = skill.trim();
-    if (normalized && !form.skills.includes(normalized) && form.skills.length < 10) {
-      setForm(prev => ({ ...prev, skills: [...prev.skills, normalized] }));
-      setSkillInput("");
+  const toggleInterest = (interest: string) => {
+    setForm((prev) => ({
+      ...prev,
+      interests: prev.interests.includes(interest)
+        ? prev.interests.filter((i) => i !== interest)
+        : [...prev.interests, interest],
+    }));
+  };
+
+  const addCustomInterest = () => {
+    const trimmed = customInterest.trim();
+    if (trimmed && !form.interests.includes(trimmed)) {
+      setForm((prev) => ({
+        ...prev,
+        interests: [...prev.interests, trimmed],
+      }));
+      setCustomInterest("");
     }
   };
 
-  const removeSkill = (skill: string) => {
-    setForm(prev => ({ ...prev, skills: prev.skills.filter(s => s !== skill) }));
+  const removeInterest = (interest: string) => {
+    setForm((prev) => ({
+      ...prev,
+      interests: prev.interests.filter((i) => i !== interest),
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -125,23 +168,26 @@ const EditProfile = () => {
 
     setIsSaving(true);
     try {
+      const finalDegree = form.degree === "Other" ? customDegree.trim() : form.degree;
+      
       const { error } = await supabase
         .from("profiles")
         .update({
           full_name: form.full_name.trim(),
           college_name: form.college_name.trim() || null,
+          degree: finalDegree || null,
           branch: form.branch.trim() || null,
-          course_stream: form.branch.trim() || null, // Keep backward compat
-          year_semester: form.year_semester.trim() || null,
+          course_stream: form.branch.trim() || null,
+          current_year: form.current_year ? parseInt(form.current_year) : null,
+          year_semester: form.current_year ? `Year ${form.current_year}` : null,
           mobile_number: form.mobile_number.trim() || null,
+          interests: form.interests.length > 0 ? form.interests : null,
         })
         .eq("id", user?.id);
 
       if (error) throw error;
 
-      // Refresh auth context profile to sync state across app
       await refreshProfile();
-
       toast.success("Profile updated successfully!");
       navigate("/profile");
     } catch (error: any) {
@@ -231,7 +277,7 @@ const EditProfile = () => {
                   />
                 </div>
 
-                {/* College - Using SearchableSelect for consistency */}
+                {/* College */}
                 <SearchableSelect
                   label="College / University"
                   tableName="lookup_universities"
@@ -245,7 +291,38 @@ const EditProfile = () => {
                   }))}
                 />
 
-                {/* Branch - Using SearchableSelect for consistency */}
+                {/* Degree */}
+                <div className="space-y-2">
+                  <Label>Degree</Label>
+                  <Select
+                    value={form.degree}
+                    onValueChange={(value) => {
+                      setForm(prev => ({ ...prev, degree: value }));
+                      if (value !== "Other") setCustomDegree("");
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select degree" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      {DEGREE_OPTIONS.map((deg) => (
+                        <SelectItem key={deg} value={deg}>
+                          {deg}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {form.degree === "Other" && (
+                    <Input
+                      value={customDegree}
+                      onChange={(e) => setCustomDegree(e.target.value)}
+                      placeholder="Enter your degree..."
+                      className="mt-2"
+                    />
+                  )}
+                </div>
+
+                {/* Branch */}
                 <SearchableSelect
                   label="Branch / Stream"
                   tableName="lookup_branches"
@@ -260,15 +337,23 @@ const EditProfile = () => {
                 />
 
                 {/* Year */}
-                <div>
-                  <Label htmlFor="year_semester">Year / Semester</Label>
-                  <Input
-                    id="year_semester"
-                    value={form.year_semester}
-                    onChange={(e) => setForm(prev => ({ ...prev, year_semester: e.target.value }))}
-                    placeholder="e.g. 3rd Year"
-                    className="mt-1"
-                  />
+                <div className="space-y-2">
+                  <Label>Current Year</Label>
+                  <Select
+                    value={form.current_year}
+                    onValueChange={(value) => setForm(prev => ({ ...prev, current_year: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {YEAR_OPTIONS.map((yr) => (
+                        <SelectItem key={yr.value} value={yr.value}>
+                          {yr.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* Mobile */}
@@ -283,41 +368,23 @@ const EditProfile = () => {
                   />
                 </div>
 
-                {/* Skills */}
-                <div>
-                  <Label>Skills (up to 10)</Label>
-                  <div className="flex gap-2 mt-1">
-                    <Input
-                      value={skillInput}
-                      onChange={(e) => setSkillInput(e.target.value)}
-                      placeholder="Add a skill..."
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          addSkill(skillInput);
-                        }
-                      }}
-                    />
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="icon"
-                      onClick={() => addSkill(skillInput)}
-                      disabled={!skillInput.trim() || form.skills.length >= 10}
-                    >
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  </div>
+                {/* Interests */}
+                <div className="space-y-3">
+                  <Label>Interests</Label>
                   
-                  {form.skills.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-3">
-                      {form.skills.map((skill) => (
-                        <Badge key={skill} variant="secondary" className="gap-1 pr-1">
-                          {skill}
+                  {form.interests.length > 0 && (
+                    <div className="flex flex-wrap gap-2 p-3 bg-secondary/30 rounded-xl">
+                      {form.interests.map((interest) => (
+                        <Badge 
+                          key={interest} 
+                          variant="default" 
+                          className="gap-1 pr-1 bg-primary text-primary-foreground"
+                        >
+                          {interest}
                           <button
                             type="button"
-                            onClick={() => removeSkill(skill)}
-                            className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"
+                            onClick={() => removeInterest(interest)}
+                            className="ml-1 hover:bg-primary-foreground/20 rounded-full p-0.5"
                           >
                             <X className="w-3 h-3" />
                           </button>
@@ -325,21 +392,43 @@ const EditProfile = () => {
                       ))}
                     </div>
                   )}
-
-                  {form.skills.length < 10 && (
-                    <div className="flex flex-wrap gap-1.5 mt-3">
-                      {SKILL_SUGGESTIONS.filter(s => !form.skills.includes(s)).slice(0, 8).map((skill) => (
-                        <Badge 
-                          key={skill} 
-                          variant="outline" 
-                          className="cursor-pointer hover:bg-accent text-xs"
-                          onClick={() => addSkill(skill)}
-                        >
-                          + {skill}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
+                  
+                  <div className="flex flex-wrap gap-1.5">
+                    {INTEREST_OPTIONS.filter(i => !form.interests.includes(i)).slice(0, 10).map((interest) => (
+                      <Badge 
+                        key={interest} 
+                        variant="outline" 
+                        className="cursor-pointer hover:bg-accent text-xs"
+                        onClick={() => toggleInterest(interest)}
+                      >
+                        + {interest}
+                      </Badge>
+                    ))}
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Input
+                      value={customInterest}
+                      onChange={(e) => setCustomInterest(e.target.value)}
+                      placeholder="Add your own interest..."
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          addCustomInterest();
+                        }
+                      }}
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={addCustomInterest}
+                      disabled={!customInterest.trim()}
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Submit */}

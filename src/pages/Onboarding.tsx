@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -15,21 +16,34 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, GraduationCap } from "lucide-react";
+import { Loader2, GraduationCap, X, Plus } from "lucide-react";
 import { SearchableSelect } from "@/components/common/SearchableSelect";
 
 const DEGREE_OPTIONS = [
   "B.Tech",
+  "B.E",
   "B.Sc",
   "B.Com",
   "B.A",
   "BBA",
   "BCA",
+  "B.Pharm",
+  "MBBS",
+  "LLB",
+  "B.Arch",
+  "B.Des",
   "M.Tech",
+  "M.E",
   "M.Sc",
+  "M.Com",
+  "M.A",
   "MBA",
   "MCA",
+  "M.Pharm",
+  "MD",
+  "LLM",
   "Ph.D",
+  "Diploma",
   "Other",
 ];
 
@@ -54,6 +68,10 @@ const INTEREST_OPTIONS = [
   "Blockchain",
   "Gaming",
   "Research",
+  "Finance",
+  "Marketing",
+  "Content Writing",
+  "Public Speaking",
 ];
 
 const Onboarding = () => {
@@ -62,6 +80,8 @@ const Onboarding = () => {
   const { toast } = useToast();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [customDegree, setCustomDegree] = useState("");
+  const [customInterest, setCustomInterest] = useState("");
   const [formData, setFormData] = useState({
     full_name: profile?.full_name || user?.user_metadata?.full_name || user?.user_metadata?.name || "",
     college_name: profile?.college_name || "",
@@ -103,11 +123,38 @@ const Onboarding = () => {
     }));
   };
 
+  const addCustomInterest = () => {
+    const trimmed = customInterest.trim();
+    if (trimmed && !formData.interests.includes(trimmed)) {
+      setFormData((prev) => ({
+        ...prev,
+        interests: [...prev.interests, trimmed],
+      }));
+      setCustomInterest("");
+    }
+  };
+
+  const removeInterest = (interest: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      interests: prev.interests.filter((i) => i !== interest),
+    }));
+  };
+
+  const getDegreeValue = () => {
+    if (formData.degree === "Other" && customDegree) {
+      return customDegree;
+    }
+    return formData.degree;
+  };
+
   const isFormValid = () => {
+    const degreeValid = formData.degree !== "" && 
+      (formData.degree !== "Other" || customDegree.trim() !== "");
     return (
       formData.full_name.trim() !== "" &&
       formData.college_name.trim() !== "" &&
-      formData.degree !== "" &&
+      degreeValid &&
       formData.branch.trim() !== "" &&
       formData.current_year !== "" &&
       formData.city.trim() !== "" &&
@@ -133,12 +180,14 @@ const Onboarding = () => {
     setIsSubmitting(true);
 
     try {
+      const finalDegree = formData.degree === "Other" ? customDegree.trim() : formData.degree;
+      
       const { error } = await supabase
         .from("profiles")
         .update({
           full_name: formData.full_name,
           college_name: formData.college_name,
-          degree: formData.degree,
+          degree: finalDegree,
           branch: formData.branch,
           course_stream: formData.branch, // Keep backward compat
           current_year: parseInt(formData.current_year),
@@ -241,14 +290,15 @@ const Onboarding = () => {
                   <Label>Degree *</Label>
                   <Select
                     value={formData.degree}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, degree: value })
-                    }
+                    onValueChange={(value) => {
+                      setFormData({ ...formData, degree: value });
+                      if (value !== "Other") setCustomDegree("");
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select degree" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-60">
                       {DEGREE_OPTIONS.map((deg) => (
                         <SelectItem key={deg} value={deg}>
                           {deg}
@@ -256,6 +306,14 @@ const Onboarding = () => {
                       ))}
                     </SelectContent>
                   </Select>
+                  {formData.degree === "Other" && (
+                    <Input
+                      value={customDegree}
+                      onChange={(e) => setCustomDegree(e.target.value)}
+                      placeholder="Enter your degree..."
+                      className="mt-2"
+                    />
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -345,23 +403,68 @@ const Onboarding = () => {
                 Interests *
               </h3>
               <p className="text-xs text-muted-foreground">
-                Select at least one interest
+                Select at least one interest or add your own
               </p>
+              
+              {/* Selected Interests */}
+              {formData.interests.length > 0 && (
+                <div className="flex flex-wrap gap-2 p-3 bg-secondary/30 rounded-xl">
+                  {formData.interests.map((interest) => (
+                    <Badge 
+                      key={interest} 
+                      variant="default" 
+                      className="gap-1 pr-1 bg-primary text-primary-foreground"
+                    >
+                      {interest}
+                      <button
+                        type="button"
+                        onClick={() => removeInterest(interest)}
+                        className="ml-1 hover:bg-primary-foreground/20 rounded-full p-0.5"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              
+              {/* Predefined Interest Options */}
               <div className="flex flex-wrap gap-2">
-                {INTEREST_OPTIONS.map((interest) => (
+                {INTEREST_OPTIONS.filter(i => !formData.interests.includes(i)).map((interest) => (
                   <button
                     key={interest}
                     type="button"
                     onClick={() => toggleInterest(interest)}
-                    className={`px-3 py-1.5 rounded-full text-sm font-medium border-2 transition-all ${
-                      formData.interests.includes(interest)
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-card text-foreground border-border hover:border-primary/50"
-                    }`}
+                    className="px-3 py-1.5 rounded-full text-sm font-medium border-2 transition-all bg-card text-foreground border-border hover:border-primary/50"
                   >
-                    {interest}
+                    + {interest}
                   </button>
                 ))}
+              </div>
+              
+              {/* Add Custom Interest */}
+              <div className="flex gap-2">
+                <Input
+                  value={customInterest}
+                  onChange={(e) => setCustomInterest(e.target.value)}
+                  placeholder="Add your own interest..."
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addCustomInterest();
+                    }
+                  }}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={addCustomInterest}
+                  disabled={!customInterest.trim()}
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
               </div>
             </div>
 
