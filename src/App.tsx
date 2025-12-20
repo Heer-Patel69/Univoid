@@ -59,7 +59,7 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/my-events" element={<Navigate to="/dashboard/my-tickets" replace />} />
+            <Route path="/my-events" element={<ProtectedRoute><MyTickets /></ProtectedRoute>} />
             <Route path="/checkin/:token" element={<CheckInRedirect />} />
             <Route path="/materials" element={<Materials />} />
             <Route path="/news" element={<News />} />
@@ -83,7 +83,7 @@ const App = () => (
             <Route path="/dashboard/upload-material" element={<ProtectedRoute><UploadMaterial /></ProtectedRoute>} />
             <Route path="/dashboard/submit-news" element={<ProtectedRoute><SubmitNews /></ProtectedRoute>} />
             <Route path="/dashboard/list-book" element={<ProtectedRoute><ListBook /></ProtectedRoute>} />
-            <Route path="/dashboard/my-tickets" element={<ProtectedRoute><MyTickets /></ProtectedRoute>} />
+            <Route path="/dashboard/my-tickets" element={<Navigate to="/my-events" replace />} />
             <Route path="/upload-material" element={<ProtectedRoute><UploadMaterial /></ProtectedRoute>} />
             <Route path="/submit-news" element={<ProtectedRoute><SubmitNews /></ProtectedRoute>} />
             <Route path="/sell-book" element={<ProtectedRoute><ListBook /></ProtectedRoute>} />
