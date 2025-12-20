@@ -36,6 +36,7 @@ import {
   ContactMessage 
 } from "@/services/contactService";
 import { getReports, updateReportStatus, deleteReportedContent, Report, ReportContentType } from "@/services/reportsService";
+import { logAdminError } from "@/services/errorLoggingService";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -174,6 +175,13 @@ const Admin = () => {
       console.error('Error fetching admin data:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       setLoadError(errorMessage);
+      
+      // Log error to database for monitoring
+      logAdminError(errorMessage, error instanceof Error ? error : undefined, {
+        action: 'fetchAllData',
+        timestamp: new Date().toISOString(),
+      });
+      
       toast.error('Failed to load admin data');
     } finally {
       setIsLoading(false);
