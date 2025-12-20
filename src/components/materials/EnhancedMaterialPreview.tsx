@@ -1,16 +1,17 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
-  Download, FileText, Image, File, Lock, ChevronLeft, ChevronRight, 
+  Download, FileText, Image, File, Lock, 
   Eye, Calendar, User, HardDrive, Loader2, BookOpen, AlertTriangle,
   ExternalLink, CheckCircle2
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatFileSize } from "@/lib/fileCompression";
 import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MaterialData {
   id: string;
@@ -55,11 +56,82 @@ export default function EnhancedMaterialPreview({
   onAdminPreviewComplete,
 }: EnhancedMaterialPreviewProps) {
   const { user } = useAuth();
-  const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [previewError, setPreviewError] = useState(false);
   const [hasAdminPreviewed, setHasAdminPreviewed] = useState(false);
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const [urlError, setUrlError] = useState<string | null>(null);
   
+  // Reset state when modal opens/closes or material changes
+  useEffect(() => {
+    if (isOpen && material) {
+      setIsLoading(true);
+      setPreviewError(false);
+      setHasAdminPreviewed(false);
+      setSignedUrl(null);
+      setUrlError(null);
+      
+      // Generate signed URL for preview
+      generateSignedUrl();
+    }
+  }, [isOpen, material?.id]);
+
+  const generateSignedUrl = async () => {
+    if (!material) return;
+    
+    // Determine which URL to use
+    const urlToUse = isAdmin ? material.file_url : (material.preview_file_url || material.file_url);
+    
+    if (!urlToUse || urlToUse.trim() === '') {
+      setUrlError('Preview URL not available');
+      setIsLoading(false);
+      return;
+    }
+
+    // If URL is already a signed URL or external URL, use it directly
+    if (urlToUse.includes('token=') || urlToUse.startsWith('http')) {
+      setSignedUrl(urlToUse);
+      return;
+    }
+
+    // Try to generate a fresh signed URL from file path
+    try {
+      // Extract file path from URL if it's a Supabase storage URL
+      const pathMatch = urlToUse.match(/materials\/(.+)/);
+      if (pathMatch) {
+        const filePath = pathMatch[1];
+        const { data, error } = await supabase.storage
+          .from('materials')
+          .createSignedUrl(filePath, 600); // 10 minute expiry
+        
+        if (error) {
+          console.error('Failed to generate signed URL:', error);
+          // Fall back to original URL
+          setSignedUrl(urlToUse);
+        } else {
+          setSignedUrl(data.signedUrl);
+        }
+      } else {
+        // Use URL as-is if not a storage path
+        setSignedUrl(urlToUse);
+      }
+    } catch (err) {
+      console.error('Error generating signed URL:', err);
+      setSignedUrl(urlToUse);
+    }
+  };
+
+  // Mark admin preview complete
+  useEffect(() => {
+    if (isAdmin && isOpen && !hasAdminPreviewed && material?.status === 'pending' && signedUrl) {
+      const timer = setTimeout(() => {
+        setHasAdminPreviewed(true);
+        onAdminPreviewComplete?.(material.id);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [isAdmin, isOpen, hasAdminPreviewed, material?.id, material?.status, onAdminPreviewComplete, signedUrl]);
+
   if (!material) return null;
 
   const isPdf = material.file_type.toLowerCase() === 'pdf';
@@ -69,20 +141,6 @@ export default function EnhancedMaterialPreview({
   
   const isLoggedIn = !!user;
   const previewLimit = material.preview_page_limit || 5;
-  
-  // Determine which URL to use for preview
-  const previewUrl = isAdmin ? material.file_url : (material.preview_file_url || material.file_url);
-  
-  // Mark admin preview complete
-  useEffect(() => {
-    if (isAdmin && isOpen && !hasAdminPreviewed && material.status === 'pending') {
-      const timer = setTimeout(() => {
-        setHasAdminPreviewed(true);
-        onAdminPreviewComplete?.(material.id);
-      }, 2000); // Admin must view for at least 2 seconds
-      return () => clearTimeout(timer);
-    }
-  }, [isAdmin, isOpen, hasAdminPreviewed, material.id, material.status, onAdminPreviewComplete]);
 
   const handleIframeLoad = () => {
     setIsLoading(false);
@@ -93,29 +151,54 @@ export default function EnhancedMaterialPreview({
     setPreviewError(true);
   };
 
+  const renderNoUrlError = () => (
+    <div className="aspect-[3/4] min-h-[400px] bg-muted rounded-lg flex flex-col items-center justify-center border border-border p-8">
+      <AlertTriangle className="w-16 h-16 text-amber-500 mb-4" />
+      <span className="text-lg font-medium text-foreground mb-2">Preview Not Available</span>
+      <span className="text-sm text-muted-foreground text-center mb-4">
+        {urlError || 'The preview file is not ready yet.'}
+      </span>
+      {isAdmin && material.file_url && (
+        <Button 
+          variant="outline"
+          onClick={() => window.open(material.file_url, '_blank')}
+        >
+          <ExternalLink className="w-4 h-4 mr-2" />
+          Try Opening Directly
+        </Button>
+      )}
+    </div>
+  );
+
   const renderPdfPreview = () => {
-    // For PDF files, use embedded viewer
-    const embedUrl = isAdmin 
-      ? `${material.file_url}#toolbar=1&navpanes=1&scrollbar=1`
-      : `${previewUrl}#toolbar=0&navpanes=0&scrollbar=1&page=1`;
+    // Block if no URL
+    if (!signedUrl || urlError) {
+      return renderNoUrlError();
+    }
+
+    // PDF embed URL with viewer params
+    const embedUrl = `${signedUrl}#toolbar=${isAdmin ? '1' : '0'}&navpanes=0&scrollbar=1`;
     
     return (
       <div className="relative w-full aspect-[3/4] min-h-[500px] bg-muted rounded-lg overflow-hidden border border-border">
         {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 z-10">
+            <Loader2 className="w-8 h-8 animate-spin text-primary mb-2" />
+            <span className="text-sm text-muted-foreground">Loading preview...</span>
           </div>
         )}
         
         {previewError ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
             <FileText className="w-16 h-16 text-muted-foreground/40 mb-4" />
-            <p className="text-muted-foreground">Preview unavailable</p>
+            <p className="text-muted-foreground mb-2">Preview could not be loaded</p>
+            <p className="text-xs text-muted-foreground/70 text-center mb-4">
+              The file may be too large or in an unsupported format
+            </p>
             <Button 
               variant="outline" 
-              size="sm" 
-              className="mt-4"
-              onClick={() => window.open(material.file_url, '_blank')}
+              size="sm"
+              onClick={() => window.open(signedUrl, '_blank')}
             >
               <ExternalLink className="w-4 h-4 mr-2" />
               Open in new tab
@@ -124,16 +207,17 @@ export default function EnhancedMaterialPreview({
         ) : (
           <iframe
             src={embedUrl}
-            className="w-full h-full"
+            className="w-full h-full border-0"
             title={material.title}
             onLoad={handleIframeLoad}
             onError={handleIframeError}
+            style={{ border: 'none' }}
           />
         )}
         
         {/* Preview limit overlay for non-admin users */}
-        {!isAdmin && isLoggedIn && (
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background/95 to-transparent p-6 text-center">
+        {!isAdmin && isLoggedIn && !previewError && (
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background/95 to-transparent p-6 text-center pointer-events-none">
             <Badge variant="secondary" className="mb-2 bg-primary/20 text-primary">
               <Eye className="w-3 h-3 mr-1" />
               Preview: First {previewLimit} pages
@@ -158,33 +242,48 @@ export default function EnhancedMaterialPreview({
     );
   };
 
-  const renderImagePreview = () => (
-    <div className="aspect-video bg-muted rounded-lg overflow-hidden border border-border relative">
-      {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
-      )}
-      
-      <img 
-        src={material.thumbnail_url || material.file_url}
-        alt={material.title}
-        className="w-full h-full object-contain"
-        onLoad={() => setIsLoading(false)}
-        onError={() => {
-          setIsLoading(false);
-          setPreviewError(true);
-        }}
-      />
-      
-      {!isLoggedIn && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
-          <Lock className="w-12 h-12 text-muted-foreground mb-4" />
-          <p className="text-lg font-medium">Login to view</p>
-        </div>
-      )}
-    </div>
-  );
+  const renderImagePreview = () => {
+    const imageUrl = signedUrl || material.thumbnail_url || material.file_url;
+    
+    if (!imageUrl) {
+      return renderNoUrlError();
+    }
+
+    return (
+      <div className="aspect-video bg-muted rounded-lg overflow-hidden border border-border relative">
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        )}
+        
+        {previewError ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <Image className="w-16 h-16 text-muted-foreground/40 mb-4" />
+            <p className="text-muted-foreground">Image could not be loaded</p>
+          </div>
+        ) : (
+          <img 
+            src={imageUrl}
+            alt={material.title}
+            className="w-full h-full object-contain"
+            onLoad={() => setIsLoading(false)}
+            onError={() => {
+              setIsLoading(false);
+              setPreviewError(true);
+            }}
+          />
+        )}
+        
+        {!isLoggedIn && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
+            <Lock className="w-12 h-12 text-muted-foreground mb-4" />
+            <p className="text-lg font-medium">Login to view</p>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const renderDocPreview = () => (
     <div className="aspect-[3/4] bg-muted rounded-lg flex flex-col items-center justify-center border border-border p-8">
@@ -199,7 +298,7 @@ export default function EnhancedMaterialPreview({
       {isAdmin && (
         <Button 
           variant="outline"
-          onClick={() => window.open(material.file_url, '_blank')}
+          onClick={() => window.open(signedUrl || material.file_url, '_blank')}
         >
           <ExternalLink className="w-4 h-4 mr-2" />
           Open Full Document
