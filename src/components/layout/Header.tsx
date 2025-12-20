@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import { PrefetchLink } from "@/components/common/PrefetchLink";
 import { Button } from "@/components/ui/button";
 import { User, LogOut, Shield, BookOpen, Repeat2, Trophy, Calendar, LayoutDashboard, Folder, Briefcase, GraduationCap } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -54,12 +55,12 @@ const Header = ({ onAuthClick }: HeaderProps) => {
       <div className="container-wide">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2.5 group">
+          <PrefetchLink to="/" className="flex items-center gap-2.5 group">
             <div className="w-10 h-10 bg-primary border border-border rounded-xl flex items-center justify-center transition-all group-hover:translate-x-[-2px] group-hover:translate-y-[-2px] group-hover:shadow-sketch shadow-sketch-sm">
               <span className="text-primary-foreground font-extrabold text-lg font-display">U</span>
             </div>
             <span className="font-extrabold text-xl text-foreground font-display">UniVoid</span>
-          </Link>
+          </PrefetchLink>
 
           {/* Desktop Navigation - Sketch Style */}
           <nav className="hidden md:flex items-center gap-1 bg-card rounded-xl px-2 py-1.5 border border-border shadow-sketch-sm">
@@ -67,7 +68,7 @@ const Header = ({ onAuthClick }: HeaderProps) => {
               const Icon = link.icon;
               const navId = `nav-${link.href.replace('/', '')}`;
               return (
-                <Link
+                <PrefetchLink
                   key={link.href}
                   id={navId}
                   to={link.href}
@@ -79,7 +80,7 @@ const Header = ({ onAuthClick }: HeaderProps) => {
                 >
                   <Icon className="w-4 h-4" strokeWidth={2} />
                   <span className="hidden lg:inline">{link.label}</span>
-                </Link>
+                </PrefetchLink>
               );
             })}
           </nav>

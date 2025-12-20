@@ -1,4 +1,5 @@
-import { Link, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import { PrefetchLink } from "@/components/common/PrefetchLink";
 import { BookOpen, Calendar, GraduationCap, LayoutDashboard, User, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -67,7 +68,7 @@ export function BottomNav() {
           const tourId = `mobile-nav-${item.href.replace('/', '')}`;
           
           return (
-            <Link
+            <PrefetchLink
               key={item.href}
               id={tourId}
               to={item.href}
@@ -100,7 +101,7 @@ export function BottomNav() {
                 "text-[10px] font-semibold transition-all",
                 isActive && "font-bold"
               )}>{item.label}</span>
-            </Link>
+            </PrefetchLink>
           );
         })}
       </div>

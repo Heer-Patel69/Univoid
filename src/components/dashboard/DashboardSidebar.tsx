@@ -1,4 +1,5 @@
-import { Link, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import { PrefetchLink } from "@/components/common/PrefetchLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useScholarshipBadge } from "@/hooks/useScholarshipBadge";
 import { useEffect } from "react";
@@ -77,15 +78,15 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
     )}>
       <div className="p-4 flex flex-col flex-1">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 px-3 py-4 mb-4">
+        <PrefetchLink to="/" className="flex items-center gap-2 px-3 py-4 mb-4">
           <div className="w-10 h-10 bg-primary border border-border rounded-xl flex items-center justify-center shadow-sketch-sm">
             <span className="text-primary-foreground font-bold text-lg">U</span>
           </div>
           <span className="font-bold text-xl text-foreground">UniVoid</span>
-        </Link>
+        </PrefetchLink>
 
         {/* User Card - Sticky Note style */}
-        <Link to="/profile" className="bg-card border border-border rounded-xl p-4 mb-6 shadow-sketch-sm hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-sketch transition-all">
+        <PrefetchLink to="/profile" className="bg-card border border-border rounded-xl p-4 mb-6 shadow-sketch-sm hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-sketch transition-all">
           <div className="flex items-center gap-3">
             {profile?.profile_photo_url ? (
               <img
@@ -108,7 +109,7 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
               </div>
             </div>
           </div>
-        </Link>
+        </PrefetchLink>
 
         {/* Navigation */}
         <nav className="flex-1 space-y-1">
@@ -117,7 +118,7 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
             My Stuff
           </p>
           {myItems.map((item) => (
-            <Link
+            <PrefetchLink
               key={item.href}
               to={item.href}
               id={item.id}
@@ -130,7 +131,7 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
             >
               <item.icon className="w-4 h-4 stroke-[2px]" />
               {item.label}
-            </Link>
+            </PrefetchLink>
           ))}
 
           {/* Browse Section */}
@@ -140,7 +141,7 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
           {browseItems.map((item) => {
             const showBadge = item.showBadge && hasNewScholarships && !isActive(item.href);
             return (
-              <Link
+              <PrefetchLink
                 key={item.href}
                 to={item.href}
                 id={item.id}
@@ -158,7 +159,7 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
                     {newCount > 9 ? "9+" : newCount}
                   </span>
                 )}
-              </Link>
+              </PrefetchLink>
             );
           })}
 
@@ -168,7 +169,7 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
             Contribute
           </p>
           {contributeItems.map((item) => (
-            <Link
+            <PrefetchLink
               key={item.href}
               to={item.href}
               id={item.id}
@@ -181,7 +182,7 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
             >
               <item.icon className="w-4 h-4 stroke-[2px]" />
               {item.label}
-            </Link>
+            </PrefetchLink>
           ))}
 
           {/* Organizer Section */}
@@ -190,7 +191,7 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mt-6 mb-2">
                 Organizer
               </p>
-              <Link
+              <PrefetchLink
                 to="/organizer/dashboard"
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all border",
@@ -201,7 +202,7 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
               >
                 <Calendar className="w-4 h-4 stroke-[2px]" />
                 Organizer Panel
-              </Link>
+              </PrefetchLink>
             </>
           )}
 
@@ -211,7 +212,7 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mt-6 mb-2">
                 Admin
               </p>
-              <Link
+              <PrefetchLink
                 to="/admin"
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all border",
@@ -222,21 +223,21 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
               >
                 <Shield className="w-4 h-4 stroke-[2px]" />
                 Admin Panel
-              </Link>
+              </PrefetchLink>
             </>
           )}
         </nav>
 
         {/* Bottom Actions */}
         <div className="border-t border-border pt-4 mt-4 space-y-1">
-          <Link
+          <PrefetchLink
             to="/settings"
             id="nav-settings"
             className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-secondary/50 transition-all"
           >
             <Settings className="w-4 h-4 stroke-[2px]" />
             Settings
-          </Link>
+          </PrefetchLink>
           <Button
             variant="ghost"
             onClick={signOut}
