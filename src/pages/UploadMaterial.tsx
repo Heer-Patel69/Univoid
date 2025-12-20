@@ -208,6 +208,7 @@ const UploadMaterial = () => {
                   tableName="lookup_universities"
                   placeholder="Search for your college..."
                   value={college}
+                  displayValue={college}
                   onSelect={(item) => setCollege(item.name)}
                   disabled={isSubmitting || !canUpload}
                 />
@@ -218,6 +219,7 @@ const UploadMaterial = () => {
                   tableName="lookup_branches"
                   placeholder="Search for your branch..."
                   value={branch}
+                  displayValue={branch}
                   onSelect={(item) => setBranch(item.name)}
                   disabled={isSubmitting || !canUpload}
                 />
