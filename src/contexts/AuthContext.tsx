@@ -67,7 +67,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       supabase.from('user_roles').select('role').eq('user_id', userId),
     ]);
 
-    if (profileResult.data) {
+    // If no profile exists, create one (fallback for OAuth users)
+    if (!profileResult.data && authUser) {
+      console.log('No profile found, creating one for user:', userId);
+      const newProfile = {
+        id: userId,
+        email: authUser.email || '',
+        full_name: authUser.user_metadata?.full_name || 
+                   authUser.user_metadata?.name || 
+                   authUser.email?.split('@')[0] || 'User',
+        college_name: authUser.user_metadata?.college_name || null,
+        course_stream: authUser.user_metadata?.course_stream || null,
+        year_semester: authUser.user_metadata?.year_semester || null,
+        mobile_number: authUser.user_metadata?.mobile_number || null,
+        email_verified: true, // OAuth users are verified
+        profile_complete: false,
+      };
+      
+      const { data: createdProfile, error: createError } = await supabase
+        .from('profiles')
+        .upsert(newProfile, { onConflict: 'id' })
+        .select()
+        .single();
+      
+      if (createError) {
+        console.error('Error creating profile:', createError);
+      } else {
+        setProfile(createdProfile as Profile);
+      }
+    } else if (profileResult.data) {
       setProfile(profileResult.data as Profile);
     }
 
