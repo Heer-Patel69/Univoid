@@ -171,9 +171,9 @@ const EditProfile = () => {
       
       <main className="flex-1 py-8">
         <div className="container-wide max-w-2xl">
-          <Button variant="ghost" size="sm" className="mb-6" onClick={() => navigate(-1)}>
+          <Button variant="ghost" size="sm" className="mb-6" onClick={() => navigate("/profile")}>
             <ArrowLeft className="w-4 h-4 mr-1" />
-            Back
+            Back to Profile
           </Button>
 
           <Card>

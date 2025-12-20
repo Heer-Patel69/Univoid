@@ -92,9 +92,9 @@ const Settings = () => {
 
       <main className="flex-1 py-8">
         <div className="container-wide max-w-3xl">
-          <Button variant="ghost" size="sm" className="mb-6" onClick={() => navigate(-1)}>
+          <Button variant="ghost" size="sm" className="mb-6" onClick={() => navigate("/dashboard")}>
             <ArrowLeft className="w-4 h-4 mr-1" />
-            Back
+            Back to Dashboard
           </Button>
 
           <div className="mb-8">
