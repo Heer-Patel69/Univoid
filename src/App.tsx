@@ -12,6 +12,7 @@ import { GlobalRealtimeProvider } from "@/components/common/GlobalRealtimeProvid
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { PushNotificationPrompt } from "@/components/notifications/PushNotificationPrompt";
 import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
+import { FeatureHints } from "@/components/onboarding/FeatureHints";
 
 import Index from "./pages/Index";
 import Materials from "./pages/Materials";
@@ -119,6 +120,7 @@ const App = () => (
                 <CookieConsent />
                 <PushNotificationPrompt />
                 <OnboardingTour />
+                <FeatureHints />
               </GlobalRealtimeProvider>
             </AuthProvider>
           </BrowserRouter>
