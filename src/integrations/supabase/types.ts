@@ -1236,7 +1236,6 @@ export type Database = {
           user_id: string
         }[]
       }
-      get_homepage_stats: { Args: never; Returns: Json }
       get_public_leaderboard: {
         Args: { limit_count?: number }
         Returns: {
