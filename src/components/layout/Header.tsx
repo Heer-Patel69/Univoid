@@ -1,7 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, User, LogOut, Shield, BookOpen, Newspaper, FileText, Repeat2, Trophy, Calendar, LayoutDashboard, Folder, Briefcase } from "lucide-react";
-import { useState } from "react";
+import { User, LogOut, Shield, BookOpen, Repeat2, Trophy, Calendar, LayoutDashboard, Folder, Briefcase } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,
@@ -13,13 +12,13 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { MobileNavDrawer } from "./MobileNavDrawer";
 
 interface HeaderProps {
   onAuthClick: () => void;
 }
 
 const Header = ({ onAuthClick }: HeaderProps) => {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, profile, isAdmin, isOrganizer, signOut } = useAuth();
   const location = useLocation();
 
@@ -82,7 +81,7 @@ const Header = ({ onAuthClick }: HeaderProps) => {
             })}
           </nav>
 
-          {/* Auth Buttons */}
+          {/* Desktop Auth Buttons */}
           <div className="hidden md:flex items-center gap-1">
             <ThemeToggle className="rounded-full" />
             {user && <NotificationCenter />}
@@ -145,97 +144,11 @@ const Header = ({ onAuthClick }: HeaderProps) => {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            className="md:hidden p-2.5 hover:bg-secondary rounded-2xl transition-all border border-border-strong/10 shadow-soft"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? (
-              <X className="w-5 h-5 text-foreground" strokeWidth={2.5} />
-            ) : (
-              <Menu className="w-5 h-5 text-foreground" strokeWidth={2.5} />
-            )}
-          </button>
-        </div>
-
-        {/* Mobile Menu */}
-        <div
-          className={`md:hidden overflow-hidden transition-all duration-300 ease-out ${
-            mobileMenuOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
-          }`}
-        >
-          <nav className="py-4 border-t border-border">
-            <div className="flex flex-col gap-1">
-              {navLinks.map((link) => {
-                const Icon = link.icon;
-                return (
-                  <Link
-                    key={link.href}
-                    to={link.href}
-                    className={`px-4 py-3.5 text-sm font-semibold rounded-2xl transition-all flex items-center gap-3 active:scale-[0.98] ${
-                      isActiveLink(link.href)
-                        ? 'bg-foreground text-background'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-secondary active:bg-secondary'
-                    }`}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <Icon className="w-5 h-5" strokeWidth={2.5} />
-                    {link.label}
-                  </Link>
-                );
-              })}
-            </div>
-            <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-border">
-              <div className="flex items-center justify-between px-4 py-2">
-                <span className="text-sm font-medium text-muted-foreground">Theme</span>
-                <ThemeToggle className="rounded-full" />
-              </div>
-              {user ? (
-                <>
-                  <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant="outline" size="lg" className="w-full justify-start gap-3 h-12 rounded-2xl">
-                      <User className="w-5 h-5" strokeWidth={2.5} />
-                      Dashboard
-                    </Button>
-                  </Link>
-                  {isOrganizer && (
-                    <Link to="/organizer/dashboard" onClick={() => setMobileMenuOpen(false)}>
-                      <Button variant="outline" size="lg" className="w-full justify-start gap-3 h-12 rounded-2xl">
-                        <LayoutDashboard className="w-5 h-5" strokeWidth={2.5} />
-                        Organizer Dashboard
-                      </Button>
-                    </Link>
-                  )}
-                  {isAdmin && (
-                    <Link to="/admin" onClick={() => setMobileMenuOpen(false)}>
-                      <Button variant="outline" size="lg" className="w-full justify-start gap-3 h-12 rounded-2xl">
-                        <Shield className="w-5 h-5" strokeWidth={2.5} />
-                        Admin Panel
-                      </Button>
-                    </Link>
-                  )}
-                  <Button 
-                    variant="ghost" 
-                    size="lg" 
-                    className="w-full justify-start gap-3 h-12 rounded-2xl text-destructive" 
-                    onClick={() => { handleSignOut(); setMobileMenuOpen(false); }}
-                  >
-                    <LogOut className="w-5 h-5" strokeWidth={2.5} />
-                    Sign out
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button variant="outline" size="lg" className="w-full h-12 rounded-2xl" onClick={() => { onAuthClick(); setMobileMenuOpen(false); }}>
-                    Sign in
-                  </Button>
-                  <Button size="lg" className="w-full h-12 rounded-2xl" onClick={() => { onAuthClick(); setMobileMenuOpen(false); }}>
-                    Join UniVoid
-                  </Button>
-                </>
-              )}
-            </div>
-          </nav>
+          {/* Mobile Navigation Drawer */}
+          <div className="flex items-center gap-2 md:hidden">
+            {user && <NotificationCenter />}
+            <MobileNavDrawer onAuthClick={onAuthClick} />
+          </div>
         </div>
       </div>
     </header>
