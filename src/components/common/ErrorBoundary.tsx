@@ -2,6 +2,7 @@ import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { logError } from '@/services/errorLoggingService';
 
 interface Props {
   children: ReactNode;
@@ -31,6 +32,19 @@ export class ErrorBoundary extends Component<Props, State> {
     
     // Log error to console in development
     console.error('ErrorBoundary caught an error:', error, errorInfo);
+    
+    // Log error to database for monitoring
+    logError({
+      errorType: 'react_error_boundary',
+      errorMessage: error.message,
+      errorStack: error.stack,
+      pageRoute: window.location.pathname,
+      componentName: errorInfo.componentStack?.split('\n')[1]?.trim() || 'Unknown',
+      metadata: {
+        componentStack: errorInfo.componentStack,
+        timestamp: new Date().toISOString(),
+      },
+    });
     
     // Call optional error handler
     this.props.onError?.(error, errorInfo);
@@ -117,6 +131,19 @@ export class InlineErrorBoundary extends Component<{ children: ReactNode; fallba
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('InlineErrorBoundary caught:', error, errorInfo);
+    
+    // Log error to database
+    logError({
+      errorType: 'react_inline_error',
+      errorMessage: error.message,
+      errorStack: error.stack,
+      pageRoute: window.location.pathname,
+      componentName: errorInfo.componentStack?.split('\n')[1]?.trim() || 'Unknown',
+      metadata: {
+        componentStack: errorInfo.componentStack,
+        timestamp: new Date().toISOString(),
+      },
+    });
   }
 
   render() {
