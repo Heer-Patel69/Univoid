@@ -17,6 +17,8 @@ import {
 import { CollegeMarquee } from "@/components/landing/Marquee";
 import { BentoGrid } from "@/components/landing/BentoGrid";
 import { TestimonialsSection } from "@/components/landing/TestimonialsSection";
+import { FAQSection } from "@/components/landing/FAQSection";
+import { LiveStatsBanner } from "@/components/landing/LiveStatsBanner";
 import { 
   ArrowRight,
   Sparkles,
@@ -268,8 +270,14 @@ const Index = () => {
         {/* Social Proof Marquee */}
         <CollegeMarquee />
 
+        {/* Live Stats Banner */}
+        <LiveStatsBanner />
+
         {/* Testimonials Section */}
         <TestimonialsSection />
+
+        {/* FAQ Section */}
+        <FAQSection />
 
         {/* Trust Section */}
         <section className="py-20 px-4">
