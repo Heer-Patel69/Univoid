@@ -30,5 +30,12 @@ export const Marquee = ({
 };
 export const CollegeMarquee = () => {
   const colleges = ["IIT Bombay", "Delhi University", "GTU", "VIT", "SRM University", "BITS Pilani", "NIT Trichy", "Anna University", "Manipal University", "Your College?"];
-  return;
+  return (
+    <div className="py-8 bg-card border-y border-border">
+      <p className="text-center text-sm font-medium text-muted-foreground mb-4">
+        Trusted by students from
+      </p>
+      <Marquee items={colleges} speed={25} />
+    </div>
+  );
 };

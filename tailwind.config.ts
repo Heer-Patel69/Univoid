@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['Nunito', 'system-ui', 'sans-serif'],
+        sans: ['Nunito', 'Outfit', 'system-ui', 'sans-serif'],
+        display: ['Nunito', 'Outfit', 'system-ui', 'sans-serif'],
       },
       colors: {
         border: {
