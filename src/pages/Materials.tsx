@@ -1,9 +1,6 @@
 import { useState, useCallback, useMemo, memo, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import { BottomNav } from "@/components/layout/BottomNav";
-import AuthModal from "@/components/auth/AuthModal";
 import EnhancedMaterialPreview from "@/components/materials/EnhancedMaterialPreview";
 import MaterialCard from "@/components/materials/MaterialCard";
 import MaterialCardSkeleton from "@/components/materials/MaterialCardSkeleton";
@@ -22,8 +19,10 @@ import { Material } from "@/types/database";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { cn } from "@/lib/utils";
-import { CACHE_TTL } from "@/hooks/useOptimizedFetch";
+
+interface LayoutContext {
+  onAuthClick?: () => void;
+}
 
 // Memoized header component to prevent re-renders
 const MaterialsHeader = memo(function MaterialsHeader() {
@@ -69,8 +68,7 @@ const Materials = () => {
   const { canDownload } = useVerification();
   const { isLowEnd } = useDeviceCapability();
   const navigate = useNavigate();
-  const [authOpen, setAuthOpen] = useState(false);
-  const [authMessage, setAuthMessage] = useState("");
+  const context = useOutletContext<LayoutContext>();
   const [filters, setFilters] = useState<MaterialFiltersState>(initialFilters);
   const [previewMaterial, setPreviewMaterial] = useState<Material | null>(null);
   const [page, setPage] = useState(0);
@@ -173,8 +171,7 @@ const Materials = () => {
 
   const handleDownload = useCallback(async (material: Material) => {
     if (!user) {
-      setAuthMessage("Sign in to download study materials");
-      setAuthOpen(true);
+      context?.onAuthClick?.();
       return;
     }
     if (!canDownload) {
@@ -201,12 +198,11 @@ const Materials = () => {
     } catch (error) {
       toast.error('Failed to get download link');
     }
-  }, [user, canDownload]);
+  }, [user, canDownload, context]);
 
   const handleLike = useCallback(async (material: Material) => {
     if (!user) {
-      setAuthMessage("Sign in to like materials");
-      setAuthOpen(true);
+      context?.onAuthClick?.();
       return;
     }
 
@@ -241,7 +237,7 @@ const Materials = () => {
         return next;
       });
     }
-  }, [user, likingIds]);
+  }, [user, likingIds, context]);
 
   const handleShare = useCallback(async (material: Material) => {
     const url = `${window.location.origin}/materials?id=${material.id}`;
@@ -277,10 +273,9 @@ const Materials = () => {
     if (user) {
       navigate("/upload-material");
     } else {
-      setAuthMessage("Sign in to upload study materials");
-      setAuthOpen(true);
+      context?.onAuthClick?.();
     }
-  }, [user, navigate]);
+  }, [user, navigate, context]);
 
   const handlePreview = useCallback(async (material: Material) => {
     setPreviewMaterial(material);
@@ -299,28 +294,7 @@ const Materials = () => {
     applyFilters(initialFilters);
   }, [applyFilters]);
 
-  const handleAuthClick = useCallback(() => setAuthOpen(true), []);
-  const handleAuthClose = useCallback(() => setAuthOpen(false), []);
   const handlePreviewClose = useCallback(() => setPreviewMaterial(null), []);
-
-  // Memoized format function
-  const formatDate = useCallback((dateStr: string) => {
-    try {
-      return format(new Date(dateStr), 'MMM d, yyyy');
-    } catch {
-      return dateStr;
-    }
-  }, []);
-
-  const getFileTypeDisplay = useCallback((fileType: string): "pdf" | "image" | "doc" | "other" => {
-    const imageTypes = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-    const docTypes = ['doc', 'docx', 'txt', 'rtf'];
-    
-    if (fileType === 'pdf') return 'pdf';
-    if (imageTypes.includes(fileType.toLowerCase())) return 'image';
-    if (docTypes.includes(fileType.toLowerCase())) return 'doc';
-    return 'other';
-  }, []);
 
   // Enhanced preview modal data
   const previewModalData = useMemo(() => {
@@ -355,10 +329,8 @@ const Materials = () => {
   }, [previewMaterial, handleDownload]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-background paper-texture pb-20 md:pb-0">
-      <Header onAuthClick={handleAuthClick} />
-      
-      <main className="flex-1 py-10 md:py-14">
+    <div className="pb-20 md:pb-0">
+      <main className="py-10 md:py-14">
         <div className="container-wide">
           {/* Header - Memoized */}
           <MaterialsHeader />
@@ -423,14 +395,7 @@ const Materials = () => {
         </div>
       </main>
 
-      <Footer />
       <BottomNav />
-      
-      <AuthModal 
-        isOpen={authOpen} 
-        onClose={handleAuthClose}
-        message={authMessage}
-      />
 
       <EnhancedMaterialPreview
         material={previewModalData}

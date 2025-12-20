@@ -1,7 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { Link } from "react-router-dom";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
+import { Link, useOutletContext } from "react-router-dom";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { EventCard } from "@/components/events/EventCard";
 import { EventCardSkeleton } from "@/components/events/EventCardSkeleton";
@@ -11,15 +9,18 @@ import { Badge } from "@/components/ui/badge";
 import { fetchEvents, Event } from "@/services/eventsService";
 import { useAuth } from "@/contexts/AuthContext";
 import { Plus, Calendar } from "lucide-react";
-import AuthModal from "@/components/auth/AuthModal";
 import { supabase } from "@/integrations/supabase/client";
+
+interface LayoutContext {
+  onAuthClick?: () => void;
+}
 
 const Events = () => {
   const { user } = useAuth();
+  const context = useOutletContext<LayoutContext>();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [priceFilter, setPriceFilter] = useState("all");
-  const [showAuthModal, setShowAuthModal] = useState(false);
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -104,11 +105,8 @@ const Events = () => {
   }, [events]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-background paper-texture">
-      <Header onAuthClick={() => setShowAuthModal(true)} />
-      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
-
-      <main className="flex-1 container mx-auto px-4 py-6 pb-24 md:pb-8">
+    <div className="pb-24 md:pb-8">
+      <main className="container mx-auto px-4 py-6">
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div>
@@ -121,13 +119,18 @@ const Events = () => {
               </p>
             </div>
 
-            {user && (
+            {user ? (
               <Link to="/organizer/create-event">
                 <Button className="rounded-full gap-2">
                   <Plus className="w-4 h-4" />
                   Create Event
                 </Button>
               </Link>
+            ) : (
+              <Button className="rounded-full gap-2" onClick={context?.onAuthClick}>
+                <Plus className="w-4 h-4" />
+                Create Event
+              </Button>
             )}
           </div>
 
@@ -175,7 +178,6 @@ const Events = () => {
         )}
       </main>
 
-      <Footer />
       <BottomNav />
     </div>
   );

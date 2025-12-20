@@ -1,10 +1,9 @@
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { AnimatePresence } from "framer-motion";
 import { Suspense, lazy } from "react";
-import { PageTransition } from "./PageTransition";
-import { PageSkeleton } from "./PageSkeleton";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import CheckInRedirect from "@/components/common/CheckInRedirect";
+import AppLayout from "@/components/layout/AppLayout";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 
 // Lazy load pages for better code splitting
 const Index = lazy(() => import("@/pages/Index"));
@@ -46,274 +45,172 @@ const Settings = lazy(() => import("@/pages/Settings"));
 const Scholarships = lazy(() => import("@/pages/Scholarships"));
 const ScholarshipDetail = lazy(() => import("@/pages/ScholarshipDetail"));
 
-// Skeleton wrapper for different page types
-const GridPageSkeleton = () => <PageSkeleton variant="grid" showFilters />;
-const DetailPageSkeleton = () => <PageSkeleton variant="detail" showFilters={false} />;
-const DashboardPageSkeleton = () => <PageSkeleton variant="dashboard" showFilters={false} />;
-const ListPageSkeleton = () => <PageSkeleton variant="list" showFilters />;
+// Minimal loading fallback - no skeleton to avoid flash
+const MinimalLoader = () => null;
 
 export const AnimatedRoutes = () => {
-  const location = useLocation();
-
   return (
-    <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
-        <Route path="/" element={
-          <Suspense fallback={<GridPageSkeleton />}>
-            <PageTransition><Index /></PageTransition>
-          </Suspense>
-        } />
-        <Route path="/onboarding" element={
-          <ProtectedRoute skipOnboarding>
-            <Suspense fallback={<ListPageSkeleton />}>
-              <PageTransition><Onboarding /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        <Route path="/my-events" element={
-          <ProtectedRoute>
-            <Suspense fallback={<ListPageSkeleton />}>
-              <PageTransition><MyTickets /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        <Route path="/checkin/:token" element={<CheckInRedirect />} />
+    <Routes>
+      {/* Landing page - no layout wrapper needed */}
+      <Route path="/" element={
+        <Suspense fallback={<MinimalLoader />}>
+          <Index />
+        </Suspense>
+      } />
+
+      {/* Public pages with persistent AppLayout (Header/Footer) */}
+      <Route element={<AppLayout />}>
         <Route path="/materials" element={
-          <Suspense fallback={<GridPageSkeleton />}>
-            <PageTransition><Materials /></PageTransition>
-          </Suspense>
+          <Suspense fallback={<MinimalLoader />}><Materials /></Suspense>
         } />
         <Route path="/news" element={
-          <Suspense fallback={<GridPageSkeleton />}>
-            <PageTransition><News /></PageTransition>
-          </Suspense>
+          <Suspense fallback={<MinimalLoader />}><News /></Suspense>
         } />
         <Route path="/books" element={
-          <Suspense fallback={<GridPageSkeleton />}>
-            <PageTransition><Books /></PageTransition>
-          </Suspense>
+          <Suspense fallback={<MinimalLoader />}><Books /></Suspense>
         } />
         <Route path="/books/:bookId" element={
-          <Suspense fallback={<DetailPageSkeleton />}>
-            <PageTransition><BookDetail /></PageTransition>
-          </Suspense>
+          <Suspense fallback={<MinimalLoader />}><BookDetail /></Suspense>
         } />
         <Route path="/events" element={
-          <Suspense fallback={<GridPageSkeleton />}>
-            <PageTransition><Events /></PageTransition>
-          </Suspense>
+          <Suspense fallback={<MinimalLoader />}><Events /></Suspense>
         } />
         <Route path="/events/:eventId" element={
-          <Suspense fallback={<DetailPageSkeleton />}>
-            <PageTransition><EventDetail /></PageTransition>
-          </Suspense>
+          <Suspense fallback={<MinimalLoader />}><EventDetail /></Suspense>
         } />
         <Route path="/scholarships" element={
-          <Suspense fallback={<GridPageSkeleton />}>
-            <PageTransition><Scholarships /></PageTransition>
-          </Suspense>
+          <Suspense fallback={<MinimalLoader />}><Scholarships /></Suspense>
         } />
         <Route path="/scholarships/:scholarshipId" element={
-          <Suspense fallback={<DetailPageSkeleton />}>
-            <PageTransition><ScholarshipDetail /></PageTransition>
-          </Suspense>
+          <Suspense fallback={<MinimalLoader />}><ScholarshipDetail /></Suspense>
         } />
         <Route path="/projects" element={
-          <Suspense fallback={<GridPageSkeleton />}>
-            <PageTransition><Projects /></PageTransition>
-          </Suspense>
-        } />
-        <Route path="/projects/create" element={
-          <ProtectedRoute>
-            <Suspense fallback={<ListPageSkeleton />}>
-              <PageTransition><CreateProject /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
+          <Suspense fallback={<MinimalLoader />}><Projects /></Suspense>
         } />
         <Route path="/projects/:projectId" element={
-          <Suspense fallback={<DetailPageSkeleton />}>
-            <PageTransition><ProjectDetail /></PageTransition>
-          </Suspense>
+          <Suspense fallback={<MinimalLoader />}><ProjectDetail /></Suspense>
         } />
         <Route path="/tasks" element={
-          <Suspense fallback={<GridPageSkeleton />}>
-            <PageTransition><Tasks /></PageTransition>
-          </Suspense>
-        } />
-        <Route path="/tasks/my-requests" element={
-          <ProtectedRoute>
-            <Suspense fallback={<GridPageSkeleton />}>
-              <PageTransition><Tasks /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
+          <Suspense fallback={<MinimalLoader />}><Tasks /></Suspense>
         } />
         <Route path="/tasks/:taskId" element={
-          <Suspense fallback={<DetailPageSkeleton />}>
-            <PageTransition><TaskDetail /></PageTransition>
-          </Suspense>
-        } />
-        <Route path="/tasks/create" element={
-          <ProtectedRoute>
-            <Suspense fallback={<ListPageSkeleton />}>
-              <PageTransition><CreateTask /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        <Route path="/become-organizer" element={
-          <Suspense fallback={<ListPageSkeleton />}>
-            <PageTransition><BecomeOrganizer /></PageTransition>
-          </Suspense>
+          <Suspense fallback={<MinimalLoader />}><TaskDetail /></Suspense>
         } />
         <Route path="/leaderboard" element={
-          <Suspense fallback={<ListPageSkeleton />}>
-            <PageTransition><Leaderboard /></PageTransition>
-          </Suspense>
+          <Suspense fallback={<MinimalLoader />}><Leaderboard /></Suspense>
         } />
-        <Route path="/privacy-policy" element={
-          <Suspense fallback={<ListPageSkeleton />}>
-            <PageTransition><PrivacyPolicy /></PageTransition>
-          </Suspense>
-        } />
-        <Route path="/terms" element={
-          <Suspense fallback={<ListPageSkeleton />}>
-            <PageTransition><Terms /></PageTransition>
-          </Suspense>
-        } />
-        <Route path="/refund-policy" element={
-          <Suspense fallback={<ListPageSkeleton />}>
-            <PageTransition><RefundPolicy /></PageTransition>
-          </Suspense>
-        } />
-        <Route path="/legal-disclaimer" element={
-          <Suspense fallback={<ListPageSkeleton />}>
-            <PageTransition><LegalDisclaimer /></PageTransition>
-          </Suspense>
-        } />
-        <Route path="/cookie-policy" element={
-          <Suspense fallback={<ListPageSkeleton />}>
-            <PageTransition><CookiePolicy /></PageTransition>
-          </Suspense>
-        } />
-        <Route path="/contact" element={
-          <Suspense fallback={<ListPageSkeleton />}>
-            <PageTransition><Contact /></PageTransition>
-          </Suspense>
-        } />
-        <Route path="/dashboard" element={
-          <ProtectedRoute>
-            <Suspense fallback={<DashboardPageSkeleton />}>
-              <PageTransition><Dashboard /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        <Route path="/dashboard/upload-material" element={
-          <ProtectedRoute>
-            <Suspense fallback={<ListPageSkeleton />}>
-              <PageTransition><UploadMaterial /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        <Route path="/dashboard/submit-news" element={
-          <ProtectedRoute>
-            <Suspense fallback={<ListPageSkeleton />}>
-              <PageTransition><SubmitNews /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        <Route path="/dashboard/list-book" element={
-          <ProtectedRoute>
-            <Suspense fallback={<ListPageSkeleton />}>
-              <PageTransition><ListBook /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        <Route path="/dashboard/my-tickets" element={<Navigate to="/my-events" replace />} />
-        <Route path="/upload-material" element={
-          <ProtectedRoute>
-            <Suspense fallback={<ListPageSkeleton />}>
-              <PageTransition><UploadMaterial /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        <Route path="/submit-news" element={
-          <ProtectedRoute>
-            <Suspense fallback={<ListPageSkeleton />}>
-              <PageTransition><SubmitNews /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        <Route path="/sell-book" element={
-          <ProtectedRoute>
-            <Suspense fallback={<ListPageSkeleton />}>
-              <PageTransition><ListBook /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        <Route path="/organizer/dashboard" element={
-          <ProtectedRoute>
-            <Suspense fallback={<DashboardPageSkeleton />}>
-              <PageTransition><OrganizerDashboard /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        <Route path="/organizer/create-event" element={
-          <ProtectedRoute>
-            <Suspense fallback={<ListPageSkeleton />}>
-              <PageTransition><CreateEvent /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        <Route path="/organizer/edit-event/:eventId" element={
-          <ProtectedRoute>
-            <Suspense fallback={<DetailPageSkeleton />}>
-              <PageTransition><EditEvent /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        <Route path="/organizer/check-in/:eventId" element={
-          <ProtectedRoute>
-            <Suspense fallback={<ListPageSkeleton />}>
-              <PageTransition><EventCheckIn /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        <Route path="/profile" element={
-          <ProtectedRoute>
-            <Suspense fallback={<DetailPageSkeleton />}>
-              <PageTransition><Profile /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        <Route path="/profile/edit" element={
-          <ProtectedRoute>
-            <Suspense fallback={<ListPageSkeleton />}>
-              <PageTransition><EditProfile /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
-        } />
-        <Route path="/settings" element={
-          <ProtectedRoute>
-            <Suspense fallback={<ListPageSkeleton />}>
-              <PageTransition><Settings /></PageTransition>
-            </Suspense>
-          </ProtectedRoute>
+        <Route path="/become-organizer" element={
+          <Suspense fallback={<MinimalLoader />}><BecomeOrganizer /></Suspense>
         } />
         <Route path="/profile/:userId" element={
-          <Suspense fallback={<DetailPageSkeleton />}>
-            <PageTransition><Profile /></PageTransition>
-          </Suspense>
+          <Suspense fallback={<MinimalLoader />}><Profile /></Suspense>
         } />
+        {/* Legal pages */}
+        <Route path="/privacy-policy" element={
+          <Suspense fallback={<MinimalLoader />}><PrivacyPolicy /></Suspense>
+        } />
+        <Route path="/terms" element={
+          <Suspense fallback={<MinimalLoader />}><Terms /></Suspense>
+        } />
+        <Route path="/refund-policy" element={
+          <Suspense fallback={<MinimalLoader />}><RefundPolicy /></Suspense>
+        } />
+        <Route path="/legal-disclaimer" element={
+          <Suspense fallback={<MinimalLoader />}><LegalDisclaimer /></Suspense>
+        } />
+        <Route path="/cookie-policy" element={
+          <Suspense fallback={<MinimalLoader />}><CookiePolicy /></Suspense>
+        } />
+        <Route path="/contact" element={
+          <Suspense fallback={<MinimalLoader />}><Contact /></Suspense>
+        } />
+      </Route>
+
+      {/* Dashboard pages with persistent DashboardLayout (Sidebar) */}
+      <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+        <Route path="/dashboard" element={
+          <Suspense fallback={<MinimalLoader />}><Dashboard /></Suspense>
+        } />
+        <Route path="/profile" element={
+          <Suspense fallback={<MinimalLoader />}><Profile /></Suspense>
+        } />
+        <Route path="/profile/edit" element={
+          <Suspense fallback={<MinimalLoader />}><EditProfile /></Suspense>
+        } />
+        <Route path="/settings" element={
+          <Suspense fallback={<MinimalLoader />}><Settings /></Suspense>
+        } />
+        <Route path="/my-events" element={
+          <Suspense fallback={<MinimalLoader />}><MyTickets /></Suspense>
+        } />
+        <Route path="/upload-material" element={
+          <Suspense fallback={<MinimalLoader />}><UploadMaterial /></Suspense>
+        } />
+        <Route path="/submit-news" element={
+          <Suspense fallback={<MinimalLoader />}><SubmitNews /></Suspense>
+        } />
+        <Route path="/sell-book" element={
+          <Suspense fallback={<MinimalLoader />}><ListBook /></Suspense>
+        } />
+        <Route path="/projects/create" element={
+          <Suspense fallback={<MinimalLoader />}><CreateProject /></Suspense>
+        } />
+        <Route path="/tasks/create" element={
+          <Suspense fallback={<MinimalLoader />}><CreateTask /></Suspense>
+        } />
+        <Route path="/tasks/my-requests" element={
+          <Suspense fallback={<MinimalLoader />}><Tasks /></Suspense>
+        } />
+        {/* Legacy dashboard routes */}
+        <Route path="/dashboard/upload-material" element={
+          <Suspense fallback={<MinimalLoader />}><UploadMaterial /></Suspense>
+        } />
+        <Route path="/dashboard/submit-news" element={
+          <Suspense fallback={<MinimalLoader />}><SubmitNews /></Suspense>
+        } />
+        <Route path="/dashboard/list-book" element={
+          <Suspense fallback={<MinimalLoader />}><ListBook /></Suspense>
+        } />
+        <Route path="/dashboard/my-tickets" element={<Navigate to="/my-events" replace />} />
+      </Route>
+
+      {/* Organizer pages with DashboardLayout */}
+      <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+        <Route path="/organizer/dashboard" element={
+          <Suspense fallback={<MinimalLoader />}><OrganizerDashboard /></Suspense>
+        } />
+        <Route path="/organizer/create-event" element={
+          <Suspense fallback={<MinimalLoader />}><CreateEvent /></Suspense>
+        } />
+        <Route path="/organizer/edit-event/:eventId" element={
+          <Suspense fallback={<MinimalLoader />}><EditEvent /></Suspense>
+        } />
+        <Route path="/organizer/check-in/:eventId" element={
+          <Suspense fallback={<MinimalLoader />}><EventCheckIn /></Suspense>
+        } />
+      </Route>
+
+      {/* Admin with DashboardLayout */}
+      <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
         <Route path="/admin" element={
-          <Suspense fallback={<DashboardPageSkeleton />}>
-            <PageTransition><Admin /></PageTransition>
-          </Suspense>
+          <Suspense fallback={<MinimalLoader />}><Admin /></Suspense>
         } />
-        <Route path="*" element={
-          <Suspense fallback={<GridPageSkeleton />}>
-            <PageTransition><NotFound /></PageTransition>
-          </Suspense>
-        } />
-      </Routes>
-    </AnimatePresence>
+      </Route>
+
+      {/* Onboarding - special case */}
+      <Route path="/onboarding" element={
+        <ProtectedRoute skipOnboarding>
+          <Suspense fallback={<MinimalLoader />}><Onboarding /></Suspense>
+        </ProtectedRoute>
+      } />
+
+      {/* Check-in redirect */}
+      <Route path="/checkin/:token" element={<CheckInRedirect />} />
+
+      {/* 404 */}
+      <Route path="*" element={
+        <Suspense fallback={<MinimalLoader />}><NotFound /></Suspense>
+      } />
+    </Routes>
   );
 };
