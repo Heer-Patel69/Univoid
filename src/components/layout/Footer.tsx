@@ -1,29 +1,39 @@
 import { Link } from "react-router-dom";
-import { Heart } from "lucide-react";
-
 const Footer = () => {
   const currentYear = new Date().getFullYear();
-
   const footerLinks = {
-    platform: [
-      { href: "/materials", label: "Study Materials" },
-      { href: "/news", label: "News" },
-      { href: "/blogs", label: "Blogs" },
-      { href: "/books", label: "Book Exchange" },
-    ],
-    community: [
-      { href: "/leaderboard", label: "Leaderboard" },
-      { href: "/dashboard", label: "Dashboard" },
-      { href: "/contact", label: "Contact Us" },
-    ],
-    legal: [
-      { href: "/privacy-policy", label: "Privacy Policy" },
-      { href: "/terms", label: "Terms of Use" },
-    ],
+    platform: [{
+      href: "/materials",
+      label: "Study Materials"
+    }, {
+      href: "/news",
+      label: "News"
+    }, {
+      href: "/blogs",
+      label: "Blogs"
+    }, {
+      href: "/books",
+      label: "Book Exchange"
+    }],
+    community: [{
+      href: "/leaderboard",
+      label: "Leaderboard"
+    }, {
+      href: "/dashboard",
+      label: "Dashboard"
+    }, {
+      href: "/contact",
+      label: "Contact Us"
+    }],
+    legal: [{
+      href: "/privacy-policy",
+      label: "Privacy Policy"
+    }, {
+      href: "/terms",
+      label: "Terms of Use"
+    }]
   };
-
-  return (
-    <footer className="border-t border-border bg-card/50">
+  return <footer className="border-t border-border bg-card/50">
       <div className="container-wide py-12">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
           {/* Brand */}
@@ -43,16 +53,11 @@ const Footer = () => {
           <div>
             <h4 className="font-bold text-foreground text-sm mb-4 font-display">Platform</h4>
             <ul className="space-y-2.5">
-              {footerLinks.platform.map((link) => (
-                <li key={link.href}>
-                  <Link 
-                    to={link.href} 
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium"
-                  >
+              {footerLinks.platform.map(link => <li key={link.href}>
+                  <Link to={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">
                     {link.label}
                   </Link>
-                </li>
-              ))}
+                </li>)}
             </ul>
           </div>
 
@@ -60,16 +65,11 @@ const Footer = () => {
           <div>
             <h4 className="font-bold text-foreground text-sm mb-4 font-display">Community</h4>
             <ul className="space-y-2.5">
-              {footerLinks.community.map((link) => (
-                <li key={link.href}>
-                  <Link 
-                    to={link.href} 
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium"
-                  >
+              {footerLinks.community.map(link => <li key={link.href}>
+                  <Link to={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">
                     {link.label}
                   </Link>
-                </li>
-              ))}
+                </li>)}
             </ul>
           </div>
 
@@ -77,16 +77,11 @@ const Footer = () => {
           <div>
             <h4 className="font-bold text-foreground text-sm mb-4 font-display">Legal</h4>
             <ul className="space-y-2.5">
-              {footerLinks.legal.map((link) => (
-                <li key={link.href}>
-                  <Link 
-                    to={link.href} 
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium"
-                  >
+              {footerLinks.legal.map(link => <li key={link.href}>
+                  <Link to={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">
                     {link.label}
                   </Link>
-                </li>
-              ))}
+                </li>)}
             </ul>
           </div>
 
@@ -102,12 +97,10 @@ const Footer = () => {
         {/* Bottom Bar */}
         <div className="mt-10 pt-6 border-t border-border">
           <p className="text-sm text-muted-foreground text-center flex items-center justify-center gap-1 font-medium">
-            © {currentYear} UniVoid. Built with <Heart className="w-4 h-4 text-red-500 fill-red-500 inline" /> for students, by students.
+            © {currentYear} UniVoid. Built with  for students, by students.
           </p>
         </div>
       </div>
-    </footer>
-  );
+    </footer>;
 };
-
 export default Footer;
