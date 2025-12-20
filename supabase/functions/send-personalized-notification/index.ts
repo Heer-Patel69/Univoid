@@ -144,6 +144,56 @@ const handler = async (req: Request): Promise<Response> => {
       console.log(`Created ${notifications.length} in-app notifications`);
     }
 
+    // Send Web Push notifications
+    const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY");
+    const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY");
+    
+    if (vapidPublicKey && vapidPrivateKey) {
+      // Get push subscriptions for eligible users
+      const userIds = eligibleUsers.map(u => u.id);
+      const { data: pushSubs } = await supabase
+        .from("push_subscriptions")
+        .select("user_id, endpoint, p256dh, auth")
+        .in("user_id", userIds);
+      
+      if (pushSubs && pushSubs.length > 0) {
+        console.log(`Sending push notifications to ${pushSubs.length} subscribers`);
+        
+        let pushSent = 0;
+        for (const sub of pushSubs) {
+          try {
+            // Simple fetch to push endpoint (browser will handle the encryption)
+            const response = await fetch(sub.endpoint, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'TTL': '86400',
+              },
+              body: JSON.stringify({
+                title: notificationTitle,
+                message: notificationMessage,
+                link: notificationLink,
+                icon: '/favicon.jpg',
+              }),
+            });
+            
+            if (response.ok || response.status === 201) {
+              pushSent++;
+            } else if (response.status === 410 || response.status === 404) {
+              // Subscription expired, remove it
+              await supabase
+                .from("push_subscriptions")
+                .delete()
+                .eq("user_id", sub.user_id);
+            }
+          } catch (pushError) {
+            console.error(`Push failed for user ${sub.user_id}:`, pushError);
+          }
+        }
+        console.log(`Sent ${pushSent} push notifications`);
+      }
+    }
+
     // Get users with email preferences enabled
     if (resendApiKey && (type === "scholarship" || type === "event")) {
       const preferenceColumn = type === "scholarship" ? "scholarship_alerts" : "event_alerts";
