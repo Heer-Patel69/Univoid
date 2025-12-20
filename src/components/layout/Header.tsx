@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 interface HeaderProps {
   onAuthClick: () => void;
@@ -82,7 +83,8 @@ const Header = ({ onAuthClick }: HeaderProps) => {
           </nav>
 
           {/* Auth Buttons */}
-          <div className="hidden md:flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-1">
+            <ThemeToggle className="rounded-full" />
             {user && <NotificationCenter />}
             {user ? (
               <DropdownMenu>
@@ -157,19 +159,23 @@ const Header = ({ onAuthClick }: HeaderProps) => {
         </div>
 
         {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-border animate-fade-in">
-            <nav className="flex flex-col gap-1">
+        <div
+          className={`md:hidden overflow-hidden transition-all duration-300 ease-out ${
+            mobileMenuOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+          }`}
+        >
+          <nav className="py-4 border-t border-border">
+            <div className="flex flex-col gap-1">
               {navLinks.map((link) => {
                 const Icon = link.icon;
                 return (
                   <Link
                     key={link.href}
                     to={link.href}
-                    className={`px-4 py-3 text-sm font-semibold rounded-2xl transition-all flex items-center gap-3 ${
+                    className={`px-4 py-3.5 text-sm font-semibold rounded-2xl transition-all flex items-center gap-3 active:scale-[0.98] ${
                       isActiveLink(link.href)
                         ? 'bg-foreground text-background'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-secondary active:bg-secondary'
                     }`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
@@ -178,55 +184,59 @@ const Header = ({ onAuthClick }: HeaderProps) => {
                   </Link>
                 );
               })}
-              <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-border">
-                {user ? (
-                  <>
-                    <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
-                      <Button variant="outline" size="sm" className="w-full">
-                        <User className="w-4 h-4 mr-2" strokeWidth={2.5} />
-                        Dashboard
+            </div>
+            <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-border">
+              <div className="flex items-center justify-between px-4 py-2">
+                <span className="text-sm font-medium text-muted-foreground">Theme</span>
+                <ThemeToggle className="rounded-full" />
+              </div>
+              {user ? (
+                <>
+                  <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="outline" size="lg" className="w-full justify-start gap-3 h-12 rounded-2xl">
+                      <User className="w-5 h-5" strokeWidth={2.5} />
+                      Dashboard
+                    </Button>
+                  </Link>
+                  {isOrganizer && (
+                    <Link to="/organizer/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="outline" size="lg" className="w-full justify-start gap-3 h-12 rounded-2xl">
+                        <LayoutDashboard className="w-5 h-5" strokeWidth={2.5} />
+                        Organizer Dashboard
                       </Button>
                     </Link>
-                    {isOrganizer && (
-                      <Link to="/organizer/dashboard" onClick={() => setMobileMenuOpen(false)}>
-                        <Button variant="outline" size="sm" className="w-full">
-                          <LayoutDashboard className="w-4 h-4 mr-2" strokeWidth={2.5} />
-                          Organizer Dashboard
-                        </Button>
-                      </Link>
-                    )}
-                    {isAdmin && (
-                      <Link to="/admin" onClick={() => setMobileMenuOpen(false)}>
-                        <Button variant="outline" size="sm" className="w-full">
-                          <Shield className="w-4 h-4 mr-2" strokeWidth={2.5} />
-                          Admin Panel
-                        </Button>
-                      </Link>
-                    )}
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="w-full text-destructive" 
-                      onClick={() => { handleSignOut(); setMobileMenuOpen(false); }}
-                    >
-                      <LogOut className="w-4 h-4 mr-2" strokeWidth={2.5} />
-                      Sign out
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button variant="outline" size="sm" className="w-full" onClick={() => { onAuthClick(); setMobileMenuOpen(false); }}>
-                      Sign in
-                    </Button>
-                    <Button size="sm" className="w-full" onClick={() => { onAuthClick(); setMobileMenuOpen(false); }}>
-                      Join UniVoid
-                    </Button>
-                  </>
-                )}
-              </div>
-            </nav>
-          </div>
-        )}
+                  )}
+                  {isAdmin && (
+                    <Link to="/admin" onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="outline" size="lg" className="w-full justify-start gap-3 h-12 rounded-2xl">
+                        <Shield className="w-5 h-5" strokeWidth={2.5} />
+                        Admin Panel
+                      </Button>
+                    </Link>
+                  )}
+                  <Button 
+                    variant="ghost" 
+                    size="lg" 
+                    className="w-full justify-start gap-3 h-12 rounded-2xl text-destructive" 
+                    onClick={() => { handleSignOut(); setMobileMenuOpen(false); }}
+                  >
+                    <LogOut className="w-5 h-5" strokeWidth={2.5} />
+                    Sign out
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="outline" size="lg" className="w-full h-12 rounded-2xl" onClick={() => { onAuthClick(); setMobileMenuOpen(false); }}>
+                    Sign in
+                  </Button>
+                  <Button size="lg" className="w-full h-12 rounded-2xl" onClick={() => { onAuthClick(); setMobileMenuOpen(false); }}>
+                    Join UniVoid
+                  </Button>
+                </>
+              )}
+            </div>
+          </nav>
+        </div>
       </div>
     </header>
   );
