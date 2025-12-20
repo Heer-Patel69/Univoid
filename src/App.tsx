@@ -11,7 +11,7 @@ import CheckInRedirect from "@/components/common/CheckInRedirect";
 import { GlobalRealtimeProvider } from "@/components/common/GlobalRealtimeProvider";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { PushNotificationPrompt } from "@/components/notifications/PushNotificationPrompt";
-import { QuickActionFAB } from "@/components/common/QuickActionFAB";
+
 import Index from "./pages/Index";
 import Materials from "./pages/Materials";
 import News from "./pages/News";
@@ -117,7 +117,7 @@ const App = () => (
                 </ErrorBoundary>
                 <CookieConsent />
                 <PushNotificationPrompt />
-                <QuickActionFAB />
+                
               </GlobalRealtimeProvider>
             </AuthProvider>
           </BrowserRouter>
