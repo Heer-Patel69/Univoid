@@ -176,13 +176,17 @@ export function SearchableSelect({
                   </button>
                 ))
               ) : hasSearched ? (
-                <div className="py-8 text-center">
+                <div className="py-4 text-center space-y-3">
                   <p className="text-sm text-muted-foreground">
                     No results found for "{searchTerm}"
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Try a different search term
-                  </p>
+                  <button
+                    type="button"
+                    onClick={() => handleSelect({ id: `custom_${searchTerm}`, name: searchTerm })}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-secondary hover:bg-secondary/80 text-sm font-medium transition-colors"
+                  >
+                    Use "{searchTerm}" anyway
+                  </button>
                 </div>
               ) : (
                 <div className="py-8 text-center">
