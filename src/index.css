@@ -157,10 +157,54 @@
 }
 
 @layer components {
+  /* GPU-accelerated performance optimizations */
+  .gpu-accelerate {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+
+  .will-change-transform {
+    will-change: transform;
+  }
+
+  .will-change-opacity {
+    will-change: opacity;
+  }
+
+  /* Optimized skeleton pulse - GPU only */
+  @keyframes skeleton-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .skeleton-optimized {
+    animation: skeleton-pulse 1.5s ease-in-out infinite;
+    will-change: opacity;
+  }
+
+  /* Lazy fade-in animation - GPU accelerated */
+  .lazy-fade-in {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+    transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+  }
+
+  .lazy-fade-in.visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  /* Stagger animation delays for lists */
+  .stagger-1 { transition-delay: 50ms; }
+  .stagger-2 { transition-delay: 100ms; }
+  .stagger-3 { transition-delay: 150ms; }
+  .stagger-4 { transition-delay: 200ms; }
+  .stagger-5 { transition-delay: 250ms; }
+  .stagger-6 { transition-delay: 300ms; }
+
   .container-wide {
     @apply max-w-6xl mx-auto px-4 sm:px-6 lg:px-8;
   }
-
   .container-narrow {
     @apply max-w-3xl mx-auto px-4 sm:px-6;
   }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { memo, useState, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,47 +26,75 @@ interface MaterialCardProps {
   isLiking?: boolean;
 }
 
-const MaterialCard = ({ 
+// Memoized helper functions outside component to prevent recreation
+const getFileTypeDisplay = (fileType: string): "pdf" | "image" | "doc" | "other" => {
+  const imageTypes = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+  const docTypes = ['doc', 'docx', 'txt', 'rtf', 'ppt', 'pptx'];
+  
+  if (fileType === 'pdf') return 'pdf';
+  if (imageTypes.includes(fileType.toLowerCase())) return 'image';
+  if (docTypes.includes(fileType.toLowerCase())) return 'doc';
+  return 'other';
+};
+
+const formatNumber = (num: number): string => {
+  if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+  if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+  return num.toString();
+};
+
+const MaterialCard = memo(function MaterialCard({ 
   material, 
   onPreview, 
   onDownload, 
   onLike, 
   onShare,
   isLiking 
-}: MaterialCardProps) => {
+}: MaterialCardProps) {
   const [showDescription, setShowDescription] = useState(false);
 
-  const getFileTypeDisplay = (fileType: string): "pdf" | "image" | "doc" | "other" => {
-    const imageTypes = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-    const docTypes = ['doc', 'docx', 'txt', 'rtf', 'ppt', 'pptx'];
-    
-    if (fileType === 'pdf') return 'pdf';
-    if (imageTypes.includes(fileType.toLowerCase())) return 'image';
-    if (docTypes.includes(fileType.toLowerCase())) return 'doc';
-    return 'other';
-  };
+  // Memoized callbacks to prevent re-renders
+  const handlePreviewClick = useCallback(() => {
+    onPreview(material);
+  }, [material, onPreview]);
 
-  const formatNumber = (num: number): string => {
-    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
-    return num.toString();
-  };
+  const handleDownloadClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDownload(material);
+  }, [material, onDownload]);
+
+  const handleLikeClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    onLike(material);
+  }, [material, onLike]);
+
+  const handleShareClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    onShare(material);
+  }, [material, onShare]);
+
+  const toggleDescription = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowDescription(prev => !prev);
+  }, []);
+
+  const fileType = getFileTypeDisplay(material.file_type);
 
   return (
-    <Card className="group overflow-hidden h-full flex flex-col hover:shadow-soft-xl transition-all duration-300 hover:-translate-y-2 border-border-strong/10">
+    <Card className="group overflow-hidden h-full flex flex-col border-border-strong/10 transform-gpu transition-transform duration-300 hover:-translate-y-1 hover:scale-[1.01]">
       <CardContent className="p-0 flex flex-col h-full">
         {/* Top Section - Grows to fill space */}
         <div 
           className="p-6 pb-0 cursor-pointer flex-1 flex flex-col"
-          onClick={() => onPreview(material)}
+          onClick={handlePreviewClick}
         >
           {/* Thumbnail + Content */}
           <div className="flex gap-4">
             <MaterialThumbnail 
-              fileType={getFileTypeDisplay(material.file_type)}
+              fileType={fileType}
               title={material.title}
               thumbnailUrl={material.thumbnail_url || undefined}
-              className="w-20 h-24 flex-shrink-0 transition-transform group-hover:scale-[1.02] rounded-2xl"
+              className="w-20 h-24 flex-shrink-0 transition-transform duration-200 group-hover:scale-[1.02] rounded-2xl"
             />
             
             <div className="flex-1 min-w-0 flex flex-col">
@@ -116,10 +144,7 @@ const MaterialCard = ({
               <button
                 type="button"
                 className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors font-medium"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowDescription(!showDescription);
-                }}
+                onClick={toggleDescription}
               >
                 {showDescription ? (
                   <>
@@ -166,13 +191,10 @@ const MaterialCard = ({
               variant="ghost"
               size="sm"
               className={cn(
-                "h-9 w-9 p-0 rounded-full",
+                "h-9 w-9 p-0 rounded-full transition-colors",
                 material.user_has_liked && "text-red-500 hover:text-red-600 bg-red-50 dark:bg-red-900/20"
               )}
-              onClick={(e) => {
-                e.stopPropagation();
-                onLike(material);
-              }}
+              onClick={handleLikeClick}
               disabled={isLiking}
             >
               <Heart className={cn("w-4 h-4", material.user_has_liked && "fill-current")} strokeWidth={2.5} />
@@ -181,11 +203,8 @@ const MaterialCard = ({
             <Button
               variant="ghost"
               size="sm"
-              className="h-9 w-9 p-0 rounded-full"
-              onClick={(e) => {
-                e.stopPropagation();
-                onShare(material);
-              }}
+              className="h-9 w-9 p-0 rounded-full transition-colors"
+              onClick={handleShareClick}
             >
               <Share2 className="w-4 h-4" strokeWidth={2.5} />
             </Button>
@@ -202,7 +221,7 @@ const MaterialCard = ({
             <Button
               variant="outline"
               size="sm"
-              className="h-9 text-xs font-semibold"
+              className="h-9 text-xs font-semibold transition-colors"
               onClick={(e) => {
                 e.stopPropagation();
                 onPreview(material);
@@ -214,11 +233,8 @@ const MaterialCard = ({
             
             <Button
               size="sm"
-              className="h-9 text-xs font-semibold"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDownload(material);
-              }}
+              className="h-9 text-xs font-semibold transition-colors"
+              onClick={handleDownloadClick}
             >
               <Download className="w-3.5 h-3.5 mr-1" strokeWidth={2.5} />
               Download
@@ -228,6 +244,6 @@ const MaterialCard = ({
       </CardContent>
     </Card>
   );
-};
+});
 
 export default MaterialCard;
