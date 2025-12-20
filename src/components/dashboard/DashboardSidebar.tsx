@@ -16,7 +16,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const DashboardSidebar = () => {
+interface DashboardSidebarProps {
+  isMobile?: boolean;
+}
+
+const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
   const { profile, isOrganizer, isAdmin, signOut } = useAuth();
   const location = useLocation();
 
@@ -40,7 +44,10 @@ const DashboardSidebar = () => {
   const isActive = (href: string) => location.pathname === href;
 
   return (
-    <aside className="hidden lg:flex flex-col w-64 bg-card border-r border-border min-h-screen p-4">
+    <aside className={cn(
+      "flex flex-col bg-card border-r border-border min-h-screen p-4",
+      isMobile ? "w-full" : "hidden lg:flex w-64"
+    )}>
       {/* Logo */}
       <Link to="/" className="flex items-center gap-2 px-3 py-4 mb-6">
         <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
