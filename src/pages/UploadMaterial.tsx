@@ -14,8 +14,9 @@ import { useVerification } from "@/hooks/useVerification";
 import VerificationBanner from "@/components/common/VerificationBanner";
 import { uploadMaterial } from "@/services/materialsService";
 import { toast } from "sonner";
-import { ArrowLeft, Upload, Loader2, FileText, CheckCircle, AlertTriangle, Clock } from "lucide-react";
-import { COURSE_OPTIONS, BRANCH_OPTIONS, LANGUAGE_OPTIONS } from "@/constants/materialOptions";
+import { ArrowLeft, Upload, Loader2, FileText, AlertTriangle, Clock } from "lucide-react";
+import { LANGUAGE_OPTIONS } from "@/constants/materialOptions";
+import { SearchableSelect } from "@/components/common/SearchableSelect";
 
 const UploadMaterial = () => {
   const { user } = useAuth();
@@ -29,9 +30,7 @@ const UploadMaterial = () => {
 
   // New fields
   const [course, setCourse] = useState("");
-  const [customCourse, setCustomCourse] = useState("");
   const [branch, setBranch] = useState("");
-  const [customBranch, setCustomBranch] = useState("");
   const [subject, setSubject] = useState("");
   const [language, setLanguage] = useState("");
   const [customLanguage, setCustomLanguage] = useState("");
@@ -75,11 +74,9 @@ const UploadMaterial = () => {
     }
 
     // Validate required fields
-    const finalCourse = course === 'Other' ? customCourse : course;
-    const finalBranch = branch === 'Other' ? customBranch : branch;
     const finalLanguage = language === 'Other' ? customLanguage : language;
 
-    if (!finalCourse || !finalBranch || !subject || !finalLanguage || !college) {
+    if (!course || !branch || !subject || !finalLanguage || !college) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -94,8 +91,8 @@ const UploadMaterial = () => {
       user.id,
       {
         onProgress: (progress) => setUploadProgress(progress),
-        course: finalCourse,
-        branch: finalBranch,
+        course,
+        branch,
         subject,
         language: finalLanguage,
         college,
@@ -137,9 +134,7 @@ const UploadMaterial = () => {
                     setFile(null); 
                     setUploadProgress(0);
                     setCourse("");
-                    setCustomCourse("");
                     setBranch("");
-                    setCustomBranch("");
                     setSubject("");
                     setLanguage("");
                     setCustomLanguage("");
@@ -207,53 +202,25 @@ const UploadMaterial = () => {
                   />
                 </div>
 
-                {/* Course */}
-                <div className="space-y-2">
-                  <Label>Course *</Label>
-                  <Select value={course} onValueChange={setCourse} disabled={isSubmitting || !canUpload}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select course" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {COURSE_OPTIONS.map((opt) => (
-                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {course === 'Other' && (
-                    <Input
-                      placeholder="Enter course name"
-                      value={customCourse}
-                      onChange={(e) => setCustomCourse(e.target.value)}
-                      required
-                      disabled={isSubmitting || !canUpload}
-                    />
-                  )}
-                </div>
+                {/* College */}
+                <SearchableSelect
+                  label="College/University *"
+                  tableName="lookup_universities"
+                  placeholder="Search for your college..."
+                  value={college}
+                  onSelect={(item) => setCollege(item.name)}
+                  disabled={isSubmitting || !canUpload}
+                />
 
                 {/* Branch */}
-                <div className="space-y-2">
-                  <Label>Branch *</Label>
-                  <Select value={branch} onValueChange={setBranch} disabled={isSubmitting || !canUpload}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select branch" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {BRANCH_OPTIONS.map((opt) => (
-                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {branch === 'Other' && (
-                    <Input
-                      placeholder="Enter branch name"
-                      value={customBranch}
-                      onChange={(e) => setCustomBranch(e.target.value)}
-                      required
-                      disabled={isSubmitting || !canUpload}
-                    />
-                  )}
-                </div>
+                <SearchableSelect
+                  label="Branch/Stream *"
+                  tableName="lookup_branches"
+                  placeholder="Search for your branch..."
+                  value={branch}
+                  onSelect={(item) => setBranch(item.name)}
+                  disabled={isSubmitting || !canUpload}
+                />
 
                 {/* Subject */}
                 <div className="space-y-2">
@@ -263,6 +230,19 @@ const UploadMaterial = () => {
                     placeholder="e.g., Data Structures, Physics"
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
+                    required
+                    disabled={isSubmitting || !canUpload}
+                  />
+                </div>
+
+                {/* Course - Free text for now */}
+                <div className="space-y-2">
+                  <Label htmlFor="course">Course *</Label>
+                  <Input
+                    id="course"
+                    placeholder="e.g., B.Tech, BCA, MBA"
+                    value={course}
+                    onChange={(e) => setCourse(e.target.value)}
                     required
                     disabled={isSubmitting || !canUpload}
                   />
@@ -290,19 +270,6 @@ const UploadMaterial = () => {
                       disabled={isSubmitting || !canUpload}
                     />
                   )}
-                </div>
-
-                {/* College */}
-                <div className="space-y-2">
-                  <Label htmlFor="college">College *</Label>
-                  <Input
-                    id="college"
-                    placeholder="e.g., ABC Engineering College"
-                    value={college}
-                    onChange={(e) => setCollege(e.target.value)}
-                    required
-                    disabled={isSubmitting || !canUpload}
-                  />
                 </div>
 
                 <div className="space-y-2">
