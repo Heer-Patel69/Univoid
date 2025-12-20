@@ -69,7 +69,7 @@ const Dashboard = () => {
   const collaborationActions = [
     { label: "My Projects", icon: Folder, href: "/projects", color: "text-purple-500", bgColor: "bg-purple-500/10" },
     { label: "Task Plaza", icon: Briefcase, href: "/tasks", color: "text-orange-500", bgColor: "bg-orange-500/10" },
-    { label: "My Events", icon: Calendar, href: "/my-tickets", color: "text-blue-500", bgColor: "bg-blue-500/10" },
+    { label: "My Events", icon: Calendar, href: "/my-events", color: "text-blue-500", bgColor: "bg-blue-500/10" },
   ];
 
   if (showLoadingOverlay) {
