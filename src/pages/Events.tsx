@@ -1,5 +1,4 @@
-import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -9,10 +8,11 @@ import { EventCardSkeleton } from "@/components/events/EventCardSkeleton";
 import { EventFilters } from "@/components/events/EventFilters";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { fetchEvents } from "@/services/eventsService";
+import { fetchEvents, Event } from "@/services/eventsService";
 import { useAuth } from "@/contexts/AuthContext";
 import { Plus, Calendar } from "lucide-react";
 import AuthModal from "@/components/auth/AuthModal";
+import { supabase } from "@/integrations/supabase/client";
 
 const Events = () => {
   const { user } = useAuth();
@@ -20,16 +20,73 @@ const Events = () => {
   const [category, setCategory] = useState("all");
   const [priceFilter, setPriceFilter] = useState("all");
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const { data: events, isLoading } = useQuery({
-    queryKey: ["events", category, priceFilter, search],
-    queryFn: () =>
-      fetchEvents({
-        category: category !== "all" ? category : undefined,
-        is_paid: priceFilter === "all" ? undefined : priceFilter === "paid",
-        search: search || undefined,
-      }),
-  });
+  // Fetch events with filters
+  useEffect(() => {
+    const loadEvents = async () => {
+      setIsLoading(true);
+      try {
+        const data = await fetchEvents({
+          category: category !== "all" ? category : undefined,
+          is_paid: priceFilter === "all" ? undefined : priceFilter === "paid",
+          search: search || undefined,
+        });
+        setEvents(data);
+      } catch (error) {
+        console.error('Failed to fetch events:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadEvents();
+  }, [category, priceFilter, search]);
+
+  // Real-time subscription for instant updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('events-page-realtime')
+      .on(
+        'postgres_changes' as any,
+        { event: '*', schema: 'public', table: 'events' },
+        (payload: any) => {
+          if (payload.eventType === 'INSERT' && payload.new?.status === 'published') {
+            setEvents(prev => {
+              if (prev.some(e => e.id === payload.new.id)) return prev;
+              const newEvent = payload.new as Event;
+              return [...prev, newEvent].sort((a, b) => 
+                new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
+              );
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            const updated = payload.new as Event;
+            setEvents(prev => {
+              // If status changed to published, add it
+              if (updated.status === 'published' && !prev.some(e => e.id === updated.id)) {
+                return [...prev, updated].sort((a, b) => 
+                  new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
+                );
+              }
+              // If no longer published, remove
+              if (updated.status !== 'published') {
+                return prev.filter(e => e.id !== updated.id);
+              }
+              // Otherwise update
+              return prev.map(e => e.id === updated.id ? { ...e, ...updated } : e);
+            });
+          } else if (payload.eventType === 'DELETE') {
+            setEvents(prev => prev.filter(e => e.id !== payload.old?.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const clearFilters = () => {
     setSearch("");

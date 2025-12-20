@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, memo } from "react";
+import { useState, useCallback, useMemo, memo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -17,13 +17,13 @@ import { getDownloadUrl } from "@/services/materialsService";
 import { getMaterialsPaginated } from "@/services/paginatedService";
 import { EmptyState, LoadMoreButton } from "@/components/common/SectionLoader";
 import { LazySection } from "@/components/common/LazySection";
-import { useOptimizedFetch, CACHE_TTL } from "@/hooks/useOptimizedFetch";
 import { useDeviceCapability, deferAfterPaint } from "@/hooks/useDeviceCapability";
 import { Material } from "@/types/database";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { CACHE_TTL } from "@/hooks/useOptimizedFetch";
 
 // Memoized header component to prevent re-renders
 const MaterialsHeader = memo(function MaterialsHeader() {
@@ -77,6 +77,7 @@ const Materials = () => {
   const [allMaterials, setAllMaterials] = useState<Material[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isFiltering, setIsFiltering] = useState(false);
   const [likingIds, setLikingIds] = useState<Set<string>>(new Set());
 
@@ -87,16 +88,41 @@ const Materials = () => {
     const result = await getMaterialsPaginated(0, batchSize);
     setAllMaterials(result.data);
     setHasMore(result.hasMore);
+    setIsLoading(false);
     return result.data;
   }, [batchSize]);
 
-  const { isLoading } = useOptimizedFetch({
-    fetchFn: fetchMaterials,
-    defaultValue: [] as Material[],
-    timeoutMs: 8000,
-    cacheKey: 'materials-page-0',
-    cacheTtl: CACHE_TTL.LONG,
-  });
+  // Initial fetch + real-time subscription
+  useEffect(() => {
+    fetchMaterials();
+
+    // Real-time subscription for instant updates
+    const channel = supabase
+      .channel('materials-page-realtime')
+      .on(
+        'postgres_changes' as any,
+        { event: '*', schema: 'public', table: 'materials' },
+        (payload: any) => {
+          if (payload.eventType === 'INSERT' && payload.new?.status === 'approved') {
+            setAllMaterials(prev => {
+              if (prev.some(m => m.id === payload.new.id)) return prev;
+              return [payload.new as Material, ...prev];
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            setAllMaterials(prev => prev.map(m => 
+              m.id === payload.new.id ? { ...m, ...payload.new } : m
+            ));
+          } else if (payload.eventType === 'DELETE') {
+            setAllMaterials(prev => prev.filter(m => m.id !== payload.old?.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchMaterials]);
 
   const applyFilters = useCallback(async (newFilters: MaterialFiltersState) => {
     setFilters(newFilters);
