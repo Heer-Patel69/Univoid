@@ -472,11 +472,11 @@ const Admin = () => {
     }
   };
 
-  const handleAdminPreviewComplete = useCallback((materialId: string) => {
+  const handleAdminPreviewComplete = (materialId: string) => {
     setPreviewedMaterialIds(prev => new Set(prev).add(materialId));
     // Update in database
     supabase.from('materials').update({ admin_previewed: true }).eq('id', materialId);
-  }, []);
+  };
 
   const renderContentTable = (items: ContentItem[], type: 'materials' | 'news' | 'books') => {
     if (items.length === 0) {
