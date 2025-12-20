@@ -33,7 +33,7 @@ import {
   FileText,
   Bell,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
@@ -65,6 +65,30 @@ export const MobileNavDrawer = ({ onAuthClick }: MobileNavDrawerProps) => {
   });
   const { user, profile, isAdmin, isOrganizer, signOut } = useAuth();
   const location = useLocation();
+
+  // Swipe gesture handling
+  const touchStartX = useRef<number>(0);
+  const touchCurrentX = useRef<number>(0);
+  const SWIPE_THRESHOLD = 80;
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchCurrentX.current = e.touches[0].clientX;
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    touchCurrentX.current = e.touches[0].clientX;
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    const deltaX = touchStartX.current - touchCurrentX.current;
+    // Swipe left to close (since drawer is on the left side)
+    if (deltaX > SWIPE_THRESHOLD) {
+      setOpen(false);
+    }
+    touchStartX.current = 0;
+    touchCurrentX.current = 0;
+  }, []);
 
   const toggleSection = (section: string) => {
     setExpandedSections(prev => ({
@@ -162,6 +186,9 @@ export const MobileNavDrawer = ({ onAuthClick }: MobileNavDrawerProps) => {
       <SheetContent 
         side="left" 
         className="w-[300px] p-0 flex flex-col bg-background border-r border-border"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
         <SheetHeader className="p-4 border-b border-border">
           <div className="flex items-center justify-between">
