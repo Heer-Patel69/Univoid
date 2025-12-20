@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -7,19 +7,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import { useVerification } from "@/hooks/useVerification";
 import VerificationBanner from "@/components/common/VerificationBanner";
 import { uploadMaterial } from "@/services/materialsService";
 import { toast } from "sonner";
-import { ArrowLeft, Upload, Loader2, FileText, AlertTriangle, Clock } from "lucide-react";
+import { ArrowLeft, Loader2, FileText, AlertTriangle, Clock } from "lucide-react";
 import { LANGUAGE_OPTIONS } from "@/constants/materialOptions";
 import { SearchableSelect } from "@/components/common/SearchableSelect";
+import { FileUploadZone } from "@/components/common/FileUploadZone";
 
 const UploadMaterial = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { isVerified, canUpload } = useVerification();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -28,31 +28,41 @@ const UploadMaterial = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  // New fields
+  // Form fields - pre-fill from profile where possible
   const [course, setCourse] = useState("");
   const [branch, setBranch] = useState("");
+  const [branchId, setBranchId] = useState("");
   const [subject, setSubject] = useState("");
   const [language, setLanguage] = useState("");
   const [customLanguage, setCustomLanguage] = useState("");
   const [college, setCollege] = useState("");
+  const [collegeId, setCollegeId] = useState("");
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      // Check if it's a video file
-      const videoExtensions = ['mp4', 'mkv', 'avi', 'mov', 'wmv', 'flv', 'webm'];
-      const ext = selectedFile.name.split('.').pop()?.toLowerCase() || '';
-      if (videoExtensions.includes(ext)) {
-        toast.error("Video files are not allowed");
-        return;
+  // Pre-fill from profile on mount
+  useEffect(() => {
+    if (profile) {
+      if (profile.college_name && !college) {
+        setCollege(profile.college_name);
       }
-      // Check file size (max 10MB for cloud optimization)
-      if (selectedFile.size > 10 * 1024 * 1024) {
-        toast.error("File size must be less than 10MB for optimal performance");
-        return;
+      if ((profile.branch || profile.course_stream) && !branch) {
+        setBranch(profile.branch || profile.course_stream || "");
       }
-      setFile(selectedFile);
     }
+  }, [profile, college, branch]);
+
+  const handleFileSelect = (selectedFile: File) => {
+    // Validate file
+    const videoExtensions = ['mp4', 'mkv', 'avi', 'mov', 'wmv', 'flv', 'webm'];
+    const ext = selectedFile.name.split('.').pop()?.toLowerCase() || '';
+    if (videoExtensions.includes(ext)) {
+      toast.error("Video files are not allowed");
+      return;
+    }
+    if (selectedFile.size > 10 * 1024 * 1024) {
+      toast.error("File size must be less than 10MB");
+      return;
+    }
+    setFile(selectedFile);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -135,10 +145,12 @@ const UploadMaterial = () => {
                     setUploadProgress(0);
                     setCourse("");
                     setBranch("");
+                    setBranchId("");
                     setSubject("");
                     setLanguage("");
                     setCustomLanguage("");
                     setCollege("");
+                    setCollegeId("");
                   }}>
                     Upload Another
                   </Button>
@@ -286,45 +298,17 @@ const UploadMaterial = () => {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="file">File *</Label>
-                  <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
-                    <input
-                      id="file"
-                      type="file"
-                      className="hidden"
-                      accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.md,.jpg,.jpeg,.png"
-                      onChange={handleFileChange}
-                      disabled={isSubmitting || !canUpload}
-                    />
-                    <label htmlFor="file" className={`cursor-pointer ${(isSubmitting || !canUpload) ? 'pointer-events-none' : ''}`}>
-                      {file ? (
-                        <div className="flex items-center justify-center gap-2">
-                          <FileText className="w-5 h-5 text-primary" />
-                          <span className="text-foreground font-medium">{file.name}</span>
-                          <span className="text-muted-foreground text-sm">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
-                        </div>
-                      ) : (
-                        <>
-                          <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                          <p className="text-muted-foreground">Click to select a file</p>
-                          <p className="text-xs text-muted-foreground mt-1">PDF, DOC, PPT, images (max 10MB, NO videos)</p>
-                        </>
-                      )}
-                    </label>
-                  </div>
-                </div>
-
-                {/* Upload Progress */}
-                {isSubmitting && (
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Uploading...</span>
-                      <span className="font-medium text-primary">{Math.round(uploadProgress)}%</span>
-                    </div>
-                    <Progress value={uploadProgress} className="h-2" />
-                  </div>
-                )}
+                {/* File Upload - Consistent UX for mobile & desktop */}
+                <FileUploadZone
+                  label="File *"
+                  file={file}
+                  onFileSelect={handleFileSelect}
+                  onClear={() => setFile(null)}
+                  disabled={!canUpload}
+                  isUploading={isSubmitting}
+                  uploadProgress={uploadProgress}
+                  hint="PDF, DOC, PPT, images (max 10MB, NO videos)"
+                />
 
                 <Button type="submit" className="w-full" disabled={isSubmitting || !canUpload}>
                   {isSubmitting ? (
@@ -334,7 +318,7 @@ const UploadMaterial = () => {
                     </>
                   ) : (
                     <>
-                      <Upload className="w-4 h-4 mr-2" />
+                      <FileText className="w-4 h-4 mr-2" />
                       Upload Material
                     </>
                   )}
