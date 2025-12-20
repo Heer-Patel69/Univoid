@@ -1,22 +1,23 @@
 import { useState, useEffect } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate, useOutletContext } from "react-router-dom";
 import { Helmet } from "react-helmet";
-import { Search, MapPin, GraduationCap, Calendar, ExternalLink, Filter, Sparkles, CheckCircle2, Bell, BellOff, Loader2 } from "lucide-react";
+import { Search, MapPin, GraduationCap, Calendar, ExternalLink, Sparkles, CheckCircle2, Bell, BellOff, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { BottomNav } from "@/components/layout/BottomNav";
 import { useRealtimeScholarships } from "@/hooks/useRealtimeScholarships";
 import { useAuth } from "@/contexts/AuthContext";
 import { format, differenceInDays } from "date-fns";
 import { toast } from "sonner";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
-import { BottomNav } from "@/components/layout/BottomNav";
-import AuthModal from "@/components/auth/AuthModal";
 import { scholarshipRemindersService } from "@/services/scholarshipRemindersService";
+
+interface LayoutContext {
+  onAuthClick?: () => void;
+}
 
 const INDIAN_STATES = [
   "All States", "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
@@ -33,11 +34,11 @@ export default function Scholarships() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user, profile } = useAuth();
+  const context = useOutletContext<LayoutContext>();
   
   const [search, setSearch] = useState("");
   const [stateFilter, setStateFilter] = useState<string>(profile?.state || "All States");
   const [courseFilter, setCourseFilter] = useState<string>("All Courses");
-  const [showAuthModal, setShowAuthModal] = useState(false);
   const [userReminders, setUserReminders] = useState<Set<string>>(new Set());
   const [loadingReminders, setLoadingReminders] = useState<Set<string>>(new Set());
 
@@ -52,7 +53,7 @@ export default function Scholarships() {
 
   const handleToggleReminder = async (scholarshipId: string, scholarshipTitle: string) => {
     if (!user) {
-      setShowAuthModal(true);
+      context?.onAuthClick?.();
       return;
     }
 
@@ -126,9 +127,7 @@ export default function Scholarships() {
         <meta name="description" content="Find verified scholarships for Indian students. State-wise, course-wise personalized scholarship opportunities from government and trusted sources." />
       </Helmet>
 
-      <Header onAuthClick={() => setShowAuthModal(true)} />
-
-      <div className="min-h-screen bg-background paper-texture pb-20 md:pb-0">
+      <div className="pb-20 md:pb-0">
         <div className="container mx-auto px-4 py-8">
           {/* Header */}
           <div className="mb-8">
@@ -336,13 +335,7 @@ export default function Scholarships() {
         </div>
       </div>
 
-      <Footer />
       <BottomNav />
-      
-      <AuthModal 
-        isOpen={showAuthModal} 
-        onClose={() => setShowAuthModal(false)} 
-      />
     </>
   );
 }

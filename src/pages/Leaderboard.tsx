@@ -1,14 +1,14 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
+import { Link, useOutletContext } from "react-router-dom";
 import { BottomNav } from "@/components/layout/BottomNav";
-import AuthModal from "@/components/auth/AuthModal";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Trophy, Medal, Award, User, ArrowRight, Crown, Loader2 } from "lucide-react";
 import { useLeaderboard } from "@/hooks/useLeaderboard";
-import { PublicProfile } from "@/types/database";
+
+interface LayoutContext {
+  onAuthClick?: () => void;
+}
 
 const getRankIcon = (rank: number) => {
   switch (rank) {
@@ -41,16 +41,14 @@ const getRankStyles = (rank: number) => {
 };
 
 const Leaderboard = () => {
-  const [authOpen, setAuthOpen] = useState(false);
+  const context = useOutletContext<LayoutContext>();
   const { leaderboard, isLoading } = useLeaderboard(50);
 
   const topThree = leaderboard.slice(0, 3);
 
   return (
-    <div className="min-h-screen flex flex-col bg-background paper-texture pb-20 md:pb-0">
-      <Header onAuthClick={() => setAuthOpen(true)} />
-      
-      <main className="flex-1 py-10 md:py-14">
+    <div className="pb-20 md:pb-0">
+      <main className="py-10 md:py-14">
         <div className="container-wide">
           {/* Header */}
           <div className="mb-10 text-center">
@@ -201,7 +199,7 @@ const Leaderboard = () => {
               <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                 Start contributing study materials or share news. Every approved contribution earns you XP.
               </p>
-              <Button onClick={() => setAuthOpen(true)} className="shadow-premium-sm">
+              <Button onClick={context?.onAuthClick} className="shadow-premium-sm">
                 Start contributing
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
@@ -210,14 +208,7 @@ const Leaderboard = () => {
         </div>
       </main>
 
-      <Footer />
       <BottomNav />
-      
-      <AuthModal 
-        isOpen={authOpen} 
-        onClose={() => setAuthOpen(false)}
-        message="Sign in to track your progress and climb the leaderboard"
-      />
     </div>
   );
 };

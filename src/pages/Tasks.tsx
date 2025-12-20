@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
+import { Link, useOutletContext } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,10 +19,9 @@ import {
   hasExistingBid,
   createBid
 } from "@/services/taskPlazaService";
-import AuthModal from "@/components/auth/AuthModal";
 import { Helmet } from "react-helmet";
 import { toast } from "sonner";
-import { format, formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import {
   Dialog,
   DialogContent,
@@ -35,14 +32,18 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 
+interface LayoutContext {
+  onAuthClick?: () => void;
+}
+
 const Tasks = () => {
   const { user } = useAuth();
+  const context = useOutletContext<LayoutContext>();
   
   const [openTasks, setOpenTasks] = useState<TaskRequest[]>([]);
   const [myRequests, setMyRequests] = useState<TaskRequest[]>([]);
   const [myAssigned, setMyAssigned] = useState<TaskRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [showAuthModal, setShowAuthModal] = useState(false);
   const [bidTask, setBidTask] = useState<TaskRequest | null>(null);
   const [bidMessage, setBidMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -157,7 +158,7 @@ const Tasks = () => {
               onClick={(e) => {
                 e.preventDefault();
                 if (!user) {
-                  setShowAuthModal(true);
+                  context?.onAuthClick?.();
                   return;
                 }
                 setBidTask(task);
@@ -189,134 +190,133 @@ const Tasks = () => {
         <meta name="description" content="A marketplace where students can help each other with assignments, manuals, and presentations. Semi-anonymous and secure." />
       </Helmet>
 
-      <div className="min-h-screen flex flex-col bg-background paper-texture">
-        <Header onAuthClick={() => setShowAuthModal(true)} />
-        
-        <main className="flex-1 py-8">
-          <div className="container-wide">
-            {/* Header */}
-            <div className="mb-8">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                  <h1 className="text-2xl md:text-3xl font-bold text-foreground flex items-center gap-3">
-                    <Briefcase className="w-8 h-8 text-primary" />
-                    Task Plaza
-                  </h1>
-                  <p className="text-muted-foreground mt-1">
-                    Help others or get help with your work
-                  </p>
-                </div>
-                
-                {user && (
-                  <Link to="/tasks/create">
-                    <Button className="gap-2">
-                      <Plus className="w-4 h-4" />
-                      Post a Need
-                    </Button>
-                  </Link>
-                )}
+      <div className="py-8">
+        <div className="container-wide">
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-foreground flex items-center gap-3">
+                  <Briefcase className="w-8 h-8 text-primary" />
+                  Task Plaza
+                </h1>
+                <p className="text-muted-foreground mt-1">
+                  Help others or get help with your work
+                </p>
               </div>
+              
+              {user ? (
+                <Link to="/tasks/create">
+                  <Button className="gap-2">
+                    <Plus className="w-4 h-4" />
+                    Post a Need
+                  </Button>
+                </Link>
+              ) : (
+                <Button className="gap-2" onClick={context?.onAuthClick}>
+                  <Plus className="w-4 h-4" />
+                  Post a Need
+                </Button>
+              )}
             </div>
+          </div>
 
-            {/* Tabs */}
-            <Tabs defaultValue="browse" className="space-y-6">
-              <TabsList>
-                <TabsTrigger value="browse">Browse Tasks</TabsTrigger>
-                {user && (
-                  <>
-                    <TabsTrigger value="my-requests">My Requests</TabsTrigger>
-                    <TabsTrigger value="my-work">My Work</TabsTrigger>
-                  </>
-                )}
-              </TabsList>
-
-              <TabsContent value="browse" className="mt-0">
-                {isLoading ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {[...Array(6)].map((_, i) => (
-                      <TaskSkeleton key={i} />
-                    ))}
-                  </div>
-                ) : openTasks.length === 0 ? (
-                  <Card className="border-dashed">
-                    <CardContent className="py-12 text-center">
-                      <Briefcase className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                      <h3 className="text-lg font-medium text-foreground mb-2">
-                        No tasks available
-                      </h3>
-                      <p className="text-muted-foreground">
-                        Check back later for new tasks
-                      </p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {openTasks.map((task) => (
-                      <TaskCard key={task.id} task={task} showBidButton />
-                    ))}
-                  </div>
-                )}
-              </TabsContent>
-
+          {/* Tabs */}
+          <Tabs defaultValue="browse" className="space-y-6">
+            <TabsList>
+              <TabsTrigger value="browse">Browse Tasks</TabsTrigger>
               {user && (
                 <>
-                  <TabsContent value="my-requests" className="mt-0">
-                    {myRequests.length === 0 ? (
-                      <Card className="border-dashed">
-                        <CardContent className="py-12 text-center">
-                          <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                          <h3 className="text-lg font-medium text-foreground mb-2">
-                            No task requests yet
-                          </h3>
-                          <p className="text-muted-foreground mb-4">
-                            Post a task to get help from others
-                          </p>
-                          <Link to="/tasks/create">
-                            <Button>Post a Need</Button>
-                          </Link>
-                        </CardContent>
-                      </Card>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {myRequests.map((task) => (
-                          <Link key={task.id} to={`/tasks/${task.id}`}>
-                            <TaskCard task={task} />
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-                  </TabsContent>
-
-                  <TabsContent value="my-work" className="mt-0">
-                    {myAssigned.length === 0 ? (
-                      <Card className="border-dashed">
-                        <CardContent className="py-12 text-center">
-                          <Hand className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                          <h3 className="text-lg font-medium text-foreground mb-2">
-                            No assigned work
-                          </h3>
-                          <p className="text-muted-foreground">
-                            Bid on tasks to start earning
-                          </p>
-                        </CardContent>
-                      </Card>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {myAssigned.map((task) => (
-                          <Link key={task.id} to={`/tasks/${task.id}`}>
-                            <TaskCard task={task} />
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-                  </TabsContent>
+                  <TabsTrigger value="my-requests">My Requests</TabsTrigger>
+                  <TabsTrigger value="my-work">My Work</TabsTrigger>
                 </>
               )}
-            </Tabs>
-          </div>
-        </main>
+            </TabsList>
 
-        <Footer />
+            <TabsContent value="browse" className="mt-0">
+              {isLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[...Array(6)].map((_, i) => (
+                    <TaskSkeleton key={i} />
+                  ))}
+                </div>
+              ) : openTasks.length === 0 ? (
+                <Card className="border-dashed">
+                  <CardContent className="py-12 text-center">
+                    <Briefcase className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-medium text-foreground mb-2">
+                      No tasks available
+                    </h3>
+                    <p className="text-muted-foreground">
+                      Check back later for new tasks
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {openTasks.map((task) => (
+                    <TaskCard key={task.id} task={task} showBidButton />
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
+            {user && (
+              <>
+                <TabsContent value="my-requests" className="mt-0">
+                  {myRequests.length === 0 ? (
+                    <Card className="border-dashed">
+                      <CardContent className="py-12 text-center">
+                        <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                        <h3 className="text-lg font-medium text-foreground mb-2">
+                          No task requests yet
+                        </h3>
+                        <p className="text-muted-foreground mb-4">
+                          Post a task to get help from others
+                        </p>
+                        <Link to="/tasks/create">
+                          <Button>Post a Need</Button>
+                        </Link>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {myRequests.map((task) => (
+                        <Link key={task.id} to={`/tasks/${task.id}`}>
+                          <TaskCard task={task} />
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="my-work" className="mt-0">
+                  {myAssigned.length === 0 ? (
+                    <Card className="border-dashed">
+                      <CardContent className="py-12 text-center">
+                        <Hand className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                        <h3 className="text-lg font-medium text-foreground mb-2">
+                          No assigned work
+                        </h3>
+                        <p className="text-muted-foreground">
+                          Bid on tasks to start earning
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {myAssigned.map((task) => (
+                        <Link key={task.id} to={`/tasks/${task.id}`}>
+                          <TaskCard task={task} />
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+              </>
+            )}
+          </Tabs>
+        </div>
       </div>
 
       {/* Bid Dialog */}
@@ -356,11 +356,6 @@ const Tasks = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <AuthModal 
-        isOpen={showAuthModal} 
-        onClose={() => setShowAuthModal(false)} 
-      />
     </>
   );
 };
