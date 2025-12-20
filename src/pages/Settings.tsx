@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,6 +37,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { FloatingDoodles } from "@/components/common/FloatingDoodles";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -88,34 +91,40 @@ const Settings = () => {
   };
 
   return (
-    <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-3xl mx-auto space-y-6">
-      <Button variant="ghost" size="sm" className="border-2 border-sketch-border shadow-sketch-sm hover:shadow-sketch hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all rounded-xl" onClick={() => navigate("/dashboard")}>
-        <ArrowLeft className="w-4 h-4 mr-1" strokeWidth={2} />
-        Back to Dashboard
-      </Button>
+    <div className="min-h-screen flex flex-col bg-sketch paper-texture">
+      <Header onAuthClick={() => {}} />
 
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Settings</h1>
-        <p className="text-muted-foreground mt-1">
-          Manage your account preferences and privacy
-        </p>
-      </div>
+      <main className="flex-1 py-8 relative overflow-hidden">
+        <FloatingDoodles density="medium" />
+        
+        <div className="container-wide max-w-3xl relative z-10">
+          <Button variant="ghost" size="sm" className="mb-6 border-2 border-sketch-border shadow-sketch-sm hover:shadow-sketch hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all rounded-xl" onClick={() => navigate("/dashboard")}>
+            <ArrowLeft className="w-4 h-4 mr-1" strokeWidth={2} />
+            Back to Dashboard
+          </Button>
 
-      <Tabs defaultValue="notifications" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 h-auto p-1 border-2 border-sketch-border shadow-sketch-sm rounded-xl bg-card">
-          <TabsTrigger value="notifications" className="flex items-center gap-2 py-3 rounded-lg data-[state=active]:bg-secondary data-[state=active]:shadow-sketch-sm data-[state=active]:border-2 data-[state=active]:border-sketch-border">
-            <Bell className="w-4 h-4" strokeWidth={2} />
-            <span className="hidden sm:inline">Notifications</span>
-          </TabsTrigger>
-          <TabsTrigger value="privacy" className="flex items-center gap-2 py-3 rounded-lg data-[state=active]:bg-secondary data-[state=active]:shadow-sketch-sm data-[state=active]:border-2 data-[state=active]:border-sketch-border">
-            <Shield className="w-4 h-4" strokeWidth={2} />
-            <span className="hidden sm:inline">Privacy</span>
-          </TabsTrigger>
-          <TabsTrigger value="account" className="flex items-center gap-2 py-3 rounded-lg data-[state=active]:bg-secondary data-[state=active]:shadow-sketch-sm data-[state=active]:border-2 data-[state=active]:border-sketch-border">
-            <User className="w-4 h-4" strokeWidth={2} />
-            <span className="hidden sm:inline">Account</span>
-          </TabsTrigger>
-        </TabsList>
+          <div className="mb-8">
+            <h1 className="text-2xl font-bold text-foreground">Settings</h1>
+            <p className="text-muted-foreground mt-1">
+              Manage your account preferences and privacy
+            </p>
+          </div>
+
+          <Tabs defaultValue="notifications" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-3 h-auto p-1 border-2 border-sketch-border shadow-sketch-sm rounded-xl bg-card">
+              <TabsTrigger value="notifications" className="flex items-center gap-2 py-3 rounded-lg data-[state=active]:bg-secondary data-[state=active]:shadow-sketch-sm data-[state=active]:border-2 data-[state=active]:border-sketch-border">
+                <Bell className="w-4 h-4" strokeWidth={2} />
+                <span className="hidden sm:inline">Notifications</span>
+              </TabsTrigger>
+              <TabsTrigger value="privacy" className="flex items-center gap-2 py-3 rounded-lg data-[state=active]:bg-secondary data-[state=active]:shadow-sketch-sm data-[state=active]:border-2 data-[state=active]:border-sketch-border">
+                <Shield className="w-4 h-4" strokeWidth={2} />
+                <span className="hidden sm:inline">Privacy</span>
+              </TabsTrigger>
+              <TabsTrigger value="account" className="flex items-center gap-2 py-3 rounded-lg data-[state=active]:bg-secondary data-[state=active]:shadow-sketch-sm data-[state=active]:border-2 data-[state=active]:border-sketch-border">
+                <User className="w-4 h-4" strokeWidth={2} />
+                <span className="hidden sm:inline">Account</span>
+              </TabsTrigger>
+            </TabsList>
 
             {/* Notifications Tab */}
             <TabsContent value="notifications" className="space-y-6">
@@ -317,8 +326,12 @@ const Settings = () => {
                   </div>
                 </CardContent>
               </Card>
-        </TabsContent>
-      </Tabs>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </main>
+
+      <Footer />
     </div>
   );
 };
