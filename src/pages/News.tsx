@@ -1,9 +1,6 @@
 import { useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import { BottomNav } from "@/components/layout/BottomNav";
-import AuthModal from "@/components/auth/AuthModal";
 import ReportButton from "@/components/reports/ReportButton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +13,10 @@ import { SectionLoader, EmptyState, LoadMoreButton } from "@/components/common/S
 import { News as NewsType } from "@/types/database";
 import { format } from "date-fns";
 import { toast } from "sonner";
+
+interface LayoutContext {
+  onAuthClick?: () => void;
+}
 
 type NewsCategory = "all" | "scholarship" | "job" | "placement" | "general";
 
@@ -30,8 +31,7 @@ const CATEGORY_CONFIG: Record<NewsCategory, { label: string; icon: React.ReactNo
 const News = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [authOpen, setAuthOpen] = useState(false);
-  const [authMessage, setAuthMessage] = useState("");
+  const context = useOutletContext<LayoutContext>();
   const [category, setCategory] = useState<NewsCategory>("all");
   const [page, setPage] = useState(0);
   const [allNews, setAllNews] = useState<NewsType[]>([]);
@@ -111,8 +111,7 @@ const News = () => {
     if (user) {
       navigate("/submit-news");
     } else {
-      setAuthMessage("Sign in to submit news");
-      setAuthOpen(true);
+      context?.onAuthClick?.();
     }
   };
 
@@ -147,10 +146,8 @@ const News = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background paper-texture pb-20 md:pb-0">
-      <Header onAuthClick={() => setAuthOpen(true)} />
-
-      <main className="flex-1 py-10 md:py-14">
+    <div className="pb-20 md:pb-0">
+      <main className="py-10 md:py-14">
         <div className="container-wide">
           {/* Header */}
           <div className="mb-8">
@@ -218,8 +215,7 @@ const News = () => {
                       size="sm"
                       onClick={() => {
                         if (!user) {
-                          setAuthMessage("Sign in to enable scholarship alerts");
-                          setAuthOpen(true);
+                          context?.onAuthClick?.();
                         } else {
                           navigate("/dashboard");
                           toast.success("Manage alerts in your dashboard");
@@ -320,10 +316,7 @@ const News = () => {
         </div>
       </main>
 
-      <Footer />
       <BottomNav />
-
-      <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} message={authMessage} />
     </div>
   );
 };
