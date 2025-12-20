@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Download, FileText, Image, File, Lock, 
   Eye, Calendar, User, HardDrive, Loader2, BookOpen, AlertTriangle,
@@ -57,6 +58,7 @@ export default function EnhancedMaterialPreview({
 }: EnhancedMaterialPreviewProps) {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
+  const [isGeneratingUrl, setIsGeneratingUrl] = useState(true);
   const [previewError, setPreviewError] = useState(false);
   const [hasAdminPreviewed, setHasAdminPreviewed] = useState(false);
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
@@ -66,6 +68,7 @@ export default function EnhancedMaterialPreview({
   useEffect(() => {
     if (isOpen && material) {
       setIsLoading(true);
+      setIsGeneratingUrl(true);
       setPreviewError(false);
       setHasAdminPreviewed(false);
       setSignedUrl(null);
@@ -85,12 +88,14 @@ export default function EnhancedMaterialPreview({
     if (!urlToUse || urlToUse.trim() === '') {
       setUrlError('Preview URL not available');
       setIsLoading(false);
+      setIsGeneratingUrl(false);
       return;
     }
 
     // If URL is already a signed URL or external URL, use it directly
     if (urlToUse.includes('token=') || urlToUse.startsWith('http')) {
       setSignedUrl(urlToUse);
+      setIsGeneratingUrl(false);
       return;
     }
 
@@ -118,8 +123,36 @@ export default function EnhancedMaterialPreview({
     } catch (err) {
       console.error('Error generating signed URL:', err);
       setSignedUrl(urlToUse);
+    } finally {
+      setIsGeneratingUrl(false);
     }
   };
+
+  // Skeleton component for loading state
+  const renderLoadingSkeleton = () => (
+    <div className="aspect-[3/4] min-h-[500px] bg-muted rounded-lg overflow-hidden border border-border p-6 space-y-4">
+      <div className="flex items-center justify-center mb-4">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+      <Skeleton className="h-4 w-3/4 mx-auto" />
+      <Skeleton className="h-4 w-1/2 mx-auto" />
+      <div className="space-y-3 mt-8">
+        <Skeleton className="h-3 w-full" />
+        <Skeleton className="h-3 w-full" />
+        <Skeleton className="h-3 w-5/6" />
+        <Skeleton className="h-3 w-full" />
+        <Skeleton className="h-3 w-4/5" />
+      </div>
+      <div className="space-y-3 mt-6">
+        <Skeleton className="h-3 w-full" />
+        <Skeleton className="h-3 w-full" />
+        <Skeleton className="h-3 w-3/4" />
+      </div>
+      <div className="text-center mt-6">
+        <span className="text-sm text-muted-foreground">Preparing preview...</span>
+      </div>
+    </div>
+  );
 
   // Mark admin preview complete
   useEffect(() => {
@@ -368,11 +401,13 @@ export default function EnhancedMaterialPreview({
 
         <ScrollArea className="flex-1 overflow-auto">
           <div className="p-4 space-y-6">
-            {/* Preview Area */}
-            {isPdf ? renderPdfPreview() : 
-             isImage ? renderImagePreview() : 
-             isZip ? renderZipPreview() :
-             renderDocPreview()}
+            {/* Preview Area - Show skeleton while generating URL */}
+            {isGeneratingUrl ? renderLoadingSkeleton() : (
+              isPdf ? renderPdfPreview() : 
+              isImage ? renderImagePreview() : 
+              isZip ? renderZipPreview() :
+              renderDocPreview()
+            )}
 
             {/* Admin Preview Status */}
             {isAdmin && material.status === 'pending' && (
