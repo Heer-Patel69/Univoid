@@ -12,6 +12,7 @@ import { ArrowLeft, Loader2, Save, Camera, User, X, Plus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { NotificationPreferences } from "@/components/dashboard/NotificationPreferences";
 
 
 const SKILL_SUGGESTIONS = [
@@ -163,7 +164,7 @@ const EditProfile = () => {
       <Header onAuthClick={() => {}} />
       
       <main className="flex-1 py-8">
-        <div className="container-wide max-w-xl">
+        <div className="container-wide max-w-2xl">
           <Button variant="ghost" size="sm" className="mb-6" onClick={() => navigate(-1)}>
             <ArrowLeft className="w-4 h-4 mr-1" />
             Back
@@ -353,6 +354,11 @@ const EditProfile = () => {
               </form>
             </CardContent>
           </Card>
+
+          {/* Notification Preferences */}
+          <div className="mt-6">
+            <NotificationPreferences />
+          </div>
         </div>
       </main>
 
