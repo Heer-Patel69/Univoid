@@ -455,3 +455,95 @@
     }
   }
 }
+
+/* Driver.js Tour Styles */
+.driver-popover {
+  background: hsl(var(--card)) !important;
+  color: hsl(var(--card-foreground)) !important;
+  border: 2px solid hsl(var(--border-strong) / 0.1) !important;
+  border-radius: 1.5rem !important;
+  max-width: 340px !important;
+  box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.driver-popover-title {
+  font-family: 'Nunito', system-ui, sans-serif !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  color: hsl(var(--foreground)) !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.driver-popover-description {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: 0.875rem !important;
+  color: hsl(var(--muted-foreground)) !important;
+  line-height: 1.5 !important;
+}
+
+.driver-popover-progress-text {
+  font-size: 0.75rem !important;
+  color: hsl(var(--muted-foreground)) !important;
+}
+
+.driver-popover-navigation-btns {
+  gap: 0.5rem !important;
+}
+
+.driver-popover-prev-btn {
+  color: hsl(var(--muted-foreground)) !important;
+  background: transparent !important;
+  padding: 0.5rem 1rem !important;
+  border-radius: 0.75rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  transition: all 0.15s ease !important;
+}
+
+.driver-popover-prev-btn:hover {
+  background: hsl(var(--secondary)) !important;
+  color: hsl(var(--foreground)) !important;
+}
+
+.driver-popover-next-btn {
+  background: hsl(var(--foreground)) !important;
+  color: hsl(var(--background)) !important;
+  padding: 0.5rem 1rem !important;
+  border-radius: 0.75rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  transition: all 0.15s ease !important;
+}
+
+.driver-popover-next-btn:hover {
+  opacity: 0.9 !important;
+}
+
+.driver-popover-close-btn {
+  color: hsl(var(--muted-foreground)) !important;
+  transition: color 0.15s ease !important;
+}
+
+.driver-popover-close-btn:hover {
+  color: hsl(var(--foreground)) !important;
+}
+
+.driver-popover-arrow {
+  border-color: hsl(var(--card)) !important;
+}
+
+.driver-popover-arrow-side-left {
+  border-left-color: hsl(var(--card)) !important;
+}
+
+.driver-popover-arrow-side-right {
+  border-right-color: hsl(var(--card)) !important;
+}
+
+.driver-popover-arrow-side-top {
+  border-top-color: hsl(var(--card)) !important;
+}
+
+.driver-popover-arrow-side-bottom {
+  border-bottom-color: hsl(var(--card)) !important;
+}

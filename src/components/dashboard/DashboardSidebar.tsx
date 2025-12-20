@@ -43,29 +43,29 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
 
   // Core Browse Items - Always visible
   const browseItems = [
-    { label: "Materials", icon: BookOpen, href: "/materials" },
-    { label: "Scholarships", icon: GraduationCap, href: "/scholarships", showBadge: true },
-    { label: "Events", icon: Calendar, href: "/events" },
-    { label: "Projects", icon: Folder, href: "/projects" },
-    { label: "Task Plaza", icon: Briefcase, href: "/tasks" },
-    { label: "Books", icon: Repeat2, href: "/books" },
-    { label: "Campus News", icon: Newspaper, href: "/news" },
-    { label: "Leaderboard", icon: Trophy, href: "/leaderboard" },
+    { label: "Materials", icon: BookOpen, href: "/materials", id: "nav-materials" },
+    { label: "Scholarships", icon: GraduationCap, href: "/scholarships", showBadge: true, id: "nav-scholarships" },
+    { label: "Events", icon: Calendar, href: "/events", id: "nav-events" },
+    { label: "Projects", icon: Folder, href: "/projects", id: "nav-projects" },
+    { label: "Task Plaza", icon: Briefcase, href: "/tasks", id: "nav-tasks" },
+    { label: "Books", icon: Repeat2, href: "/books", id: "nav-books" },
+    { label: "Campus News", icon: Newspaper, href: "/news", id: "nav-news" },
+    { label: "Leaderboard", icon: Trophy, href: "/leaderboard", id: "nav-leaderboard" },
   ];
 
   // My Stuff - User's personal items
   const myItems = [
-    { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-    { label: "My Profile", icon: User, href: "/profile" },
-    { label: "My Tickets", icon: Ticket, href: "/my-events" },
+    { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard", id: "nav-dashboard" },
+    { label: "My Profile", icon: User, href: "/profile", id: "nav-profile" },
+    { label: "My Tickets", icon: Ticket, href: "/my-events", id: "nav-tickets" },
   ];
 
   // Contribute Items
   const contributeItems = [
-    { label: "Upload Material", icon: FileText, href: "/upload-material" },
-    { label: "Sell Book", icon: Repeat2, href: "/sell-book" },
-    { label: "Create Project", icon: Folder, href: "/projects/create" },
-    { label: "Post Task", icon: Briefcase, href: "/tasks/create" },
+    { label: "Upload Material", icon: FileText, href: "/upload-material", id: "btn-upload-material" },
+    { label: "Sell Book", icon: Repeat2, href: "/sell-book", id: "btn-sell-book" },
+    { label: "Create Project", icon: Folder, href: "/projects/create", id: "btn-create-project" },
+    { label: "Post Task", icon: Briefcase, href: "/tasks/create", id: "btn-post-task" },
   ];
 
   return (
@@ -120,6 +120,7 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
             <Link
               key={item.href}
               to={item.href}
+              id={item.id}
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
                 isActive(item.href)
@@ -142,6 +143,7 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
               <Link
                 key={item.href}
                 to={item.href}
+                id={item.id}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all relative",
                   isActive(item.href)
@@ -169,6 +171,7 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
             <Link
               key={item.href}
               to={item.href}
+              id={item.id}
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
                 isActive(item.href)
@@ -228,6 +231,7 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
         <div className="border-t border-border pt-4 mt-4 space-y-1">
           <Link
             to="/settings"
+            id="nav-settings"
             className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-secondary transition-all"
           >
             <Settings className="w-4 h-4" />

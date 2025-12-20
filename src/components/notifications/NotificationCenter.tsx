@@ -574,6 +574,7 @@ export const NotificationCenter = () => {
         <Button
           variant="ghost"
           size="icon"
+          id="notification-bell"
           className="relative h-10 w-10 rounded-full hover:bg-secondary"
         >
           <Bell className="h-5 w-5" strokeWidth={2} />

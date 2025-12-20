@@ -11,6 +11,7 @@ import CheckInRedirect from "@/components/common/CheckInRedirect";
 import { GlobalRealtimeProvider } from "@/components/common/GlobalRealtimeProvider";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { PushNotificationPrompt } from "@/components/notifications/PushNotificationPrompt";
+import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
 
 import Index from "./pages/Index";
 import Materials from "./pages/Materials";
@@ -117,7 +118,7 @@ const App = () => (
                 </ErrorBoundary>
                 <CookieConsent />
                 <PushNotificationPrompt />
-                
+                <OnboardingTour />
               </GlobalRealtimeProvider>
             </AuthProvider>
           </BrowserRouter>
