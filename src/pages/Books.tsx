@@ -13,7 +13,7 @@ import { Search, BookOpen, User, ArrowRight, Images } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getBooksPaginated } from "@/services/paginatedService";
 import { SectionLoader, EmptyState, LoadMoreButton } from "@/components/common/SectionLoader";
-import { useOptimizedFetch } from "@/hooks/useOptimizedFetch";
+import { useOptimizedFetch, CACHE_TTL } from "@/hooks/useOptimizedFetch";
 import { Book } from "@/types/database";
 import { toast } from "sonner";
 
@@ -40,6 +40,7 @@ const Books = () => {
     defaultValue: [] as Book[],
     timeoutMs: 8000,
     cacheKey: 'books-page-0',
+    cacheTtl: CACHE_TTL.LONG, // 5 minutes cache for books
   });
 
   const loadMore = async () => {
