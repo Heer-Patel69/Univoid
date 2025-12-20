@@ -122,6 +122,63 @@ export type Database = {
         }
         Relationships: []
       }
+      check_in_audit_log: {
+        Row: {
+          action: string
+          created_at: string | null
+          device_fingerprint: string | null
+          event_id: string
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          organizer_id: string
+          ticket_id: string
+          user_agent: string | null
+          verification_method: string
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          device_fingerprint?: string | null
+          event_id: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          organizer_id: string
+          ticket_id: string
+          user_agent?: string | null
+          verification_method: string
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          device_fingerprint?: string | null
+          event_id?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          organizer_id?: string
+          ticket_id?: string
+          user_agent?: string | null
+          verification_method?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "check_in_audit_log_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "check_in_audit_log_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "event_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contact_messages: {
         Row: {
           created_at: string
@@ -266,34 +323,55 @@ export type Database = {
       }
       event_tickets: {
         Row: {
+          abuse_flag: boolean | null
           created_at: string
+          device_fingerprint: string | null
           event_id: string
           id: string
           is_used: boolean
+          last_scan_attempt: string | null
           qr_code: string
           registration_id: string
+          scan_attempts: number | null
+          token_hash: string | null
           used_at: string | null
+          used_by: string | null
           user_id: string
+          verification_method: string | null
         }
         Insert: {
+          abuse_flag?: boolean | null
           created_at?: string
+          device_fingerprint?: string | null
           event_id: string
           id?: string
           is_used?: boolean
+          last_scan_attempt?: string | null
           qr_code: string
           registration_id: string
+          scan_attempts?: number | null
+          token_hash?: string | null
           used_at?: string | null
+          used_by?: string | null
           user_id: string
+          verification_method?: string | null
         }
         Update: {
+          abuse_flag?: boolean | null
           created_at?: string
+          device_fingerprint?: string | null
           event_id?: string
           id?: string
           is_used?: boolean
+          last_scan_attempt?: string | null
           qr_code?: string
           registration_id?: string
+          scan_attempts?: number | null
+          token_hash?: string | null
           used_at?: string | null
+          used_by?: string | null
           user_id?: string
+          verification_method?: string | null
         }
         Relationships: [
           {
@@ -1033,6 +1111,15 @@ export type Database = {
         Returns: undefined
       }
       cleanup_expired_otps: { Args: never; Returns: undefined }
+      create_secure_ticket: {
+        Args: {
+          p_event_id: string
+          p_registration_id: string
+          p_user_id: string
+        }
+        Returns: string
+      }
+      generate_secure_ticket_token: { Args: never; Returns: string }
       generate_ticket_qr: { Args: never; Returns: string }
       get_book_by_id_safe: {
         Args: { p_book_id: string }
@@ -1143,6 +1230,16 @@ export type Database = {
       }
       is_admin_or_assistant: { Args: { _user_id: string }; Returns: boolean }
       is_email_blocked: { Args: { p_email: string }; Returns: boolean }
+      secure_check_in: {
+        Args: {
+          p_device_fingerprint?: string
+          p_event_id: string
+          p_organizer_id: string
+          p_qr_code: string
+          p_verification_method?: string
+        }
+        Returns: Json
+      }
       toggle_material_like: {
         Args: { p_material_id: string }
         Returns: boolean

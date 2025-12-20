@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Header from "@/components/layout/Header";
@@ -10,25 +10,26 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import AuthModal from "@/components/auth/AuthModal";
 import QRScanner from "@/components/events/QRScanner";
 import { 
+  secureCheckIn, 
+  fetchCheckInStats, 
+  fetchRecentCheckIns,
+  lookupTicketById,
+  type SecureCheckInResult 
+} from "@/services/ticketService";
+import { 
   ScanLine, ArrowLeft, CheckCircle, XCircle, 
-  Users, TicketCheck, Clock, AlertTriangle, User
+  Users, TicketCheck, Clock, AlertTriangle, User,
+  Shield, Search, Fingerprint
 } from "lucide-react";
 import { format } from "date-fns";
 import type { Event } from "@/services/eventsService";
-
-interface CheckInResult {
-  success: boolean;
-  attendeeName: string;
-  ticketId: string;
-  alreadyUsed?: boolean;
-  usedAt?: string;
-}
 
 const EventCheckIn = () => {
   const { eventId } = useParams<{ eventId: string }>();
@@ -38,7 +39,9 @@ const EventCheckIn = () => {
   const queryClient = useQueryClient();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [qrInput, setQrInput] = useState("");
-  const [lastCheckIn, setLastCheckIn] = useState<CheckInResult | null>(null);
+  const [manualTicketId, setManualTicketId] = useState("");
+  const [lastCheckIn, setLastCheckIn] = useState<SecureCheckInResult | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
 
   // Fetch event details
   const { data: event, isLoading: eventLoading } = useQuery({
@@ -61,159 +64,105 @@ const EventCheckIn = () => {
   // Fetch check-in stats
   const { data: checkInStats, refetch: refetchStats } = useQuery({
     queryKey: ["event-checkin-stats", eventId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("event_tickets")
-        .select("is_used, used_at")
-        .eq("event_id", eventId!);
-      if (error) throw error;
-      const total = data?.length || 0;
-      const checkedIn = data?.filter(t => t.is_used).length || 0;
-      return { total, checkedIn, percentage: total > 0 ? Math.round((checkedIn / total) * 100) : 0 };
-    },
-    enabled: !!eventId && !!user,
-    refetchInterval: 5000, // Auto refresh every 5 seconds
+    queryFn: () => fetchCheckInStats(eventId!),
+    enabled: !!eventId && !!user && isOrganizer,
+    refetchInterval: 5000,
   });
 
   // Fetch recent check-ins
   const { data: recentCheckIns } = useQuery({
     queryKey: ["recent-checkins", eventId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("event_tickets")
-        .select(`
-          id,
-          is_used,
-          used_at,
-          user_id
-        `)
-        .eq("event_id", eventId!)
-        .eq("is_used", true)
-        .order("used_at", { ascending: false })
-        .limit(10);
-      if (error) throw error;
-
-      // Fetch user profiles
-      const userIds = data?.map(t => t.user_id) || [];
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, full_name, profile_photo_url")
-        .in("id", userIds);
-
-      return data?.map(ticket => ({
-        ...ticket,
-        profile: profiles?.find(p => p.id === ticket.user_id),
-      }));
-    },
-    enabled: !!eventId && !!user,
+    queryFn: () => fetchRecentCheckIns(eventId!, 10),
+    enabled: !!eventId && !!user && isOrganizer,
     refetchInterval: 5000,
   });
 
-  // Check-in mutation with attendee info
+  // Secure check-in mutation
   const checkInMutation = useMutation({
-    mutationFn: async (qrCode: string): Promise<CheckInResult> => {
-      console.log("=== CHECK-IN ATTEMPT ===");
-      console.log("QR Code:", qrCode);
+    mutationFn: async ({ qrCode, method }: { qrCode: string; method: 'qr' | 'manual' }) => {
+      if (!user?.id || !eventId) throw new Error("Missing required data");
+      
+      console.log("=== SECURE CHECK-IN ATTEMPT ===");
+      console.log("Method:", method);
       console.log("Event ID:", eventId);
-
-      // Try to find ticket by exact QR code match
-      let { data: ticket, error: fetchError } = await supabase
-        .from("event_tickets")
-        .select("*, registration:event_registrations(*)")
-        .eq("qr_code", qrCode)
-        .eq("event_id", eventId!)
-        .single();
-
-      // If not found, try parsing as JSON (in case QR contains structured data)
-      if (fetchError && qrCode.startsWith("{")) {
-        try {
-          const parsed = JSON.parse(qrCode);
-          if (parsed.ticketId || parsed.qr_code) {
-            const code = parsed.ticketId || parsed.qr_code;
-            const result = await supabase
-              .from("event_tickets")
-              .select("*, registration:event_registrations(*)")
-              .eq("qr_code", code)
-              .eq("event_id", eventId!)
-              .single();
-            ticket = result.data;
-            fetchError = result.error;
-          }
-        } catch (e) {
-          console.log("QR is not JSON");
-        }
-      }
-
-      if (fetchError || !ticket) {
-        console.error("Ticket not found:", fetchError);
-        throw new Error("Invalid ticket - not found for this event");
-      }
-
-      // Get attendee name
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("full_name, profile_photo_url")
-        .eq("id", ticket.user_id)
-        .single();
-
-      const attendeeName = profile?.full_name || "Unknown Attendee";
-
-      // Check if already used
-      if (ticket.is_used) {
-        const usedTime = ticket.used_at ? format(new Date(ticket.used_at), "h:mm a") : "earlier";
-        return {
-          success: false,
-          attendeeName,
-          ticketId: ticket.id,
-          alreadyUsed: true,
-          usedAt: usedTime,
-        };
-      }
-
-      // Mark as used
-      const { error: updateError } = await supabase
-        .from("event_tickets")
-        .update({ is_used: true, used_at: new Date().toISOString() })
-        .eq("id", ticket.id);
-
-      if (updateError) {
-        console.error("Update error:", updateError);
-        throw new Error("Failed to check in");
-      }
-
-      console.log("✅ Check-in successful for:", attendeeName);
-
-      return {
-        success: true,
-        attendeeName,
-        ticketId: ticket.id,
-      };
+      
+      return secureCheckIn(qrCode, eventId, user.id, method);
     },
     onSuccess: (result) => {
       setLastCheckIn(result);
+      setIsScanning(false);
       
-      if (result.alreadyUsed) {
+      if (result.success) {
+        toast({ 
+          title: `✅ ${result.attendee_name} checked in!`,
+          description: "Entry verified successfully"
+        });
+      } else if (result.error === 'ALREADY_USED') {
         toast({ 
           title: "⚠️ Already Checked In", 
-          description: `${result.attendeeName} was already checked in at ${result.usedAt}`,
+          description: `${result.attendee_name} was already verified`,
           variant: "destructive" 
         });
       } else {
-        toast({ title: `✅ ${result.attendeeName} checked in!` });
+        toast({ 
+          title: "❌ Check-in Failed", 
+          description: result.message || "Invalid ticket",
+          variant: "destructive" 
+        });
       }
       
       setQrInput("");
+      setManualTicketId("");
       refetchStats();
       queryClient.invalidateQueries({ queryKey: ["recent-checkins", eventId] });
       
-      // Clear last check-in after 5 seconds
+      // Clear result after 5 seconds
       setTimeout(() => setLastCheckIn(null), 5000);
     },
     onError: (error: Error) => {
       setLastCheckIn(null);
-      toast({ title: "❌ Check-in Failed", description: error.message, variant: "destructive" });
+      setIsScanning(false);
+      toast({ 
+        title: "❌ Check-in Failed", 
+        description: error.message, 
+        variant: "destructive" 
+      });
     },
   });
+
+  // Manual ticket lookup
+  const lookupMutation = useMutation({
+    mutationFn: async (ticketId: string) => {
+      if (!eventId) throw new Error("No event");
+      return lookupTicketById(ticketId, eventId);
+    },
+    onSuccess: (ticket) => {
+      if (!ticket) {
+        toast({ title: "Ticket not found", variant: "destructive" });
+        return;
+      }
+      
+      if (ticket.is_used) {
+        toast({ 
+          title: "Already Used", 
+          description: `${ticket.attendee?.full_name || 'Attendee'} already checked in`,
+          variant: "destructive"
+        });
+      } else {
+        // Perform check-in with the QR code
+        checkInMutation.mutate({ qrCode: ticket.qr_code, method: 'manual' });
+      }
+    },
+    onError: () => {
+      toast({ title: "Lookup failed", variant: "destructive" });
+    }
+  });
+
+  const handleQRScan = async (qrCode: string) => {
+    if (isScanning || checkInMutation.isPending) return;
+    setIsScanning(true);
+    checkInMutation.mutate({ qrCode, method: 'qr' });
+  };
 
   if (!user) {
     return (
@@ -234,7 +183,7 @@ const EventCheckIn = () => {
       <div className="min-h-screen flex flex-col bg-background">
         <Header onAuthClick={() => setShowAuthModal(true)} />
         <main className="flex-1 flex items-center justify-center">
-          <p>Loading event...</p>
+          <div className="animate-pulse text-muted-foreground">Loading event...</div>
         </main>
         <Footer />
       </div>
@@ -294,7 +243,10 @@ const EventCheckIn = () => {
           <CardHeader className="pb-3">
             <div className="flex items-start justify-between">
               <div>
-                <CardTitle className="text-lg">{event.title}</CardTitle>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-green-600" />
+                  {event.title}
+                </CardTitle>
                 <CardDescription>
                   {format(new Date(event.start_date), "EEEE, MMM d 'at' h:mm a")}
                 </CardDescription>
@@ -319,12 +271,18 @@ const EventCheckIn = () => {
               </div>
               <div className="text-center p-3 rounded-lg bg-orange-500/10">
                 <Clock className="w-5 h-5 text-orange-600 mx-auto mb-1" />
-                <p className="text-xl font-bold text-orange-600">
-                  {(checkInStats?.total || 0) - (checkInStats?.checkedIn || 0)}
-                </p>
+                <p className="text-xl font-bold text-orange-600">{checkInStats?.remaining || 0}</p>
                 <p className="text-xs text-muted-foreground">Remaining</p>
               </div>
             </div>
+
+            {/* Abuse warning */}
+            {checkInStats?.abuseFlags && checkInStats.abuseFlags > 0 && (
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-destructive/10 text-destructive text-sm mb-4">
+                <AlertTriangle className="w-4 h-4" />
+                {checkInStats.abuseFlags} ticket(s) flagged for suspicious activity
+              </div>
+            )}
 
             {/* Progress bar */}
             <div className="space-y-2">
@@ -345,14 +303,17 @@ const EventCheckIn = () => {
                 {lastCheckIn.success ? (
                   <CheckCircle className="w-12 h-12 text-green-500 flex-shrink-0" />
                 ) : (
-                  <AlertTriangle className="w-12 h-12 text-orange-500 flex-shrink-0" />
+                  <XCircle className="w-12 h-12 text-orange-500 flex-shrink-0" />
                 )}
-                <div>
-                  <p className="font-bold text-lg">{lastCheckIn.attendeeName}</p>
+                <div className="flex-1">
+                  <p className="font-bold text-lg">{lastCheckIn.attendee_name || 'Unknown'}</p>
                   <p className={`text-sm ${lastCheckIn.success ? 'text-green-600' : 'text-orange-600'}`}>
-                    {lastCheckIn.success ? 'Successfully checked in!' : `Already checked in at ${lastCheckIn.usedAt}`}
+                    {lastCheckIn.success 
+                      ? 'Successfully verified & checked in!' 
+                      : lastCheckIn.message || 'Check-in failed'}
                   </p>
                 </div>
+                <Fingerprint className="w-6 h-6 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
@@ -363,46 +324,81 @@ const EventCheckIn = () => {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg">
               <ScanLine className="w-5 h-5" />
-              Check-in Scanner
+              Secure Check-in
             </CardTitle>
+            <CardDescription className="flex items-center gap-1">
+              <Shield className="w-3 h-3" />
+              Anti-fraud protection enabled • One-time use only
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="camera">
               <TabsList className="grid w-full grid-cols-2 mb-4">
-                <TabsTrigger value="camera">Camera Scan</TabsTrigger>
-                <TabsTrigger value="manual">Manual Entry</TabsTrigger>
+                <TabsTrigger value="camera">QR Scanner</TabsTrigger>
+                <TabsTrigger value="manual">Manual Verify</TabsTrigger>
               </TabsList>
 
               <TabsContent value="camera">
                 <QRScanner
                   eventId={eventId!}
-                  onScan={async (qrCode) => {
-                    await checkInMutation.mutateAsync(qrCode);
-                  }}
+                  onScan={handleQRScan}
                 />
+                {checkInMutation.isPending && (
+                  <div className="mt-4 text-center text-sm text-muted-foreground animate-pulse">
+                    Verifying ticket...
+                  </div>
+                )}
               </TabsContent>
 
-              <TabsContent value="manual">
-                <div className="space-y-4">
+              <TabsContent value="manual" className="space-y-4">
+                {/* QR Code text input */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">QR Code Text</label>
                   <div className="flex gap-2">
-                    <input
-                      type="text"
+                    <Input
                       value={qrInput}
                       onChange={(e) => setQrInput(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && qrInput && checkInMutation.mutate(qrInput)}
-                      placeholder="Enter or paste QR code..."
-                      className="flex-1 px-3 py-2 border rounded-lg bg-background text-sm"
-                      autoFocus
+                      onKeyDown={(e) => e.key === "Enter" && qrInput && checkInMutation.mutate({ qrCode: qrInput, method: 'manual' })}
+                      placeholder="Paste QR code content..."
                     />
                     <Button
-                      onClick={() => checkInMutation.mutate(qrInput)}
+                      onClick={() => checkInMutation.mutate({ qrCode: qrInput, method: 'manual' })}
                       disabled={!qrInput || checkInMutation.isPending}
                     >
-                      {checkInMutation.isPending ? "..." : "Check In"}
+                      Verify
                     </Button>
                   </div>
-                  <p className="text-xs text-muted-foreground text-center">
-                    Paste the QR code text from the attendee's ticket
+                </div>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">or</span>
+                  </div>
+                </div>
+
+                {/* Ticket ID lookup */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Ticket ID Lookup</label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={manualTicketId}
+                      onChange={(e) => setManualTicketId(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && manualTicketId && lookupMutation.mutate(manualTicketId)}
+                      placeholder="Enter ticket ID..."
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={() => lookupMutation.mutate(manualTicketId)}
+                      disabled={!manualTicketId || lookupMutation.isPending}
+                    >
+                      <Search className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Use ticket ID from attendee's ticket page for manual verification
                   </p>
                 </div>
               </TabsContent>
@@ -432,6 +428,16 @@ const EventCheckIn = () => {
                       <p className="text-sm font-medium truncate">
                         {checkin.profile?.full_name || "Unknown"}
                       </p>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-[10px] py-0">
+                          {checkin.verification_method || 'qr'}
+                        </Badge>
+                        {checkin.abuse_flag && (
+                          <Badge variant="destructive" className="text-[10px] py-0">
+                            flagged
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                     <p className="text-xs text-muted-foreground">
                       {checkin.used_at ? format(new Date(checkin.used_at), "h:mm a") : ""}
