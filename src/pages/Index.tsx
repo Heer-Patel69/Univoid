@@ -20,6 +20,7 @@ import {
 } from "@/components/common/SketchDoodles";
 import { FloatingDoodles } from "@/components/common/FloatingDoodles";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRoleRedirect } from "@/hooks/useRoleRedirect";
 import { 
   ArrowRight,
   GraduationCap,
@@ -49,12 +50,13 @@ const Index = () => {
   const heroRef = useRef<HTMLElement>(null);
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
+  const { getRedirectPath } = useRoleRedirect();
 
   useEffect(() => {
     if (!isLoading && user) {
-      navigate('/dashboard', { replace: true });
+      navigate(getRedirectPath(), { replace: true });
     }
-  }, [user, isLoading, navigate]);
+  }, [user, isLoading, navigate, getRedirectPath]);
 
   useEffect(() => {
     const handleScroll = () => {
