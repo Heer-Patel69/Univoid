@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, isPast } from "date-fns";
+import DOMPurify from "dompurify";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -201,7 +202,16 @@ const EventDetail = () => {
             <Card>
               <CardHeader><CardTitle>About this Event</CardTitle></CardHeader>
               <CardContent>
-                <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: event.description }} />
+                <div 
+                  className="prose prose-sm dark:prose-invert max-w-none" 
+                  dangerouslySetInnerHTML={{ 
+                    __html: DOMPurify.sanitize(event.description, {
+                      ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'ul', 'ol', 'li', 'strong', 'em', 'a', 'blockquote', 'code', 'pre'],
+                      ALLOWED_ATTR: ['href', 'title', 'target', 'rel'],
+                      ALLOW_DATA_ATTR: false
+                    })
+                  }} 
+                />
               </CardContent>
             </Card>
           )}

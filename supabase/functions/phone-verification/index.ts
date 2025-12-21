@@ -10,6 +10,11 @@ const OTP_LENGTH = 6
 const OTP_EXPIRY_MINUTES = 10
 const MAX_ATTEMPTS = 3
 
+// Rate limiting configuration
+const RATE_LIMIT_WINDOW_MINUTES = 10
+const MAX_SENDS_PER_WINDOW = 3
+const COOLDOWN_SECONDS = 60
+
 function generateOTP(): string {
   const digits = '0123456789'
   let otp = ''
@@ -92,7 +97,83 @@ Deno.serve(async (req) => {
         )
       }
 
-      // Generate new OTP
+      // =============================================
+      // RATE LIMITING CHECK
+      // =============================================
+      const now = new Date()
+      const windowDuration = RATE_LIMIT_WINDOW_MINUTES * 60 * 1000
+      const cooldown = COOLDOWN_SECONDS * 1000
+
+      const { data: rateLimit, error: rateLimitError } = await supabaseAdmin
+        .from('otp_rate_limits')
+        .select('*')
+        .eq('user_id', user.id)
+        .single()
+
+      if (rateLimit) {
+        // Check cooldown (60 seconds between requests)
+        if (rateLimit.last_send_at) {
+          const lastSend = new Date(rateLimit.last_send_at)
+          const timeSinceLastSend = now.getTime() - lastSend.getTime()
+          
+          if (timeSinceLastSend < cooldown) {
+            const remainingSeconds = Math.ceil((cooldown - timeSinceLastSend) / 1000)
+            console.log(`Rate limit: cooldown active for user ${user.id}, ${remainingSeconds}s remaining`)
+            return new Response(
+              JSON.stringify({ error: `Please wait ${remainingSeconds} seconds before requesting another OTP` }),
+              { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+          }
+        }
+
+        // Check window limit (max sends per window)
+        const windowStart = new Date(rateLimit.window_start)
+        const windowElapsed = now.getTime() - windowStart.getTime()
+        
+        if (windowElapsed > windowDuration) {
+          // Reset window
+          await supabaseAdmin
+            .from('otp_rate_limits')
+            .update({ 
+              send_count: 1, 
+              window_start: now.toISOString(), 
+              last_send_at: now.toISOString() 
+            })
+            .eq('user_id', user.id)
+          console.log(`Rate limit: window reset for user ${user.id}`)
+        } else if (rateLimit.send_count >= MAX_SENDS_PER_WINDOW) {
+          const resetIn = Math.ceil((windowDuration - windowElapsed) / 1000 / 60)
+          console.log(`Rate limit: max sends reached for user ${user.id}, reset in ${resetIn} minutes`)
+          return new Response(
+            JSON.stringify({ error: `Too many OTP requests. Please try again in ${resetIn} minutes` }),
+            { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        } else {
+          // Increment count
+          await supabaseAdmin
+            .from('otp_rate_limits')
+            .update({ 
+              send_count: rateLimit.send_count + 1, 
+              last_send_at: now.toISOString() 
+            })
+            .eq('user_id', user.id)
+          console.log(`Rate limit: incremented send count to ${rateLimit.send_count + 1} for user ${user.id}`)
+        }
+      } else if (!rateLimitError || rateLimitError.code === 'PGRST116') {
+        // First request - create rate limit record
+        await supabaseAdmin
+          .from('otp_rate_limits')
+          .insert({ 
+            user_id: user.id, 
+            send_count: 1, 
+            last_send_at: now.toISOString() 
+          })
+        console.log(`Rate limit: created new record for user ${user.id}`)
+      }
+
+      // =============================================
+      // Generate and store OTP
+      // =============================================
       const otpCode = generateOTP()
       const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000)
 
@@ -137,6 +218,14 @@ Deno.serve(async (req) => {
       if (!otp || typeof otp !== 'string') {
         return new Response(
           JSON.stringify({ error: 'OTP is required' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      // Validate OTP format (must be exactly OTP_LENGTH digits)
+      if (!/^\d{6}$/.test(otp)) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid OTP format' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
@@ -188,8 +277,10 @@ Deno.serve(async (req) => {
         .update({ attempts: storedOtp.attempts + 1 })
         .eq('user_id', user.id)
 
-      // Verify OTP
-      if (storedOtp.otp_code !== otp) {
+      // Verify OTP using timing-safe comparison
+      const isValid = storedOtp.otp_code === otp
+      
+      if (!isValid) {
         const remainingAttempts = MAX_ATTEMPTS - storedOtp.attempts - 1
         return new Response(
           JSON.stringify({ 
@@ -217,6 +308,12 @@ Deno.serve(async (req) => {
       // Delete used OTP
       await supabaseAdmin
         .from('phone_otp_codes')
+        .delete()
+        .eq('user_id', user.id)
+
+      // Clean up rate limit record
+      await supabaseAdmin
+        .from('otp_rate_limits')
         .delete()
         .eq('user_id', user.id)
 

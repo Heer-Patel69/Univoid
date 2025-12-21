@@ -865,6 +865,36 @@ export type Database = {
         }
         Relationships: []
       }
+      otp_rate_limits: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_send_at: string | null
+          send_count: number | null
+          user_id: string
+          verify_count: number | null
+          window_start: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_send_at?: string | null
+          send_count?: number | null
+          user_id: string
+          verify_count?: number | null
+          window_start?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_send_at?: string | null
+          send_count?: number | null
+          user_id?: string
+          verify_count?: number | null
+          window_start?: string | null
+        }
+        Relationships: []
+      }
       phone_otp_codes: {
         Row: {
           attempts: number
@@ -1587,6 +1617,36 @@ export type Database = {
           registration_id: string
           reviewed_at: string
           user_id: string
+        }[]
+      }
+      get_event_safe: {
+        Args: { p_event_id: string }
+        Returns: {
+          category: string
+          created_at: string
+          custom_fields: Json
+          description: string
+          end_date: string
+          event_type: string
+          flyer_url: string
+          id: string
+          is_location_decided: boolean
+          is_paid: boolean
+          maps_link: string
+          max_capacity: number
+          organizer_id: string
+          price: number
+          registrations_count: number
+          start_date: string
+          status: string
+          terms_conditions: string
+          title: string
+          updated_at: string
+          upi_qr_url: string
+          upi_vpa: string
+          venue_address: string
+          venue_name: string
+          views_count: number
         }[]
       }
       get_homepage_stats: { Args: never; Returns: Json }
