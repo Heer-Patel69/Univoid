@@ -120,16 +120,18 @@ export const fetchEvents = async (filters?: EventFilters) => {
   return result.data;
 };
 
-// Fetch single event
+// Fetch single event with secure function (hides payment details from non-registered users)
 export const fetchEventById = async (id: string) => {
   const { data, error } = await supabase
-    .from('events')
-    .select('*')
-    .eq('id', id)
-    .single();
+    .rpc('get_event_safe', { p_event_id: id });
 
   if (error) throw error;
-  return data as Event;
+  
+  // RPC returns an array, get the first item
+  const event = Array.isArray(data) ? data[0] : data;
+  if (!event) throw new Error('Event not found');
+  
+  return event as Event;
 };
 
 // Register for event
