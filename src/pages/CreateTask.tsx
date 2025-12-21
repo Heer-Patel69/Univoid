@@ -77,8 +77,6 @@ const CreateTask = () => {
       </Helmet>
 
       <div className="min-h-screen flex flex-col bg-background">
-        <Header onAuthClick={() => {}} />
-        
         <main className="flex-1 py-8">
           <div className="container-wide max-w-2xl">
             <Button 
@@ -213,8 +211,6 @@ const CreateTask = () => {
             </Card>
           </div>
         </main>
-
-        <Footer />
       </div>
     </>
   );

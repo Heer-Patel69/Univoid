@@ -155,14 +155,12 @@ const TaskDetail = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
-        <Header onAuthClick={() => setShowAuthModal(true)} />
         <main className="flex-1 py-8">
           <div className="container-wide max-w-3xl">
             <Skeleton className="h-8 w-48 mb-4" />
             <Skeleton className="h-64 w-full" />
           </div>
         </main>
-        <Footer />
       </div>
     );
   }
@@ -178,8 +176,6 @@ const TaskDetail = () => {
       </Helmet>
 
       <div className="min-h-screen flex flex-col bg-background">
-        <Header onAuthClick={() => setShowAuthModal(true)} />
-        
         <main className="flex-1 py-8">
           <div className="container-wide max-w-3xl">
             {/* Back button */}
@@ -380,8 +376,6 @@ const TaskDetail = () => {
             )}
           </div>
         </main>
-
-        <Footer />
       </div>
 
       {/* Delete Confirmation */}

@@ -115,7 +115,6 @@ const CreateEvent = () => {
       return data;
     },
     onSuccess: (data) => {
-      // Event will appear in real-time via subscription - no refresh needed
       toast({ title: "Event Created!", description: "Your event is now live and will appear instantly for all users." });
       navigate(`/events/${data.id}`);
     },
@@ -141,22 +140,18 @@ const CreateEvent = () => {
   if (!user) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
-        <Header onAuthClick={() => setShowAuthModal(true)} />
         <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
         <main className="flex-1 container mx-auto px-4 py-20 text-center">
           <h1 className="text-2xl font-bold mb-4">Login Required</h1>
           <p className="text-muted-foreground mb-6">You need to be logged in to create events.</p>
           <Button onClick={() => setShowAuthModal(true)}>Login</Button>
         </main>
-        <Footer />
       </div>
     );
   }
 
-
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header onAuthClick={() => setShowAuthModal(true)} />
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
 
       <main className="flex-1 container mx-auto px-4 py-6 pb-24 md:pb-8 max-w-3xl">
@@ -354,9 +349,6 @@ const CreateEvent = () => {
           </CardContent>
         </Card>
       </main>
-
-      <Footer />
-      <BottomNav />
     </div>
   );
 };

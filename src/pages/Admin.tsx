@@ -1070,8 +1070,6 @@ const Admin = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header onAuthClick={() => {}} />
-      
       <main className="flex-1 py-8">
         <div className="container-wide">
           {/* Header */}
@@ -1246,8 +1244,6 @@ const Admin = () => {
           </Card>
         </div>
       </main>
-
-      <Footer />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
