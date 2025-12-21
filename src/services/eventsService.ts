@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
+import type { CursorPage, CursorPageParam } from "@/hooks/useCursorPagination";
 
 export interface Event {
   id: string;
@@ -55,18 +56,35 @@ export interface EventTicket {
   registration?: EventRegistration;
 }
 
-// Fetch published events
-export const fetchEvents = async (filters?: {
+export interface EventFilters {
   category?: string;
   is_paid?: boolean;
   search?: string;
-}) => {
+}
+
+/**
+ * Fetch events with cursor-based pagination
+ * Uses start_date as cursor for upcoming events ordering
+ */
+export async function fetchEventsWithCursor(
+  params: CursorPageParam,
+  filters?: EventFilters
+): Promise<CursorPage<Event>> {
+  const { cursor, limit } = params;
+
   let query = supabase
     .from('events')
-    .select('*')
+    .select('*', { count: 'exact' })
     .eq('status', 'published')
-    .order('start_date', { ascending: true });
+    .order('start_date', { ascending: true })
+    .limit(limit + 1);
 
+  // Apply cursor - for ascending order, we want items AFTER the cursor
+  if (cursor) {
+    query = query.gt('start_date', cursor);
+  }
+
+  // Apply filters
   if (filters?.category) {
     query = query.eq('category', filters.category);
   }
@@ -77,9 +95,29 @@ export const fetchEvents = async (filters?: {
     query = query.ilike('title', `%${filters.search}%`);
   }
 
-  const { data, error } = await query;
+  const { data, error, count } = await query;
   if (error) throw error;
-  return data as Event[];
+
+  const events = (data || []) as Event[];
+  const hasMore = events.length > limit;
+  const items = hasMore ? events.slice(0, limit) : events;
+  
+  const nextCursor = hasMore && items.length > 0
+    ? items[items.length - 1].start_date
+    : null;
+
+  return {
+    data: items,
+    nextCursor,
+    hasMore,
+    totalCount: count ?? undefined,
+  };
+}
+
+// Legacy function for backward compatibility
+export const fetchEvents = async (filters?: EventFilters) => {
+  const result = await fetchEventsWithCursor({ cursor: null, limit: 50 }, filters);
+  return result.data;
 };
 
 // Fetch single event

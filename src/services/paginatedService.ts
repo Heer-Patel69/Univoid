@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Material, News, Book } from '@/types/database';
+import type { CursorPage, CursorPageParam } from '@/hooks/useCursorPagination';
 
 const DEFAULT_PAGE_SIZE = 20;
 
@@ -44,6 +45,76 @@ export interface MaterialFilters {
   subject?: string;
   language?: string;
   college?: string;
+}
+
+/**
+ * Cursor-based pagination for materials
+ * More efficient for large datasets - no offset scanning
+ */
+export async function getMaterialsWithCursor(
+  params: CursorPageParam,
+  filters?: MaterialFilters
+): Promise<CursorPage<Material>> {
+  const { cursor, limit } = params;
+
+  let query = supabase
+    .from('materials')
+    .select('id, title, file_type, course, subject, branch, language, college, thumbnail_url, created_by, created_at, views_count, downloads_count, likes_count, shares_count', { count: 'exact' })
+    .eq('status', 'approved')
+    .order('created_at', { ascending: false })
+    .limit(limit + 1); // Fetch one extra to check for more
+
+  // Apply cursor
+  if (cursor) {
+    query = query.lt('created_at', cursor);
+  }
+
+  // Apply filters
+  if (filters?.course) {
+    query = query.eq('course', filters.course);
+  }
+  if (filters?.branch) {
+    query = query.eq('branch', filters.branch);
+  }
+  if (filters?.language) {
+    query = query.eq('language', filters.language);
+  }
+  if (filters?.subject) {
+    query = query.ilike('subject', `%${filters.subject}%`);
+  }
+  if (filters?.college) {
+    query = query.ilike('college', `%${filters.college}%`);
+  }
+  if (filters?.search) {
+    query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%,subject.ilike.%${filters.search}%`);
+  }
+
+  const { data, error, count } = await query;
+
+  if (error) throw error;
+
+  const materials = (data || []) as Material[];
+  const hasMore = materials.length > limit;
+  const items = hasMore ? materials.slice(0, limit) : materials;
+  
+  // Get next cursor from last item
+  const nextCursor = hasMore && items.length > 0 
+    ? items[items.length - 1].created_at 
+    : null;
+
+  // Batch fetch contributor names
+  const userIds = items.map(m => m.created_by);
+  const nameMap = await fetchContributorNames(userIds);
+  items.forEach(m => {
+    m.contributor_name = nameMap.get(m.created_by) || 'Anonymous';
+  });
+
+  return {
+    data: items,
+    nextCursor,
+    hasMore,
+    totalCount: count ?? undefined,
+  };
 }
 
 // Materials with filters - optimized to fetch only needed fields for listing
