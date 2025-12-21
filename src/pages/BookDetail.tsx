@@ -5,12 +5,12 @@ import BookCarousel from "@/components/books/BookCarousel";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, User, MessageCircle, Loader2, X } from "lucide-react";
+import { User, MessageCircle, Loader2, X, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getBookById, getSellerContact } from "@/services/booksService";
 import { Book } from "@/types/database";
 import { toast } from "sonner";
-
+import PageBreadcrumb from "@/components/common/PageBreadcrumb";
 
 const BookDetail = () => {
   const { bookId } = useParams<{ bookId: string }>();
@@ -94,12 +94,12 @@ const BookDetail = () => {
   return (
     <div className="py-8">
       <div className="container-wide max-w-4xl">
-        <Link to="/books">
-          <Button variant="ghost" size="sm" className="mb-6">
-            <ArrowLeft className="w-4 h-4 mr-1" />
-            Back to Books
-          </Button>
-        </Link>
+        <PageBreadcrumb 
+          items={[
+            { label: "Books", href: "/books" },
+            { label: book.title }
+          ]} 
+        />
 
         <div className="grid md:grid-cols-2 gap-8">
           {/* Image Carousel */}

@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
-  ArrowLeft, Clock, IndianRupee, FileText, AlertTriangle, 
+  Clock, IndianRupee, FileText, AlertTriangle, 
   User, Check, X, Trash2, Loader2, MessageSquare, Phone, Mail
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,6 +22,7 @@ import {
 } from "@/services/taskPlazaService";
 import { supabase } from "@/integrations/supabase/client";
 import AuthModal from "@/components/auth/AuthModal";
+import PageBreadcrumb from "@/components/common/PageBreadcrumb";
 import { Helmet } from "react-helmet";
 import { toast } from "sonner";
 import { format, formatDistanceToNow } from "date-fns";
@@ -178,11 +179,12 @@ const TaskDetail = () => {
       <div className="min-h-screen flex flex-col bg-background">
         <main className="flex-1 py-8">
           <div className="container-wide max-w-3xl">
-            {/* Back button */}
-            <Link to="/tasks" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6">
-              <ArrowLeft className="w-4 h-4" />
-              Back to Tasks
-            </Link>
+            <PageBreadcrumb 
+              items={[
+                { label: "Task Plaza", href: "/tasks" },
+                { label: task.title }
+              ]} 
+            />
 
             {/* Task Card */}
             <Card className={`mb-6 ${task.is_urgent ? 'border-l-4 border-l-destructive' : ''}`}>
