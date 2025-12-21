@@ -262,17 +262,13 @@ const ProjectDetail = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <Header onAuthClick={() => setShowAuthModal(true)} />
-        <main className="flex-1 py-8">
-          <div className="container-wide max-w-4xl">
-            <Skeleton className="h-8 w-48 mb-4" />
-            <Skeleton className="h-32 w-full mb-4" />
-            <Skeleton className="h-64 w-full" />
-          </div>
-        </main>
-        <Footer />
-      </div>
+      <main className="flex-1 py-8">
+        <div className="container-wide max-w-4xl">
+          <Skeleton className="h-8 w-48 mb-4" />
+          <Skeleton className="h-32 w-full mb-4" />
+          <Skeleton className="h-64 w-full" />
+        </div>
+      </main>
     );
   }
 
@@ -286,9 +282,6 @@ const ProjectDetail = () => {
         <title>{project.title} | UniVoid Projects</title>
       </Helmet>
 
-      <div className="min-h-screen flex flex-col bg-background">
-        <Header onAuthClick={() => setShowAuthModal(true)} />
-        
         <main className="flex-1 py-8">
           <div className="container-wide max-w-4xl">
             <Button 
@@ -561,9 +554,6 @@ const ProjectDetail = () => {
             </Tabs>
           </div>
         </main>
-
-        <Footer />
-      </div>
 
       {/* Join Request Dialog */}
       <Dialog open={showJoinDialog} onOpenChange={setShowJoinDialog}>

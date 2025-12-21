@@ -244,21 +244,16 @@ const OrganizerDashboard = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <Header onAuthClick={() => setShowAuthModal(true)} />
+      <main className="flex-1 container mx-auto px-4 py-20 text-center">
         <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
-        <main className="flex-1 container mx-auto px-4 py-20 text-center">
-          <h1 className="text-2xl font-bold mb-4">Login Required</h1>
-          <Button onClick={() => setShowAuthModal(true)}>Login</Button>
-        </main>
-        <Footer />
-      </div>
+        <h1 className="text-2xl font-bold mb-4">Login Required</h1>
+        <Button onClick={() => setShowAuthModal(true)}>Login</Button>
+      </main>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header onAuthClick={() => setShowAuthModal(true)} />
+    <>
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
 
       <main className="flex-1 container mx-auto px-4 py-6 pb-24 md:pb-8">
@@ -531,10 +526,7 @@ const OrganizerDashboard = () => {
           )}
         </DialogContent>
       </Dialog>
-
-      <Footer />
-      <BottomNav />
-    </div>
+    </>
   );
 };
 
