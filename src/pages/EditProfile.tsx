@@ -1,7 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -212,17 +210,14 @@ const EditProfile = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header onAuthClick={() => {}} />
-      
-      <main className="flex-1 py-8">
-        <div className="container-wide max-w-2xl">
-          <Button variant="ghost" size="sm" className="mb-6" onClick={() => navigate("/profile")}>
-            <ArrowLeft className="w-4 h-4 mr-1" />
-            Back to Profile
-          </Button>
+    <main className="flex-1 py-8">
+      <div className="container-wide max-w-2xl">
+        <Button variant="ghost" size="sm" className="mb-6" onClick={() => navigate("/profile")}>
+          <ArrowLeft className="w-4 h-4 mr-1" />
+          Back to Profile
+        </Button>
 
-          <Card>
+        <Card>
             <CardHeader>
               <CardTitle>Edit Profile</CardTitle>
             </CardHeader>
@@ -451,18 +446,15 @@ const EditProfile = () => {
                   </Button>
                 </div>
               </form>
-            </CardContent>
-          </Card>
+          </CardContent>
+        </Card>
 
-          {/* Notification Preferences */}
-          <div className="mt-6">
-            <NotificationPreferences />
-          </div>
+        {/* Notification Preferences */}
+        <div className="mt-6">
+          <NotificationPreferences />
         </div>
-      </main>
-
-      <Footer />
-    </div>
+      </div>
+    </main>
   );
 };
 

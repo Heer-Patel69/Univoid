@@ -1,16 +1,11 @@
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Scale, Mail, AlertTriangle, ExternalLink, Shield, Globe } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const LegalDisclaimer = () => {
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header onAuthClick={() => {}} />
-      
-      <main className="flex-1 py-10 md:py-14">
-        <div className="container-wide max-w-4xl">
+    <main className="flex-1 py-10 md:py-14">
+      <div className="container-wide max-w-4xl">
           {/* Header */}
           <div className="mb-10 text-center">
             <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -377,10 +372,7 @@ const LegalDisclaimer = () => {
           </Card>
         </div>
       </main>
-
-      <Footer />
-    </div>
-  );
-};
+    );
+  };
 
 export default LegalDisclaimer;

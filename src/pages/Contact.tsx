@@ -2,9 +2,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
-import AuthModal from "@/components/auth/AuthModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +20,6 @@ const contactSchema = z.object({
 type ContactFormData = z.infer<typeof contactSchema>;
 
 const Contact = () => {
-  const [authOpen, setAuthOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
@@ -77,128 +73,121 @@ const Contact = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header onAuthClick={() => setAuthOpen(true)} />
-      <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} />
-      
-      <main className="flex-grow container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto">
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2 text-center">
-            Contact Us
-          </h1>
-          <p className="text-muted-foreground text-center mb-8">
-            Have questions or feedback? We'd love to hear from you.
-          </p>
+    <main className="flex-grow container mx-auto px-4 py-8">
+      <div className="max-w-2xl mx-auto">
+        <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2 text-center">
+          Contact Us
+        </h1>
+        <p className="text-muted-foreground text-center mb-8">
+          Have questions or feedback? We'd love to hear from you.
+        </p>
 
-          <div className="grid md:grid-cols-2 gap-6 mb-8">
-            <Card className="border-border">
-              <CardContent className="p-6 flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Mail className="w-6 h-6 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Email</p>
-                  <a href="mailto:univoid35@gmail.com" className="text-foreground font-medium hover:text-primary">
-                    univoid35@gmail.com
-                  </a>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border">
-              <CardContent className="p-6 flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Phone className="w-6 h-6 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Phone</p>
-                  <a href="tel:+919537442568" className="text-foreground font-medium hover:text-primary">
-                    +91 9537442568
-                  </a>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+        <div className="grid md:grid-cols-2 gap-6 mb-8">
+          <Card className="border-border">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <Mail className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Email</p>
+                <a href="mailto:univoid35@gmail.com" className="text-foreground font-medium hover:text-primary">
+                  univoid35@gmail.com
+                </a>
+              </div>
+            </CardContent>
+          </Card>
 
           <Card className="border-border">
-            <CardHeader>
-              <CardTitle>Send us a message</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isSubmitted ? (
-                <div className="text-center py-8">
-                  <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-foreground mb-2">Thank you!</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Your message has been sent. We'll get back to you soon.
-                  </p>
-                  <Button onClick={() => setIsSubmitted(false)}>Send another message</Button>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Name</Label>
-                    <Input
-                      id="name"
-                      placeholder="Your name"
-                      {...register("name")}
-                      className={errors.name ? "border-destructive" : ""}
-                    />
-                    {errors.name && (
-                      <p className="text-sm text-destructive">{errors.name.message}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="your@email.com"
-                      {...register("email")}
-                      className={errors.email ? "border-destructive" : ""}
-                    />
-                    {errors.email && (
-                      <p className="text-sm text-destructive">{errors.email.message}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="message">Message</Label>
-                    <Textarea
-                      id="message"
-                      placeholder="Your message..."
-                      rows={5}
-                      {...register("message")}
-                      className={errors.message ? "border-destructive" : ""}
-                    />
-                    {errors.message && (
-                      <p className="text-sm text-destructive">{errors.message.message}</p>
-                    )}
-                  </div>
-
-                  <Button type="submit" className="w-full" disabled={isSubmitting}>
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Sending...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="w-4 h-4 mr-2" />
-                        Send Message
-                      </>
-                    )}
-                  </Button>
-                </form>
-              )}
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <Phone className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Phone</p>
+                <a href="tel:+919537442568" className="text-foreground font-medium hover:text-primary">
+                  +91 9537442568
+                </a>
+              </div>
             </CardContent>
           </Card>
         </div>
-      </main>
 
-      <Footer />
-    </div>
+        <Card className="border-border">
+          <CardHeader>
+            <CardTitle>Send us a message</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isSubmitted ? (
+              <div className="text-center py-8">
+                <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-foreground mb-2">Thank you!</h3>
+                <p className="text-muted-foreground mb-4">
+                  Your message has been sent. We'll get back to you soon.
+                </p>
+                <Button onClick={() => setIsSubmitted(false)}>Send another message</Button>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    id="name"
+                    placeholder="Your name"
+                    {...register("name")}
+                    className={errors.name ? "border-destructive" : ""}
+                  />
+                  {errors.name && (
+                    <p className="text-sm text-destructive">{errors.name.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="your@email.com"
+                    {...register("email")}
+                    className={errors.email ? "border-destructive" : ""}
+                  />
+                  {errors.email && (
+                    <p className="text-sm text-destructive">{errors.email.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="message">Message</Label>
+                  <Textarea
+                    id="message"
+                    placeholder="Your message..."
+                    rows={5}
+                    {...register("message")}
+                    className={errors.message ? "border-destructive" : ""}
+                  />
+                  {errors.message && (
+                    <p className="text-sm text-destructive">{errors.message.message}</p>
+                  )}
+                </div>
+
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4 mr-2" />
+                      Send Message
+                    </>
+                  )}
+                </Button>
+              </form>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </main>
   );
 };
 
