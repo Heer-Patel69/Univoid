@@ -7,6 +7,7 @@ const corsHeaders = {
 };
 
 // Curated India-only scholarships (reliable data source)
+// Updated for 2025-26 academic year
 const INDIA_SCHOLARSHIPS = [
   {
     title: "National Scholarship Portal (NSP) - Central Sector Scheme",
@@ -14,7 +15,7 @@ const INDIA_SCHOLARSHIPS = [
     source_name: "National Scholarship Portal",
     source_url: "https://scholarships.gov.in",
     source_domain: "scholarships.gov.in",
-    deadline: "2025-01-31",
+    deadline: "2025-12-31",
     eligible_states: [],
     is_all_india: true,
     eligible_courses: ["UG", "PG"],
@@ -27,7 +28,7 @@ const INDIA_SCHOLARSHIPS = [
     source_name: "Kendriya Sainik Board",
     source_url: "https://ksb.gov.in",
     source_domain: "ksb.gov.in",
-    deadline: "2025-02-28",
+    deadline: "2025-12-31",
     eligible_states: [],
     is_all_india: true,
     eligible_courses: ["UG", "PG", "Diploma"],
@@ -40,7 +41,7 @@ const INDIA_SCHOLARSHIPS = [
     source_name: "AICTE",
     source_url: "https://www.aicte-india.org",
     source_domain: "aicte-india.org",
-    deadline: "2025-03-15",
+    deadline: "2025-12-31",
     eligible_states: [],
     is_all_india: true,
     eligible_courses: ["UG", "Diploma"],
@@ -53,7 +54,7 @@ const INDIA_SCHOLARSHIPS = [
     source_name: "AICTE",
     source_url: "https://www.aicte-india.org",
     source_domain: "aicte-india.org",
-    deadline: "2025-03-15",
+    deadline: "2025-12-31",
     eligible_states: [],
     is_all_india: true,
     eligible_courses: ["UG", "Diploma"],
@@ -66,7 +67,7 @@ const INDIA_SCHOLARSHIPS = [
     source_name: "UGC",
     source_url: "https://www.ugc.ac.in",
     source_domain: "ugc.ac.in",
-    deadline: "2025-03-31",
+    deadline: "2025-12-31",
     eligible_states: [],
     is_all_india: true,
     eligible_courses: ["PG"],
@@ -79,7 +80,7 @@ const INDIA_SCHOLARSHIPS = [
     source_name: "Karnataka State Government",
     source_url: "https://sw.kar.nic.in",
     source_domain: "sw.kar.nic.in",
-    deadline: "2025-02-28",
+    deadline: "2025-12-31",
     eligible_states: ["Karnataka"],
     is_all_india: false,
     eligible_courses: ["UG", "PG", "Diploma"],
@@ -92,7 +93,7 @@ const INDIA_SCHOLARSHIPS = [
     source_name: "Jharkhand Government",
     source_url: "https://ekalyan.cgg.gov.in",
     source_domain: "ekalyan.cgg.gov.in",
-    deadline: "2025-02-15",
+    deadline: "2025-12-31",
     eligible_states: ["Jharkhand"],
     is_all_india: false,
     eligible_courses: ["UG", "PG", "Diploma"],
@@ -105,7 +106,7 @@ const INDIA_SCHOLARSHIPS = [
     source_name: "Maharashtra Government",
     source_url: "https://mahadbt.maharashtra.gov.in",
     source_domain: "mahadbt.maharashtra.gov.in",
-    deadline: "2025-03-31",
+    deadline: "2025-12-31",
     eligible_states: ["Maharashtra"],
     is_all_india: false,
     eligible_courses: ["UG", "PG"],
@@ -118,7 +119,7 @@ const INDIA_SCHOLARSHIPS = [
     source_name: "West Bengal Government",
     source_url: "https://wbmdfc.org",
     source_domain: "wbmdfc.org",
-    deadline: "2025-02-28",
+    deadline: "2025-12-31",
     eligible_states: ["West Bengal"],
     is_all_india: false,
     eligible_courses: ["UG", "PG", "Diploma"],
@@ -131,7 +132,7 @@ const INDIA_SCHOLARSHIPS = [
     source_name: "Tamil Nadu Government",
     source_url: "https://bcmbcmw.tn.gov.in",
     source_domain: "bcmbcmw.tn.gov.in",
-    deadline: "2025-03-15",
+    deadline: "2025-12-31",
     eligible_states: ["Tamil Nadu"],
     is_all_india: false,
     eligible_courses: ["UG", "PG", "Diploma"],
@@ -144,7 +145,7 @@ const INDIA_SCHOLARSHIPS = [
     source_name: "Telangana Government",
     source_url: "https://telanganaepass.cgg.gov.in",
     source_domain: "telanganaepass.cgg.gov.in",
-    deadline: "2025-02-28",
+    deadline: "2025-12-31",
     eligible_states: ["Telangana"],
     is_all_india: false,
     eligible_courses: ["UG", "PG", "Diploma"],
@@ -157,7 +158,7 @@ const INDIA_SCHOLARSHIPS = [
     source_name: "Uttar Pradesh Government",
     source_url: "https://scholarship.up.gov.in",
     source_domain: "scholarship.up.gov.in",
-    deadline: "2025-01-31",
+    deadline: "2025-12-31",
     eligible_states: ["Uttar Pradesh"],
     is_all_india: false,
     eligible_courses: ["UG", "PG", "Diploma"],
@@ -170,7 +171,7 @@ const INDIA_SCHOLARSHIPS = [
     source_name: "Rajasthan Government",
     source_url: "https://hte.rajasthan.gov.in",
     source_domain: "hte.rajasthan.gov.in",
-    deadline: "2025-03-31",
+    deadline: "2025-12-31",
     eligible_states: ["Rajasthan"],
     is_all_india: false,
     eligible_courses: ["UG"],
@@ -183,7 +184,7 @@ const INDIA_SCHOLARSHIPS = [
     source_name: "Gujarat Government",
     source_url: "https://mysy.guj.nic.in",
     source_domain: "mysy.guj.nic.in",
-    deadline: "2025-02-15",
+    deadline: "2025-12-31",
     eligible_states: ["Gujarat"],
     is_all_india: false,
     eligible_courses: ["UG", "PG", "Diploma"],
@@ -196,7 +197,7 @@ const INDIA_SCHOLARSHIPS = [
     source_name: "DST India",
     source_url: "https://online-inspire.gov.in",
     source_domain: "online-inspire.gov.in",
-    deadline: "2025-02-28",
+    deadline: "2025-12-31",
     eligible_states: [],
     is_all_india: true,
     eligible_courses: ["UG"],
@@ -204,38 +205,6 @@ const INDIA_SCHOLARSHIPS = [
     application_link: "https://online-inspire.gov.in",
   },
 ];
-
-async function getOrCreateSystemUser(supabase: any): Promise<string> {
-  const SYSTEM_USER_EMAIL = "system@univoid.local";
-  
-  const { data: existingProfile } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("email", SYSTEM_USER_EMAIL)
-    .maybeSingle();
-
-  if (existingProfile?.id) {
-    return existingProfile.id;
-  }
-
-  const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-    email: SYSTEM_USER_EMAIL,
-    password: crypto.randomUUID(),
-    email_confirm: true,
-    user_metadata: {
-      full_name: "UniVoid System",
-      college_name: "UniVoid System",
-      course_stream: "System",
-      year_semester: "N/A",
-    },
-  });
-
-  if (authError) {
-    throw new Error(`Failed to create system user: ${authError.message}`);
-  }
-
-  return authData.user.id;
-}
 
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
@@ -248,27 +217,43 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    const systemUserId = await getOrCreateSystemUser(supabase);
     
     let insertedCount = 0;
-    let skippedCount = 0;
+    let updatedCount = 0;
 
     for (const scholarship of INDIA_SCHOLARSHIPS) {
-      // Check for duplicates by title prefix
+      // Check for existing by title prefix
       const titlePrefix = scholarship.title.substring(0, 40);
       const { data: existing } = await supabase
         .from("scholarships")
-        .select("id")
+        .select("id, deadline, deadline_status")
         .ilike("title", `%${titlePrefix}%`)
         .limit(1);
 
       if (existing && existing.length > 0) {
-        console.log(`Skipping duplicate: ${titlePrefix}...`);
-        skippedCount++;
+        // UPDATE existing scholarship with fresh data
+        const { error: updateError } = await supabase
+          .from("scholarships")
+          .update({
+            description: scholarship.description,
+            source_url: scholarship.source_url,
+            application_link: scholarship.application_link,
+            deadline: scholarship.deadline,
+            deadline_status: "active",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existing[0].id);
+
+        if (updateError) {
+          console.error(`Failed to update ${scholarship.title}: ${updateError.message}`);
+        } else {
+          updatedCount++;
+          console.log(`Updated: ${scholarship.title.substring(0, 50)}...`);
+        }
         continue;
       }
 
+      // Insert new scholarship
       const { error } = await supabase.from("scholarships").insert({
         title: scholarship.title,
         description: scholarship.description,
@@ -283,7 +268,6 @@ const handler = async (req: Request): Promise<Response> => {
         application_link: scholarship.application_link,
         official_source: scholarship.official_source,
         status: "approved", // Auto-approve verified government sources
-        created_by: systemUserId,
       });
 
       if (error) {
@@ -294,15 +278,18 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    console.log(`Completed: ${insertedCount} inserted, ${skippedCount} skipped`);
+    // Also run auto-expire on old scholarships
+    await supabase.rpc("auto_expire_scholarships");
+
+    console.log(`Completed: ${insertedCount} inserted, ${updatedCount} updated`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `Synced ${insertedCount} India-only scholarships`,
+        message: `Synced scholarships: ${insertedCount} new, ${updatedCount} updated`,
         total: INDIA_SCHOLARSHIPS.length,
         inserted: insertedCount,
-        skipped: skippedCount,
+        updated: updatedCount,
       }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );

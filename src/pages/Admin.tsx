@@ -8,8 +8,9 @@ import {
   Check, X, FileText, Newspaper, BookOpen, Loader2, 
   Flag, Trash2, Eye, Users, Shield, AlertTriangle, Ban, KeyRound,
   Mail, MessageSquare, Sparkles, Calendar, ToggleLeft, ToggleRight, UserPlus,
-  Bell, Send
+  Bell, Send, GraduationCap
 } from "lucide-react";
+import ScholarshipManager from "@/components/admin/ScholarshipManager";
 import AdminAssistantManager from "@/components/admin/AdminAssistantManager";
 import { SystemToolsTab } from "@/components/admin/SystemToolsTab";
 import { isFullAdmin } from "@/services/adminInviteService";
@@ -1188,6 +1189,10 @@ const Admin = () => {
                     <Calendar className="w-3 h-3 mr-1" />
                     Events
                   </TabsTrigger>
+                  <TabsTrigger value="scholarships" className="text-xs sm:text-sm">
+                    <GraduationCap className="w-3 h-3 mr-1" />
+                    Scholarships
+                  </TabsTrigger>
                   <TabsTrigger value="assistants" className="text-xs sm:text-sm">
                     <UserPlus className="w-3 h-3 mr-1" />
                     Assistants
@@ -1230,6 +1235,10 @@ const Admin = () => {
 
                 <TabsContent value="events" className="mt-0">
                   {renderEventsTab()}
+                </TabsContent>
+
+                <TabsContent value="scholarships" className="mt-0">
+                  <ScholarshipManager />
                 </TabsContent>
 
                 <TabsContent value="assistants" className="mt-0">
