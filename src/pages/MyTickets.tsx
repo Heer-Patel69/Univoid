@@ -55,7 +55,6 @@ const MyTickets = () => {
   const { upcomingTickets, usedTickets, expiredTickets } = useMemo(() => {
     if (!tickets) return { upcomingTickets: [], usedTickets: [], expiredTickets: [] };
     
-    const now = new Date();
     return {
       upcomingTickets: tickets.filter(t => !t.is_used && !isPast(new Date(t.event.start_date))),
       usedTickets: tickets.filter(t => t.is_used),
@@ -84,7 +83,6 @@ const MyTickets = () => {
   if (!user) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
-        <Header onAuthClick={() => setShowAuthModal(true)} />
         <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
         <main className="flex-1 container mx-auto px-4 py-20 text-center">
           <Ticket className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
@@ -92,7 +90,6 @@ const MyTickets = () => {
           <p className="text-muted-foreground mb-6">Sign in to view your event tickets</p>
           <Button onClick={() => setShowAuthModal(true)}>Login</Button>
         </main>
-        <Footer />
       </div>
     );
   }
@@ -196,7 +193,6 @@ const MyTickets = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header onAuthClick={() => setShowAuthModal(true)} />
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
 
       <main className="flex-1 container mx-auto px-4 py-6 pb-24 md:pb-8 max-w-3xl">
@@ -292,9 +288,6 @@ const MyTickets = () => {
           </Tabs>
         )}
       </main>
-
-      <Footer />
-      <BottomNav />
     </div>
   );
 };

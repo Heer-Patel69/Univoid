@@ -82,12 +82,9 @@ const BecomeOrganizer = () => {
     },
   });
 
-  
-
   if (!user) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
-        <Header onAuthClick={() => setShowAuthModal(true)} />
         <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
         <main className="flex-1 container mx-auto px-4 py-20 text-center">
           <Sparkles className="w-16 h-16 text-primary mx-auto mb-4" />
@@ -95,7 +92,6 @@ const BecomeOrganizer = () => {
           <p className="text-muted-foreground mb-6">Login to apply for organizer privileges</p>
           <Button onClick={() => setShowAuthModal(true)}>Login to Continue</Button>
         </main>
-        <Footer />
       </div>
     );
   }
@@ -103,7 +99,6 @@ const BecomeOrganizer = () => {
   if (isOrganizer) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
-        <Header onAuthClick={() => setShowAuthModal(true)} />
         <main className="flex-1 container mx-auto px-4 py-20 text-center max-w-lg">
           <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
           <h1 className="text-2xl font-bold mb-4">You're Already an Organizer!</h1>
@@ -113,15 +108,12 @@ const BecomeOrganizer = () => {
             <Button variant="outline" onClick={() => navigate("/organizer/create-event")}>Create Event</Button>
           </div>
         </main>
-        <Footer />
-        <BottomNav />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header onAuthClick={() => setShowAuthModal(true)} />
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
 
       <main className="flex-1 container mx-auto px-4 py-6 pb-24 md:pb-8 max-w-2xl">
@@ -256,9 +248,6 @@ const BecomeOrganizer = () => {
           </Card>
         )}
       </main>
-
-      <Footer />
-      <BottomNav />
     </div>
   );
 };

@@ -97,8 +97,6 @@ const ListBook = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header onAuthClick={() => {}} />
-      
       <main className="flex-1 py-8">
         <div className="container-wide max-w-lg">
           <Link to="/dashboard">
@@ -201,8 +199,6 @@ const ListBook = () => {
           </Card>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 };

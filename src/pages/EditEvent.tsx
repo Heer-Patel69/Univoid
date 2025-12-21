@@ -149,13 +149,11 @@ const EditEvent = () => {
   if (!user) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
-        <Header onAuthClick={() => setShowAuthModal(true)} />
         <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
         <main className="flex-1 container mx-auto px-4 py-20 text-center">
           <h1 className="text-2xl font-bold mb-4">Login Required</h1>
           <Button onClick={() => setShowAuthModal(true)}>Login</Button>
         </main>
-        <Footer />
       </div>
     );
   }
@@ -163,11 +161,9 @@ const EditEvent = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
-        <Header onAuthClick={() => setShowAuthModal(true)} />
         <main className="flex-1 container mx-auto px-4 py-20 text-center">
           <Loader2 className="w-8 h-8 animate-spin mx-auto" />
         </main>
-        <Footer />
       </div>
     );
   }
@@ -175,20 +171,17 @@ const EditEvent = () => {
   if (!event || event.organizer_id !== user.id) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
-        <Header onAuthClick={() => setShowAuthModal(true)} />
         <main className="flex-1 container mx-auto px-4 py-20 text-center">
           <h1 className="text-2xl font-bold mb-4">Not Authorized</h1>
           <p className="text-muted-foreground mb-6">You can only edit your own events.</p>
           <Button onClick={() => navigate("/organizer/dashboard")}>Back to Dashboard</Button>
         </main>
-        <Footer />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header onAuthClick={() => setShowAuthModal(true)} />
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
 
       <main className="flex-1 container mx-auto px-4 py-6 pb-24 md:pb-8 max-w-3xl">
@@ -371,9 +364,6 @@ const EditEvent = () => {
           </div>
         </div>
       </main>
-
-      <Footer />
-      <BottomNav />
     </div>
   );
 };

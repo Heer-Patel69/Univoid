@@ -78,7 +78,6 @@ export default function ScholarshipDetail() {
         <Helmet>
           <title>Scholarship Not Found | UniVoid</title>
         </Helmet>
-        <Header onAuthClick={() => setShowAuthModal(true)} />
         <div className="min-h-screen bg-background pb-20 md:pb-0">
           <div className="container mx-auto px-4 py-16 text-center">
             <AlertCircle className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
@@ -92,8 +91,6 @@ export default function ScholarshipDetail() {
             </Button>
           </div>
         </div>
-        <Footer />
-        <BottomNav />
         <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
       </>
     );
@@ -107,8 +104,6 @@ export default function ScholarshipDetail() {
         <title>{scholarship?.title || "Scholarship Details"} | UniVoid</title>
         <meta name="description" content={scholarship?.description || "View scholarship details and apply"} />
       </Helmet>
-
-      <Header onAuthClick={() => setShowAuthModal(true)} />
 
       <div className="min-h-screen bg-background pb-20 md:pb-0">
         <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -274,8 +269,6 @@ export default function ScholarshipDetail() {
         </div>
       </div>
 
-      <Footer />
-      <BottomNav />
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
     </>
   );
