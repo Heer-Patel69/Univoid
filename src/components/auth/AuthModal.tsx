@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Dialog,
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -43,6 +44,25 @@ const AuthModal = ({ isOpen, onClose, onSuccess, message }: AuthModalProps) => {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, userRoles, isAdmin, isAdminOrAssistant, isLoading } = useAuth();
+
+  // Auto-close and redirect when user logs in
+  useEffect(() => {
+    if (user && !isLoading && isOpen) {
+      onClose();
+      
+      // Determine redirect path based on role
+      let redirectPath = '/dashboard';
+      if (isAdmin || isAdminOrAssistant) {
+        redirectPath = '/admin';
+      } else if (userRoles.includes('organizer')) {
+        redirectPath = '/organizer-dashboard';
+      }
+      
+      navigate(redirectPath, { replace: true });
+      onSuccess?.();
+    }
+  }, [user, isLoading, isOpen, userRoles, isAdmin, isAdminOrAssistant, navigate, onClose, onSuccess]);
 
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);

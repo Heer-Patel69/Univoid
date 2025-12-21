@@ -95,7 +95,7 @@ interface UserItem {
 }
 
 const Admin = () => {
-  const { user, isAdmin, isLoading: authLoading } = useAuth();
+  const { user, isAdmin, isAdminOrAssistant, isLoading: authLoading } = useAuth();
   
   // Content state
   const [allMaterials, setAllMaterials] = useState<ContentItem[]>([]);
@@ -190,7 +190,7 @@ const Admin = () => {
   }, []);
 
   useEffect(() => {
-    if (user && isAdmin) {
+    if (user && isAdminOrAssistant) {
       fetchAllData();
       isFullAdmin().then(setIsUserFullAdmin);
 
@@ -254,7 +254,7 @@ const Admin = () => {
         channels.forEach(channel => supabase.removeChannel(channel));
       };
     }
-  }, [user, isAdmin, fetchAllData]);
+  }, [user, isAdminOrAssistant, fetchAllData]);
 
   // Check auth loading first
   if (authLoading) {
@@ -329,8 +329,8 @@ const Admin = () => {
     );
   }
 
-  // Show access denied if logged in but not admin
-  if (!isAdmin) {
+  // Show access denied if logged in but not admin or assistant
+  if (!isAdminOrAssistant) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
         <div className="text-center max-w-md">
