@@ -20,6 +20,7 @@ import {
   Repeat2,
   Ticket,
   Plus,
+  Home,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -40,34 +41,61 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
     }
   }, [location.pathname, hasNewScholarships, markAsSeen]);
 
-  const isActive = (href: string) => location.pathname === href || location.pathname.startsWith(href + '/');
+  const isActive = (href: string) => {
+    if (href === "/") return location.pathname === "/";
+    return location.pathname === href || location.pathname.startsWith(href + '/');
+  };
 
-  // Core Browse Items - Always visible
-  const browseItems = [
-    { label: "Materials", icon: BookOpen, href: "/materials", id: "nav-materials" },
-    { label: "Scholarships", icon: GraduationCap, href: "/scholarships", showBadge: true, id: "nav-scholarships" },
-    { label: "Events", icon: Calendar, href: "/events", id: "nav-events" },
-    { label: "Projects", icon: Folder, href: "/projects", id: "nav-projects" },
-    { label: "Task Plaza", icon: Briefcase, href: "/tasks", id: "nav-tasks" },
-    { label: "Books", icon: Repeat2, href: "/books", id: "nav-books" },
-    { label: "Campus News", icon: Newspaper, href: "/news", id: "nav-news" },
-    { label: "Leaderboard", icon: Trophy, href: "/leaderboard", id: "nav-leaderboard" },
+  // Dashboard-specific items
+  const dashboardItems = [
+    { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+    { label: "My Profile", icon: User, href: "/profile" },
+    { label: "My Tickets", icon: Ticket, href: "/my-events" },
   ];
 
-  // My Stuff - User's personal items
-  const myItems = [
-    { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard", id: "nav-dashboard" },
-    { label: "My Profile", icon: User, href: "/profile", id: "nav-profile" },
-    { label: "My Tickets", icon: Ticket, href: "/my-events", id: "nav-tickets" },
+  // Browse Items
+  const browseItems = [
+    { label: "Materials", icon: BookOpen, href: "/materials" },
+    { label: "Scholarships", icon: GraduationCap, href: "/scholarships", showBadge: true },
+    { label: "Events", icon: Calendar, href: "/events" },
+    { label: "Projects", icon: Folder, href: "/projects" },
+    { label: "Task Plaza", icon: Briefcase, href: "/tasks" },
+    { label: "Books", icon: Repeat2, href: "/books" },
+    { label: "Campus News", icon: Newspaper, href: "/news" },
+    { label: "Leaderboard", icon: Trophy, href: "/leaderboard" },
   ];
 
   // Contribute Items
   const contributeItems = [
-    { label: "Upload Material", icon: FileText, href: "/upload-material", id: "btn-upload-material" },
-    { label: "Sell Book", icon: Repeat2, href: "/sell-book", id: "btn-sell-book" },
-    { label: "Create Project", icon: Folder, href: "/projects/create", id: "btn-create-project" },
-    { label: "Post Task", icon: Briefcase, href: "/tasks/create", id: "btn-post-task" },
+    { label: "Upload Material", icon: FileText, href: "/upload-material" },
+    { label: "Sell Book", icon: Repeat2, href: "/sell-book" },
+    { label: "Create Project", icon: Folder, href: "/projects/create" },
+    { label: "Post Task", icon: Briefcase, href: "/tasks/create" },
   ];
+
+  const renderNavItem = (item: { label: string; icon: React.ElementType; href: string; showBadge?: boolean }) => {
+    const showBadge = item.showBadge && hasNewScholarships && !isActive(item.href);
+    return (
+      <PrefetchLink
+        key={item.href}
+        to={item.href}
+        className={cn(
+          "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all border",
+          isActive(item.href)
+            ? "bg-secondary border-border font-bold"
+            : "text-foreground border-transparent hover:bg-secondary/50"
+        )}
+      >
+        <item.icon className="w-4 h-4 stroke-[2px]" />
+        {item.label}
+        {showBadge && (
+          <span className="ml-auto min-w-[20px] h-[20px] bg-foreground text-background text-[10px] font-bold rounded-full flex items-center justify-center px-1.5">
+            {newCount > 9 ? "9+" : newCount}
+          </span>
+        )}
+      </PrefetchLink>
+    );
+  };
 
   return (
     <aside className={cn(
@@ -77,7 +105,7 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
         : "hidden lg:flex w-64 h-screen sticky top-0 overflow-y-auto"
     )}>
       <div className="p-4 flex flex-col flex-1">
-        {/* Logo */}
+        {/* Logo - Always routes to HOME */}
         <PrefetchLink to="/" className="flex items-center gap-2 px-3 py-4 mb-4">
           <div className="w-10 h-10 bg-primary border border-border rounded-xl flex items-center justify-center shadow-sketch-sm">
             <span className="text-primary-foreground font-bold text-lg">U</span>
@@ -85,7 +113,7 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
           <span className="font-bold text-xl text-foreground">UniVoid</span>
         </PrefetchLink>
 
-        {/* User Card - Sticky Note style */}
+        {/* User Card */}
         <PrefetchLink to="/profile" className="bg-card border border-border rounded-xl p-4 mb-6 shadow-sketch-sm hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-sketch transition-all">
           <div className="flex items-center gap-3">
             {profile?.profile_photo_url ? (
@@ -113,77 +141,38 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
 
         {/* Navigation */}
         <nav className="flex-1 space-y-1">
+          {/* Home Link */}
+          <PrefetchLink
+            to="/"
+            className={cn(
+              "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all border",
+              isActive("/")
+                ? "bg-secondary border-border font-bold"
+                : "text-foreground border-transparent hover:bg-secondary/50"
+            )}
+          >
+            <Home className="w-4 h-4 stroke-[2px]" />
+            Home
+          </PrefetchLink>
+
           {/* My Stuff Section */}
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-2">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mt-4 mb-2">
             My Stuff
           </p>
-          {myItems.map((item) => (
-            <PrefetchLink
-              key={item.href}
-              to={item.href}
-              id={item.id}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all border",
-                isActive(item.href)
-                  ? "bg-secondary border-border font-bold"
-                  : "text-foreground border-transparent hover:bg-secondary/50"
-              )}
-            >
-              <item.icon className="w-4 h-4 stroke-[2px]" />
-              {item.label}
-            </PrefetchLink>
-          ))}
+          {dashboardItems.map(renderNavItem)}
 
           {/* Browse Section */}
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mt-6 mb-2">
             Browse
           </p>
-          {browseItems.map((item) => {
-            const showBadge = item.showBadge && hasNewScholarships && !isActive(item.href);
-            return (
-              <PrefetchLink
-                key={item.href}
-                to={item.href}
-                id={item.id}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all relative border",
-                  isActive(item.href)
-                    ? "bg-secondary border-border font-bold"
-                    : "text-foreground border-transparent hover:bg-secondary/50"
-                )}
-              >
-                <item.icon className="w-4 h-4 stroke-[2px]" />
-                {item.label}
-                {showBadge && (
-                  <span className="ml-auto min-w-[20px] h-[20px] bg-foreground text-background text-[10px] font-bold rounded-full flex items-center justify-center px-1.5">
-                    {newCount > 9 ? "9+" : newCount}
-                  </span>
-                )}
-              </PrefetchLink>
-            );
-          })}
+          {browseItems.map(renderNavItem)}
 
           {/* Contribute Section */}
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mt-6 mb-2">
-            <Plus className="w-3 h-3 inline mr-1" />
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mt-6 mb-2 flex items-center gap-1">
+            <Plus className="w-3 h-3" />
             Contribute
           </p>
-          {contributeItems.map((item) => (
-            <PrefetchLink
-              key={item.href}
-              to={item.href}
-              id={item.id}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all border",
-                isActive(item.href)
-                  ? "bg-secondary border-border font-bold"
-                  : "text-foreground border-transparent hover:bg-secondary/50"
-              )}
-            >
-              <item.icon className="w-4 h-4 stroke-[2px]" />
-              {item.label}
-            </PrefetchLink>
-          ))}
+          {contributeItems.map(renderNavItem)}
 
           {/* Organizer Section */}
           {(isOrganizer || isAdmin) && (
@@ -232,8 +221,12 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
         <div className="border-t border-border pt-4 mt-4 space-y-1">
           <PrefetchLink
             to="/settings"
-            id="nav-settings"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-secondary/50 transition-all"
+            className={cn(
+              "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
+              isActive("/settings")
+                ? "bg-secondary font-bold"
+                : "text-foreground hover:bg-secondary/50"
+            )}
           >
             <Settings className="w-4 h-4 stroke-[2px]" />
             Settings
