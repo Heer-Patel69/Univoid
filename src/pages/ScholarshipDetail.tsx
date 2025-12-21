@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { BottomNav } from "@/components/layout/BottomNav";
 import { Helmet } from "react-helmet";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, MapPin, GraduationCap, Calendar, ExternalLink, CheckCircle2, AlertCircle, Bell, BellOff, Loader2 } from "lucide-react";
@@ -272,6 +273,7 @@ export default function ScholarshipDetail() {
       </div>
 
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+      <BottomNav />
     </>
   );
 }
