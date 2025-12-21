@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,44 +45,37 @@ const SubmitNews = () => {
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <Header onAuthClick={() => {}} />
-        <main className="flex-1 py-8">
-          <div className="container-wide max-w-lg">
-            <Card>
-              <CardContent className="p-8 text-center">
-                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle className="w-8 h-8 text-green-600" />
-                </div>
-                <h2 className="text-xl font-bold text-foreground mb-2">News Submitted!</h2>
-                <p className="text-muted-foreground mb-6">
-                  Your news has been submitted for review. Once approved, it will be published and you'll earn XP!
-                </p>
-                <div className="flex gap-3 justify-center">
-                  <Button variant="outline" onClick={() => { setIsSuccess(false); setTitle(""); setContent(""); setExternalLink(""); }}>
-                    Submit Another
-                  </Button>
-                  <Link to="/dashboard">
-                    <Button>Go to Dashboard</Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </main>
-        <Footer />
-      </div>
+      <main className="flex-1 py-8">
+        <div className="container-wide max-w-lg">
+          <Card>
+            <CardContent className="p-8 text-center">
+              <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-8 h-8 text-green-600" />
+              </div>
+              <h2 className="text-xl font-bold text-foreground mb-2">News Submitted!</h2>
+              <p className="text-muted-foreground mb-6">
+                Your news has been submitted for review. Once approved, it will be published and you'll earn XP!
+              </p>
+              <div className="flex gap-3 justify-center">
+                <Button variant="outline" onClick={() => { setIsSuccess(false); setTitle(""); setContent(""); setExternalLink(""); }}>
+                  Submit Another
+                </Button>
+                <Link to="/dashboard">
+                  <Button>Go to Dashboard</Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header onAuthClick={() => {}} />
-      
-      <main className="flex-1 py-8">
-        <div className="container-wide max-w-2xl">
-          <Link to="/dashboard">
-            <Button variant="ghost" size="sm" className="mb-6">
+    <main className="flex-1 py-8">
+      <div className="container-wide max-w-2xl">
+        <Link to="/dashboard">
+          <Button variant="ghost" size="sm" className="mb-6">
               <ArrowLeft className="w-4 h-4 mr-1" />
               Back to Dashboard
             </Button>
@@ -151,12 +142,9 @@ const SubmitNews = () => {
                 </Button>
               </form>
             </CardContent>
-          </Card>
-        </div>
-      </main>
-
-      <Footer />
-    </div>
+        </Card>
+      </div>
+    </main>
   );
 };
 
