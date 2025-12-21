@@ -32,15 +32,41 @@ export async function updateContentStatus(
   createdBy: string,
   contentTitle?: string
 ): Promise<{ error: Error | null }> {
-  const { error } = await supabase
+  // First check current status to prevent duplicate operations
+  const { data: currentItem, error: fetchError } = await supabase
     .from(type)
-    .update({ status })
-    .eq('id', contentId);
+    .select('status')
+    .eq('id', contentId)
+    .single();
+
+  if (fetchError) {
+    return { error: fetchError as Error };
+  }
+
+  // If already in the target status, skip the update
+  if (currentItem?.status === status) {
+    console.log(`Content ${contentId} is already ${status}, skipping update`);
+    return { error: null };
+  }
+
+  // Perform the status update
+  const { error, data } = await supabase
+    .from(type)
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq('id', contentId)
+    .select()
+    .single();
 
   if (error) {
+    console.error('Update error:', error);
     return { error: error as Error };
   }
 
+  if (!data) {
+    return { error: new Error('Update failed - no data returned') };
+  }
+
+  // Award XP only on first approval (award_xp function now handles duplicate prevention)
   if (status === 'approved') {
     const xpAmount = getXPAmount(type);
     if (xpAmount > 0) {

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useOutletContext } from "react-router-dom";
+import { BottomNav } from "@/components/layout/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -356,6 +357,8 @@ const Tasks = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <BottomNav />
     </>
   );
 };
