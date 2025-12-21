@@ -10,7 +10,7 @@ interface BookImageUploadProps {
   maxImages?: number;
 }
 
-const BookImageUpload = ({ images, onImagesChange, maxImages = 5 }: BookImageUploadProps) => {
+const BookImageUpload = ({ images, onImagesChange, maxImages = 3 }: BookImageUploadProps) => {
   const [isCompressing, setIsCompressing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -20,8 +20,16 @@ const BookImageUpload = ({ images, onImagesChange, maxImages = 5 }: BookImageUpl
 
     const remainingSlots = maxImages - images.length;
     if (remainingSlots <= 0) {
-      toast.error(`Maximum ${maxImages} images allowed`);
+      toast.error(`You can upload maximum ${maxImages} images only`);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
       return;
+    }
+
+    // Show warning if trying to add too many
+    if (files.length > remainingSlots) {
+      toast.warning(`Only ${remainingSlots} more image(s) can be added. Max ${maxImages} allowed.`);
     }
 
     const filesToProcess = files.slice(0, remainingSlots);
@@ -127,7 +135,7 @@ const BookImageUpload = ({ images, onImagesChange, maxImages = 5 }: BookImageUpl
         >
           <ImagePlus className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
           <p className="text-sm text-muted-foreground">
-            Click to add photos (1-5 images)
+            Click to add photos (max {maxImages} images)
           </p>
           <p className="text-xs text-muted-foreground mt-1">
             JPG, PNG, WebP • First image will be the cover

@@ -11,17 +11,32 @@ import { createBook } from "@/services/booksService";
 import { toast } from "sonner";
 import { ArrowLeft, BookOpen, Loader2, CheckCircle } from "lucide-react";
 import BookImageUpload from "@/components/books/BookImageUpload";
+import BookScanner from "@/components/books/BookScanner";
 import { CompressedImage } from "@/lib/imageCompression";
+
+const MAX_BOOK_IMAGES = 3;
 
 const ListBook = () => {
   const { user, profile, isLoading } = useAuth();
   const [title, setTitle] = useState("");
+  const [author, setAuthor] = useState("");
   const [description, setDescription] = useState("");
   const [condition, setCondition] = useState("");
   const [price, setPrice] = useState("");
   const [images, setImages] = useState<CompressedImage[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+
+  // Handle book scanned from ISBN
+  const handleBookScanned = (bookInfo: { title: string; author?: string }) => {
+    setTitle(bookInfo.title);
+    if (bookInfo.author) {
+      setAuthor(bookInfo.author);
+    }
+  };
+
+  // Check if form is valid for submission
+  const isFormValid = title.trim().length > 0 && images.length > 0;
 
   // Route protection is handled by ProtectedRoute wrapper
   // Additional check for profile since we need it for seller info
@@ -44,9 +59,15 @@ const ListBook = () => {
 
     setIsSubmitting(true);
 
+    // Combine author into description if provided
+    const fullDescription = author 
+      ? `Author: ${author}${description ? '\n' + description : ''}`
+      : description;
+
     const { id, error } = await createBook({
       title,
-      description: description || undefined,
+      description: fullDescription || undefined,
+      author: author || undefined,
       condition: condition || undefined,
       price: price ? parseFloat(price) : undefined,
       seller_email: profile.email,
@@ -81,7 +102,7 @@ const ListBook = () => {
                 Your book is now live in the book exchange!
               </p>
               <div className="flex gap-3 justify-center">
-                <Button variant="outline" onClick={() => { setIsSuccess(false); setTitle(""); setDescription(""); setCondition(""); setPrice(""); setImages([]); }}>
+                <Button variant="outline" onClick={() => { setIsSuccess(false); setTitle(""); setAuthor(""); setDescription(""); setCondition(""); setPrice(""); setImages([]); }}>
                   List Another
                 </Button>
                 <Link to="/dashboard">
@@ -116,16 +137,22 @@ const ListBook = () => {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
-                  <Label>Book Photos *</Label>
+                  <div className="flex items-center justify-between">
+                    <Label>Book Photos * (max 3)</Label>
+                    <span className="text-xs text-muted-foreground">{images.length}/3</span>
+                  </div>
                   <BookImageUpload
                     images={images}
                     onImagesChange={setImages}
-                    maxImages={5}
+                    maxImages={MAX_BOOK_IMAGES}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="title">Book Title *</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="title">Book Title *</Label>
+                    <BookScanner onBookScanned={handleBookScanned} />
+                  </div>
                   <Input
                     id="title"
                     placeholder="e.g., Calculus: Early Transcendentals"
@@ -133,10 +160,23 @@ const ListBook = () => {
                     onChange={(e) => setTitle(e.target.value)}
                     required
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Tip: Use "Scan ISBN" to auto-fill book details
+                  </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
+                  <Label htmlFor="author">Author</Label>
+                  <Input
+                    id="author"
+                    placeholder="e.g., James Stewart"
+                    value={author}
+                    onChange={(e) => setAuthor(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description">Additional Details</Label>
                   <Textarea
                     id="description"
                     placeholder="Author, edition, subject, etc..."
@@ -181,7 +221,7 @@ const ListBook = () => {
                   </p>
                 </div>
 
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                <Button type="submit" className="w-full" disabled={isSubmitting || !isFormValid}>
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -194,6 +234,11 @@ const ListBook = () => {
                     </>
                   )}
                 </Button>
+                {!isFormValid && (
+                  <p className="text-xs text-muted-foreground text-center">
+                    Add at least 1 photo and enter a book title to continue
+                  </p>
+                )}
               </form>
             </CardContent>
           </Card>

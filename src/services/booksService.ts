@@ -75,6 +75,7 @@ export async function getSellerContact(bookId: string): Promise<{
 interface CreateBookData {
   title: string;
   description?: string;
+  author?: string;
   price?: number;
   condition?: string;
   seller_email: string;
@@ -115,6 +116,7 @@ export async function createBook(
     .insert({
       title: data.title,
       description: data.description || null,
+      author: data.author || null,
       price: data.price || null,
       condition: data.condition || null,
       image_urls: imageUrls,
