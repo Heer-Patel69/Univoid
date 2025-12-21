@@ -219,25 +219,29 @@ export async function getBooksPaginated(
   page = 0,
   pageSize = DEFAULT_PAGE_SIZE
 ): Promise<PaginatedResult<Book>> {
-  const from = page * pageSize;
-  // Fetch extra to account for filtering
-  const to = from + pageSize + 10;
+  const offset = page * pageSize;
 
-  const { data, error, count } = await supabase
-    .from('books')
-    .select('*', { count: 'exact' })
-    .eq('status', 'approved')
-    .eq('is_sold', false)
-    .order('created_at', { ascending: false })
-    .range(from, to);
+  // Use the secure RPC function that bypasses RLS for public access
+  const { data, error } = await supabase.rpc('get_books_safe', {
+    p_status: 'approved',
+    p_limit: pageSize + 10, // Fetch extra to account for filtering
+    p_offset: offset
+  });
 
   if (error) throw error;
 
   // Filter expired books and limit
-  const books = (data as Book[])
+  const books = ((data || []) as Book[])
     .filter(book => !isBookExpired(book.created_at))
     .slice(0, pageSize);
   
+  // Get total count separately
+  const { count } = await supabase
+    .from('books')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'approved')
+    .eq('is_sold', false);
+
   const userIds = books.map(b => b.created_by);
   const nameMap = await fetchContributorNames(userIds);
   books.forEach(b => {
@@ -246,7 +250,7 @@ export async function getBooksPaginated(
 
   return {
     data: books,
-    hasMore: (count ?? 0) > from + pageSize,
+    hasMore: (count ?? 0) > offset + pageSize,
     total: count ?? 0,
   };
 }
