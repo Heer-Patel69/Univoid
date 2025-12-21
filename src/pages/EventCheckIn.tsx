@@ -163,65 +163,48 @@ const EventCheckIn = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <Header onAuthClick={() => setShowAuthModal(true)} />
+      <main className="flex-1 container mx-auto px-4 py-20 text-center">
         <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
-        <main className="flex-1 container mx-auto px-4 py-20 text-center">
-          <h1 className="text-2xl font-bold mb-4">Login Required</h1>
-          <Button onClick={() => setShowAuthModal(true)}>Login</Button>
-        </main>
-        <Footer />
-      </div>
+        <h1 className="text-2xl font-bold mb-4">Login Required</h1>
+        <Button onClick={() => setShowAuthModal(true)}>Login</Button>
+      </main>
     );
   }
 
   if (eventLoading) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <Header onAuthClick={() => setShowAuthModal(true)} />
-        <main className="flex-1 flex items-center justify-center">
-          <div className="animate-pulse text-muted-foreground">Loading event...</div>
-        </main>
-        <Footer />
-      </div>
+      <main className="flex-1 flex items-center justify-center">
+        <div className="animate-pulse text-muted-foreground">Loading event...</div>
+      </main>
     );
   }
 
   if (!event) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <Header onAuthClick={() => setShowAuthModal(true)} />
-        <main className="flex-1 container mx-auto px-4 py-20 text-center">
-          <h1 className="text-2xl font-bold mb-4">Event Not Found</h1>
-          <Link to="/organizer/dashboard">
-            <Button>Back to Dashboard</Button>
-          </Link>
-        </main>
-        <Footer />
-      </div>
+      <main className="flex-1 container mx-auto px-4 py-20 text-center">
+        <h1 className="text-2xl font-bold mb-4">Event Not Found</h1>
+        <Link to="/organizer/dashboard">
+          <Button>Back to Dashboard</Button>
+        </Link>
+      </main>
     );
   }
 
   if (!isOrganizer) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <Header onAuthClick={() => setShowAuthModal(true)} />
-        <main className="flex-1 container mx-auto px-4 py-20 text-center">
-          <AlertTriangle className="w-16 h-16 text-destructive mx-auto mb-4" />
-          <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
-          <p className="text-muted-foreground mb-6">Only the event organizer can access check-in</p>
-          <Link to="/events">
-            <Button>View Events</Button>
-          </Link>
-        </main>
-        <Footer />
-      </div>
+      <main className="flex-1 container mx-auto px-4 py-20 text-center">
+        <AlertTriangle className="w-16 h-16 text-destructive mx-auto mb-4" />
+        <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
+        <p className="text-muted-foreground mb-6">Only the event organizer can access check-in</p>
+        <Link to="/events">
+          <Button>View Events</Button>
+        </Link>
+      </main>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header onAuthClick={() => setShowAuthModal(true)} />
+    <>
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
 
       <main className="flex-1 container mx-auto px-4 py-6 pb-24 md:pb-8 max-w-2xl">
@@ -446,10 +429,7 @@ const EventCheckIn = () => {
           </Card>
         )}
       </main>
-
-      <Footer />
-      <BottomNav />
-    </div>
+    </>
   );
 };
 
