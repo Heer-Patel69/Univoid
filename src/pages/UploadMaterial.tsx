@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -125,58 +123,51 @@ const UploadMaterial = () => {
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <Header onAuthClick={() => {}} />
-        <main className="flex-1 py-8">
-          <div className="container-wide max-w-lg">
-            <Card>
-              <CardContent className="p-8 text-center">
-                <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Clock className="w-8 h-8 text-yellow-600" />
-                </div>
-                <h2 className="text-xl font-bold text-foreground mb-2">Submitted for Review!</h2>
-                <p className="text-muted-foreground mb-6">
-                  Your material has been submitted and is pending admin approval. You'll be notified once it's published!
-                </p>
-                <div className="flex gap-3 justify-center">
-                  <Button variant="outline" onClick={() => { 
-                    setIsSuccess(false); 
-                    setTitle(""); 
-                    setDescription(""); 
-                    setFile(null); 
-                    setUploadProgress(0);
-                    setCourse("");
-                    setBranch("");
-                    setBranchId("");
-                    setSubject("");
-                    setLanguage("");
-                    setCustomLanguage("");
-                    setCollege("");
-                    setCollegeId("");
-                  }}>
-                    Upload Another
-                  </Button>
-                  <Link to="/dashboard">
-                    <Button>Go to Dashboard</Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </main>
-        <Footer />
-      </div>
+      <main className="flex-1 py-8">
+        <div className="container-wide max-w-lg">
+          <Card>
+            <CardContent className="p-8 text-center">
+              <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Clock className="w-8 h-8 text-yellow-600" />
+              </div>
+              <h2 className="text-xl font-bold text-foreground mb-2">Submitted for Review!</h2>
+              <p className="text-muted-foreground mb-6">
+                Your material has been submitted and is pending admin approval. You'll be notified once it's published!
+              </p>
+              <div className="flex gap-3 justify-center">
+                <Button variant="outline" onClick={() => { 
+                  setIsSuccess(false); 
+                  setTitle(""); 
+                  setDescription(""); 
+                  setFile(null); 
+                  setUploadProgress(0);
+                  setCourse("");
+                  setBranch("");
+                  setBranchId("");
+                  setSubject("");
+                  setLanguage("");
+                  setCustomLanguage("");
+                  setCollege("");
+                  setCollegeId("");
+                }}>
+                  Upload Another
+                </Button>
+                <Link to="/dashboard">
+                  <Button>Go to Dashboard</Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header onAuthClick={() => {}} />
-      
-      <main className="flex-1 py-8">
-        <div className="container-wide max-w-lg">
-          <Link to="/dashboard">
-            <Button variant="ghost" size="sm" className="mb-6">
+    <main className="flex-1 py-8">
+      <div className="container-wide max-w-lg">
+        <Link to="/dashboard">
+          <Button variant="ghost" size="sm" className="mb-6">
               <ArrowLeft className="w-4 h-4 mr-1" />
               Back to Dashboard
             </Button>
@@ -326,13 +317,10 @@ const UploadMaterial = () => {
                   )}
                 </Button>
               </form>
-            </CardContent>
-          </Card>
-        </div>
-      </main>
-
-      <Footer />
-    </div>
+          </CardContent>
+        </Card>
+      </div>
+    </main>
   );
 };
 
