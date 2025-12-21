@@ -10,6 +10,7 @@ import { format, differenceInDays } from "date-fns";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import AuthModal from "@/components/auth/AuthModal";
+import PageBreadcrumb from "@/components/common/PageBreadcrumb";
 import { scholarshipsService } from "@/services/scholarshipsService";
 import { scholarshipRemindersService } from "@/services/scholarshipRemindersService";
 import { useAuth } from "@/contexts/AuthContext";
@@ -107,11 +108,12 @@ export default function ScholarshipDetail() {
 
       <div className="min-h-screen bg-background pb-20 md:pb-0">
         <div className="container mx-auto px-4 py-8 max-w-4xl">
-          {/* Back button */}
-          <Button variant="ghost" onClick={() => navigate("/scholarships")} className="mb-6">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Scholarships
-          </Button>
+          <PageBreadcrumb 
+            items={[
+              { label: "Scholarships", href: "/scholarships" },
+              { label: scholarship?.title || "Loading..." }
+            ]} 
+          />
 
           {isLoading ? (
             <Card>

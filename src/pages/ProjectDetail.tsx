@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { 
-  ArrowLeft, Users, Plus, Check, X, Loader2, 
+  Users, Plus, Check, X, Loader2, 
   CheckSquare, Clock, User, Trash2, Settings
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -50,6 +50,7 @@ import {
 import { toast } from "sonner";
 import { Helmet } from "react-helmet";
 import AuthModal from "@/components/auth/AuthModal";
+import PageBreadcrumb from "@/components/common/PageBreadcrumb";
 import { format } from "date-fns";
 
 const ProjectDetail = () => {
@@ -284,14 +285,12 @@ const ProjectDetail = () => {
 
         <main className="flex-1 py-8">
           <div className="container-wide max-w-4xl">
-            <Button 
-              variant="ghost" 
-              onClick={() => navigate('/projects')}
-              className="mb-6 gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Projects
-            </Button>
+            <PageBreadcrumb 
+              items={[
+                { label: "Projects", href: "/projects" },
+                { label: project.title }
+              ]} 
+            />
 
             {/* Project Header */}
             <Card className="mb-6">

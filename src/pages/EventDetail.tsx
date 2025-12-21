@@ -15,7 +15,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { fetchEventById, checkUserRegistration, registerForEvent } from "@/services/eventsService";
 import { supabase } from "@/integrations/supabase/client";
 import AuthModal from "@/components/auth/AuthModal";
-import { Calendar, MapPin, Users, IndianRupee, ExternalLink, Clock, Share2, ArrowLeft, CheckCircle, AlertCircle, Upload, Eye } from "lucide-react";
+import PageBreadcrumb from "@/components/common/PageBreadcrumb";
+import { Calendar, MapPin, Users, IndianRupee, ExternalLink, Clock, Share2, CheckCircle, AlertCircle, Upload, Eye } from "lucide-react";
 
 const EventDetail = () => {
   const { eventId } = useParams<{ eventId: string }>();
@@ -164,9 +165,12 @@ const EventDetail = () => {
     <div className="container mx-auto px-4 py-6 pb-24 md:pb-8">
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
 
-      <Button variant="ghost" className="mb-6 gap-2" onClick={() => navigate("/events")}>
-        <ArrowLeft className="w-4 h-4" /> Back to Events
-      </Button>
+      <PageBreadcrumb 
+        items={[
+          { label: "Events", href: "/events" },
+          { label: event.title }
+        ]} 
+      />
 
       <div className="grid lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
