@@ -8,11 +8,6 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
   Menu,
   User,
   LogOut,
@@ -24,11 +19,12 @@ import {
   LayoutDashboard,
   Folder,
   Briefcase,
-  ChevronDown,
   Settings,
   GraduationCap,
   Newspaper,
   Ticket,
+  FileText,
+  Plus,
 } from "lucide-react";
 import { useState, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -49,20 +45,8 @@ interface NavItem {
   organizerOnly?: boolean;
 }
 
-interface NavSection {
-  title: string;
-  icon: React.ElementType;
-  items: NavItem[];
-  defaultOpen?: boolean;
-  showOnlyWhenHasItems?: boolean;
-}
-
 export const MobileNavDrawer = ({ onAuthClick }: MobileNavDrawerProps) => {
   const [open, setOpen] = useState(false);
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    browse: true,
-    account: false,
-  });
   const { user, profile, isAdmin, isOrganizer, signOut } = useAuth();
   const location = useLocation();
 
@@ -89,15 +73,12 @@ export const MobileNavDrawer = ({ onAuthClick }: MobileNavDrawerProps) => {
     touchCurrentX.current = 0;
   }, []);
 
-  const toggleSection = (section: string) => {
-    setExpandedSections(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }));
-  };
-
   const handleSignOut = async () => {
     await signOut();
+    setOpen(false);
+  };
+
+  const handleLinkClick = () => {
     setOpen(false);
   };
 
@@ -111,57 +92,46 @@ export const MobileNavDrawer = ({ onAuthClick }: MobileNavDrawerProps) => {
   };
 
   const isActiveLink = (href: string) => {
+    if (href === "/") return location.pathname === "/";
     return location.pathname === href || location.pathname.startsWith(href + '/');
   };
 
-  const navSections: NavSection[] = [
-    {
-      title: "Browse",
-      icon: BookOpen,
-      defaultOpen: true,
-      items: [
-        { href: "/materials", label: "Materials", icon: BookOpen },
-        { href: "/scholarships", label: "Scholarships", icon: GraduationCap },
-        { href: "/events", label: "Events", icon: Calendar },
-        { href: "/projects", label: "Projects", icon: Folder },
-        { href: "/tasks", label: "Task Plaza", icon: Briefcase },
-        { href: "/books", label: "Books", icon: Repeat2 },
-        { href: "/news", label: "Campus News", icon: Newspaper },
-        { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
-      ],
-    },
-    {
-      title: "My Account",
-      icon: User,
-      showOnlyWhenHasItems: true,
-      items: [
-        { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, requiresAuth: true },
-        { href: "/my-events", label: "My Tickets", icon: Ticket, requiresAuth: true },
-        { href: "/settings", label: "Settings", icon: Settings, requiresAuth: true },
-      ],
-    },
-    {
-      title: "Organizer",
-      icon: Calendar,
-      showOnlyWhenHasItems: true,
-      items: [
-        { href: "/organizer/dashboard", label: "Organizer Panel", icon: LayoutDashboard, organizerOnly: true },
-        { href: "/organizer/create-event", label: "Create Event", icon: Calendar, organizerOnly: true },
-      ],
-    },
-    {
-      title: "Admin",
-      icon: Shield,
-      showOnlyWhenHasItems: true,
-      items: [
-        { href: "/admin", label: "Admin Panel", icon: Shield, adminOnly: true },
-      ],
-    },
+  // Browse items - public exploration
+  const browseItems: NavItem[] = [
+    { href: "/materials", label: "Materials", icon: BookOpen },
+    { href: "/scholarships", label: "Scholarships", icon: GraduationCap },
+    { href: "/events", label: "Events", icon: Calendar },
+    { href: "/projects", label: "Projects", icon: Folder },
+    { href: "/tasks", label: "Task Plaza", icon: Briefcase },
+    { href: "/books", label: "Books", icon: Repeat2 },
+    { href: "/news", label: "Campus News", icon: Newspaper },
+    { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
   ];
 
-  // Filter items based on auth and roles
-  const getFilteredItems = (section: NavSection) => {
-    return section.items.filter(item => {
+  // Account items - user-specific
+  const accountItems: NavItem[] = [
+    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, requiresAuth: true },
+    { href: "/profile", label: "My Profile", icon: User, requiresAuth: true },
+    { href: "/my-events", label: "My Tickets", icon: Ticket, requiresAuth: true },
+    { href: "/settings", label: "Settings", icon: Settings, requiresAuth: true },
+  ];
+
+  // Contribute items - actions
+  const contributeItems: NavItem[] = [
+    { href: "/upload-material", label: "Upload Material", icon: FileText, requiresAuth: true },
+    { href: "/sell-book", label: "Sell Book", icon: Repeat2, requiresAuth: true },
+    { href: "/projects/create", label: "Create Project", icon: Folder, requiresAuth: true },
+    { href: "/tasks/create", label: "Post Task", icon: Briefcase, requiresAuth: true },
+  ];
+
+  // Admin/Organizer items
+  const adminItems: NavItem[] = [
+    { href: "/organizer/dashboard", label: "Organizer Panel", icon: LayoutDashboard, organizerOnly: true },
+    { href: "/admin", label: "Admin Panel", icon: Shield, adminOnly: true },
+  ];
+
+  const filterItems = (items: NavItem[]) => {
+    return items.filter(item => {
       if (item.adminOnly && !isAdmin) return false;
       if (item.organizerOnly && !(isOrganizer || isAdmin)) return false;
       if (item.requiresAuth && !user) return false;
@@ -169,12 +139,9 @@ export const MobileNavDrawer = ({ onAuthClick }: MobileNavDrawerProps) => {
     });
   };
 
-  // Only show sections that have visible items
-  const visibleSections = navSections.filter(section => {
-    const items = getFilteredItems(section);
-    if (section.showOnlyWhenHasItems && items.length === 0) return false;
-    return items.length > 0;
-  });
+  const filteredAccountItems = filterItems(accountItems);
+  const filteredContributeItems = filterItems(contributeItems);
+  const filteredAdminItems = filterItems(adminItems);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -198,7 +165,7 @@ export const MobileNavDrawer = ({ onAuthClick }: MobileNavDrawerProps) => {
             <Link 
               to="/" 
               className="flex items-center gap-2.5 group"
-              onClick={() => setOpen(false)}
+              onClick={handleLinkClick}
             >
               <div className="w-10 h-10 bg-foreground rounded-2xl flex items-center justify-center transition-all group-hover:scale-105 shadow-soft">
                 <span className="text-background font-extrabold text-lg font-display">U</span>
@@ -214,7 +181,7 @@ export const MobileNavDrawer = ({ onAuthClick }: MobileNavDrawerProps) => {
           <div className="p-4 border-b border-border bg-secondary/30">
             <Link 
               to="/profile" 
-              onClick={() => setOpen(false)}
+              onClick={handleLinkClick}
               className="flex items-center gap-3 hover:opacity-80 transition-opacity"
             >
               <Avatar className="h-12 w-12 border-2 border-border-strong/20 shadow-soft">
@@ -235,64 +202,130 @@ export const MobileNavDrawer = ({ onAuthClick }: MobileNavDrawerProps) => {
           </div>
         )}
 
-        {/* Navigation Sections */}
-        <div className="flex-1 overflow-y-auto py-2">
-          {visibleSections.map((section) => {
-            const filteredItems = getFilteredItems(section);
-            const SectionIcon = section.icon;
-            const sectionKey = section.title.toLowerCase().replace(/\s+/g, '');
-            const isExpanded = expandedSections[sectionKey] ?? section.defaultOpen;
-
-            return (
-              <Collapsible
-                key={section.title}
-                open={isExpanded}
-                onOpenChange={() => toggleSection(sectionKey)}
-                className="border-b border-border/50 last:border-b-0"
-              >
-                <CollapsibleTrigger className="flex items-center justify-between w-full px-4 py-3 hover:bg-secondary/50 transition-colors">
-                  <div className="flex items-center gap-2">
-                    <SectionIcon className="w-4 h-4 text-muted-foreground" strokeWidth={2.5} />
-                    <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                      {section.title}
-                    </span>
-                  </div>
-                  <ChevronDown 
+        {/* Navigation */}
+        <div className="flex-1 overflow-y-auto py-4">
+          {/* Browse Section */}
+          <div className="px-4 mb-4">
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
+              Browse
+            </p>
+            <div className="space-y-1">
+              {browseItems.map((item) => {
+                const ItemIcon = item.icon;
+                const isActive = isActiveLink(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    to={item.href}
+                    onClick={handleLinkClick}
                     className={cn(
-                      "w-4 h-4 text-muted-foreground transition-transform duration-200",
-                      isExpanded && "rotate-180"
-                    )} 
-                    strokeWidth={2.5}
-                  />
-                </CollapsibleTrigger>
-                <CollapsibleContent className="animate-accordion-down">
-                  <div className="pb-2">
-                    {filteredItems.map((item) => {
-                      const ItemIcon = item.icon;
-                      const isActive = isActiveLink(item.href);
+                      "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
+                      isActive
+                        ? "bg-primary text-primary-foreground shadow-soft"
+                        : "text-foreground hover:bg-secondary active:scale-[0.98]"
+                    )}
+                  >
+                    <ItemIcon className="w-4 h-4" strokeWidth={2.5} />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
 
-                      return (
-                        <Link
-                          key={item.href}
-                          to={item.href}
-                          onClick={() => setOpen(false)}
-                          className={cn(
-                            "flex items-center gap-3 mx-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
-                            isActive
-                              ? "bg-primary text-primary-foreground shadow-soft"
-                              : "text-foreground hover:bg-secondary active:scale-[0.98]"
-                          )}
-                        >
-                          <ItemIcon className="w-4 h-4" strokeWidth={2.5} />
-                          {item.label}
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            );
-          })}
+          {/* My Account Section - only if logged in */}
+          {filteredAccountItems.length > 0 && (
+            <div className="px-4 mb-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                My Account
+              </p>
+              <div className="space-y-1">
+                {filteredAccountItems.map((item) => {
+                  const ItemIcon = item.icon;
+                  const isActive = isActiveLink(item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      to={item.href}
+                      onClick={handleLinkClick}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
+                        isActive
+                          ? "bg-primary text-primary-foreground shadow-soft"
+                          : "text-foreground hover:bg-secondary active:scale-[0.98]"
+                      )}
+                    >
+                      <ItemIcon className="w-4 h-4" strokeWidth={2.5} />
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Contribute Section - only if logged in */}
+          {filteredContributeItems.length > 0 && (
+            <div className="px-4 mb-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1">
+                <Plus className="w-3 h-3" />
+                Contribute
+              </p>
+              <div className="space-y-1">
+                {filteredContributeItems.map((item) => {
+                  const ItemIcon = item.icon;
+                  const isActive = isActiveLink(item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      to={item.href}
+                      onClick={handleLinkClick}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
+                        isActive
+                          ? "bg-primary text-primary-foreground shadow-soft"
+                          : "text-foreground hover:bg-secondary active:scale-[0.98]"
+                      )}
+                    >
+                      <ItemIcon className="w-4 h-4" strokeWidth={2.5} />
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Admin/Organizer Section */}
+          {filteredAdminItems.length > 0 && (
+            <div className="px-4 mb-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                Management
+              </p>
+              <div className="space-y-1">
+                {filteredAdminItems.map((item) => {
+                  const ItemIcon = item.icon;
+                  const isActive = isActiveLink(item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      to={item.href}
+                      onClick={handleLinkClick}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
+                        isActive
+                          ? "bg-primary text-primary-foreground shadow-soft"
+                          : "text-foreground hover:bg-secondary active:scale-[0.98]"
+                      )}
+                    >
+                      <ItemIcon className="w-4 h-4" strokeWidth={2.5} />
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer Actions */}

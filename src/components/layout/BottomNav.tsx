@@ -1,17 +1,18 @@
 import { useLocation } from "react-router-dom";
 import { PrefetchLink } from "@/components/common/PrefetchLink";
-import { BookOpen, Calendar, GraduationCap, LayoutDashboard, User, Home } from "lucide-react";
+import { BookOpen, Calendar, GraduationCap, Repeat2, Briefcase } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useScholarshipBadge } from "@/hooks/useScholarshipBadge";
 import { useEffect } from "react";
 
+// Action-focused bottom nav items - no Home, no Profile, no Dashboard
 const navItems = [
-  { href: "/dashboard", label: "Home", icon: LayoutDashboard, requiresAuth: true },
   { href: "/materials", label: "Materials", icon: BookOpen },
   { href: "/scholarships", label: "Scholarships", icon: GraduationCap, highlight: true, showBadge: true },
   { href: "/events", label: "Events", icon: Calendar },
-  { href: "/profile", label: "Profile", icon: User, requiresAuth: true },
+  { href: "/books", label: "Sell Books", icon: Repeat2 },
+  { href: "/tasks", label: "Tasks", icon: Briefcase },
 ];
 
 // Paths where bottom nav should NOT appear
@@ -19,6 +20,7 @@ const HIDDEN_PATHS = [
   "/admin",
   "/organizer",
   "/onboarding",
+  "/dashboard",
 ];
 
 export function BottomNav() {
@@ -33,36 +35,21 @@ export function BottomNav() {
     }
   }, [location.pathname, hasNewScholarships, markAsSeen]);
 
-  // Hide on admin and organizer pages
+  // Hide on admin, organizer, and dashboard pages
   const shouldHide = HIDDEN_PATHS.some(path => location.pathname.startsWith(path));
   
   if (shouldHide) {
     return null;
   }
 
-  // Filter items based on auth
-  const visibleItems = navItems.filter(item => {
-    if (item.requiresAuth && !user) {
-      if (item.href === "/dashboard") return false;
-      if (item.href === "/profile") return false;
-    }
-    return true;
-  });
-
-  // Add home for non-auth users
-  const finalItems = user ? visibleItems : [
-    { href: "/", label: "Home", icon: Home },
-    ...visibleItems.filter(i => i.href !== "/profile"),
-  ];
-
   return (
     <nav className="fixed bottom-3 left-3 right-3 z-50 md:hidden">
       <div className="bg-card/95 backdrop-blur-xl rounded-2xl border border-border-strong/10 shadow-lg flex items-center justify-around py-2 px-1">
-        {finalItems.map((item) => {
+        {navItems.map((item) => {
           const isActive = location.pathname === item.href || 
             (item.href !== "/" && location.pathname.startsWith(item.href));
           const Icon = item.icon;
-          const showBadge = 'showBadge' in item && item.showBadge && hasNewScholarships && !isActive;
+          const showBadge = item.showBadge && hasNewScholarships && !isActive;
 
           // Generate tour ID based on href
           const tourId = `mobile-nav-${item.href.replace('/', '')}`;
@@ -83,9 +70,9 @@ export function BottomNav() {
                 <div
                   className={cn(
                     "w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-200",
-                    'highlight' in item && item.highlight && !isActive && "bg-pastel-purple",
-                    'highlight' in item && item.highlight && isActive && "bg-foreground text-background shadow-md",
-                    isActive && !('highlight' in item && item.highlight) && "bg-foreground text-background shadow-md"
+                    item.highlight && !isActive && "bg-pastel-purple",
+                    item.highlight && isActive && "bg-foreground text-background shadow-md",
+                    isActive && !item.highlight && "bg-foreground text-background shadow-md"
                   )}
                 >
                   <Icon className="w-5 h-5" strokeWidth={2.5} />
