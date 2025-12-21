@@ -71,8 +71,9 @@ export default function ScholarshipManager() {
   const [editingScholarship, setEditingScholarship] = useState<Scholarship | null>(null);
   const [formData, setFormData] = useState<ScholarshipFormData>(emptyForm);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
 
-  const { scholarships: pendingScholarships, approve, reject } = usePendingScholarships();
+  const { scholarships: pendingScholarships, approve, reject, refetch: refetchPending } = usePendingScholarships();
 
   const fetchAllScholarships = async () => {
     setIsLoading(true);
@@ -114,7 +115,10 @@ export default function ScholarshipManager() {
       const { data, error } = await supabase.functions.invoke("fetch-india-scholarships");
       if (error) throw error;
       toast.success(`Synced: ${data.inserted} new, ${data.updated} updated`);
-      fetchAllScholarships();
+      setLastSyncedAt(new Date().toISOString());
+      // Force refetch both lists
+      await fetchAllScholarships();
+      refetchPending();
     } catch (error) {
       console.error(error);
       toast.error("Sync failed");
@@ -269,11 +273,18 @@ export default function ScholarshipManager() {
     <div className="space-y-6">
       {/* Header Actions */}
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <GraduationCap className="w-5 h-5 text-primary" />
-          <span className="text-sm text-muted-foreground">
-            {approvedCount} active, {pendingScholarships.length} pending, {expiredCount} expired
-          </span>
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <GraduationCap className="w-5 h-5 text-primary" />
+            <span className="text-sm text-muted-foreground">
+              {approvedCount} active, {pendingScholarships.length} pending, {expiredCount} expired
+            </span>
+          </div>
+          {lastSyncedAt && (
+            <span className="text-xs text-muted-foreground">
+              Last synced: {format(new Date(lastSyncedAt), "MMM d, yyyy 'at' h:mm a")}
+            </span>
+          )}
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={handleSyncScholarships} disabled={isSyncing}>

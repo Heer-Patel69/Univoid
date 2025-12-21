@@ -8,7 +8,9 @@ interface AuthContextType {
   session: Session | null;
   profile: Profile | null;
   role: AppRole;
+  userRoles: string[];
   isAdmin: boolean;
+  isAdminOrAssistant: boolean;
   isOrganizer: boolean;
   isLoading: boolean;
   signUp: (data: SignUpData) => Promise<{ error: Error | null }>;
@@ -331,13 +333,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const isAdminRole = role === 'admin' || userRoles.includes('admin');
+  const isAssistantRole = userRoles.includes('admin_assistant');
+  
   const value: AuthContextType = {
     user,
     session,
     profile,
     role,
-    isAdmin: role === 'admin' || userRoles.includes('admin'),
-    isOrganizer: role === 'organizer' || userRoles.includes('organizer') || userRoles.includes('admin'),
+    userRoles,
+    isAdmin: isAdminRole,
+    isAdminOrAssistant: isAdminRole || isAssistantRole,
+    isOrganizer: role === 'organizer' || userRoles.includes('organizer') || isAdminRole,
     isLoading,
     signUp,
     signIn,
