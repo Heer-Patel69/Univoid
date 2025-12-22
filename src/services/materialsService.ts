@@ -1,8 +1,9 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Material, BLOCKED_VIDEO_FORMATS } from '@/types/database';
-import { compressFile, MAX_FILE_SIZE_BYTES, validateMaterialFile } from '@/lib/fileCompression';
+import { MAX_FILE_SIZE_BYTES, validateMaterialFile } from '@/lib/fileCompression';
 import { materialsLogger } from '@/services/errorLoggingService';
 import type { CursorPage, CursorPageParam } from '@/hooks/useCursorPagination';
+import { resumableUpload, RESUMABLE_THRESHOLD } from '@/hooks/useResumableUpload';
 
 /**
  * Get proper user-friendly error message for upload failures
@@ -228,32 +229,57 @@ export async function uploadMaterial(
 
     reportProgress(10, 'Preparing upload...');
 
-    // STAGE 2: Upload raw file directly (NO client-side compression)
-    // This is the main wait time - purely network dependent
+    // STAGE 2: Upload file to storage
+    // Use resumable upload for large files (>10MB), regular upload for smaller files
     const safeStorageFileName = `${crypto.randomUUID()}.${fileExt}`;
     const filePath = `${userId}/${safeStorageFileName}`;
+    const useResumable = file.size > RESUMABLE_THRESHOLD;
     
-    console.log(`${logPrefix} Uploading to storage (no client compression):`, { filePath });
-    reportProgress(15, 'Uploading file...');
+    console.log(`${logPrefix} Upload method:`, { 
+      filePath, 
+      useResumable,
+      fileSize: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+      threshold: `${(RESUMABLE_THRESHOLD / 1024 / 1024).toFixed(0)} MB`,
+    });
 
     const uploadStartTime = Date.now();
-    const { error: uploadError, data: uploadData } = await supabase.storage
-      .from('materials')
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: false,
-      });
     
-    const uploadDuration = Date.now() - uploadStartTime;
-    console.log(`${logPrefix} Storage upload completed in ${uploadDuration}ms`);
+    if (useResumable) {
+      // Large file: Use TUS resumable upload (can resume on failure)
+      reportProgress(15, 'Starting resumable upload...');
+      
+      try {
+        await resumableUpload(file, filePath, 'materials', (progress) => {
+          // Map 0-100 to 15-70 range for our progress
+          const mappedProgress = 15 + (progress.progress * 0.55);
+          reportProgress(Math.round(mappedProgress), progress.stage);
+        });
+        console.log(`${logPrefix} Resumable upload completed in ${Date.now() - uploadStartTime}ms`);
+      } catch (uploadError: any) {
+        console.error(`${logPrefix} Resumable upload FAILED:`, uploadError);
+        return { id: null, error: new Error(getUploadErrorMessage(uploadError)) };
+      }
+    } else {
+      // Small file: Use regular upload (faster for small files)
+      reportProgress(15, 'Uploading file...');
+      
+      const { error: uploadError } = await supabase.storage
+        .from('materials')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+      
+      console.log(`${logPrefix} Storage upload completed in ${Date.now() - uploadStartTime}ms`);
 
-    if (uploadError) {
-      console.error(`${logPrefix} UPLOAD FAILED:`, {
-        errorMessage: uploadError.message,
-        statusCode: (uploadError as any).statusCode,
-        online: navigator.onLine,
-      });
-      return { id: null, error: new Error(getUploadErrorMessage(uploadError)) };
+      if (uploadError) {
+        console.error(`${logPrefix} UPLOAD FAILED:`, {
+          errorMessage: uploadError.message,
+          statusCode: (uploadError as any).statusCode,
+          online: navigator.onLine,
+        });
+        return { id: null, error: new Error(getUploadErrorMessage(uploadError)) };
+      }
     }
 
     reportProgress(70, 'Saving to database...');
