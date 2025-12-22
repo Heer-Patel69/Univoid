@@ -152,13 +152,37 @@ export function useRealtimeMaterials(
         { event: 'UPDATE', schema: 'public', table: 'materials' },
         (payload) => {
           const updated = payload.new as Material;
-          setMaterials(prev => prev.map(m => 
-            m.id === updated.id ? { ...m, ...updated } : m
-          ));
-          // Also update cache
-          materialsCache.data = materialsCache.data.map(m =>
-            m.id === updated.id ? { ...m, ...updated } : m
-          );
+          const oldData = payload.old as Material | null;
+          
+          // Check if material was just approved (status changed from pending/rejected to approved)
+          const wasJustApproved = updated.status === 'approved' && 
+            (oldData?.status === 'pending' || oldData?.status === 'rejected');
+          
+          if (wasJustApproved) {
+            // Add newly approved material to the list
+            setMaterials(prev => {
+              if (prev.some(m => m.id === updated.id)) {
+                return prev.map(m => m.id === updated.id ? { ...m, ...updated } : m);
+              }
+              return [updated, ...prev];
+            });
+            // Update cache
+            if (!materialsCache.data.some(m => m.id === updated.id)) {
+              materialsCache.data = [updated, ...materialsCache.data];
+            }
+          } else if (updated.status === 'approved') {
+            // Update existing approved material
+            setMaterials(prev => prev.map(m => 
+              m.id === updated.id ? { ...m, ...updated } : m
+            ));
+            materialsCache.data = materialsCache.data.map(m =>
+              m.id === updated.id ? { ...m, ...updated } : m
+            );
+          } else {
+            // Material was rejected/removed from approved, remove from list
+            setMaterials(prev => prev.filter(m => m.id !== updated.id));
+            materialsCache.data = materialsCache.data.filter(m => m.id !== updated.id);
+          }
         }
       )
       .on(

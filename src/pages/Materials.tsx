@@ -102,15 +102,39 @@ const Materials = () => {
         'postgres_changes' as any,
         { event: '*', schema: 'public', table: 'materials' },
         (payload: any) => {
-          if (payload.eventType === 'INSERT' && payload.new?.status === 'approved') {
+          const newData = payload.new as Material;
+          const oldData = payload.old as Material | null;
+          
+          if (payload.eventType === 'INSERT' && newData?.status === 'approved') {
+            // New approved material inserted
             setAllMaterials(prev => {
-              if (prev.some(m => m.id === payload.new.id)) return prev;
-              return [payload.new as Material, ...prev];
+              if (prev.some(m => m.id === newData.id)) return prev;
+              return [newData, ...prev];
             });
           } else if (payload.eventType === 'UPDATE') {
-            setAllMaterials(prev => prev.map(m => 
-              m.id === payload.new.id ? { ...m, ...payload.new } : m
-            ));
+            // Check if material was just approved (status changed from pending to approved)
+            const wasJustApproved = newData?.status === 'approved' && 
+              (oldData?.status === 'pending' || oldData?.status === 'rejected');
+            
+            if (wasJustApproved) {
+              // Add newly approved material to the list
+              setAllMaterials(prev => {
+                if (prev.some(m => m.id === newData.id)) {
+                  // Already exists, update it
+                  return prev.map(m => m.id === newData.id ? { ...m, ...newData } : m);
+                }
+                // Add to top of list
+                return [newData, ...prev];
+              });
+            } else if (newData?.status === 'approved') {
+              // Update existing approved material
+              setAllMaterials(prev => prev.map(m => 
+                m.id === newData.id ? { ...m, ...newData } : m
+              ));
+            } else {
+              // Material was un-approved (rejected or back to pending), remove from list
+              setAllMaterials(prev => prev.filter(m => m.id !== newData.id));
+            }
           } else if (payload.eventType === 'DELETE') {
             setAllMaterials(prev => prev.filter(m => m.id !== payload.old?.id));
           }
