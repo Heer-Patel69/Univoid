@@ -369,7 +369,12 @@ export function useAuth() {
 async function compressImage(file: File, maxWidth = 800): Promise<File> {
   return new Promise((resolve) => {
     const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    
     img.onload = () => {
+      // Revoke object URL to prevent memory leak
+      URL.revokeObjectURL(objectUrl);
+      
       const canvas = document.createElement('canvas');
       let width = img.width;
       let height = img.height;
@@ -397,6 +402,12 @@ async function compressImage(file: File, maxWidth = 800): Promise<File> {
         0.8
       );
     };
-    img.src = URL.createObjectURL(file);
+    
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(file);
+    };
+    
+    img.src = objectUrl;
   });
 }
