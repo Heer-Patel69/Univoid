@@ -399,6 +399,15 @@ const Admin = () => {
 
     toast.success('Content approved! XP awarded to contributor.');
     setPendingCounts(prev => ({ ...prev, [type]: prev[type as keyof typeof prev] - 1 }));
+    
+    // Optimistically update the local state immediately
+    if (type === 'materials') {
+      setAllMaterials(prev => prev.map(m => m.id === item.id ? { ...m, status: 'approved' } : m));
+    } else if (type === 'news') {
+      setAllNews(prev => prev.map(n => n.id === item.id ? { ...n, status: 'approved' } : n));
+    } else if (type === 'books') {
+      setAllBooks(prev => prev.map(b => b.id === item.id ? { ...b, status: 'approved' } : b));
+    }
   };
 
   const handleReject = async (type: 'materials' | 'news' | 'books', item: ContentItem) => {
@@ -413,6 +422,15 @@ const Admin = () => {
 
     toast.success('Content rejected.');
     setPendingCounts(prev => ({ ...prev, [type]: prev[type as keyof typeof prev] - 1 }));
+    
+    // Optimistically update the local state immediately
+    if (type === 'materials') {
+      setAllMaterials(prev => prev.map(m => m.id === item.id ? { ...m, status: 'rejected' } : m));
+    } else if (type === 'news') {
+      setAllNews(prev => prev.map(n => n.id === item.id ? { ...n, status: 'rejected' } : n));
+    } else if (type === 'books') {
+      setAllBooks(prev => prev.map(b => b.id === item.id ? { ...b, status: 'rejected' } : b));
+    }
   };
 
   const handleIgnoreReport = async (report: Report) => {

@@ -92,37 +92,58 @@ export default function EnhancedMaterialPreview({
       return;
     }
 
-    // If URL is already a signed URL or external URL, use it directly
-    if (urlToUse.includes('token=') || urlToUse.startsWith('http')) {
-      setSignedUrl(urlToUse);
-      setIsGeneratingUrl(false);
-      return;
-    }
-
-    // Try to generate a fresh signed URL from file path
+    // Try to extract file path and generate a fresh signed URL
     try {
-      // Extract file path from URL if it's a Supabase storage URL
-      const pathMatch = urlToUse.match(/materials\/(.+)/);
-      if (pathMatch) {
-        const filePath = pathMatch[1];
+      // Extract file path from various URL formats
+      // Format 1: Full storage URL with /object/sign/materials/path or /object/public/materials/path
+      // Format 2: Signed URL with token parameter
+      // Format 3: Direct path like userId/timestamp-filename.pdf
+      
+      let filePath: string | null = null;
+      
+      // Try to extract path from signed URL (contains /materials/ in path)
+      const signedPathMatch = urlToUse.match(/\/materials\/([^?]+)/);
+      if (signedPathMatch) {
+        filePath = signedPathMatch[1];
+      }
+      
+      // Try to extract from object path format
+      if (!filePath) {
+        const objectPathMatch = urlToUse.match(/\/object\/(?:sign|public)\/materials\/([^?]+)/);
+        if (objectPathMatch) {
+          filePath = objectPathMatch[1];
+        }
+      }
+      
+      // If we found a file path, generate a fresh signed URL
+      if (filePath) {
+        // Decode URI components in case path is encoded
+        filePath = decodeURIComponent(filePath);
+        
         const { data, error } = await supabase.storage
           .from('materials')
-          .createSignedUrl(filePath, 600); // 10 minute expiry
+          .createSignedUrl(filePath, 3600); // 1 hour expiry for preview
         
-        if (error) {
-          console.error('Failed to generate signed URL:', error);
-          // Fall back to original URL
-          setSignedUrl(urlToUse);
-        } else {
+        if (!error && data?.signedUrl) {
           setSignedUrl(data.signedUrl);
+          setIsGeneratingUrl(false);
+          return;
         }
-      } else {
-        // Use URL as-is if not a storage path
+      }
+      
+      // Fall back to original URL if it's already a valid HTTP URL
+      if (urlToUse.startsWith('http')) {
         setSignedUrl(urlToUse);
+      } else {
+        setUrlError('Could not generate preview URL');
       }
     } catch (err) {
-      console.error('Error generating signed URL:', err);
-      setSignedUrl(urlToUse);
+      // Fall back to original URL on any error
+      if (urlToUse.startsWith('http')) {
+        setSignedUrl(urlToUse);
+      } else {
+        setUrlError('Could not generate preview URL');
+      }
     } finally {
       setIsGeneratingUrl(false);
     }
