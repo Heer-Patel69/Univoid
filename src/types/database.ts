@@ -74,6 +74,8 @@ export interface News {
   contributor_name?: string;
 }
 
+export type BookListingType = 'sell' | 'rent' | 'donate' | 'exchange';
+
 export interface Book {
   id: string;
   title: string;
@@ -93,6 +95,7 @@ export interface Book {
   category: string | null;
   author: string | null;
   views_count: number;
+  listing_type: BookListingType;
   contributor_name?: string;
 }
 

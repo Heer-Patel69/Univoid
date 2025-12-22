@@ -73,12 +73,15 @@ export async function getSellerContact(bookId: string): Promise<{
   };
 }
 
+type BookListingType = 'sell' | 'rent' | 'donate' | 'exchange';
+
 interface CreateBookData {
   title: string;
   description?: string;
   author?: string;
   price?: number;
   condition?: string;
+  listing_type: BookListingType;
   seller_email: string;
   seller_mobile: string;
   seller_address: string;
@@ -114,6 +117,11 @@ export async function createBook(
   // Auto-categorize based on title and description
   const autoCategory = categorizeBook(data.title, data.description);
 
+  // Price logic: Donate = no price, Exchange = no price
+  const finalPrice = (data.listing_type === 'donate' || data.listing_type === 'exchange') 
+    ? null 
+    : data.price || null;
+
   // Instant publish
   const { data: insertData, error } = await supabase
     .from('books')
@@ -121,9 +129,10 @@ export async function createBook(
       title: data.title,
       description: data.description || null,
       author: data.author || null,
-      price: data.price || null,
+      price: finalPrice,
       condition: data.condition || null,
       category: autoCategory,
+      listing_type: data.listing_type,
       image_urls: imageUrls,
       seller_mobile: data.seller_mobile,
       seller_address: data.seller_address,
