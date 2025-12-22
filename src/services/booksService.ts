@@ -164,13 +164,25 @@ export async function createBook(
   return { id: insertData.id, error: null };
 }
 
-export async function markBookAsSold(bookId: string): Promise<{ error: Error | null }> {
+export type BookStatus = 'available' | 'sold' | 'rented';
+
+export async function updateBookStatus(bookId: string, status: BookStatus): Promise<{ error: Error | null }> {
+  const isSold = status === 'sold';
+  
   const { error } = await supabase
     .from('books')
-    .update({ is_sold: true })
+    .update({ 
+      book_status: status,
+      is_sold: isSold 
+    } as any)
     .eq('id', bookId);
 
   return { error: error as Error | null };
+}
+
+// Keep for backwards compatibility
+export async function markBookAsSold(bookId: string): Promise<{ error: Error | null }> {
+  return updateBookStatus(bookId, 'sold');
 }
 
 export async function getMyBooks(userId: string): Promise<Book[]> {
@@ -182,4 +194,15 @@ export async function getMyBooks(userId: string): Promise<Book[]> {
 
   if (error) throw error;
   return data as Book[];
+}
+
+// Validate if user can list a book (requires WhatsApp number)
+export function canListBook(mobileNumber: string | null | undefined): { canList: boolean; message?: string } {
+  if (!mobileNumber || mobileNumber.trim().length < 10) {
+    return {
+      canList: false,
+      message: "Please add your WhatsApp number in your profile to list books."
+    };
+  }
+  return { canList: true };
 }

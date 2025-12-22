@@ -8,10 +8,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/contexts/AuthContext";
-import { createBook } from "@/services/booksService";
+import { createBook, canListBook } from "@/services/booksService";
 import { toast } from "sonner";
-import { ArrowLeft, BookOpen, Loader2, CheckCircle, DollarSign, Repeat2, Gift, Clock, Sparkles } from "lucide-react";
+import { ArrowLeft, BookOpen, Loader2, CheckCircle, DollarSign, Repeat2, Gift, Clock, Sparkles, AlertTriangle } from "lucide-react";
 import BookImageUpload from "@/components/books/BookImageUpload";
 import BookScanner from "@/components/books/BookScanner";
 import { CompressedImage } from "@/lib/imageCompression";
@@ -97,8 +98,11 @@ const ListBook = () => {
     setCategoryManuallySet(false); // Allow AI to detect category for scanned books
   };
 
+  // Check if user can list books
+  const listingPermission = canListBook(profile?.mobile_number);
+  
   // Check if form is valid for submission
-  const isFormValid = title.trim().length > 0 && images.length > 0;
+  const isFormValid = title.trim().length > 0 && images.length > 0 && listingPermission.canList;
 
   // Show price field only for sell and rent
   const showPriceField = listingType === 'sell' || listingType === 'rent';
@@ -368,11 +372,26 @@ const ListBook = () => {
                   )}
                 </div>
 
-                <div className="p-4 bg-secondary/50 rounded-lg">
-                  <p className="text-sm text-muted-foreground">
-                    <strong className="text-foreground">Contact Info:</strong> Your WhatsApp number ({profile.mobile_number || 'not set'}) will be used for buyer inquiries.
-                  </p>
-                </div>
+                {/* WhatsApp number warning */}
+                {!listingPermission.canList && (
+                  <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      {listingPermission.message}{' '}
+                      <Link to="/profile/edit" className="underline font-medium">
+                        Update Profile
+                      </Link>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {listingPermission.canList && (
+                  <div className="p-4 bg-secondary/50 rounded-lg">
+                    <p className="text-sm text-muted-foreground">
+                      <strong className="text-foreground">Contact Info:</strong> Your WhatsApp number ({profile.mobile_number}) will be used for buyer inquiries.
+                    </p>
+                  </div>
+                )}
 
                 <Button type="submit" className="w-full" disabled={isSubmitting || !isFormValid}>
                   {isSubmitting ? (
@@ -387,7 +406,7 @@ const ListBook = () => {
                     </>
                   )}
                 </Button>
-                {!isFormValid && (
+                {!isFormValid && listingPermission.canList && (
                   <p className="text-xs text-muted-foreground text-center">
                     Add at least 1 photo and enter a book title to continue
                   </p>

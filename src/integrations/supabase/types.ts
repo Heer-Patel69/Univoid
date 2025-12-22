@@ -65,6 +65,7 @@ export type Database = {
       books: {
         Row: {
           author: string | null
+          book_status: Database["public"]["Enums"]["book_status"]
           category: string | null
           condition: string | null
           created_at: string
@@ -85,6 +86,7 @@ export type Database = {
         }
         Insert: {
           author?: string | null
+          book_status?: Database["public"]["Enums"]["book_status"]
           category?: string | null
           condition?: string | null
           created_at?: string
@@ -105,6 +107,7 @@ export type Database = {
         }
         Update: {
           author?: string | null
+          book_status?: Database["public"]["Enums"]["book_status"]
           category?: string | null
           condition?: string | null
           created_at?: string
@@ -1554,6 +1557,7 @@ export type Database = {
         Args: { p_book_id: string; p_limit?: number }
         Returns: {
           author: string | null
+          book_status: Database["public"]["Enums"]["book_status"]
           category: string | null
           condition: string | null
           created_at: string
@@ -1714,6 +1718,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "student" | "organizer" | "admin_assistant"
+      book_status: "available" | "sold" | "rented"
       content_status: "pending" | "approved" | "rejected"
       event_status: "draft" | "published" | "cancelled" | "completed"
       organizer_application_status: "pending" | "approved" | "rejected"
@@ -1846,6 +1851,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "student", "organizer", "admin_assistant"],
+      book_status: ["available", "sold", "rented"],
       content_status: ["pending", "approved", "rejected"],
       event_status: ["draft", "published", "cancelled", "completed"],
       organizer_application_status: ["pending", "approved", "rejected"],

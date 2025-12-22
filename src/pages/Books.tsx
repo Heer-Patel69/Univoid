@@ -110,6 +110,12 @@ const Books = () => {
 
   const filteredBooks = useMemo(() => {
     const filtered = allBooks.filter(book => {
+      // Hide sold and rented books from buyers
+      const bookStatus = (book as any).book_status as string || 'available';
+      if (book.is_sold || bookStatus === 'sold' || bookStatus === 'rented') {
+        return false;
+      }
+      
       const matchesSearch = 
         book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (book.description?.toLowerCase().includes(searchQuery.toLowerCase()));
