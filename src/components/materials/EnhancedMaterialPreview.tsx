@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -73,6 +73,10 @@ export default function EnhancedMaterialPreview({
     }
   };
   const [useGoogleViewer, setUseGoogleViewer] = useState(getPreferredViewer);
+  const loadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Auto-fallback timeout (10 seconds)
+  const LOAD_TIMEOUT_MS = 10000;
   
   // Save viewer preference to localStorage
   const saveViewerPreference = (useGoogle: boolean) => {
@@ -98,7 +102,45 @@ export default function EnhancedMaterialPreview({
       // Generate signed URL for preview
       generateSignedUrl();
     }
+    
+    // Cleanup timeout on unmount or modal close
+    return () => {
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current);
+        loadTimeoutRef.current = null;
+      }
+    };
   }, [isOpen, material?.id]);
+  
+  // Set up auto-fallback timeout when loading with native viewer
+  useEffect(() => {
+    // Only set timeout for native viewer when loading a PDF
+    const isPdf = material?.file_type.toLowerCase() === 'pdf';
+    
+    if (isOpen && isPdf && isLoading && !isGeneratingUrl && signedUrl && !useGoogleViewer && !previewError) {
+      // Clear any existing timeout
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current);
+      }
+      
+      // Set new timeout - auto-switch to Google Viewer after 10 seconds
+      loadTimeoutRef.current = setTimeout(() => {
+        if (isLoading && !previewError) {
+          setIsLoading(true);
+          setPreviewError(false);
+          setUseGoogleViewer(true);
+          saveViewerPreference(true);
+        }
+      }, LOAD_TIMEOUT_MS);
+    }
+    
+    return () => {
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current);
+        loadTimeoutRef.current = null;
+      }
+    };
+  }, [isOpen, isLoading, isGeneratingUrl, signedUrl, useGoogleViewer, previewError, material?.file_type]);
 
   const generateSignedUrl = async () => {
     if (!material) return;
@@ -219,11 +261,21 @@ export default function EnhancedMaterialPreview({
 
   const handleIframeLoad = () => {
     setIsLoading(false);
+    // Clear timeout on successful load
+    if (loadTimeoutRef.current) {
+      clearTimeout(loadTimeoutRef.current);
+      loadTimeoutRef.current = null;
+    }
   };
 
   const handleIframeError = () => {
     setIsLoading(false);
     setPreviewError(true);
+    // Clear timeout on error
+    if (loadTimeoutRef.current) {
+      clearTimeout(loadTimeoutRef.current);
+      loadTimeoutRef.current = null;
+    }
   };
 
   const renderNoUrlError = () => (
