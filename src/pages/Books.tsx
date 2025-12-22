@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useNavigate, Link, useOutletContext } from "react-router-dom";
 import { BottomNav } from "@/components/layout/BottomNav";
 import ReportButton from "@/components/reports/ReportButton";
@@ -6,7 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, BookOpen, User, ArrowRight, Images } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Search, BookOpen, User, ArrowRight, Images, Filter } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getBooksPaginated } from "@/services/paginatedService";
 import { SectionLoader, EmptyState, LoadMoreButton } from "@/components/common/SectionLoader";
@@ -14,6 +15,18 @@ import { useOptimizedFetch, CACHE_TTL } from "@/hooks/useOptimizedFetch";
 import { Book } from "@/types/database";
 import { toast } from "sonner";
 import { getDisplayCategory } from "@/lib/bookCategorizer";
+
+const BOOK_CATEGORIES = [
+  "All Categories",
+  "Academic",
+  "Competitive Exam",
+  "Technology",
+  "Fiction",
+  "Non-Fiction",
+  "Self-Help",
+  "Biography",
+  "Other",
+] as const;
 
 interface LayoutContext {
   onAuthClick?: () => void;
@@ -24,6 +37,7 @@ const Books = () => {
   const navigate = useNavigate();
   const context = useOutletContext<LayoutContext>();
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("All Categories");
   const [page, setPage] = useState(0);
   const [allBooks, setAllBooks] = useState<Book[]>([]);
   const [hasMore, setHasMore] = useState(true);
@@ -68,10 +82,20 @@ const Books = () => {
     }
   };
 
-  const filteredBooks = allBooks.filter(book =>
-    book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (book.description?.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredBooks = useMemo(() => {
+    return allBooks.filter(book => {
+      const matchesSearch = 
+        book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (book.description?.toLowerCase().includes(searchQuery.toLowerCase()));
+      
+      const bookCategory = getDisplayCategory(book.category);
+      const matchesCategory = 
+        selectedCategory === "All Categories" || 
+        bookCategory === selectedCategory;
+      
+      return matchesSearch && matchesCategory;
+    });
+  }, [allBooks, searchQuery, selectedCategory]);
 
   return (
     <div className="pb-20 md:pb-0">
@@ -94,15 +118,30 @@ const Books = () => {
             </div>
           </div>
 
-          {/* Search */}
-          <div className="relative mb-8 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by title or description..."
-              className="pl-10"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+          {/* Search & Filter */}
+          <div className="flex flex-col sm:flex-row gap-3 mb-8">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by title or description..."
+                className="pl-10"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-full sm:w-48">
+                <Filter className="w-4 h-4 mr-2 text-muted-foreground" />
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                {BOOK_CATEGORIES.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Content */}
@@ -118,7 +157,7 @@ const Books = () => {
               }
             />
           ) : filteredBooks.length === 0 ? (
-            <EmptyState message="No books found matching your search." />
+            <EmptyState message={searchQuery || selectedCategory !== "All Categories" ? "No books found matching your filters." : "No books found."} />
           ) : (
             <>
               {/* Books Grid */}
@@ -191,7 +230,7 @@ const Books = () => {
               </div>
 
               {/* Load More */}
-              {!searchQuery && (
+              {!searchQuery && selectedCategory === "All Categories" && (
                 <LoadMoreButton 
                   onClick={loadMore}
                   isLoading={loadingMore}
