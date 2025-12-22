@@ -54,7 +54,7 @@ const BookDetail = () => {
         openWhatsAppContact({
           bookName: book.title,
           price: book.price,
-          listingType: getListingType(book.price),
+          listingType: getListingType(book.listing_type, book.price),
           sellerMobile: contact.mobile,
         });
       } else {
@@ -92,8 +92,14 @@ const BookDetail = () => {
     );
   }
 
-  const listingType = getListingType(book.price);
-  const listingLabel = book.price && book.price > 0 ? 'For Sale' : 'Exchange';
+  const listingType = getListingType(book.listing_type, book.price);
+  const listingLabels: Record<string, string> = {
+    sell: 'For Sale',
+    rent: 'For Rent',
+    donate: 'Free (Donate)',
+    exchange: 'Exchange',
+  };
+  const listingLabel = listingLabels[listingType] || 'For Sale';
 
   return (
     <div className="py-8">
@@ -132,7 +138,9 @@ const BookDetail = () => {
             </div>
 
             {book.price && book.price > 0 && (
-              <p className="text-3xl font-bold text-primary mb-4">₹{book.price}</p>
+              <p className="text-3xl font-bold text-primary mb-4">
+                ₹{book.price}{listingType === 'rent' ? '/month' : ''}
+              </p>
             )}
 
             {book.description && (

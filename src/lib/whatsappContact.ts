@@ -13,9 +13,13 @@ interface WhatsAppMessageParams {
 }
 
 /**
- * Determines the listing type based on price
+ * Gets the listing type from the database value or infers from price
  */
-export function getListingType(price: number | null | undefined): ListingType {
+export function getListingType(listingType?: string | null, price?: number | null): ListingType {
+  if (listingType && ['sell', 'rent', 'donate', 'exchange'].includes(listingType)) {
+    return listingType as ListingType;
+  }
+  // Fallback for old books without listing_type
   if (price === null || price === undefined || price === 0) {
     return 'exchange';
   }

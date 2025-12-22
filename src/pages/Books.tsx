@@ -15,6 +15,14 @@ import { useOptimizedFetch, CACHE_TTL } from "@/hooks/useOptimizedFetch";
 import { Book } from "@/types/database";
 import { toast } from "sonner";
 import { getDisplayCategory } from "@/lib/bookCategorizer";
+import { getListingType } from "@/lib/whatsappContact";
+
+const LISTING_LABELS: Record<string, string> = {
+  sell: 'For Sale',
+  rent: 'For Rent',
+  donate: 'Free',
+  exchange: 'Exchange',
+};
 
 const BOOK_CATEGORIES = [
   "All Categories",
@@ -195,9 +203,12 @@ const Books = () => {
                           )}
                         </div>
                         
-                        <div className="flex items-center gap-2 mt-3">
-                          <Badge variant={book.price ? "default" : "outline"} className="text-xs">
-                            {book.price ? 'For Sale' : 'Exchange'}
+                        <div className="flex items-center gap-2 mt-3 flex-wrap">
+                          <Badge 
+                            variant={book.listing_type === 'donate' ? 'secondary' : book.price ? 'default' : 'outline'} 
+                            className="text-xs"
+                          >
+                            {LISTING_LABELS[getListingType(book.listing_type, book.price)] || 'For Sale'}
                           </Badge>
                           {book.condition && (
                             <Badge variant="secondary" className="text-xs">{book.condition}</Badge>
@@ -208,7 +219,9 @@ const Books = () => {
                         </div>
                         
                         {book.price && book.price > 0 && (
-                          <p className="text-lg font-semibold text-primary mt-3">₹{book.price}</p>
+                          <p className="text-lg font-semibold text-primary mt-3">
+                            ₹{book.price}{book.listing_type === 'rent' ? '/mo' : ''}
+                          </p>
                         )}
                         
                         <div className="flex items-center justify-between mt-3">

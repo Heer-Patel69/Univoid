@@ -73,6 +73,7 @@ export type Database = {
           id: string
           image_urls: string[] | null
           is_sold: boolean
+          listing_type: string | null
           price: number | null
           seller_address: string
           seller_email: string
@@ -92,6 +93,7 @@ export type Database = {
           id?: string
           image_urls?: string[] | null
           is_sold?: boolean
+          listing_type?: string | null
           price?: number | null
           seller_address: string
           seller_email: string
@@ -111,6 +113,7 @@ export type Database = {
           id?: string
           image_urls?: string[] | null
           is_sold?: boolean
+          listing_type?: string | null
           price?: number | null
           seller_address?: string
           seller_email?: string
@@ -1559,6 +1562,7 @@ export type Database = {
           id: string
           image_urls: string[] | null
           is_sold: boolean
+          listing_type: string | null
           price: number | null
           seller_address: string
           seller_email: string
