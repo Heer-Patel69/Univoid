@@ -20,7 +20,7 @@ import { BookListingType } from "@/types/database";
 import { useBookCategorization } from "@/hooks/useBookCategorization";
 import { useDebounce } from "@/hooks/useDebounce";
 
-const MAX_BOOK_IMAGES = 3;
+const MAX_BOOK_IMAGES = 1;
 
 const LISTING_TYPES = [
   { value: 'sell', label: 'Sell', icon: DollarSign, description: 'Set a price for your book' },
@@ -256,10 +256,7 @@ const ListBook = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label>Book Photos * (max 3)</Label>
-                    <span className="text-xs text-muted-foreground">{images.length}/3</span>
-                  </div>
+                  <Label>Book Cover *</Label>
                   <BookImageUpload
                     images={images}
                     onImagesChange={setImages}

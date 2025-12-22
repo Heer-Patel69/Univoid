@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { X, ImagePlus, Loader2 } from "lucide-react";
+import { Camera, RefreshCw, Loader2, ImageIcon } from "lucide-react";
 import { compressImage, validateImageFile, CompressedImage } from "@/lib/imageCompression";
 import { toast } from "sonner";
 
@@ -10,138 +10,165 @@ interface BookImageUploadProps {
   maxImages?: number;
 }
 
-const BookImageUpload = ({ images, onImagesChange, maxImages = 3 }: BookImageUploadProps) => {
+const BookImageUpload = ({ images, onImagesChange, maxImages = 1 }: BookImageUploadProps) => {
   const [isCompressing, setIsCompressing] = useState(false);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
-    const remainingSlots = maxImages - images.length;
-    if (remainingSlots <= 0) {
-      toast.error(`You can upload maximum ${maxImages} images only`);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-      return;
-    }
-
-    // Show warning if trying to add too many
-    if (files.length > remainingSlots) {
-      toast.warning(`Only ${remainingSlots} more image(s) can be added. Max ${maxImages} allowed.`);
-    }
-
-    const filesToProcess = files.slice(0, remainingSlots);
+    // Only allow single image - replace existing
+    const file = files[0];
     setIsCompressing(true);
 
     try {
-      const newImages: CompressedImage[] = [];
-
-      for (const file of filesToProcess) {
-        const error = validateImageFile(file);
-        if (error) {
-          toast.error(`${file.name}: ${error}`);
-          continue;
-        }
-
-        const compressed = await compressImage(file);
-        newImages.push(compressed);
+      const error = validateImageFile(file);
+      if (error) {
+        toast.error(error);
+        return;
       }
 
-      if (newImages.length > 0) {
-        onImagesChange([...images, ...newImages]);
-        toast.success(`${newImages.length} image(s) added`);
-      }
+      const compressed = await compressImage(file);
+      // Replace any existing image with the new one
+      onImagesChange([compressed]);
+      toast.success("Book cover added");
     } catch (error) {
-      toast.error("Failed to process images");
+      toast.error("Failed to process image");
     } finally {
       setIsCompressing(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
+      // Reset inputs
+      if (cameraInputRef.current) cameraInputRef.current.value = "";
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
-  const removeImage = (index: number) => {
-    const newImages = images.filter((_, i) => i !== index);
-    onImagesChange(newImages);
+  const replaceImage = () => {
+    // Prefer camera on mobile
+    if (cameraInputRef.current) {
+      cameraInputRef.current.click();
+    }
   };
 
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-muted-foreground">
-          {images.length}/{maxImages} images
-        </span>
-        {images.length < maxImages && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isCompressing}
-          >
-            {isCompressing ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <ImagePlus className="w-4 h-4 mr-2" />
-            )}
-            Add Image
-          </Button>
-        )}
-      </div>
+  const hasImage = images.length > 0;
 
+  return (
+    <div className="space-y-3">
+      {/* Camera input - primary for mobile */}
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/jpeg,image/jpg,image/png,image/webp"
+        capture="environment"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
+      
+      {/* File input - fallback for gallery */}
       <input
         ref={fileInputRef}
         type="file"
         accept="image/jpeg,image/jpg,image/png,image/webp"
-        multiple
         onChange={handleFileSelect}
         className="hidden"
       />
 
-      {images.length > 0 ? (
-        <div className="grid grid-cols-3 gap-3">
-          {images.map((img, index) => (
-            <div
-              key={index}
-              className="relative aspect-square rounded-lg overflow-hidden border border-border group"
+      {hasImage ? (
+        // Show captured image with replace option
+        <div className="relative">
+          <div className="aspect-[3/4] max-w-[200px] mx-auto rounded-lg overflow-hidden border-2 border-primary bg-secondary">
+            <img
+              src={images[0].preview}
+              alt="Book cover"
+              className="w-full h-full object-cover"
+            />
+          </div>
+          
+          {/* Replace button */}
+          <div className="flex justify-center mt-3 gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={replaceImage}
+              disabled={isCompressing}
             >
-              <img
-                src={img.preview}
-                alt={`Book image ${index + 1}`}
-                className="w-full h-full object-cover"
-              />
-              <button
-                type="button"
-                onClick={() => removeImage(index)}
-                className="absolute top-1 right-1 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <X className="w-4 h-4" />
-              </button>
-              {index === 0 && (
-                <span className="absolute bottom-1 left-1 text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded">
-                  Cover
-                </span>
+              {isCompressing ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4 mr-2" />
               )}
-            </div>
-          ))}
+              Replace Cover
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isCompressing}
+            >
+              <ImageIcon className="w-4 h-4 mr-2" />
+              Gallery
+            </Button>
+          </div>
         </div>
       ) : (
+        // Camera-first capture area
         <div
-          onClick={() => fileInputRef.current?.click()}
-          className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
+          onClick={() => cameraInputRef.current?.click()}
+          className="border-2 border-dashed border-primary/50 rounded-lg p-8 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all"
         >
-          <ImagePlus className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">
-            Click to add photos (max {maxImages} images)
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            JPG, PNG, WebP • First image will be the cover
-          </p>
+          {isCompressing ? (
+            <div className="flex flex-col items-center">
+              <Loader2 className="w-12 h-12 text-primary animate-spin mb-3" />
+              <p className="text-sm text-muted-foreground">Processing...</p>
+            </div>
+          ) : (
+            <>
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Camera className="w-8 h-8 text-primary" />
+              </div>
+              <p className="font-medium text-foreground mb-1">
+                Scan Book Cover
+              </p>
+              <p className="text-sm text-muted-foreground mb-4">
+                Tap to open camera and capture your book's cover
+              </p>
+              <Button
+                type="button"
+                variant="default"
+                size="sm"
+                className="mb-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  cameraInputRef.current?.click();
+                }}
+              >
+                <Camera className="w-4 h-4 mr-2" />
+                Open Camera
+              </Button>
+              <div className="flex items-center justify-center gap-2 mt-2">
+                <span className="text-xs text-muted-foreground">or</span>
+                <button
+                  type="button"
+                  className="text-xs text-primary hover:underline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    fileInputRef.current?.click();
+                  }}
+                >
+                  Choose from Gallery
+                </button>
+              </div>
+            </>
+          )}
         </div>
       )}
+      
+      <p className="text-xs text-muted-foreground text-center">
+        Only 1 book cover image allowed • JPG, PNG, WebP
+      </p>
     </div>
   );
 };

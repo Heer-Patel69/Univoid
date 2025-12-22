@@ -92,7 +92,7 @@ const MyBooksSection = ({ books, isLoading, onRefresh }: MyBooksSectionProps) =>
           <p className="text-muted-foreground mb-4">
             Start by listing your first book for sale, rent, or exchange
           </p>
-          <Link to="/books/list">
+          <Link to="/sell-book">
             <Button>List a Book</Button>
           </Link>
         </CardContent>

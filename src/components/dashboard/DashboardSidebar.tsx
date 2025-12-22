@@ -40,6 +40,7 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
     { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
     { label: "My Profile", icon: User, href: "/profile" },
     { label: "My Tickets", icon: Ticket, href: "/my-events" },
+    { label: "My Books", icon: BookOpen, href: "/dashboard/my-books" },
   ];
 
   // Browse Items
