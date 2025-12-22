@@ -23,6 +23,7 @@ import {
 import { Helmet } from "react-helmet";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+import { useSkeletonSync } from "@/hooks/useSkeleton";
 import {
   Dialog,
   DialogContent,
@@ -44,17 +45,20 @@ const Tasks = () => {
   const [openTasks, setOpenTasks] = useState<TaskRequest[]>([]);
   const [myRequests, setMyRequests] = useState<TaskRequest[]>([]);
   const [myAssigned, setMyAssigned] = useState<TaskRequest[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [rawLoading, setRawLoading] = useState(true);
   const [bidTask, setBidTask] = useState<TaskRequest | null>(null);
   const [bidMessage, setBidMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Use skeleton sync for consistent loading behavior
+  const isLoading = useSkeletonSync(rawLoading, { minDisplayTime: 400 });
 
   useEffect(() => {
     loadTasks();
   }, [user]);
 
   const loadTasks = async () => {
-    setIsLoading(true);
+    setRawLoading(true);
     try {
       const open = await getOpenTasks();
       setOpenTasks(open);
@@ -70,7 +74,7 @@ const Tasks = () => {
     } catch (error) {
       console.error('Failed to load tasks:', error);
     } finally {
-      setIsLoading(false);
+      setRawLoading(false);
     }
   };
 
