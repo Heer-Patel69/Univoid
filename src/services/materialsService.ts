@@ -168,8 +168,10 @@ export async function uploadMaterial(
 
     options?.onProgress?.(15);
 
-    // Upload file to storage
-    const filePath = `${userId}/${Date.now()}-${uploadFile.name}`;
+    // Generate safe storage filename using UUID (original filename may contain invalid characters like [ ] ( ))
+    const safeStorageFileName = `${crypto.randomUUID()}.${fileExt}`;
+    const filePath = `${userId}/${safeStorageFileName}`;
+    
     const { error: uploadError } = await supabase.storage
       .from('materials')
       .upload(filePath, uploadFile, {
