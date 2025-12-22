@@ -42,6 +42,7 @@ const TaskDetail = lazy(() => import("@/pages/TaskDetail"));
 const CreateTask = lazy(() => import("@/pages/CreateTask"));
 const EventCheckIn = lazy(() => import("@/pages/EventCheckIn"));
 const Settings = lazy(() => import("@/pages/Settings"));
+const MyBooks = lazy(() => import("@/pages/MyBooks"));
 // Preload critical pages after initial render
 const preloadCriticalPages = () => {
   // Preload most commonly visited pages
@@ -179,6 +180,9 @@ export const AnimatedRoutes = () => {
         } />
         <Route path="/dashboard/list-book" element={
           <Suspense fallback={<MinimalLoader />}><ListBook /></Suspense>
+        } />
+        <Route path="/dashboard/my-books" element={
+          <Suspense fallback={<MinimalLoader />}><MyBooks /></Suspense>
         } />
         <Route path="/dashboard/my-tickets" element={<Navigate to="/my-events" replace />} />
       </Route>
