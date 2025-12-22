@@ -424,44 +424,16 @@ export default function EnhancedMaterialPreview({
   };
 
   const renderImagePreview = () => {
-    const imageUrl = signedUrl || material.thumbnail_url || material.file_url;
-    
-    if (!imageUrl) {
-      return renderNoUrlError();
-    }
-
     return (
-      <div className="aspect-video bg-muted rounded-lg overflow-hidden border border-border relative">
-        {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          </div>
-        )}
-        
-        {previewError ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <Image className="w-16 h-16 text-muted-foreground/40 mb-4" />
-            <p className="text-muted-foreground">Image could not be loaded</p>
-          </div>
-        ) : (
-          <img 
-            src={imageUrl}
-            alt={material.title}
-            className="w-full h-full object-contain"
-            onLoad={() => setIsLoading(false)}
-            onError={() => {
-              setIsLoading(false);
-              setPreviewError(true);
-            }}
-          />
-        )}
-        
-        {!isLoggedIn && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
-            <Lock className="w-12 h-12 text-muted-foreground mb-4" />
-            <p className="text-lg font-medium">Login to view</p>
-          </div>
-        )}
+      <div className="aspect-video bg-muted rounded-lg flex flex-col items-center justify-center border border-border p-8">
+        <Image className="w-16 h-16 text-muted-foreground/40 mb-4" />
+        <span className="text-lg font-medium text-foreground mb-2">Image File</span>
+        <span className="text-sm text-muted-foreground text-center">
+          Preview available for PDF files only.
+        </span>
+        <p className="text-xs text-muted-foreground mt-2">
+          {material.file_size ? formatFileSize(material.file_size) : 'Unknown size'}
+        </p>
       </div>
     );
   };
@@ -472,26 +444,12 @@ export default function EnhancedMaterialPreview({
       <span className="text-lg font-medium text-foreground mb-2">
         {material.file_type.toUpperCase()} Document
       </span>
-      <span className="text-sm text-muted-foreground mb-4">
+      <span className="text-sm text-muted-foreground text-center mb-2">
+        Preview available for PDF files only.
+      </span>
+      <span className="text-xs text-muted-foreground">
         {material.file_size ? formatFileSize(material.file_size) : 'Unknown size'}
       </span>
-      
-      {isAdmin && (
-        <Button 
-          variant="outline"
-          onClick={() => window.open(signedUrl || material.file_url, '_blank')}
-        >
-          <ExternalLink className="w-4 h-4 mr-2" />
-          Open Full Document
-        </Button>
-      )}
-      
-      {!isAdmin && !isLoggedIn && (
-        <div className="text-center mt-4">
-          <Lock className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">Login to download</p>
-        </div>
-      )}
     </div>
   );
 
@@ -501,19 +459,15 @@ export default function EnhancedMaterialPreview({
       <span className="text-lg font-medium text-foreground mb-2">
         Archive File
       </span>
-      <span className="text-sm text-muted-foreground mb-4">
+      <span className="text-sm text-muted-foreground text-center mb-2">
+        Preview available for PDF files only.
+      </span>
+      <span className="text-xs text-muted-foreground">
         {material.file_size ? formatFileSize(material.file_size) : 'Unknown size'}
       </span>
-      <p className="text-xs text-muted-foreground text-center mb-4">
+      <p className="text-xs text-muted-foreground text-center mt-4">
         Contains study materials, notes, or resources
       </p>
-      
-      {isAdmin && (
-        <Badge variant="secondary" className="bg-green-500/20 text-green-700">
-          <CheckCircle2 className="w-3 h-3 mr-1" />
-          Admin: Full download allowed
-        </Badge>
-      )}
     </div>
   );
 

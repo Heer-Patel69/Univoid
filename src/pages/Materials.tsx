@@ -281,6 +281,20 @@ const Materials = () => {
   }, [user, navigate, context]);
 
   const handlePreview = useCallback(async (material: Material) => {
+    // Only allow preview for approved PDFs
+    const isPdf = material.file_type.toLowerCase() === 'pdf';
+    const isApproved = material.status === 'approved';
+    
+    if (!isPdf) {
+      toast.info('Preview available for PDF files only');
+      return;
+    }
+    
+    if (!isApproved) {
+      toast.info('This material is pending approval');
+      return;
+    }
+    
     setPreviewMaterial(material);
     // Defer view count increment
     deferAfterPaint(() => {
