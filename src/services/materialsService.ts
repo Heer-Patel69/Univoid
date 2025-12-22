@@ -183,21 +183,36 @@ export async function uploadMaterial(
   userId: string,
   options?: UploadOptions
 ): Promise<{ id: string | null; error: Error | null }> {
+  // Debug logging for upload tracking
+  const uploadId = crypto.randomUUID().slice(0, 8);
+  const logPrefix = `[Upload ${uploadId}]`;
+  
+  console.log(`${logPrefix} Starting upload:`, {
+    originalFileName: file.name,
+    fileSize: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+    fileType: file.type,
+    userId: userId.slice(0, 8) + '...',
+    online: navigator.onLine,
+  });
+
   try {
     // Validate file
     const validationError = validateMaterialFile(file);
     if (validationError) {
+      console.error(`${logPrefix} Validation failed:`, validationError);
       return { id: null, error: new Error(validationError) };
     }
 
     // Check for blocked video formats
     const fileExt = file.name.split('.').pop()?.toLowerCase() || '';
     if (BLOCKED_VIDEO_FORMATS.includes(fileExt)) {
+      console.error(`${logPrefix} Blocked format:`, fileExt);
       return { id: null, error: new Error('Video files are not allowed') };
     }
 
     // Check file size (100MB limit)
     if (file.size > MAX_FILE_SIZE_BYTES) {
+      console.error(`${logPrefix} File too large:`, file.size);
       return { id: null, error: new Error('File size must be less than 100MB') };
     }
 
@@ -206,11 +221,17 @@ export async function uploadMaterial(
     // Compress file if possible (images)
     let uploadFile = file;
     try {
+      console.log(`${logPrefix} Starting compression...`);
       const compressionResult = await compressFile(file, (p) => {
         options?.onCompressionProgress?.(p.stage, p.progress);
       });
       uploadFile = compressionResult.file;
+      console.log(`${logPrefix} Compression done:`, {
+        originalSize: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+        compressedSize: `${(uploadFile.size / 1024 / 1024).toFixed(2)} MB`,
+      });
     } catch (error) {
+      console.warn(`${logPrefix} Compression failed, using original:`, error);
       materialsLogger.warn('File compression failed, using original', error, { fileName: file.name });
     }
 
@@ -220,20 +241,43 @@ export async function uploadMaterial(
     const safeStorageFileName = `${crypto.randomUUID()}.${fileExt}`;
     const filePath = `${userId}/${safeStorageFileName}`;
     
-    const { error: uploadError } = await supabase.storage
+    console.log(`${logPrefix} Uploading to storage:`, {
+      originalName: file.name,
+      storagePath: filePath,
+      bucket: 'materials',
+    });
+
+    const uploadStartTime = Date.now();
+    const { error: uploadError, data: uploadData } = await supabase.storage
       .from('materials')
       .upload(filePath, uploadFile, {
         cacheControl: '3600',
         upsert: false,
       });
+    
+    const uploadDuration = Date.now() - uploadStartTime;
+    console.log(`${logPrefix} Storage upload completed in ${uploadDuration}ms`);
 
     options?.onProgress?.(60);
 
     if (uploadError) {
-      console.error('Storage upload error (REAL):', uploadError);
+      // Detailed error logging
+      console.error(`${logPrefix} UPLOAD FAILED:`, {
+        errorMessage: uploadError.message,
+        errorName: (uploadError as any).name,
+        statusCode: (uploadError as any).statusCode || (uploadError as any).status,
+        cause: (uploadError as any).cause,
+        fullError: JSON.stringify(uploadError, null, 2),
+        filePath,
+        fileSize: uploadFile.size,
+        online: navigator.onLine,
+      });
+      
       const errorMessage = getUploadErrorMessage(uploadError);
       return { id: null, error: new Error(errorMessage) };
     }
+    
+    console.log(`${logPrefix} Upload successful:`, { path: uploadData?.path || filePath });
 
     // Server-side PDF compression via edge function (non-blocking, with timeout)
     let finalFilePath = filePath;
@@ -268,9 +312,11 @@ export async function uploadMaterial(
       .createSignedUrl(finalFilePath, 60 * 60 * 24 * 365); // 1 year
 
     if (urlError) {
-      console.error('Signed URL error:', urlError);
+      console.error(`${logPrefix} Signed URL error:`, urlError);
       return { id: null, error: new Error('Failed to generate file URL. Please try again.') };
     }
+
+    console.log(`${logPrefix} Signed URL generated successfully`);
 
     const fileUrl = urlData?.signedUrl || '';
 
@@ -306,10 +352,19 @@ export async function uploadMaterial(
 
     options?.onProgress?.(100);
 
+    console.log(`${logPrefix} Inserting into database...`);
+
     if (error) {
-      console.error('Database insert error:', error);
+      console.error(`${logPrefix} Database insert error:`, {
+        errorMessage: error.message,
+        errorCode: error.code,
+        details: error.details,
+        hint: error.hint,
+      });
       return { id: null, error: new Error('Failed to save material. Please try again.') };
     }
+    
+    console.log(`${logPrefix} Material created successfully:`, { materialId: data.id });
 
     // Get uploader name for notification
     const { data: profile } = await supabase
@@ -329,21 +384,19 @@ export async function uploadMaterial(
     }).catch((err) => console.error('Failed to send notification:', err));
 
     return { id: data.id, error: null };
-  } catch (error) {
-    // Catch-all for any unexpected errors (network issues, etc.)
-    console.error('Unexpected upload error:', error);
+  } catch (error: any) {
+    // Catch-all for any unexpected errors
+    console.error(`[Upload] UNEXPECTED ERROR:`, {
+      message: error?.message,
+      name: error?.name,
+      stack: error?.stack?.slice(0, 500),
+      online: navigator.onLine,
+      cause: error?.cause,
+    });
     
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
-    // Handle common network errors with friendly messages
-    if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
-      return { id: null, error: new Error('Network error. Please check your internet connection and try again.') };
-    }
-    if (errorMessage.includes('timeout') || errorMessage.includes('Timeout')) {
-      return { id: null, error: new Error('Upload timed out. Please try again with a stable connection.') };
-    }
-    
-    return { id: null, error: new Error(`Upload failed: ${errorMessage}`) };
+    // Use proper error detection
+    const errorMessage = getUploadErrorMessage(error);
+    return { id: null, error: new Error(errorMessage) };
   }
 }
 
