@@ -4,6 +4,54 @@ import { compressFile, MAX_FILE_SIZE_BYTES, validateMaterialFile } from '@/lib/f
 import { materialsLogger } from '@/services/errorLoggingService';
 import type { CursorPage, CursorPageParam } from '@/hooks/useCursorPagination';
 
+/**
+ * Get proper user-friendly error message for upload failures
+ * NEVER show "Network error" unless user is actually offline
+ */
+function getUploadErrorMessage(error: any): string {
+  // Only show network error if actually offline
+  if (!navigator.onLine) {
+    return 'You are offline. Please check your internet connection.';
+  }
+
+  const message = error?.message || '';
+  const statusCode = error?.statusCode || error?.status;
+
+  // Storage-specific errors
+  if (message.includes('Invalid key') || message.includes('invalid key')) {
+    return 'Upload failed due to file path issue. Please try again.';
+  }
+
+  if (message.includes('exceeded') || message.includes('size') || statusCode === 413) {
+    return 'File is too large. Please try a smaller file (max 16MB).';
+  }
+
+  if (statusCode === 403 || message.includes('permission') || message.includes('not authorized')) {
+    return 'You do not have permission to upload. Please log in again.';
+  }
+
+  if (statusCode === 401 || message.includes('unauthorized') || message.includes('JWT')) {
+    return 'Your session has expired. Please refresh the page and try again.';
+  }
+
+  if (message.includes('timeout') || message.includes('Timeout')) {
+    return 'Upload timed out. Please try again with a stable connection.';
+  }
+
+  if (message.includes('bucket') || message.includes('Bucket')) {
+    return 'Storage configuration error. Please contact support.';
+  }
+
+  // Generic fetch failures - could be CORS, policy, or actual network
+  if (message.includes('fetch') || message.includes('network')) {
+    // But we already checked navigator.onLine, so it's likely a backend issue
+    return 'Upload failed. Please try again or contact support if the issue persists.';
+  }
+
+  // Default: show the actual error for debugging
+  return message || 'Upload failed. Please try again.';
+}
+
 export interface MaterialFilters {
   status?: 'approved' | 'all';
   branch?: string;
@@ -182,15 +230,9 @@ export async function uploadMaterial(
     options?.onProgress?.(60);
 
     if (uploadError) {
-      console.error('Storage upload error:', uploadError);
-      // Provide user-friendly message for common errors
-      if (uploadError.message?.includes('exceeded') || uploadError.message?.includes('size')) {
-        return { id: null, error: new Error('File too large for upload. Please try a smaller file.') };
-      }
-      if (uploadError.message?.includes('network') || uploadError.message?.includes('fetch')) {
-        return { id: null, error: new Error('Network error during upload. Please check your connection and try again.') };
-      }
-      return { id: null, error: new Error(`Upload failed: ${uploadError.message}`) };
+      console.error('Storage upload error (REAL):', uploadError);
+      const errorMessage = getUploadErrorMessage(uploadError);
+      return { id: null, error: new Error(errorMessage) };
     }
 
     // Server-side PDF compression via edge function (non-blocking, with timeout)
