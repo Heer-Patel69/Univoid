@@ -44,22 +44,38 @@ export async function getScholarshipsWithCursor(
 ): Promise<CursorPage<Scholarship>> {
   const { cursor, limit } = params;
 
+  // Calculate how many extra items to fetch to account for client-side filtering
+  // If filtering by state/course, fetch more to ensure we have enough after filtering
+  const hasClientFilter = !!(filters?.state || filters?.course);
+  const fetchLimit = hasClientFilter ? limit * 3 : limit; // Fetch 3x if filtering
+
   let query = supabase
     .from("scholarships")
     .select("*", { count: 'exact' })
     .eq("status", "approved")
     .eq("deadline_status", "active")
     .order("created_at", { ascending: false })
-    .limit(limit + 1);
+    .limit(fetchLimit + 1);
 
   // Apply cursor
   if (cursor) {
     query = query.lt("created_at", cursor);
   }
 
-  // Apply search filter
+  // Apply search filter (can be done server-side)
   if (filters?.search) {
     query = query.ilike("title", `%${filters.search}%`);
+  }
+
+  // Apply state filter server-side using array contains
+  if (filters?.state) {
+    // Filter: is_all_india OR eligible_states contains the state
+    query = query.or(`is_all_india.eq.true,eligible_states.cs.{${filters.state}}`);
+  }
+
+  // Apply course filter server-side
+  if (filters?.course) {
+    query = query.or(`eligible_courses.cs.{Any},eligible_courses.cs.{${filters.course}}`);
   }
 
   const { data, error, count } = await query;
@@ -68,27 +84,11 @@ export async function getScholarshipsWithCursor(
 
   let scholarships = (data || []) as unknown as Scholarship[];
   
-  // Check for more items
+  // Check for more items and slice to limit
   const hasMore = scholarships.length > limit;
-  scholarships = hasMore ? scholarships.slice(0, limit) : scholarships;
+  scholarships = scholarships.slice(0, limit);
 
-  // Client-side filtering for state/course (these use array contains)
-  if (filters?.state) {
-    scholarships = scholarships.filter(s => 
-      s.is_all_india || s.eligible_states.some(st => 
-        st.toLowerCase() === filters.state?.toLowerCase()
-      )
-    );
-  }
-
-  if (filters?.course) {
-    scholarships = scholarships.filter(s => 
-      s.eligible_courses.includes("Any") || 
-      s.eligible_courses.includes(filters.course!)
-    );
-  }
-
-  // Get next cursor
+  // Get next cursor from the last item we're keeping
   const nextCursor = hasMore && scholarships.length > 0
     ? scholarships[scholarships.length - 1].created_at
     : null;

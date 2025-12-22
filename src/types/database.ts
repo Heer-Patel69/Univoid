@@ -1,7 +1,7 @@
 // Database types for UniVoid
 
 export type ContentStatus = 'pending' | 'approved' | 'rejected';
-export type AppRole = 'admin' | 'student' | 'organizer';
+export type AppRole = 'admin' | 'student' | 'organizer' | 'admin_assistant';
 
 export interface Profile {
   id: string;
