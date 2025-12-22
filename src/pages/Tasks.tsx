@@ -24,6 +24,7 @@ import { Helmet } from "react-helmet";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { useSkeletonSync } from "@/hooks/useSkeleton";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
   DialogContent,
@@ -55,6 +56,39 @@ const Tasks = () => {
 
   useEffect(() => {
     loadTasks();
+
+    // Real-time subscription for instant updates
+    const channel = supabase
+      .channel('tasks-page-realtime')
+      .on(
+        'postgres_changes' as any,
+        { event: '*', schema: 'public', table: 'task_requests' },
+        (payload: any) => {
+          const newData = payload.new as TaskRequest;
+          
+          if (payload.eventType === 'INSERT' && newData?.status === 'open') {
+            setOpenTasks(prev => {
+              if (prev.some(t => t.id === newData.id)) return prev;
+              return [newData, ...prev];
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            if (newData?.status === 'open') {
+              setOpenTasks(prev => prev.map(t => 
+                t.id === newData.id ? { ...t, ...newData } : t
+              ));
+            } else {
+              setOpenTasks(prev => prev.filter(t => t.id !== newData.id));
+            }
+          } else if (payload.eventType === 'DELETE') {
+            setOpenTasks(prev => prev.filter(t => t.id !== payload.old?.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const loadTasks = async () => {
