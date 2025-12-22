@@ -65,19 +65,21 @@ export async function getMaterialsWithCursor(
     ? items[items.length - 1].created_at 
     : null;
 
-  // Batch fetch contributor names
+  // Batch fetch contributor names in a single query
   const userIds = [...new Set(items.map(m => m.created_by))];
   const contributorNames: Record<string, string> = {};
   
-  // Fetch names in parallel
-  await Promise.all(
-    userIds.map(async (userId) => {
-      const { data: nameData } = await supabase.rpc('get_contributor_name', {
-        user_id: userId,
-      });
-      contributorNames[userId] = nameData || 'Anonymous';
-    })
-  );
+  if (userIds.length > 0) {
+    const { data: namesData } = await supabase.rpc('get_contributor_names', {
+      user_ids: userIds,
+    });
+    
+    if (namesData) {
+      for (const row of namesData) {
+        contributorNames[row.user_id] = row.full_name || 'Anonymous';
+      }
+    }
+  }
 
   for (const material of items) {
     material.contributor_name = contributorNames[material.created_by] || 'Anonymous';
@@ -297,11 +299,24 @@ export async function getPendingMaterials(): Promise<Material[]> {
   if (error) throw error;
 
   const materials = data as Material[];
-  for (const material of materials) {
-    const { data: nameData } = await supabase.rpc('get_contributor_name', {
-      user_id: material.created_by,
+  
+  // Batch fetch contributor names
+  const userIds = [...new Set(materials.map(m => m.created_by))];
+  if (userIds.length > 0) {
+    const { data: namesData } = await supabase.rpc('get_contributor_names', {
+      user_ids: userIds,
     });
-    material.contributor_name = nameData || 'Anonymous';
+    
+    const contributorNames: Record<string, string> = {};
+    if (namesData) {
+      for (const row of namesData) {
+        contributorNames[row.user_id] = row.full_name || 'Anonymous';
+      }
+    }
+    
+    for (const material of materials) {
+      material.contributor_name = contributorNames[material.created_by] || 'Anonymous';
+    }
   }
 
   return materials;
