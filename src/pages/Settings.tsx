@@ -17,7 +17,8 @@ import {
   EyeOff,
   Loader2,
   AlertTriangle,
-  RotateCcw
+  RotateCcw,
+  FileText
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { NotificationPreferences } from "@/components/dashboard/NotificationPreferences";
@@ -47,6 +48,25 @@ const Settings = () => {
     showActivityStatus: false,
   });
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // PDF viewer preference from localStorage
+  const [useGoogleViewer, setUseGoogleViewer] = useState(() => {
+    try {
+      return localStorage.getItem('pdf-viewer-preference') === 'google';
+    } catch {
+      return false;
+    }
+  });
+
+  const handlePdfViewerChange = (useGoogle: boolean) => {
+    setUseGoogleViewer(useGoogle);
+    try {
+      localStorage.setItem('pdf-viewer-preference', useGoogle ? 'google' : 'native');
+    } catch (e) {
+      console.warn('Failed to save PDF viewer preference:', e);
+    }
+    toast.success(`PDF viewer set to ${useGoogle ? 'Google Docs' : 'Native browser'}`);
+  };
 
   if (isLoading) {
     return (
@@ -190,6 +210,38 @@ const Settings = () => {
                   <Switch
                     checked={privacySettings.showActivityStatus}
                     onCheckedChange={(checked) => handlePrivacyChange('showActivityStatus', checked)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* PDF Viewer Preferences */}
+            <Card className="card-sketch-hover">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" strokeWidth={2} />
+                  Document Viewer
+                </CardTitle>
+                <CardDescription>
+                  Choose how PDFs and documents are displayed
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between gap-4 p-4 rounded-xl bg-sketch border-2 border-sketch-border shadow-sketch-sm">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 rounded-xl bg-secondary border-2 border-sketch-border">
+                      <FileText className="h-4 w-4 text-foreground" strokeWidth={2} />
+                    </div>
+                    <div className="space-y-0.5">
+                      <Label className="font-medium">Use Google Docs Viewer</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Use Google Docs to preview PDFs (more compatible, but requires internet)
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={useGoogleViewer}
+                    onCheckedChange={handlePdfViewerChange}
                   />
                 </div>
               </CardContent>
