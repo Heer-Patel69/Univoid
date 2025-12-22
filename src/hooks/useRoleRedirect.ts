@@ -29,7 +29,8 @@ export function useRoleRedirect() {
     const isDashboardPage = 
       currentPath === '/dashboard' ||
       currentPath === '/admin' ||
-      currentPath === '/organizer-dashboard';
+      currentPath === '/organizer/dashboard' ||
+      currentPath.startsWith('/organizer/');
 
     if (isDashboardPage) {
       hasRedirected.current = true;
@@ -50,7 +51,7 @@ export function useRoleRedirect() {
     if (isAdmin || isAdminOrAssistant) {
       redirectPath = '/admin';
     } else if (userRoles.includes('organizer')) {
-      redirectPath = '/organizer-dashboard';
+      redirectPath = '/organizer/dashboard';
     }
 
     hasRedirected.current = true;
@@ -60,7 +61,7 @@ export function useRoleRedirect() {
   return {
     getRedirectPath: () => {
       if (isAdmin || isAdminOrAssistant) return '/admin';
-      if (userRoles.includes('organizer')) return '/organizer-dashboard';
+      if (userRoles.includes('organizer')) return '/organizer/dashboard';
       return '/dashboard';
     }
   };
@@ -74,7 +75,7 @@ export function getRoleBasedRedirectPath(roles: string[]): string {
     return '/admin';
   }
   if (roles.includes('organizer')) {
-    return '/organizer-dashboard';
+    return '/organizer/dashboard';
   }
   return '/dashboard';
 }
