@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Profile, UserRole, AppRole } from '@/types/database';
+import { authLogger } from '@/services/errorLoggingService';
 
 interface AuthContextType {
   user: User | null;
@@ -84,13 +85,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profile_complete: false,
       };
       
-      const { data: createdProfile } = await supabase
+      const { data: createdProfile, error: createError } = await supabase
         .from('profiles')
         .upsert(newProfile, { onConflict: 'id' })
         .select()
         .single();
       
-      if (createdProfile) {
+      if (createError) {
+        authLogger.error('Failed to create profile', createError, { userId });
+      } else if (createdProfile) {
         setProfile(createdProfile as Profile);
       }
     } else if (profileResult.data) {
@@ -116,6 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const AUTH_TIMEOUT_MS = 8000;
     const safetyTimeout = setTimeout(() => {
       if (isMounted && isLoading && !hasInitialized) {
+        authLogger.warn('Auth loading timeout - proceeding without auth');
         setIsLoading(false);
         hasInitialized = true;
       }
@@ -166,8 +170,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         
         hasInitialized = true;
-      } catch {
-        // Auth initialization failed silently
+      } catch (error) {
+        authLogger.error('Auth initialization failed', error);
       } finally {
         if (isMounted) {
           setIsLoading(false);

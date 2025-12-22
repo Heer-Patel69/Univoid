@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Material, BLOCKED_VIDEO_FORMATS } from '@/types/database';
 import { compressFile, MAX_FILE_SIZE_BYTES, validateMaterialFile } from '@/lib/fileCompression';
+import { materialsLogger } from '@/services/errorLoggingService';
 import type { CursorPage, CursorPageParam } from '@/hooks/useCursorPagination';
 
 export interface MaterialFilters {
@@ -160,8 +161,8 @@ export async function uploadMaterial(
       options?.onCompressionProgress?.(p.stage, p.progress);
     });
     uploadFile = compressionResult.file;
-  } catch {
-    // Compression failed, use original file
+  } catch (error) {
+    materialsLogger.warn('File compression failed, using original', error, { fileName: file.name });
   }
 
   options?.onProgress?.(15);
@@ -193,8 +194,8 @@ export async function uploadMaterial(
       if (!compressionError && compressionResult?.success) {
         finalFilePath = compressionResult.newFilePath;
       }
-    } catch {
-      // Server-side PDF compression failed, use original
+    } catch (error) {
+      materialsLogger.warn('Server-side PDF compression failed', error, { filePath });
     }
   }
 
