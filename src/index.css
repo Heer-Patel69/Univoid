@@ -268,7 +268,7 @@
     will-change: opacity;
   }
 
-  /* Ultra-fast skeleton shimmer - GPU accelerated */
+  /* Ultra-fast skeleton shimmer - GPU accelerated with theme-aware colors */
   @keyframes skeleton-shimmer {
     0% { background-position: -200% 0; }
     100% { background-position: 200% 0; }
@@ -277,23 +277,37 @@
   .skeleton-optimized {
     background: linear-gradient(
       90deg,
-      hsl(var(--muted)) 0%,
-      hsl(var(--muted) / 0.4) 50%,
-      hsl(var(--muted)) 100%
+      hsl(40 15% 88%) 0%,
+      hsl(45 20% 94%) 25%,
+      hsl(50 25% 96%) 50%,
+      hsl(45 20% 94%) 75%,
+      hsl(40 15% 88%) 100%
     );
     background-size: 200% 100%;
-    animation: skeleton-shimmer 1s linear infinite;
+    animation: skeleton-shimmer 1.5s ease-in-out infinite;
     will-change: background-position;
+  }
+
+  .dark .skeleton-optimized {
+    background: linear-gradient(
+      90deg,
+      hsl(20 10% 15%) 0%,
+      hsl(25 12% 20%) 25%,
+      hsl(30 15% 24%) 50%,
+      hsl(25 12% 20%) 75%,
+      hsl(20 10% 15%) 100%
+    );
+    background-size: 200% 100%;
   }
 
   /* Fast pulse alternative for simpler skeletons */
   @keyframes skeleton-pulse {
     0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+    50% { opacity: 0.6; }
   }
 
   .skeleton-pulse {
-    animation: skeleton-pulse 1s ease-in-out infinite;
+    animation: skeleton-pulse 1.8s ease-in-out infinite;
     will-change: opacity;
   }
 
