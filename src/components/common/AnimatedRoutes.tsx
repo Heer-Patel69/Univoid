@@ -1,9 +1,21 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import { Suspense, lazy, useEffect } from "react";
+import { Suspense, lazy, useEffect, memo } from "react";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import CheckInRedirect from "@/components/common/CheckInRedirect";
 import AppLayout from "@/components/layout/AppLayout";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import {
+  TextPageSkeleton,
+  FAQPageSkeleton,
+  ListingPageSkeleton,
+  TaskListingSkeleton,
+  DetailPageSkeleton,
+  DashboardPageSkeleton,
+  ContactPageSkeleton,
+  EventsPageSkeleton,
+  LeaderboardPageSkeleton,
+  HomePageSkeleton,
+} from "@/components/common/PageSkeletons";
 
 // Lazy load pages for better code splitting
 const Index = lazy(() => import("@/pages/Index"));
@@ -44,6 +56,7 @@ const CreateTask = lazy(() => import("@/pages/CreateTask"));
 const EventCheckIn = lazy(() => import("@/pages/EventCheckIn"));
 const Settings = lazy(() => import("@/pages/Settings"));
 const MyBooks = lazy(() => import("@/pages/MyBooks"));
+
 // Preload critical pages after initial render
 const preloadCriticalPages = () => {
   // Preload most commonly visited pages
@@ -52,7 +65,21 @@ const preloadCriticalPages = () => {
   import("@/pages/Events");
 };
 
-// Minimal loading - null for instant feel
+// Memoized skeleton wrappers for route-specific loading
+const HomeSkeleton = memo(() => <HomePageSkeleton />);
+const MaterialsSkeleton = memo(() => <ListingPageSkeleton />);
+const BooksSkeleton = memo(() => <ListingPageSkeleton />);
+const EventsSkeleton = memo(() => <EventsPageSkeleton />);
+const ProjectsSkeleton = memo(() => <TaskListingSkeleton />);
+const TasksSkeleton = memo(() => <TaskListingSkeleton />);
+const DetailSkeleton = memo(() => <DetailPageSkeleton />);
+const TextSkeleton = memo(() => <TextPageSkeleton />);
+const FAQSkeleton = memo(() => <FAQPageSkeleton />);
+const ContactSkeleton = memo(() => <ContactPageSkeleton />);
+const LeaderboardSkeleton = memo(() => <LeaderboardPageSkeleton />);
+const DashboardSkeleton = memo(() => <DashboardPageSkeleton />);
+
+// Minimal loading for non-critical pages
 const MinimalLoader = () => null;
 
 export const AnimatedRoutes = () => {
@@ -70,7 +97,7 @@ export const AnimatedRoutes = () => {
     <Routes>
       {/* Landing page - no layout wrapper needed */}
       <Route path="/" element={
-        <Suspense fallback={<MinimalLoader />}>
+        <Suspense fallback={<HomeSkeleton />}>
           <Index />
         </Suspense>
       } />
@@ -78,115 +105,115 @@ export const AnimatedRoutes = () => {
       {/* Public pages with persistent AppLayout (Header/Footer) */}
       <Route element={<AppLayout />}>
         <Route path="/materials" element={
-          <Suspense fallback={<MinimalLoader />}><Materials /></Suspense>
+          <Suspense fallback={<MaterialsSkeleton />}><Materials /></Suspense>
         } />
         <Route path="/news" element={
-          <Suspense fallback={<MinimalLoader />}><News /></Suspense>
+          <Suspense fallback={<ListingPageSkeleton />}><News /></Suspense>
         } />
         <Route path="/books" element={
-          <Suspense fallback={<MinimalLoader />}><Books /></Suspense>
+          <Suspense fallback={<BooksSkeleton />}><Books /></Suspense>
         } />
         <Route path="/books/:bookId" element={
-          <Suspense fallback={<MinimalLoader />}><BookDetail /></Suspense>
+          <Suspense fallback={<DetailSkeleton />}><BookDetail /></Suspense>
         } />
         <Route path="/events" element={
-          <Suspense fallback={<MinimalLoader />}><Events /></Suspense>
+          <Suspense fallback={<EventsSkeleton />}><Events /></Suspense>
         } />
         <Route path="/events/:eventId" element={
-          <Suspense fallback={<MinimalLoader />}><EventDetail /></Suspense>
+          <Suspense fallback={<DetailSkeleton />}><EventDetail /></Suspense>
         } />
         <Route path="/projects" element={
-          <Suspense fallback={<MinimalLoader />}><Projects /></Suspense>
+          <Suspense fallback={<ProjectsSkeleton />}><Projects /></Suspense>
         } />
         <Route path="/projects/:projectId" element={
-          <Suspense fallback={<MinimalLoader />}><ProjectDetail /></Suspense>
+          <Suspense fallback={<DetailSkeleton />}><ProjectDetail /></Suspense>
         } />
         <Route path="/tasks" element={
-          <Suspense fallback={<MinimalLoader />}><Tasks /></Suspense>
+          <Suspense fallback={<TasksSkeleton />}><Tasks /></Suspense>
         } />
         <Route path="/tasks/:taskId" element={
-          <Suspense fallback={<MinimalLoader />}><TaskDetail /></Suspense>
+          <Suspense fallback={<DetailSkeleton />}><TaskDetail /></Suspense>
         } />
         <Route path="/leaderboard" element={
-          <Suspense fallback={<MinimalLoader />}><Leaderboard /></Suspense>
+          <Suspense fallback={<LeaderboardSkeleton />}><Leaderboard /></Suspense>
         } />
         <Route path="/become-organizer" element={
-          <Suspense fallback={<MinimalLoader />}><BecomeOrganizer /></Suspense>
+          <Suspense fallback={<TextSkeleton />}><BecomeOrganizer /></Suspense>
         } />
         <Route path="/profile/:userId" element={
-          <Suspense fallback={<MinimalLoader />}><Profile /></Suspense>
+          <Suspense fallback={<DetailSkeleton />}><Profile /></Suspense>
         } />
         {/* Legal pages */}
         <Route path="/privacy-policy" element={
-          <Suspense fallback={<MinimalLoader />}><PrivacyPolicy /></Suspense>
+          <Suspense fallback={<TextSkeleton />}><PrivacyPolicy /></Suspense>
         } />
         <Route path="/terms" element={
-          <Suspense fallback={<MinimalLoader />}><Terms /></Suspense>
+          <Suspense fallback={<TextSkeleton />}><Terms /></Suspense>
         } />
         <Route path="/refund-policy" element={
-          <Suspense fallback={<MinimalLoader />}><RefundPolicy /></Suspense>
+          <Suspense fallback={<TextSkeleton />}><RefundPolicy /></Suspense>
         } />
         <Route path="/legal-disclaimer" element={
-          <Suspense fallback={<MinimalLoader />}><LegalDisclaimer /></Suspense>
+          <Suspense fallback={<TextSkeleton />}><LegalDisclaimer /></Suspense>
         } />
         <Route path="/cookie-policy" element={
-          <Suspense fallback={<MinimalLoader />}><CookiePolicy /></Suspense>
+          <Suspense fallback={<TextSkeleton />}><CookiePolicy /></Suspense>
         } />
         <Route path="/contact" element={
-          <Suspense fallback={<MinimalLoader />}><Contact /></Suspense>
+          <Suspense fallback={<ContactSkeleton />}><Contact /></Suspense>
         } />
         <Route path="/faq" element={
-          <Suspense fallback={<MinimalLoader />}><FAQ /></Suspense>
+          <Suspense fallback={<FAQSkeleton />}><FAQ /></Suspense>
         } />
       </Route>
 
       {/* Dashboard pages with persistent DashboardLayout (Sidebar) */}
       <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
         <Route path="/dashboard" element={
-          <Suspense fallback={<MinimalLoader />}><Dashboard /></Suspense>
+          <Suspense fallback={<DashboardSkeleton />}><Dashboard /></Suspense>
         } />
         <Route path="/profile" element={
-          <Suspense fallback={<MinimalLoader />}><Profile /></Suspense>
+          <Suspense fallback={<DetailSkeleton />}><Profile /></Suspense>
         } />
         <Route path="/profile/edit" element={
-          <Suspense fallback={<MinimalLoader />}><EditProfile /></Suspense>
+          <Suspense fallback={<TextSkeleton />}><EditProfile /></Suspense>
         } />
         <Route path="/settings" element={
-          <Suspense fallback={<MinimalLoader />}><Settings /></Suspense>
+          <Suspense fallback={<TextSkeleton />}><Settings /></Suspense>
         } />
         <Route path="/my-events" element={
-          <Suspense fallback={<MinimalLoader />}><MyTickets /></Suspense>
+          <Suspense fallback={<ListingPageSkeleton />}><MyTickets /></Suspense>
         } />
         <Route path="/upload-material" element={
-          <Suspense fallback={<MinimalLoader />}><UploadMaterial /></Suspense>
+          <Suspense fallback={<TextSkeleton />}><UploadMaterial /></Suspense>
         } />
         <Route path="/submit-news" element={
-          <Suspense fallback={<MinimalLoader />}><SubmitNews /></Suspense>
+          <Suspense fallback={<TextSkeleton />}><SubmitNews /></Suspense>
         } />
         <Route path="/sell-book" element={
-          <Suspense fallback={<MinimalLoader />}><ListBook /></Suspense>
+          <Suspense fallback={<TextSkeleton />}><ListBook /></Suspense>
         } />
         <Route path="/projects/create" element={
-          <Suspense fallback={<MinimalLoader />}><CreateProject /></Suspense>
+          <Suspense fallback={<TextSkeleton />}><CreateProject /></Suspense>
         } />
         <Route path="/tasks/create" element={
-          <Suspense fallback={<MinimalLoader />}><CreateTask /></Suspense>
+          <Suspense fallback={<TextSkeleton />}><CreateTask /></Suspense>
         } />
         <Route path="/tasks/my-requests" element={
-          <Suspense fallback={<MinimalLoader />}><Tasks /></Suspense>
+          <Suspense fallback={<TasksSkeleton />}><Tasks /></Suspense>
         } />
         {/* Legacy dashboard routes */}
         <Route path="/dashboard/upload-material" element={
-          <Suspense fallback={<MinimalLoader />}><UploadMaterial /></Suspense>
+          <Suspense fallback={<TextSkeleton />}><UploadMaterial /></Suspense>
         } />
         <Route path="/dashboard/submit-news" element={
-          <Suspense fallback={<MinimalLoader />}><SubmitNews /></Suspense>
+          <Suspense fallback={<TextSkeleton />}><SubmitNews /></Suspense>
         } />
         <Route path="/dashboard/list-book" element={
-          <Suspense fallback={<MinimalLoader />}><ListBook /></Suspense>
+          <Suspense fallback={<TextSkeleton />}><ListBook /></Suspense>
         } />
         <Route path="/dashboard/my-books" element={
-          <Suspense fallback={<MinimalLoader />}><MyBooks /></Suspense>
+          <Suspense fallback={<ListingPageSkeleton />}><MyBooks /></Suspense>
         } />
         <Route path="/dashboard/my-tickets" element={<Navigate to="/my-events" replace />} />
       </Route>
@@ -194,30 +221,30 @@ export const AnimatedRoutes = () => {
       {/* Organizer pages with DashboardLayout */}
       <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
         <Route path="/organizer/dashboard" element={
-          <Suspense fallback={<MinimalLoader />}><OrganizerDashboard /></Suspense>
+          <Suspense fallback={<DashboardSkeleton />}><OrganizerDashboard /></Suspense>
         } />
         <Route path="/organizer/create-event" element={
-          <Suspense fallback={<MinimalLoader />}><CreateEvent /></Suspense>
+          <Suspense fallback={<TextSkeleton />}><CreateEvent /></Suspense>
         } />
         <Route path="/organizer/edit-event/:eventId" element={
-          <Suspense fallback={<MinimalLoader />}><EditEvent /></Suspense>
+          <Suspense fallback={<TextSkeleton />}><EditEvent /></Suspense>
         } />
         <Route path="/organizer/check-in/:eventId" element={
-          <Suspense fallback={<MinimalLoader />}><EventCheckIn /></Suspense>
+          <Suspense fallback={<DashboardSkeleton />}><EventCheckIn /></Suspense>
         } />
       </Route>
 
       {/* Admin with DashboardLayout */}
       <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
         <Route path="/admin" element={
-          <Suspense fallback={<MinimalLoader />}><Admin /></Suspense>
+          <Suspense fallback={<DashboardSkeleton />}><Admin /></Suspense>
         } />
       </Route>
 
       {/* Onboarding - special case */}
       <Route path="/onboarding" element={
         <ProtectedRoute skipOnboarding>
-          <Suspense fallback={<MinimalLoader />}><Onboarding /></Suspense>
+          <Suspense fallback={<TextSkeleton />}><Onboarding /></Suspense>
         </ProtectedRoute>
       } />
 
