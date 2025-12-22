@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { FileText, Mail, AlertTriangle, Users, BookOpen, Calendar, ShoppingBag, Briefcase, Shield } from "lucide-react";
+import { FileText, Mail, AlertTriangle, Users, BookOpen, Calendar, ShoppingBag, Briefcase, Shield, CheckCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Terms = () => {
@@ -15,7 +15,7 @@ const Terms = () => {
             Terms and Conditions
           </h1>
           <p className="text-muted-foreground">
-            Version 2.0 | Effective Date: 20 December 2024
+            Updated | Effective Date: 22 December 2024
           </p>
         </div>
 
@@ -36,13 +36,37 @@ const Terms = () => {
                 <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
                 <div>
                   <h2 className="text-lg font-semibold text-foreground mb-2">Important: Platform Role Disclaimer</h2>
-                  <p className="text-muted-foreground leading-relaxed">
+                  <p className="text-muted-foreground leading-relaxed mb-3">
                     <strong>UniVoid is solely a facilitator platform.</strong> All study materials, books, events, 
                     tasks, projects, news articles, and other content on this platform are created, uploaded, and 
-                    managed entirely by users. UniVoid does not create, verify, endorse, or take responsibility for 
-                    any user-generated content. UniVoid has no liability for user intent, uploaded content, copyright 
-                    ownership, accuracy, legality, or any outcomes arising from the use of this platform.
+                    managed entirely by users.
                   </p>
+                  <p className="text-muted-foreground leading-relaxed mb-3">
+                    UniVoid <strong>does not create, own, verify, endorse, or take responsibility</strong> for any 
+                    user-generated content and shall not be liable for:
+                  </p>
+                  <ul className="space-y-1.5 text-sm text-muted-foreground">
+                    <li className="flex items-start gap-2">
+                      <span className="text-destructive mt-1">•</span>
+                      <span>User intent or behavior</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-destructive mt-1">•</span>
+                      <span>Copyright ownership or infringement</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-destructive mt-1">•</span>
+                      <span>Accuracy, completeness, or reliability of content</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-destructive mt-1">•</span>
+                      <span>Legality or compliance of uploaded materials</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-destructive mt-1">•</span>
+                      <span>Any outcomes, losses, or damages arising from platform use</span>
+                    </li>
+                  </ul>
                 </div>
               </div>
             </section>
@@ -51,12 +75,12 @@ const Terms = () => {
             <section>
               <h2 className="text-lg font-semibold text-foreground mb-4">1. Acceptance of Terms</h2>
               <p className="text-muted-foreground leading-relaxed mb-3">
-                By accessing UniVoid, you confirm that:
+                By accessing or using UniVoid, you confirm that:
               </p>
               <ul className="space-y-2 text-muted-foreground">
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
-                  <span>You are at least 16 years of age</span>
+                  <span>You are at least <strong>16 years of age</strong></span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
@@ -85,7 +109,7 @@ const Terms = () => {
               <ul className="space-y-2 text-muted-foreground">
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
-                  <span>Providing accurate and truthful information during registration</span>
+                  <span>Providing accurate and truthful information</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
@@ -93,7 +117,7 @@ const Terms = () => {
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
-                  <span>All activities that occur under your account</span>
+                  <span>All activities performed under your account</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
@@ -114,22 +138,20 @@ const Terms = () => {
               </div>
               <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg mb-4">
                 <p className="text-muted-foreground text-sm">
-                  <strong className="text-foreground">Disclaimer:</strong> UniVoid does not verify, validate, or 
-                  guarantee the accuracy, legality, or quality of any content uploaded by users. Users are 
-                  solely responsible for all content they upload, share, or publish on the platform.
+                  <strong className="text-foreground">Content Responsibility Disclaimer:</strong> UniVoid does <strong>not verify, validate, or guarantee</strong> the accuracy, legality, or quality of any content uploaded by users. All responsibility lies solely with the user who uploads or shares the content.
                 </p>
               </div>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                When uploading content, you represent and warrant that:
+                By uploading content, you represent and warrant that:
               </p>
               <ul className="space-y-2 text-muted-foreground">
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
-                  <span>You own the content or have the necessary rights and permissions to share it</span>
+                  <span>You own the content or have legal rights to share it</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
-                  <span>The content does not infringe any third-party intellectual property rights</span>
+                  <span>The content does not infringe third-party intellectual property rights</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
@@ -142,34 +164,70 @@ const Terms = () => {
               </ul>
             </section>
 
-            {/* Events */}
+            {/* Study Material Verification - NEW SECTION */}
             <section>
               <div className="flex items-center gap-2 mb-4">
-                <Calendar className="w-5 h-5 text-primary" />
-                <h2 className="text-lg font-semibold text-foreground">4. Events Disclaimer</h2>
+                <CheckCircle className="w-5 h-5 text-primary" />
+                <h2 className="text-lg font-semibold text-foreground">4. Study Material Verification Disclaimer</h2>
               </div>
-              <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg mb-4">
+              <div className="p-4 bg-destructive/5 border border-destructive/20 rounded-lg mb-4">
                 <p className="text-muted-foreground text-sm">
-                  <strong className="text-foreground">Critical Notice:</strong> UniVoid is NOT an event organizer. 
-                  All events listed on the platform are created and managed by independent organizers who use 
-                  UniVoid as a listing platform.
+                  <strong className="text-foreground">Important Update:</strong> UniVoid follows a <strong>manual review process</strong> for study materials through Admin and Admin Assistance to maintain platform quality.
                 </p>
               </div>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                UniVoid accepts no responsibility or liability for:
+                However, users acknowledge and agree that:
               </p>
               <ul className="space-y-2 text-muted-foreground">
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
-                  <span>Event cancellations, postponements, or changes without notice</span>
+                  <span>Verification is <strong>limited to basic checks only</strong></span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
-                  <span>Quality, safety, or conduct of events</span>
+                  <span>Verification does <strong>not guarantee correctness, completeness, or accuracy</strong></span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
-                  <span>Any accidents, injuries, or incidents occurring at events</span>
+                  <span>There may be <strong>human or technical errors</strong> in reviewed documents</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span>
+                  <span>Verified materials may still contain factual errors, outdated information, or formatting mistakes</span>
+                </li>
+              </ul>
+              <p className="text-muted-foreground leading-relaxed mt-4 text-sm">
+                UniVoid <strong>does not guarantee that verified materials are error-free</strong> and shall not be held liable for any academic, professional, or personal consequences arising from their use.
+              </p>
+            </section>
+
+            {/* Events */}
+            <section>
+              <div className="flex items-center gap-2 mb-4">
+                <Calendar className="w-5 h-5 text-primary" />
+                <h2 className="text-lg font-semibold text-foreground">5. Events Disclaimer</h2>
+              </div>
+              <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg mb-4">
+                <p className="text-muted-foreground text-sm">
+                  <strong className="text-foreground">Critical Notice:</strong> UniVoid is <strong>NOT</strong> an event organizer. 
+                  All events listed on the platform are created and managed by <strong>independent organizers</strong>.
+                </p>
+              </div>
+              <p className="text-muted-foreground leading-relaxed mb-4">
+                UniVoid accepts <strong>no responsibility or liability</strong> for:
+              </p>
+              <ul className="space-y-2 text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span>
+                  <span>Event cancellations, postponements, or changes</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span>
+                  <span>Event quality, safety, or conduct</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span>
+                  <span>Accidents, injuries, or incidents</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
@@ -182,13 +240,12 @@ const Terms = () => {
             <section>
               <div className="flex items-center gap-2 mb-4">
                 <ShoppingBag className="w-5 h-5 text-primary" />
-                <h2 className="text-lg font-semibold text-foreground">5. Book Exchange Disclaimer</h2>
+                <h2 className="text-lg font-semibold text-foreground">6. Book Exchange Disclaimer</h2>
               </div>
               <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg mb-4">
                 <p className="text-muted-foreground text-sm">
-                  <strong className="text-foreground">Important:</strong> UniVoid does not sell, purchase, or 
-                  deliver books. The book exchange feature is a peer-to-peer listing service that connects 
-                  buyers and sellers.
+                  <strong className="text-foreground">Important:</strong> UniVoid <strong>does not sell, purchase, or deliver books</strong>. 
+                  The Book Exchange feature is a <strong>peer-to-peer listing service</strong> only.
                 </p>
               </div>
               <p className="text-muted-foreground leading-relaxed mb-4">
@@ -197,15 +254,15 @@ const Terms = () => {
               <ul className="space-y-2 text-muted-foreground">
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
-                  <span>The condition, authenticity, or quality of books listed</span>
+                  <span>Book condition, authenticity, or quality</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
-                  <span>Pricing disputes or negotiations between parties</span>
+                  <span>Pricing negotiations or disputes</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
-                  <span>Payment processing, refunds, or financial transactions</span>
+                  <span>Payments, refunds, or transactions</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
@@ -218,28 +275,27 @@ const Terms = () => {
             <section>
               <div className="flex items-center gap-2 mb-4">
                 <Briefcase className="w-5 h-5 text-primary" />
-                <h2 className="text-lg font-semibold text-foreground">6. Tasks and Projects Disclaimer</h2>
+                <h2 className="text-lg font-semibold text-foreground">7. Tasks and Projects Disclaimer</h2>
               </div>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                The tasks and projects features allow users to collaborate and seek assistance. UniVoid provides 
-                the platform for these connections but:
+                Tasks and Projects allow users to collaborate independently. UniVoid:
               </p>
               <ul className="space-y-2 text-muted-foreground">
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
-                  <span>Does not guarantee completion, quality, or outcomes of any task or project</span>
+                  <span>Does not guarantee task or project completion</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
-                  <span>Does not verify the skills, qualifications, or reliability of users</span>
+                  <span>Does not verify user skills or reliability</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
-                  <span>Does not process, guarantee, or handle payments between users</span>
+                  <span>Does not process or secure payments</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
-                  <span>Is not liable for any disputes, losses, or damages arising from collaborations</span>
+                  <span>Is not liable for disputes, losses, or damages between users</span>
                 </li>
               </ul>
             </section>
@@ -248,12 +304,30 @@ const Terms = () => {
             <section>
               <div className="flex items-center gap-2 mb-4">
                 <Shield className="w-5 h-5 text-primary" />
-                <h2 className="text-lg font-semibold text-foreground">7. Intellectual Property</h2>
+                <h2 className="text-lg font-semibold text-foreground">8. Intellectual Property</h2>
               </div>
-              <p className="text-muted-foreground leading-relaxed mb-4">
-                The UniVoid platform, including its logo, design, and proprietary features, is owned by UniVoid. 
-                User-generated content remains the property of the respective users, but by uploading content, 
-                you grant UniVoid a license to display and distribute it on the platform.
+              <ul className="space-y-2 text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span>
+                  <span>UniVoid platform design, branding, and proprietary features are owned by UniVoid</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span>
+                  <span>User-generated content remains the property of the respective users</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span>
+                  <span>By uploading content, users grant UniVoid a <strong>non-exclusive license</strong> to display and distribute it on the platform</span>
+                </li>
+              </ul>
+            </section>
+
+            {/* Updates to Terms */}
+            <section>
+              <h2 className="text-lg font-semibold text-foreground mb-4">9. Updates to Terms</h2>
+              <p className="text-muted-foreground leading-relaxed">
+                UniVoid reserves the right to update or modify these Terms at any time. 
+                Continued use of the platform after updates constitutes acceptance of the revised terms.
               </p>
             </section>
 
@@ -264,7 +338,7 @@ const Terms = () => {
                 <h2 className="text-lg font-semibold text-foreground">Contact Us</h2>
               </div>
               <p className="text-muted-foreground leading-relaxed">
-                For any questions about these terms, please contact us at:{" "}
+                For any questions or concerns regarding these Terms, contact us at:{" "}
                 <a href="mailto:univoid35@gmail.com" className="text-primary hover:underline font-medium">
                   univoid35@gmail.com
                 </a>
@@ -274,7 +348,7 @@ const Terms = () => {
             {/* Footer Links */}
             <div className="pt-6 border-t border-border">
               <p className="text-sm text-muted-foreground text-center">
-                See also: <Link to="/privacy-policy" className="text-primary hover:underline">Privacy Policy</Link> | <Link to="/refund-policy" className="text-primary hover:underline">Refund Policy</Link>
+                See also: <Link to="/privacy-policy" className="text-primary hover:underline">Privacy Policy</Link> | <Link to="/refund-policy" className="text-primary hover:underline">Refund Policy</Link> | <Link to="/legal-disclaimer" className="text-primary hover:underline">Legal Disclaimer</Link>
               </p>
             </div>
           </CardContent>
