@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, BookOpen, User, ArrowRight, Images, Filter } from "lucide-react";
+import { Search, BookOpen, User, ArrowRight, Images, Filter, ArrowUpDown } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getBooksPaginated } from "@/services/paginatedService";
 import { SectionLoader, EmptyState, LoadMoreButton } from "@/components/common/SectionLoader";
@@ -44,6 +44,14 @@ const LISTING_TYPE_FILTERS = [
   { value: "exchange", label: "Exchange" },
 ] as const;
 
+const SORT_OPTIONS = [
+  { value: "newest", label: "Newest First" },
+  { value: "oldest", label: "Oldest First" },
+  { value: "price_low", label: "Price: Low to High" },
+  { value: "price_high", label: "Price: High to Low" },
+  { value: "popular", label: "Most Popular" },
+] as const;
+
 interface LayoutContext {
   onAuthClick?: () => void;
 }
@@ -55,6 +63,7 @@ const Books = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("All Categories");
   const [selectedListingType, setSelectedListingType] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("newest");
   const [page, setPage] = useState(0);
   const [allBooks, setAllBooks] = useState<Book[]>([]);
   const [hasMore, setHasMore] = useState(true);
@@ -100,7 +109,7 @@ const Books = () => {
   };
 
   const filteredBooks = useMemo(() => {
-    return allBooks.filter(book => {
+    const filtered = allBooks.filter(book => {
       const matchesSearch = 
         book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (book.description?.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -117,7 +126,25 @@ const Books = () => {
       
       return matchesSearch && matchesCategory && matchesListingType;
     });
-  }, [allBooks, searchQuery, selectedCategory, selectedListingType]);
+
+    // Apply sorting
+    return filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "newest":
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case "oldest":
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case "price_low":
+          return (a.price ?? Infinity) - (b.price ?? Infinity);
+        case "price_high":
+          return (b.price ?? 0) - (a.price ?? 0);
+        case "popular":
+          return (b.views_count ?? 0) - (a.views_count ?? 0);
+        default:
+          return 0;
+      }
+    });
+  }, [allBooks, searchQuery, selectedCategory, selectedListingType, sortBy]);
 
   return (
     <div className="pb-20 md:pb-0">
@@ -151,9 +178,22 @@ const Books = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <div className="flex gap-2">
-              <Select value={selectedListingType} onValueChange={setSelectedListingType}>
+            <div className="flex flex-wrap gap-2">
+              <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger className="w-full sm:w-40">
+                  <ArrowUpDown className="w-4 h-4 mr-2 text-muted-foreground" />
+                  <SelectValue placeholder="Sort" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SORT_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={selectedListingType} onValueChange={setSelectedListingType}>
+                <SelectTrigger className="w-full sm:w-36">
                   <SelectValue placeholder="Type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -165,7 +205,7 @@ const Books = () => {
                 </SelectContent>
               </Select>
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-full sm:w-44">
+                <SelectTrigger className="w-full sm:w-40">
                   <Filter className="w-4 h-4 mr-2 text-muted-foreground" />
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
