@@ -68,7 +68,7 @@ const PrivacyPolicy = () => {
                   <h3 className="font-medium text-foreground mb-2">Account Information</h3>
                   <ul className="space-y-1.5 text-sm text-muted-foreground list-disc list-inside">
                     <li>Full name and email address (required for registration)</li>
-                    <li>Mobile number (optional, for account recovery and notifications)</li>
+                    <li>Mobile number</li>
                     <li>Profile photograph (optional)</li>
                     <li>Password (stored in encrypted format)</li>
                   </ul>
