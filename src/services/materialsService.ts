@@ -160,12 +160,8 @@ export async function uploadMaterial(
       options?.onCompressionProgress?.(p.stage, p.progress);
     });
     uploadFile = compressionResult.file;
-    
-    if (compressionResult.compressionRatio > 0) {
-      console.log(`File compressed: ${compressionResult.compressionRatio.toFixed(1)}% reduction`);
-    }
-  } catch (e) {
-    console.warn('Compression failed, using original file:', e);
+  } catch {
+    // Compression failed, use original file
   }
 
   options?.onProgress?.(15);
@@ -196,10 +192,9 @@ export async function uploadMaterial(
       
       if (!compressionError && compressionResult?.success) {
         finalFilePath = compressionResult.newFilePath;
-        console.log(`Server-side PDF compression: ${compressionResult.compressionRatio}% reduction`);
       }
-    } catch (err) {
-      console.warn('Server-side PDF compression failed, using original:', err);
+    } catch {
+      // Server-side PDF compression failed, use original
     }
   }
 

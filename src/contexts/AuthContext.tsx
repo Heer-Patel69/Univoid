@@ -54,7 +54,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .from('profiles')
         .update({ email_verified: true })
         .eq('id', authUser.id);
-      console.log('OAuth user verification synced to profiles table');
     }
   };
 
@@ -71,7 +70,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // If no profile exists, create one (fallback for OAuth users)
     if (!profileResult.data && authUser) {
-      console.log('No profile found, creating one for user:', userId);
       const newProfile = {
         id: userId,
         email: authUser.email || '',
@@ -86,15 +84,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profile_complete: false,
       };
       
-      const { data: createdProfile, error: createError } = await supabase
+      const { data: createdProfile } = await supabase
         .from('profiles')
         .upsert(newProfile, { onConflict: 'id' })
         .select()
         .single();
       
-      if (createError) {
-        console.error('Error creating profile:', createError);
-      } else {
+      if (createdProfile) {
         setProfile(createdProfile as Profile);
       }
     } else if (profileResult.data) {
@@ -117,13 +113,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let hasInitialized = false;
 
     // Safety timeout - never block app for more than 8 seconds
+    const AUTH_TIMEOUT_MS = 8000;
     const safetyTimeout = setTimeout(() => {
       if (isMounted && isLoading && !hasInitialized) {
-        console.warn('Auth loading timeout - proceeding without auth');
         setIsLoading(false);
         hasInitialized = true;
       }
-    }, 8000);
+    }, AUTH_TIMEOUT_MS);
 
     // Set up auth state listener FIRST (synchronous callback - no async)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -170,8 +166,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         
         hasInitialized = true;
-      } catch (error) {
-        console.error('Auth initialization error:', error);
+      } catch {
+        // Auth initialization failed silently
       } finally {
         if (isMounted) {
           setIsLoading(false);
