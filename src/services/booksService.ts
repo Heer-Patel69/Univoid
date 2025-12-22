@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Book } from '@/types/database';
+import { categorizeBook } from '@/lib/bookCategorizer';
 
 // Books expire after 15 days
 const BOOK_EXPIRY_DAYS = 15;
@@ -110,6 +111,9 @@ export async function createBook(
     }
   }
 
+  // Auto-categorize based on title and description
+  const autoCategory = categorizeBook(data.title, data.description);
+
   // Instant publish
   const { data: insertData, error } = await supabase
     .from('books')
@@ -119,6 +123,7 @@ export async function createBook(
       author: data.author || null,
       price: data.price || null,
       condition: data.condition || null,
+      category: autoCategory,
       image_urls: imageUrls,
       seller_mobile: data.seller_mobile,
       seller_address: data.seller_address,

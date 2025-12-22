@@ -13,6 +13,7 @@ import { SectionLoader, EmptyState, LoadMoreButton } from "@/components/common/S
 import { useOptimizedFetch, CACHE_TTL } from "@/hooks/useOptimizedFetch";
 import { Book } from "@/types/database";
 import { toast } from "sonner";
+import { getDisplayCategory } from "@/lib/bookCategorizer";
 
 interface LayoutContext {
   onAuthClick?: () => void;
@@ -162,6 +163,9 @@ const Books = () => {
                           {book.condition && (
                             <Badge variant="secondary" className="text-xs">{book.condition}</Badge>
                           )}
+                          <Badge variant="outline" className="text-xs">
+                            {getDisplayCategory(book.category)}
+                          </Badge>
                         </div>
                         
                         {book.price && book.price > 0 && (
