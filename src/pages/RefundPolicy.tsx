@@ -254,8 +254,8 @@ const RefundPolicy = () => {
                 </p>
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Mail className="w-4 h-4 text-primary" />
-                  <a href="mailto:support@univoid.in" className="text-primary hover:underline font-medium">
-                    support@univoid.in
+                  <a href="mailto:univoid35@gmail.com" className="text-primary hover:underline font-medium">
+                    univoid35@gmail.com
                   </a>
                 </div>
                 <p className="text-sm text-muted-foreground mt-4">
