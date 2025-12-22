@@ -27,6 +27,7 @@ const RefundPolicy = lazy(() => import("@/pages/RefundPolicy"));
 const LegalDisclaimer = lazy(() => import("@/pages/LegalDisclaimer"));
 const CookiePolicy = lazy(() => import("@/pages/CookiePolicy"));
 const Contact = lazy(() => import("@/pages/Contact"));
+const FAQ = lazy(() => import("@/pages/FAQ"));
 const Events = lazy(() => import("@/pages/Events"));
 const EventDetail = lazy(() => import("@/pages/EventDetail"));
 const CreateEvent = lazy(() => import("@/pages/CreateEvent"));
@@ -133,6 +134,9 @@ export const AnimatedRoutes = () => {
         } />
         <Route path="/contact" element={
           <Suspense fallback={<MinimalLoader />}><Contact /></Suspense>
+        } />
+        <Route path="/faq" element={
+          <Suspense fallback={<MinimalLoader />}><FAQ /></Suspense>
         } />
       </Route>
 
