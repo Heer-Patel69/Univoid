@@ -10,7 +10,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 interface NotificationPrefs {
   event_alerts: boolean;
-  scholarship_alerts: boolean;
   weekly_digest: boolean;
   interest_based_alerts: boolean;
   location_based_alerts: boolean;
@@ -22,7 +21,6 @@ export const NotificationPreferences = () => {
   const [saving, setSaving] = useState(false);
   const [prefs, setPrefs] = useState<NotificationPrefs>({
     event_alerts: true,
-    scholarship_alerts: true,
     weekly_digest: true,
     interest_based_alerts: true,
     location_based_alerts: true,
@@ -49,7 +47,6 @@ export const NotificationPreferences = () => {
       if (data) {
         setPrefs({
           event_alerts: data.event_alerts ?? true,
-          scholarship_alerts: data.scholarship_alerts ?? true,
           weekly_digest: data.weekly_digest ?? true,
           interest_based_alerts: data.interest_based_alerts ?? true,
           location_based_alerts: data.location_based_alerts ?? true,
@@ -124,12 +121,6 @@ export const NotificationPreferences = () => {
       label: 'Location-Based Alerts',
       description: `Events happening in ${profile?.city || 'your city'}`,
       icon: MapPin,
-    },
-    {
-      key: 'scholarship_alerts' as const,
-      label: 'Scholarship Alerts',
-      description: 'Notifications about scholarships and funding opportunities',
-      icon: BookOpen,
     },
     {
       key: 'weekly_digest' as const,
