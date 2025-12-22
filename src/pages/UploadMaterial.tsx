@@ -24,6 +24,7 @@ const UploadMaterial = () => {
   const [file, setFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStage, setUploadStage] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
 
   // Form fields - pre-fill from profile where possible
@@ -92,6 +93,7 @@ const UploadMaterial = () => {
 
     setIsSubmitting(true);
     setUploadProgress(0);
+    setUploadStage("Starting upload...");
 
     const { id, error } = await uploadMaterial(
       file, 
@@ -99,7 +101,10 @@ const UploadMaterial = () => {
       description, 
       user.id,
       {
-        onProgress: (progress) => setUploadProgress(progress),
+        onProgress: (progress, stage) => {
+          setUploadProgress(progress);
+          setUploadStage(stage);
+        },
         course,
         branch,
         subject,
@@ -113,6 +118,7 @@ const UploadMaterial = () => {
     if (error) {
       toast.error(error.message);
       setUploadProgress(0);
+      setUploadStage("");
       return;
     }
 
@@ -306,10 +312,11 @@ const UploadMaterial = () => {
 
                 <Button type="submit" className="w-full" disabled={isSubmitting || !canUpload}>
                   {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Uploading...
-                    </>
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span className="truncate">{uploadStage || 'Uploading...'}</span>
+                      <span className="text-xs opacity-75">({uploadProgress}%)</span>
+                    </div>
                   ) : (
                     <>
                       <FileText className="w-4 h-4 mr-2" />

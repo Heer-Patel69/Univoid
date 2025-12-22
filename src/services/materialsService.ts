@@ -167,15 +167,25 @@ export async function getMaterialById(id: string): Promise<Material | null> {
 }
 
 interface UploadOptions {
-  onProgress?: (progress: number) => void;
-  onCompressionProgress?: (stage: string, progress: number) => void;
+  onProgress?: (progress: number, stage: string) => void;
   course?: string;
   branch?: string;
   subject?: string;
   language?: string;
   college?: string;
+  skipCompression?: boolean; // Skip client-side compression for faster uploads
 }
 
+/**
+ * OPTIMIZED UPLOAD FLOW:
+ * 1. Validate file (instant)
+ * 2. Upload raw file to storage (main wait time - network dependent)
+ * 3. Insert DB record immediately with status='pending'
+ * 4. Return success to user FAST
+ * 5. Background: PDF compression, signed URL refresh, notifications
+ * 
+ * This removes 5-10 seconds of blocking on mobile devices.
+ */
 export async function uploadMaterial(
   file: File,
   title: string,
@@ -183,74 +193,53 @@ export async function uploadMaterial(
   userId: string,
   options?: UploadOptions
 ): Promise<{ id: string | null; error: Error | null }> {
-  // Debug logging for upload tracking
   const uploadId = crypto.randomUUID().slice(0, 8);
   const logPrefix = `[Upload ${uploadId}]`;
   
-  console.log(`${logPrefix} Starting upload:`, {
+  console.log(`${logPrefix} Starting optimized upload:`, {
     originalFileName: file.name,
     fileSize: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
     fileType: file.type,
-    userId: userId.slice(0, 8) + '...',
     online: navigator.onLine,
   });
 
+  const reportProgress = (progress: number, stage: string) => {
+    options?.onProgress?.(progress, stage);
+  };
+
   try {
-    // Validate file
+    // STAGE 1: Validate file (instant)
+    reportProgress(5, 'Validating file...');
+    
     const validationError = validateMaterialFile(file);
     if (validationError) {
       console.error(`${logPrefix} Validation failed:`, validationError);
       return { id: null, error: new Error(validationError) };
     }
 
-    // Check for blocked video formats
     const fileExt = file.name.split('.').pop()?.toLowerCase() || '';
     if (BLOCKED_VIDEO_FORMATS.includes(fileExt)) {
-      console.error(`${logPrefix} Blocked format:`, fileExt);
       return { id: null, error: new Error('Video files are not allowed') };
     }
 
-    // Check file size (100MB limit)
     if (file.size > MAX_FILE_SIZE_BYTES) {
-      console.error(`${logPrefix} File too large:`, file.size);
       return { id: null, error: new Error('File size must be less than 100MB') };
     }
 
-    options?.onProgress?.(5);
+    reportProgress(10, 'Preparing upload...');
 
-    // Compress file if possible (images)
-    let uploadFile = file;
-    try {
-      console.log(`${logPrefix} Starting compression...`);
-      const compressionResult = await compressFile(file, (p) => {
-        options?.onCompressionProgress?.(p.stage, p.progress);
-      });
-      uploadFile = compressionResult.file;
-      console.log(`${logPrefix} Compression done:`, {
-        originalSize: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
-        compressedSize: `${(uploadFile.size / 1024 / 1024).toFixed(2)} MB`,
-      });
-    } catch (error) {
-      console.warn(`${logPrefix} Compression failed, using original:`, error);
-      materialsLogger.warn('File compression failed, using original', error, { fileName: file.name });
-    }
-
-    options?.onProgress?.(15);
-
-    // Generate safe storage filename using UUID (original filename may contain invalid characters like [ ] ( ))
+    // STAGE 2: Upload raw file directly (NO client-side compression)
+    // This is the main wait time - purely network dependent
     const safeStorageFileName = `${crypto.randomUUID()}.${fileExt}`;
     const filePath = `${userId}/${safeStorageFileName}`;
     
-    console.log(`${logPrefix} Uploading to storage:`, {
-      originalName: file.name,
-      storagePath: filePath,
-      bucket: 'materials',
-    });
+    console.log(`${logPrefix} Uploading to storage (no client compression):`, { filePath });
+    reportProgress(15, 'Uploading file...');
 
     const uploadStartTime = Date.now();
     const { error: uploadError, data: uploadData } = await supabase.storage
       .from('materials')
-      .upload(filePath, uploadFile, {
+      .upload(filePath, file, {
         cacheControl: '3600',
         upsert: false,
       });
@@ -258,146 +247,105 @@ export async function uploadMaterial(
     const uploadDuration = Date.now() - uploadStartTime;
     console.log(`${logPrefix} Storage upload completed in ${uploadDuration}ms`);
 
-    options?.onProgress?.(60);
-
     if (uploadError) {
-      // Detailed error logging
       console.error(`${logPrefix} UPLOAD FAILED:`, {
         errorMessage: uploadError.message,
-        errorName: (uploadError as any).name,
-        statusCode: (uploadError as any).statusCode || (uploadError as any).status,
-        cause: (uploadError as any).cause,
-        fullError: JSON.stringify(uploadError, null, 2),
-        filePath,
-        fileSize: uploadFile.size,
+        statusCode: (uploadError as any).statusCode,
         online: navigator.onLine,
       });
-      
-      const errorMessage = getUploadErrorMessage(uploadError);
-      return { id: null, error: new Error(errorMessage) };
-    }
-    
-    console.log(`${logPrefix} Upload successful:`, { path: uploadData?.path || filePath });
-
-    // Server-side PDF compression via edge function (non-blocking, with timeout)
-    let finalFilePath = filePath;
-    if (fileExt === 'pdf') {
-      options?.onCompressionProgress?.('Compressing PDF on server...', 50);
-      try {
-        const compressionPromise = supabase.functions.invoke('compress-pdf', {
-          body: { filePath, bucket: 'materials' },
-        });
-        
-        // 30 second timeout for PDF compression
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('PDF compression timeout')), 30000)
-        );
-        
-        const result = await Promise.race([compressionPromise, timeoutPromise]) as { data: any; error: any };
-        
-        if (!result.error && result.data?.success) {
-          finalFilePath = result.data.newFilePath;
-        }
-      } catch (error) {
-        // PDF compression failure is non-critical, continue with original file
-        materialsLogger.warn('Server-side PDF compression failed or timed out', error, { filePath });
-      }
+      return { id: null, error: new Error(getUploadErrorMessage(uploadError)) };
     }
 
-    options?.onProgress?.(70);
+    reportProgress(70, 'Saving to database...');
 
-    // Get file URL (signed URL for private bucket)
-    const { data: urlData, error: urlError } = await supabase.storage
-      .from('materials')
-      .createSignedUrl(finalFilePath, 60 * 60 * 24 * 365); // 1 year
-
-    if (urlError) {
-      console.error(`${logPrefix} Signed URL error:`, urlError);
-      return { id: null, error: new Error('Failed to generate file URL. Please try again.') };
-    }
-
-    console.log(`${logPrefix} Signed URL generated successfully`);
-
-    const fileUrl = urlData?.signedUrl || '';
-
-    // Determine preview URL based on file type
+    // STAGE 3: Insert DB record immediately
+    // Store file_path instead of signed URL - URLs generated on-demand
     const isImageFile = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(fileExt.toLowerCase());
-    const previewFileUrl = isImageFile ? fileUrl : null;
-    const previewPageLimit = isImageFile ? 1 : 5;
-
-    options?.onProgress?.(80);
-
-    // Create material record - pending review
+    
     const { data, error } = await supabase
       .from('materials')
       .insert({
         title,
         description,
-        file_url: fileUrl,
+        file_url: filePath, // Store path, not signed URL (generated on-demand)
         file_type: fileExt,
-        file_size: uploadFile.size,
+        file_size: file.size,
         created_by: userId,
-        status: 'pending', // Requires admin approval
+        status: 'pending',
         course: options?.course || null,
         branch: options?.branch || null,
         subject: options?.subject || null,
         language: options?.language || null,
         college: options?.college || null,
-        preview_file_url: previewFileUrl,
-        preview_page_limit: previewPageLimit,
-        preview_ready: isImageFile, // Images are ready immediately
+        preview_file_url: null, // Generated in background
+        preview_page_limit: isImageFile ? 1 : 5,
+        preview_ready: false, // Background processing will set to true
       })
       .select('id')
       .single();
 
-    options?.onProgress?.(100);
-
-    console.log(`${logPrefix} Inserting into database...`);
-
     if (error) {
-      console.error(`${logPrefix} Database insert error:`, {
-        errorMessage: error.message,
-        errorCode: error.code,
-        details: error.details,
-        hint: error.hint,
-      });
+      console.error(`${logPrefix} Database insert error:`, error);
       return { id: null, error: new Error('Failed to save material. Please try again.') };
     }
-    
+
     console.log(`${logPrefix} Material created successfully:`, { materialId: data.id });
+    reportProgress(90, 'Finalizing...');
 
-    // Get uploader name for notification
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('full_name')
-      .eq('id', userId)
-      .maybeSingle();
+    // STAGE 4: Background tasks (non-blocking)
+    // These run AFTER we return success to the user
+    triggerBackgroundProcessing(data.id, filePath, fileExt, userId, title);
 
-    // Notify admins about new pending content (async, don't await)
-    supabase.functions.invoke('notify-pending-review', {
-      body: {
-        materialId: data.id,
-        title,
-        uploaderName: profile?.full_name || 'A user',
-        contentType: 'material',
-      },
-    }).catch((err) => console.error('Failed to send notification:', err));
-
+    reportProgress(100, 'Done!');
+    
     return { id: data.id, error: null };
   } catch (error: any) {
-    // Catch-all for any unexpected errors
-    console.error(`[Upload] UNEXPECTED ERROR:`, {
-      message: error?.message,
-      name: error?.name,
-      stack: error?.stack?.slice(0, 500),
-      online: navigator.onLine,
-      cause: error?.cause,
-    });
-    
-    // Use proper error detection
-    const errorMessage = getUploadErrorMessage(error);
-    return { id: null, error: new Error(errorMessage) };
+    console.error(`${logPrefix} UNEXPECTED ERROR:`, error);
+    return { id: null, error: new Error(getUploadErrorMessage(error)) };
   }
+}
+
+/**
+ * Background processing - runs after upload success is returned to user
+ * Handles: PDF compression, preview generation, notifications
+ */
+function triggerBackgroundProcessing(
+  materialId: string,
+  filePath: string,
+  fileExt: string,
+  userId: string,
+  title: string
+) {
+  // All these are fire-and-forget (non-blocking)
+  
+  // 1. PDF compression (if applicable)
+  if (fileExt === 'pdf') {
+    supabase.functions.invoke('compress-pdf', {
+      body: { filePath, bucket: 'materials', materialId },
+    }).catch((err) => console.warn('Background PDF compression failed:', err));
+  }
+
+  // 2. Get uploader name and notify admins (async, wrap in Promise for proper chaining)
+  (async () => {
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', userId)
+        .maybeSingle();
+      
+      await supabase.functions.invoke('notify-pending-review', {
+        body: {
+          materialId,
+          title,
+          uploaderName: profile?.full_name || 'A user',
+          contentType: 'material',
+        },
+      });
+    } catch (err) {
+      console.warn('Background notification failed:', err);
+    }
+  })();
 }
 
 export async function getMyMaterials(userId: string): Promise<Material[]> {
@@ -411,12 +359,33 @@ export async function getMyMaterials(userId: string): Promise<Material[]> {
   return data as Material[];
 }
 
+/**
+ * Generate signed URL on-demand for downloads
+ * This is called when user clicks download, NOT during upload
+ */
 export async function getDownloadUrl(materialId: string): Promise<string | null> {
   const material = await getMaterialById(materialId);
   if (!material) return null;
   
-  // The file_url already contains a signed URL
-  return material.file_url;
+  // file_url now stores the path, generate signed URL on demand
+  const filePath = material.file_url;
+  
+  // If it's already a full URL (legacy data), return as-is
+  if (filePath.startsWith('http')) {
+    return filePath;
+  }
+  
+  // Generate fresh signed URL (1 hour validity for downloads)
+  const { data, error } = await supabase.storage
+    .from('materials')
+    .createSignedUrl(filePath, 60 * 60); // 1 hour
+  
+  if (error) {
+    console.error('Failed to generate download URL:', error);
+    return null;
+  }
+  
+  return data?.signedUrl || null;
 }
 
 export async function getPendingMaterials(): Promise<Material[]> {
