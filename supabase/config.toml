@@ -53,3 +53,6 @@ verify_jwt = false
 
 [functions.extract-book-cover]
 verify_jwt = true
+
+[functions.categorize-book]
+verify_jwt = false

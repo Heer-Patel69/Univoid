@@ -81,6 +81,7 @@ interface CreateBookData {
   author?: string;
   price?: number;
   condition?: string;
+  category?: string;
   listing_type: BookListingType;
   seller_email: string;
   seller_mobile: string;
@@ -114,8 +115,8 @@ export async function createBook(
     }
   }
 
-  // Auto-categorize based on title and description
-  const autoCategory = categorizeBook(data.title, data.description);
+  // Use AI-provided category if available, otherwise fall back to rule-based
+  const finalCategory = data.category || categorizeBook(data.title, data.description);
 
   // Price logic: Donate = no price, Exchange = no price
   const finalPrice = (data.listing_type === 'donate' || data.listing_type === 'exchange') 
@@ -131,7 +132,7 @@ export async function createBook(
       author: data.author || null,
       price: finalPrice,
       condition: data.condition || null,
-      category: autoCategory,
+      category: finalCategory,
       listing_type: data.listing_type,
       image_urls: imageUrls,
       seller_mobile: data.seller_mobile,
