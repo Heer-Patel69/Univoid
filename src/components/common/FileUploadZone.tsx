@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from "react";
 import { Upload, FileText, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
+import { toast } from "sonner";
 
 interface FileUploadZoneProps {
   onFileSelect: (file: File) => void;
@@ -20,16 +21,19 @@ export function FileUploadZone({
   onFileSelect,
   file,
   onClear,
-  accept = ".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.md,.jpg,.jpeg,.png",
-  maxSizeMB = 10,
+  accept = ".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.md,.jpg,.jpeg,.png,.zip",
+  maxSizeMB = 100,
   disabled = false,
   isUploading = false,
   uploadProgress = 0,
   label = "Upload File",
-  hint = "PDF, DOC, PPT, images (max 10MB)",
+  hint,
 }: FileUploadZoneProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Generate default hint based on maxSizeMB
+  const displayHint = hint || `PDF, DOC, PPT, images, ZIP (max ${maxSizeMB}MB)`;
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -46,15 +50,19 @@ export function FileUploadZone({
   }, []);
 
   const validateFile = useCallback((selectedFile: File): boolean => {
-    // Check video files
+    // Check video files first
     const videoExtensions = ['mp4', 'mkv', 'avi', 'mov', 'wmv', 'flv', 'webm'];
     const ext = selectedFile.name.split('.').pop()?.toLowerCase() || '';
     if (videoExtensions.includes(ext)) {
+      toast.error("Video files are not allowed. Please upload documents or images.");
       return false;
     }
     
-    // Check file size
-    if (selectedFile.size > maxSizeMB * 1024 * 1024) {
+    // Check file size with clear error message
+    const maxSizeBytes = maxSizeMB * 1024 * 1024;
+    if (selectedFile.size > maxSizeBytes) {
+      const fileSizeMB = (selectedFile.size / 1024 / 1024).toFixed(1);
+      toast.error(`File too large (${fileSizeMB}MB). Maximum allowed size is ${maxSizeMB}MB.`);
       return false;
     }
     
@@ -69,17 +77,21 @@ export function FileUploadZone({
     if (disabled || isUploading) return;
     
     const droppedFile = e.dataTransfer.files?.[0];
-    if (droppedFile && validateFile(droppedFile)) {
-      onFileSelect(droppedFile);
+    if (droppedFile) {
+      if (validateFile(droppedFile)) {
+        onFileSelect(droppedFile);
+      }
     }
   }, [disabled, isUploading, validateFile, onFileSelect]);
 
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
-    if (selectedFile && validateFile(selectedFile)) {
-      onFileSelect(selectedFile);
+    if (selectedFile) {
+      if (validateFile(selectedFile)) {
+        onFileSelect(selectedFile);
+      }
     }
-    // Reset input
+    // Reset input so same file can be selected again
     if (inputRef.current) {
       inputRef.current.value = '';
     }
@@ -162,7 +174,7 @@ export function FileUploadZone({
               <span className="hidden sm:inline">Drag & drop or </span>
               <span className="text-primary">tap to upload</span>
             </p>
-            <p className="text-xs text-muted-foreground mt-1">{hint}</p>
+            <p className="text-xs text-muted-foreground mt-1">{displayHint}</p>
           </>
         )}
       </div>
