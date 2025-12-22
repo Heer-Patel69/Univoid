@@ -63,6 +63,7 @@ export default function EnhancedMaterialPreview({
   const [hasAdminPreviewed, setHasAdminPreviewed] = useState(false);
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [urlError, setUrlError] = useState<string | null>(null);
+  const [useGoogleViewer, setUseGoogleViewer] = useState(false);
   
   // Reset state when modal opens/closes or material changes
   useEffect(() => {
@@ -73,6 +74,7 @@ export default function EnhancedMaterialPreview({
       setHasAdminPreviewed(false);
       setSignedUrl(null);
       setUrlError(null);
+      setUseGoogleViewer(false);
       
       // Generate signed URL for preview
       generateSignedUrl();
@@ -230,8 +232,11 @@ export default function EnhancedMaterialPreview({
       return renderNoUrlError();
     }
 
-    // PDF embed URL with viewer params
-    const embedUrl = `${signedUrl}#toolbar=${isAdmin ? '1' : '0'}&navpanes=0&scrollbar=1`;
+    // Google Docs viewer URL
+    const googleViewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(signedUrl)}&embedded=true`;
+    
+    // Determine which viewer to use
+    const viewerUrl = useGoogleViewer ? googleViewerUrl : `${signedUrl}#toolbar=${isAdmin ? '1' : '0'}&navpanes=0&scrollbar=1`;
     
     return (
       <div className="relative w-full aspect-[3/4] min-h-[500px] bg-muted rounded-lg overflow-hidden border border-border">
@@ -242,10 +247,40 @@ export default function EnhancedMaterialPreview({
           </div>
         )}
         
-        {previewError ? (
+        {previewError && !useGoogleViewer ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
             <FileText className="w-16 h-16 text-muted-foreground/40 mb-4" />
-            <p className="text-muted-foreground mb-2">Preview could not be loaded</p>
+            <p className="text-muted-foreground mb-2">Native preview could not be loaded</p>
+            <p className="text-xs text-muted-foreground/70 text-center mb-4">
+              Try using Google Docs viewer instead
+            </p>
+            <div className="flex gap-2">
+              <Button 
+                variant="default" 
+                size="sm"
+                onClick={() => {
+                  setPreviewError(false);
+                  setIsLoading(true);
+                  setUseGoogleViewer(true);
+                }}
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                Try Google Viewer
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => window.open(signedUrl, '_blank')}
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Open in new tab
+              </Button>
+            </div>
+          </div>
+        ) : previewError && useGoogleViewer ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
+            <FileText className="w-16 h-16 text-muted-foreground/40 mb-4" />
+            <p className="text-muted-foreground mb-2">Preview not available</p>
             <p className="text-xs text-muted-foreground/70 text-center mb-4">
               The file may be too large or in an unsupported format
             </p>
@@ -260,13 +295,31 @@ export default function EnhancedMaterialPreview({
           </div>
         ) : (
           <iframe
-            src={embedUrl}
+            src={viewerUrl}
             className="w-full h-full border-0"
             title={material.title}
             onLoad={handleIframeLoad}
             onError={handleIframeError}
             style={{ border: 'none' }}
           />
+        )}
+        
+        {/* Viewer toggle for admin */}
+        {isAdmin && !previewError && signedUrl && (
+          <div className="absolute top-2 right-2 z-10">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                setIsLoading(true);
+                setPreviewError(false);
+                setUseGoogleViewer(!useGoogleViewer);
+              }}
+              className="text-xs opacity-80 hover:opacity-100"
+            >
+              {useGoogleViewer ? 'Native Viewer' : 'Google Viewer'}
+            </Button>
+          </div>
         )}
         
         {/* Preview limit overlay for non-admin users */}
