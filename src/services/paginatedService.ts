@@ -59,7 +59,7 @@ export async function getMaterialsWithCursor(
 
   let query = supabase
     .from('materials')
-    .select('id, title, file_type, course, subject, branch, language, college, thumbnail_url, created_by, created_at, views_count, downloads_count, likes_count, shares_count', { count: 'exact' })
+    .select('id, title, file_type, file_url, status, course, subject, branch, language, college, thumbnail_url, created_by, created_at, views_count, downloads_count, likes_count, shares_count, description', { count: 'exact' })
     .eq('status', 'approved')
     .order('created_at', { ascending: false })
     .limit(limit + 1); // Fetch one extra to check for more
@@ -127,9 +127,10 @@ export async function getMaterialsPaginated(
   const to = from + pageSize - 1;
 
   // Only select fields needed for the card display (performance optimization)
+  // Include status and file_url for preview/download functionality
   let query = supabase
     .from('materials')
-    .select('id, title, file_type, course, subject, branch, language, college, thumbnail_url, created_by, created_at, views_count, downloads_count, likes_count, shares_count', { count: 'exact' })
+    .select('id, title, file_type, file_url, status, course, subject, branch, language, college, thumbnail_url, created_by, created_at, views_count, downloads_count, likes_count, shares_count, description', { count: 'exact' })
     .eq('status', 'approved')
     .order('created_at', { ascending: false });
 
