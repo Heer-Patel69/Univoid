@@ -36,6 +36,14 @@ const BOOK_CATEGORIES = [
   "Other",
 ] as const;
 
+const LISTING_TYPE_FILTERS = [
+  { value: "all", label: "All Types" },
+  { value: "sell", label: "For Sale" },
+  { value: "rent", label: "For Rent" },
+  { value: "donate", label: "Free (Donate)" },
+  { value: "exchange", label: "Exchange" },
+] as const;
+
 interface LayoutContext {
   onAuthClick?: () => void;
 }
@@ -46,6 +54,7 @@ const Books = () => {
   const context = useOutletContext<LayoutContext>();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("All Categories");
+  const [selectedListingType, setSelectedListingType] = useState<string>("all");
   const [page, setPage] = useState(0);
   const [allBooks, setAllBooks] = useState<Book[]>([]);
   const [hasMore, setHasMore] = useState(true);
@@ -101,9 +110,14 @@ const Books = () => {
         selectedCategory === "All Categories" || 
         bookCategory === selectedCategory;
       
-      return matchesSearch && matchesCategory;
+      const bookListingType = getListingType(book.listing_type, book.price);
+      const matchesListingType = 
+        selectedListingType === "all" || 
+        bookListingType === selectedListingType;
+      
+      return matchesSearch && matchesCategory && matchesListingType;
     });
-  }, [allBooks, searchQuery, selectedCategory]);
+  }, [allBooks, searchQuery, selectedCategory, selectedListingType]);
 
   return (
     <div className="pb-20 md:pb-0">
@@ -126,7 +140,7 @@ const Books = () => {
             </div>
           </div>
 
-          {/* Search & Filter */}
+          {/* Search & Filters */}
           <div className="flex flex-col sm:flex-row gap-3 mb-8">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -137,19 +151,33 @@ const Books = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-full sm:w-48">
-                <Filter className="w-4 h-4 mr-2 text-muted-foreground" />
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                {BOOK_CATEGORIES.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex gap-2">
+              <Select value={selectedListingType} onValueChange={setSelectedListingType}>
+                <SelectTrigger className="w-full sm:w-40">
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {LISTING_TYPE_FILTERS.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-full sm:w-44">
+                  <Filter className="w-4 h-4 mr-2 text-muted-foreground" />
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {BOOK_CATEGORIES.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Content */}
@@ -165,7 +193,7 @@ const Books = () => {
               }
             />
           ) : filteredBooks.length === 0 ? (
-            <EmptyState message={searchQuery || selectedCategory !== "All Categories" ? "No books found matching your filters." : "No books found."} />
+            <EmptyState message={searchQuery || selectedCategory !== "All Categories" || selectedListingType !== "all" ? "No books found matching your filters." : "No books found."} />
           ) : (
             <>
               {/* Books Grid */}
@@ -243,7 +271,7 @@ const Books = () => {
               </div>
 
               {/* Load More */}
-              {!searchQuery && selectedCategory === "All Categories" && (
+              {!searchQuery && selectedCategory === "All Categories" && selectedListingType === "all" && (
                 <LoadMoreButton 
                   onClick={loadMore}
                   isLoading={loadingMore}
