@@ -1,15 +1,12 @@
 import { useLocation } from "react-router-dom";
 import { PrefetchLink } from "@/components/common/PrefetchLink";
-import { BookOpen, Calendar, GraduationCap, Repeat2, Briefcase } from "lucide-react";
+import { BookOpen, Calendar, Repeat2, Briefcase, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/contexts/AuthContext";
-import { useScholarshipBadge } from "@/hooks/useScholarshipBadge";
-import { useEffect } from "react";
 
 // Action-focused bottom nav items - no Home, no Profile, no Dashboard
 const navItems = [
   { href: "/materials", label: "Materials", icon: BookOpen },
-  { href: "/scholarships", label: "Scholarships", icon: GraduationCap, highlight: true, showBadge: true },
+  { href: "/projects", label: "Project Partner", icon: Users, highlight: true },
   { href: "/events", label: "Events", icon: Calendar },
   { href: "/books", label: "Sell Books", icon: Repeat2 },
   { href: "/tasks", label: "Tasks", icon: Briefcase },
@@ -25,15 +22,6 @@ const HIDDEN_PATHS = [
 
 export function BottomNav() {
   const location = useLocation();
-  const { user } = useAuth();
-  const { hasNewScholarships, newCount, markAsSeen } = useScholarshipBadge();
-
-  // Clear badge when on scholarships page
-  useEffect(() => {
-    if (location.pathname.startsWith("/scholarships") && hasNewScholarships) {
-      markAsSeen();
-    }
-  }, [location.pathname, hasNewScholarships, markAsSeen]);
 
   // Hide on admin, organizer, and dashboard pages
   const shouldHide = HIDDEN_PATHS.some(path => location.pathname.startsWith(path));
@@ -49,7 +37,6 @@ export function BottomNav() {
           const isActive = location.pathname === item.href || 
             (item.href !== "/" && location.pathname.startsWith(item.href));
           const Icon = item.icon;
-          const showBadge = item.showBadge && hasNewScholarships && !isActive;
 
           // Generate tour ID based on href
           const tourId = `mobile-nav-${item.href.replace('/', '')}`;
@@ -77,12 +64,6 @@ export function BottomNav() {
                 >
                   <Icon className="w-5 h-5" strokeWidth={2.5} />
                 </div>
-                {/* Badge indicator */}
-                {showBadge && (
-                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center px-1">
-                    {newCount > 9 ? "9+" : newCount}
-                  </span>
-                )}
               </div>
               <span className={cn(
                 "text-[10px] font-semibold transition-all",

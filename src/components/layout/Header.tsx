@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { PrefetchLink } from "@/components/common/PrefetchLink";
 import { Button } from "@/components/ui/button";
-import { User, LogOut, Shield, BookOpen, Repeat2, Trophy, Calendar, LayoutDashboard, Folder, Briefcase, GraduationCap } from "lucide-react";
+import { User, LogOut, Shield, BookOpen, Repeat2, Trophy, Calendar, LayoutDashboard, Folder, Briefcase } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,
@@ -26,7 +26,6 @@ const Header = ({ onAuthClick }: HeaderProps) => {
   const navLinks = [
     { href: "/materials", label: "Materials", icon: BookOpen },
     { href: "/events", label: "Events", icon: Calendar },
-    { href: "/scholarships", label: "Scholarships", icon: GraduationCap },
     { href: "/projects", label: "Projects", icon: Folder },
     { href: "/tasks", label: "Tasks", icon: Briefcase },
     { href: "/books", label: "Books", icon: Repeat2 },
