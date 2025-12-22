@@ -9,6 +9,7 @@ import { Plus, Users, Search, Folder, UserPlus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getProjects, Project } from "@/services/projectsService";
 import { Helmet } from "react-helmet";
+import { BottomNav } from "@/components/layout/BottomNav";
 
 interface LayoutContext {
   onAuthClick?: () => void;
@@ -66,7 +67,7 @@ const Projects = () => {
   );
 
   return (
-    <>
+    <div className="pb-20 md:pb-0">
       <Helmet>
         <title>Project Partner - Find Your Team | UniVoid</title>
         <meta name="description" content="Find teammates for hackathons, projects, and startups. Collaborate with students who have the skills you need." />
@@ -208,7 +209,9 @@ const Projects = () => {
           )}
         </div>
       </div>
-    </>
+
+      <BottomNav />
+    </div>
   );
 };
 
