@@ -29,6 +29,60 @@
     <!-- Google AdSense -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1169163493596327"
      crossorigin="anonymous"></script>
+
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "UniVoid",
+      "url": "https://univoid.in",
+      "logo": "https://univoid.in/favicon.jpg",
+      "description": "UniVoid is a student-first platform for Indian college students. Access study materials, campus events, projects, tasks, book exchange, and news.",
+      "sameAs": [
+        "https://twitter.com/UniVoid"
+      ],
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "customer support",
+        "url": "https://univoid.in/contact"
+      }
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "UniVoid",
+      "url": "https://univoid.in",
+      "description": "Everything a College Student Needs in One Place",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://univoid.in/materials?search={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "EducationalOrganization",
+      "name": "UniVoid",
+      "url": "https://univoid.in",
+      "description": "A student-first platform providing study materials, events, projects, and resources for Indian college students.",
+      "areaServed": {
+        "@type": "Country",
+        "name": "India"
+      },
+      "audience": {
+        "@type": "EducationalAudience",
+        "educationalRole": "student"
+      }
+    }
+    </script>
   </head>
 
   <body>
