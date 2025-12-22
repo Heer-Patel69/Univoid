@@ -1,10 +1,8 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Shield, Mail, Database, Lock, Eye, UserCheck, Clock, Globe } from "lucide-react";
 import { Link } from "react-router-dom";
-
 const PrivacyPolicy = () => {
-  return (
-    <div className="py-10 md:py-14">
+  return <div className="py-10 md:py-14">
       <div className="container-wide max-w-4xl">
         {/* Header */}
         <div className="mb-10 text-center">
@@ -50,7 +48,7 @@ const PrivacyPolicy = () => {
               <p className="text-muted-foreground leading-relaxed">
                 For any privacy-related queries, you can reach us at:{" "}
                 <a href="mailto:support@univoid.in" className="text-primary hover:underline font-medium">
-                  support@univoid.in
+                  ​univoid35@gmail.com
                 </a>
               </p>
             </section>
@@ -279,8 +277,6 @@ const PrivacyPolicy = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default PrivacyPolicy;
