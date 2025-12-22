@@ -1,8 +1,10 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Shield, Mail, Database, Lock, Eye, UserCheck, Clock, Globe } from "lucide-react";
+import { Shield, Mail, Database, Lock, Eye, UserCheck, Clock, Globe, MessageCircle, AlertTriangle, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
+
 const PrivacyPolicy = () => {
-  return <div className="py-10 md:py-14">
+  return (
+    <div className="py-10 md:py-14">
       <div className="container-wide max-w-4xl">
         {/* Header */}
         <div className="mb-10 text-center">
@@ -13,7 +15,7 @@ const PrivacyPolicy = () => {
             Privacy Policy
           </h1>
           <p className="text-muted-foreground">
-            Version 2.0 | Effective Date: 20 December 2024
+            Updated | Effective Date: 22 December 2024
           </p>
         </div>
 
@@ -22,16 +24,24 @@ const PrivacyPolicy = () => {
             {/* Introduction */}
             <section>
               <p className="text-muted-foreground leading-relaxed">
-                Welcome to UniVoid. Your privacy matters to us. This Privacy Policy explains in detail how we collect, 
-                use, store, and protect your personal information when you use our platform. By accessing or using UniVoid, 
-                you acknowledge that you have read and understood this policy.
+                Welcome to UniVoid. Your privacy matters to us. This Privacy Policy explains how we collect, 
+                use, store, and protect your personal information when you use our platform. By accessing or 
+                using UniVoid, you acknowledge that you have read and understood this policy.
               </p>
-              <div className="mt-4 p-4 bg-primary/5 rounded-lg border border-primary/10">
-                <p className="text-sm text-muted-foreground">
-                  <strong className="text-foreground">Important:</strong> UniVoid operates as a facilitator platform. 
-                  All materials, books, events, tasks, projects, and other content are uploaded and managed by users. 
-                  UniVoid does not create, verify, or take responsibility for user-generated content.
-                </p>
+            </section>
+
+            {/* Platform Notice */}
+            <section className="p-4 bg-primary/5 rounded-lg border border-primary/10">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground mb-2">Important Platform Notice</h2>
+                  <p className="text-muted-foreground leading-relaxed">
+                    UniVoid operates solely as a <strong>facilitator platform</strong>. All study materials, books, 
+                    events, tasks, projects, and other content are uploaded and managed by users. UniVoid does not 
+                    create, verify, or take responsibility for user-generated content.
+                  </p>
+                </div>
               </div>
             </section>
 
@@ -46,7 +56,7 @@ const PrivacyPolicy = () => {
                 sharing, event discovery, project collaboration, and peer-to-peer book exchange among students.
               </p>
               <p className="text-muted-foreground leading-relaxed">
-                For any privacy-related queries, you can reach us at:{" "}
+                For any privacy-related queries, contact us at:{" "}
                 <a href="mailto:univoid35@gmail.com" className="text-primary hover:underline font-medium">
                   univoid35@gmail.com
                 </a>
@@ -59,48 +69,45 @@ const PrivacyPolicy = () => {
                 <Database className="w-5 h-5 text-primary" />
                 <h2 className="text-lg font-semibold text-foreground">What Personal Data We Collect</h2>
               </div>
-              <p className="text-muted-foreground leading-relaxed mb-4">
-                We collect different types of information to provide and improve our services:
-              </p>
               
               <div className="space-y-4">
                 <div className="p-4 bg-muted/30 rounded-lg">
-                  <h3 className="font-medium text-foreground mb-2">Account Information</h3>
+                  <h3 className="font-medium text-foreground mb-2">1. Account Information</h3>
                   <ul className="space-y-1.5 text-sm text-muted-foreground list-disc list-inside">
-                    <li>Full name and email address (required for registration)</li>
-                    <li>Mobile number</li>
+                    <li>Full name and email address (required)</li>
+                    <li>Mobile number (used for account security and contact features)</li>
                     <li>Profile photograph (optional)</li>
                     <li>Password (stored in encrypted format)</li>
                   </ul>
                 </div>
 
                 <div className="p-4 bg-muted/30 rounded-lg">
-                  <h3 className="font-medium text-foreground mb-2">Educational Information</h3>
+                  <h3 className="font-medium text-foreground mb-2">2. Educational Information</h3>
                   <ul className="space-y-1.5 text-sm text-muted-foreground list-disc list-inside">
                     <li>College or university name</li>
                     <li>Course, branch, and year of study</li>
-                    <li>State and city of residence</li>
+                    <li>State and city</li>
                     <li>Academic interests and preferences</li>
                   </ul>
                 </div>
 
                 <div className="p-4 bg-muted/30 rounded-lg">
-                  <h3 className="font-medium text-foreground mb-2">User-Generated Content</h3>
+                  <h3 className="font-medium text-foreground mb-2">3. User-Generated Content</h3>
                   <ul className="space-y-1.5 text-sm text-muted-foreground list-disc list-inside">
-                    <li>Study materials, documents, and files you upload</li>
+                    <li>Study materials and documents uploaded by you</li>
                     <li>Book listings and descriptions</li>
-                    <li>Event registrations and participation data</li>
-                    <li>Project information and task requests</li>
-                    <li>News articles and blog posts</li>
+                    <li>Event registrations and participation details</li>
+                    <li>Project posts and task requests</li>
+                    <li>News or blog content shared by users</li>
                   </ul>
                 </div>
 
                 <div className="p-4 bg-muted/30 rounded-lg">
-                  <h3 className="font-medium text-foreground mb-2">Technical & Usage Data</h3>
+                  <h3 className="font-medium text-foreground mb-2">4. Technical & Usage Data</h3>
                   <ul className="space-y-1.5 text-sm text-muted-foreground list-disc list-inside">
                     <li>IP address and approximate location</li>
-                    <li>Device type, operating system, and browser information</li>
-                    <li>Pages visited, features used, and time spent on platform</li>
+                    <li>Device type, operating system, and browser</li>
+                    <li>Pages visited and features used</li>
                     <li>Search queries and interaction patterns</li>
                     <li>Error logs and performance data</li>
                   </ul>
@@ -114,26 +121,29 @@ const PrivacyPolicy = () => {
                 <Clock className="w-5 h-5 text-primary" />
                 <h2 className="text-lg font-semibold text-foreground">When We Collect Your Data</h2>
               </div>
+              <p className="text-muted-foreground leading-relaxed mb-4">
+                We collect data when you:
+              </p>
               <ul className="space-y-2 text-muted-foreground">
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
-                  <span><strong>Account Creation:</strong> When you sign up and create your profile</span>
+                  <span>Create an account or log in</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
-                  <span><strong>Profile Updates:</strong> When you edit your personal or educational details</span>
+                  <span>Update your profile information</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
-                  <span><strong>Content Upload:</strong> When you share materials, list books, or create events</span>
+                  <span>Upload materials, list books, or create events</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
-                  <span><strong>Platform Usage:</strong> Automatically during your browsing and interaction with features</span>
+                  <span>Browse or interact with platform features</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
-                  <span><strong>Communications:</strong> When you contact our support team or provide feedback</span>
+                  <span>Contact support or submit feedback</span>
                 </li>
               </ul>
             </section>
@@ -145,7 +155,7 @@ const PrivacyPolicy = () => {
                 <h2 className="text-lg font-semibold text-foreground">Why We Collect Your Data</h2>
               </div>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                We use your information for the following purposes:
+                We use your data only for legitimate platform purposes, including:
               </p>
               <div className="grid gap-3">
                 <div className="flex items-start gap-3 p-3 bg-muted/20 rounded-lg">
@@ -154,7 +164,7 @@ const PrivacyPolicy = () => {
                   </div>
                   <div>
                     <h4 className="font-medium text-foreground text-sm">Platform Operation</h4>
-                    <p className="text-xs text-muted-foreground">To create and manage your account, authenticate your identity, and provide access to features</p>
+                    <p className="text-xs text-muted-foreground">Account creation and authentication, providing access to platform features</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 p-3 bg-muted/20 rounded-lg">
@@ -163,7 +173,7 @@ const PrivacyPolicy = () => {
                   </div>
                   <div>
                     <h4 className="font-medium text-foreground text-sm">Personalization</h4>
-                    <p className="text-xs text-muted-foreground">To recommend relevant materials, scholarships, and events based on your profile and interests</p>
+                    <p className="text-xs text-muted-foreground">Recommending relevant materials, tasks, events, and opportunities based on your profile</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 p-3 bg-muted/20 rounded-lg">
@@ -172,7 +182,7 @@ const PrivacyPolicy = () => {
                   </div>
                   <div>
                     <h4 className="font-medium text-foreground text-sm">Communication</h4>
-                    <p className="text-xs text-muted-foreground">To send important updates, notifications, deadline reminders, and respond to your queries</p>
+                    <p className="text-xs text-muted-foreground">Sending important updates, notifications, and responses to support queries</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 p-3 bg-muted/20 rounded-lg">
@@ -181,7 +191,7 @@ const PrivacyPolicy = () => {
                   </div>
                   <div>
                     <h4 className="font-medium text-foreground text-sm">Security & Safety</h4>
-                    <p className="text-xs text-muted-foreground">To detect fraud, prevent abuse, and maintain the safety of our community</p>
+                    <p className="text-xs text-muted-foreground">Preventing fraud, abuse, and unauthorized access; maintaining platform integrity</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 p-3 bg-muted/20 rounded-lg">
@@ -190,8 +200,50 @@ const PrivacyPolicy = () => {
                   </div>
                   <div>
                     <h4 className="font-medium text-foreground text-sm">Analytics & Improvement</h4>
-                    <p className="text-xs text-muted-foreground">To understand usage patterns and improve platform performance and features</p>
+                    <p className="text-xs text-muted-foreground">Understanding usage patterns, improving performance and user experience</p>
                   </div>
+                </div>
+              </div>
+            </section>
+
+            {/* WhatsApp Redirect - NEW SECTION */}
+            <section className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+              <div className="flex items-start gap-3">
+                <MessageCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground mb-3">WhatsApp Redirect & Phone Number Usage</h2>
+                  <p className="text-muted-foreground leading-relaxed mb-3">
+                    UniVoid uses mobile numbers <strong>only for contact facilitation</strong> in specific features 
+                    such as <strong>peer-to-peer book exchange</strong>.
+                  </p>
+                  <p className="text-muted-foreground leading-relaxed mb-3">
+                    Please note:
+                  </p>
+                  <ul className="space-y-2 text-sm text-muted-foreground">
+                    <li className="flex items-start gap-2">
+                      <span className="text-amber-600 mt-1">•</span>
+                      <span>Your mobile number is used <strong>only to enable WhatsApp redirection</strong></span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-amber-600 mt-1">•</span>
+                      <span>UniVoid <strong>does not read, store, monitor, or access WhatsApp messages</strong></span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-amber-600 mt-1">•</span>
+                      <span>UniVoid <strong>does not share your number with third parties</strong></span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-amber-600 mt-1">•</span>
+                      <span>Phone numbers are <strong>not publicly displayed</strong> on the platform</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-amber-600 mt-1">•</span>
+                      <span>All communication happens <strong>directly between users on WhatsApp</strong></span>
+                    </li>
+                  </ul>
+                  <p className="text-muted-foreground leading-relaxed mt-3 text-sm">
+                    UniVoid has <strong>no control over conversations or transactions</strong> that take place on WhatsApp.
+                  </p>
                 </div>
               </div>
             </section>
@@ -203,7 +255,7 @@ const PrivacyPolicy = () => {
                 <h2 className="text-lg font-semibold text-foreground">How We Protect Your Data</h2>
               </div>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                We implement industry-standard security measures to protect your personal information:
+                We use industry-standard security practices, including:
               </p>
               <ul className="space-y-2 text-muted-foreground">
                 <li className="flex items-start gap-2">
@@ -212,17 +264,20 @@ const PrivacyPolicy = () => {
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
-                  <span>Secure authentication mechanisms</span>
+                  <span>Secure authentication systems</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
-                  <span>Regular security audits and updates</span>
+                  <span>Access control and monitoring</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
-                  <span>Access controls and monitoring</span>
+                  <span>Regular security updates</span>
                 </li>
               </ul>
+              <p className="text-muted-foreground leading-relaxed mt-4 text-sm">
+                Despite best efforts, no system is 100% secure, and users acknowledge inherent risks of online platforms.
+              </p>
             </section>
 
             {/* Your Rights */}
@@ -232,26 +287,44 @@ const PrivacyPolicy = () => {
                 <h2 className="text-lg font-semibold text-foreground">Your Rights</h2>
               </div>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                You have the following rights regarding your personal data:
+                You have the right to:
               </p>
               <ul className="space-y-2 text-muted-foreground">
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
-                  <span><strong>Access:</strong> Request a copy of your personal data</span>
+                  <span><strong>Access</strong> your personal data</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
-                  <span><strong>Correction:</strong> Request correction of inaccurate data</span>
+                  <span><strong>Correct</strong> inaccurate or incomplete data</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
-                  <span><strong>Deletion:</strong> Request deletion of your account and data</span>
+                  <span><strong>Delete</strong> your account and associated data</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
-                  <span><strong>Portability:</strong> Request your data in a portable format</span>
+                  <span><strong>Request portability</strong> of your data (where applicable)</span>
                 </li>
               </ul>
+              <p className="text-muted-foreground leading-relaxed mt-4">
+                To exercise these rights, contact us at:{" "}
+                <a href="mailto:univoid35@gmail.com" className="text-primary hover:underline font-medium">
+                  univoid35@gmail.com
+                </a>
+              </p>
+            </section>
+
+            {/* Policy Updates */}
+            <section>
+              <div className="flex items-center gap-2 mb-4">
+                <RefreshCw className="w-5 h-5 text-primary" />
+                <h2 className="text-lg font-semibold text-foreground">Policy Updates</h2>
+              </div>
+              <p className="text-muted-foreground leading-relaxed">
+                UniVoid may update this Privacy Policy from time to time. Continued use of the platform after 
+                updates indicates acceptance of the revised policy.
+              </p>
             </section>
 
             {/* Contact */}
@@ -261,7 +334,7 @@ const PrivacyPolicy = () => {
                 <h2 className="text-lg font-semibold text-foreground">Contact Us</h2>
               </div>
               <p className="text-muted-foreground leading-relaxed">
-                For any privacy-related queries or to exercise your rights, please contact us at:{" "}
+                For privacy-related concerns or questions:{" "}
                 <a href="mailto:univoid35@gmail.com" className="text-primary hover:underline font-medium">
                   univoid35@gmail.com
                 </a>
@@ -271,12 +344,14 @@ const PrivacyPolicy = () => {
             {/* Footer Links */}
             <div className="pt-6 border-t border-border">
               <p className="text-sm text-muted-foreground text-center">
-                See also: <Link to="/terms" className="text-primary hover:underline">Terms and Conditions</Link> | <Link to="/refund-policy" className="text-primary hover:underline">Refund Policy</Link>
+                See also: <Link to="/terms" className="text-primary hover:underline">Terms and Conditions</Link> | <Link to="/refund-policy" className="text-primary hover:underline">Refund Policy</Link> | <Link to="/cookie-policy" className="text-primary hover:underline">Cookie Policy</Link>
               </p>
             </div>
           </CardContent>
         </Card>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default PrivacyPolicy;
