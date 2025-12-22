@@ -247,7 +247,7 @@ const Books = () => {
           ) : (
             <>
               {/* Books Grid */}
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 staggered-grid-fast">
                 {filteredBooks.map((book) => (
                   <Link key={book.id} to={`/books/${book.id}`}>
                     <Card className="card-premium overflow-hidden group cursor-pointer h-full">
