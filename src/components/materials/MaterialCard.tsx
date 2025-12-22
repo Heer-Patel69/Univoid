@@ -53,6 +53,11 @@ const MaterialCard = memo(function MaterialCard({
 }: MaterialCardProps) {
   const [showDescription, setShowDescription] = useState(false);
 
+  // Check if preview is available (PDF only + approved)
+  const isPdf = material.file_type.toLowerCase() === 'pdf';
+  const isApproved = material.status === 'approved';
+  const canPreview = isPdf && isApproved;
+
   // Memoized callbacks to prevent re-renders
   const handlePreviewClick = useCallback(() => {
     onPreview(material);
@@ -85,8 +90,8 @@ const MaterialCard = memo(function MaterialCard({
       <CardContent className="p-0 flex flex-col h-full">
         {/* Top Section - Grows to fill space */}
         <div 
-          className="p-6 pb-0 cursor-pointer flex-1 flex flex-col"
-          onClick={handlePreviewClick}
+          className={cn("p-6 pb-0 flex-1 flex flex-col", canPreview && "cursor-pointer")}
+          onClick={canPreview ? handlePreviewClick : undefined}
         >
           {/* Thumbnail + Content */}
           <div className="flex gap-4">
@@ -105,6 +110,16 @@ const MaterialCard = memo(function MaterialCard({
               
               {/* Tags - Fixed minimum height for consistency */}
               <div className="flex flex-wrap gap-1.5 mb-2 min-h-[40px] content-start">
+                {!isApproved && (
+                  <Badge variant="outline" className="text-[10px] px-2 py-0.5 h-fit bg-amber-500/10 text-amber-700 border-amber-300">
+                    Pending
+                  </Badge>
+                )}
+                {!isPdf && (
+                  <Badge variant="outline" className="text-[10px] px-2 py-0.5 h-fit">
+                    {material.file_type.toUpperCase()}
+                  </Badge>
+                )}
                 {material.course && (
                   <Badge variant="blue" className="text-[10px] px-2 py-0.5 h-fit">
                     {material.course}
@@ -224,8 +239,12 @@ const MaterialCard = memo(function MaterialCard({
               className="h-9 text-xs font-semibold transition-colors"
               onClick={(e) => {
                 e.stopPropagation();
-                onPreview(material);
+                if (canPreview) {
+                  onPreview(material);
+                }
               }}
+              disabled={!canPreview}
+              title={!canPreview ? (isPdf ? 'Material pending approval' : 'Preview available for PDF files only') : 'Preview material'}
             >
               <Eye className="w-3.5 h-3.5 mr-1" strokeWidth={2.5} />
               Preview
@@ -235,6 +254,8 @@ const MaterialCard = memo(function MaterialCard({
               size="sm"
               className="h-9 text-xs font-semibold transition-colors"
               onClick={handleDownloadClick}
+              disabled={!isApproved}
+              title={!isApproved ? 'Material pending approval' : 'Download material'}
             >
               <Download className="w-3.5 h-3.5 mr-1" strokeWidth={2.5} />
               Download
