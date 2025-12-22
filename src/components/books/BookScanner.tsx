@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface BookScannerProps {
   onBookScanned: (bookInfo: { title: string; author?: string }) => void;
+  onImageCaptured?: (imageBase64: string) => void;
 }
 
 interface OpenLibraryBook {
@@ -18,7 +19,7 @@ interface OpenLibraryBook {
 
 type ScanMode = "barcode" | "cover";
 
-const BookScanner = ({ onBookScanned }: BookScannerProps) => {
+const BookScanner = ({ onBookScanned, onImageCaptured }: BookScannerProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
@@ -149,6 +150,11 @@ const BookScanner = ({ onBookScanned }: BookScannerProps) => {
     setIsScanning(false);
     setIsFetching(true);
     toast.info("Analyzing book cover...");
+
+    // Immediately pass image to parent for upload
+    if (onImageCaptured) {
+      onImageCaptured(imageBase64);
+    }
 
     const bookInfo = await extractBookInfoFromCover(imageBase64);
     setIsFetching(false);

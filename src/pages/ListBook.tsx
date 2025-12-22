@@ -89,7 +89,7 @@ const ListBook = () => {
     setCategoryManuallySet(true);
   }, []);
 
-  // Handle book scanned from ISBN
+  // Handle book scanned from ISBN or cover scan
   const handleBookScanned = (bookInfo: { title: string; author?: string }) => {
     setTitle(bookInfo.title);
     if (bookInfo.author) {
@@ -97,6 +97,20 @@ const ListBook = () => {
     }
     setCategoryManuallySet(false); // Allow AI to detect category for scanned books
   };
+
+  // Handle AI detection from image upload
+  const handleBookDetected = useCallback((info: { title?: string; author?: string; category?: string }) => {
+    if (info.title && !title) {
+      setTitle(info.title);
+    }
+    if (info.author && !author) {
+      setAuthor(info.author);
+    }
+    if (info.category && !categoryManuallySet) {
+      setCategory(info.category);
+    }
+    setCategoryManuallySet(false); // Allow AI category detection
+  }, [title, author, categoryManuallySet]);
 
   // Check if user can list books
   const listingPermission = canListBook(profile?.mobile_number);
@@ -260,6 +274,7 @@ const ListBook = () => {
                   <BookImageUpload
                     images={images}
                     onImagesChange={setImages}
+                    onBookDetected={handleBookDetected}
                     maxImages={MAX_BOOK_IMAGES}
                   />
                 </div>

@@ -1,19 +1,50 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Camera, RefreshCw, Loader2, ImageIcon } from "lucide-react";
+import { Camera, RefreshCw, Loader2, ImageIcon, Sparkles } from "lucide-react";
 import { compressImage, validateImageFile, CompressedImage } from "@/lib/imageCompression";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface BookImageUploadProps {
   images: CompressedImage[];
   onImagesChange: (images: CompressedImage[]) => void;
+  onBookDetected?: (info: { title?: string; author?: string; category?: string }) => void;
   maxImages?: number;
 }
 
-const BookImageUpload = ({ images, onImagesChange, maxImages = 1 }: BookImageUploadProps) => {
+const BookImageUpload = ({ images, onImagesChange, onBookDetected, maxImages = 1 }: BookImageUploadProps) => {
   const [isCompressing, setIsCompressing] = useState(false);
+  const [isDetecting, setIsDetecting] = useState(false);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const detectBookFromImage = async (imageBase64: string) => {
+    if (!onBookDetected) return;
+    
+    setIsDetecting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("extract-book-cover", {
+        body: { image: imageBase64 },
+      });
+
+      if (error) {
+        console.error("AI detection error:", error);
+        return;
+      }
+
+      if (data?.title || data?.author) {
+        onBookDetected({
+          title: data.title || undefined,
+          author: data.author || undefined,
+        });
+        toast.success("Book details detected!");
+      }
+    } catch (error) {
+      console.error("Error detecting book:", error);
+    } finally {
+      setIsDetecting(false);
+    }
+  };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -34,6 +65,11 @@ const BookImageUpload = ({ images, onImagesChange, maxImages = 1 }: BookImageUpl
       // Replace any existing image with the new one
       onImagesChange([compressed]);
       toast.success("Book cover added");
+      
+      // Auto-detect book info from image
+      if (compressed.preview) {
+        detectBookFromImage(compressed.preview);
+      }
     } catch (error) {
       toast.error("Failed to process image");
     } finally {
@@ -52,6 +88,7 @@ const BookImageUpload = ({ images, onImagesChange, maxImages = 1 }: BookImageUpl
   };
 
   const hasImage = images.length > 0;
+  const isProcessing = isCompressing || isDetecting;
 
   return (
     <div className="space-y-3">
@@ -83,6 +120,12 @@ const BookImageUpload = ({ images, onImagesChange, maxImages = 1 }: BookImageUpl
               alt="Book cover"
               className="w-full h-full object-cover"
             />
+            {isDetecting && (
+              <div className="absolute inset-0 bg-background/80 flex flex-col items-center justify-center">
+                <Sparkles className="w-6 h-6 text-primary animate-pulse mb-2" />
+                <p className="text-xs text-muted-foreground">Detecting book...</p>
+              </div>
+            )}
           </div>
           
           {/* Replace button */}
@@ -92,9 +135,9 @@ const BookImageUpload = ({ images, onImagesChange, maxImages = 1 }: BookImageUpl
               variant="outline"
               size="sm"
               onClick={replaceImage}
-              disabled={isCompressing}
+              disabled={isProcessing}
             >
-              {isCompressing ? (
+              {isProcessing ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               ) : (
                 <RefreshCw className="w-4 h-4 mr-2" />
@@ -106,7 +149,7 @@ const BookImageUpload = ({ images, onImagesChange, maxImages = 1 }: BookImageUpl
               variant="ghost"
               size="sm"
               onClick={() => fileInputRef.current?.click()}
-              disabled={isCompressing}
+              disabled={isProcessing}
             >
               <ImageIcon className="w-4 h-4 mr-2" />
               Gallery
@@ -167,7 +210,7 @@ const BookImageUpload = ({ images, onImagesChange, maxImages = 1 }: BookImageUpl
       )}
       
       <p className="text-xs text-muted-foreground text-center">
-        Only 1 book cover image allowed • JPG, PNG, WebP
+        Only 1 book cover image allowed • AI auto-detects title & author
       </p>
     </div>
   );

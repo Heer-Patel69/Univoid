@@ -5,7 +5,8 @@ import BookCarousel from "@/components/books/BookCarousel";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { User, Loader2, ArrowLeft, MessageSquare } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { User, Loader2, ArrowLeft, MessageSquare, ShieldCheck, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getBookById, getSellerContact } from "@/services/booksService";
 import { Book } from "@/types/database";
@@ -13,6 +14,53 @@ import { toast } from "sonner";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb";
 import { openWhatsAppContact, getListingType } from "@/lib/whatsappContact";
 import { getDisplayCategory } from "@/lib/bookCategorizer";
+
+const SafetyTipsSection = () => (
+  <div className="mt-6 space-y-4">
+    <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+      <ShieldCheck className="w-4 h-4 text-primary" />
+      Before You Buy – Safety Tips
+    </div>
+    
+    <div className="grid gap-3">
+      {/* For Buyers */}
+      <Card className="bg-secondary/30">
+        <CardContent className="p-4 space-y-2">
+          <p className="text-sm font-medium text-foreground">For Buyers:</p>
+          <ul className="text-xs text-muted-foreground space-y-1.5 list-disc list-inside">
+            <li>Always meet in a safe, public place</li>
+            <li>Inspect the book condition before paying</li>
+            <li>Avoid paying in advance without verification</li>
+            <li>Keep proof of payment (screenshot, receipt)</li>
+          </ul>
+        </CardContent>
+      </Card>
+      
+      {/* For Sellers */}
+      <Card className="bg-secondary/30">
+        <CardContent className="p-4 space-y-2">
+          <p className="text-sm font-medium text-foreground">For Sellers:</p>
+          <ul className="text-xs text-muted-foreground space-y-1.5 list-disc list-inside">
+            <li>Confirm payment before handing over the book</li>
+            <li>Meet buyers in safe, public locations</li>
+            <li>Be honest about book condition</li>
+            <li>Keep transaction records</li>
+          </ul>
+        </CardContent>
+      </Card>
+    </div>
+    
+    {/* Disclaimer */}
+    <Alert variant="default" className="bg-muted/50 border-muted">
+      <AlertTriangle className="h-4 w-4" />
+      <AlertDescription className="text-xs">
+        <strong>Disclaimer:</strong> UniVoid is a facilitator platform only. We do not handle payments, 
+        deliveries, or verify users. All transactions are between buyers and sellers directly. 
+        Please exercise caution.
+      </AlertDescription>
+    </Alert>
+  </div>
+);
 
 const BookDetail = () => {
   const { bookId } = useParams<{ bookId: string }>();
@@ -101,6 +149,8 @@ const BookDetail = () => {
   };
   const listingLabel = listingLabels[listingType] || 'For Sale';
 
+  const isAvailable = !book.is_sold && (book as any).book_status !== 'sold' && (book as any).book_status !== 'rented';
+
   return (
     <div className="py-8">
       <div className="container-wide max-w-4xl">
@@ -167,21 +217,26 @@ const BookDetail = () => {
               </CardContent>
             </Card>
 
-            {/* Hide contact button for sold/rented books */}
-            {!book.is_sold && (book as any).book_status !== 'sold' && (book as any).book_status !== 'rented' ? (
-              <Button
-                className="w-full bg-green-600 hover:bg-green-700"
-                size="lg"
-                onClick={handleWhatsAppContact}
-                disabled={loadingContact}
-              >
-                {loadingContact ? (
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                ) : (
-                  <MessageSquare className="w-4 h-4 mr-2" />
-                )}
-                {user ? "Contact on WhatsApp" : "Login to Contact Seller"}
-              </Button>
+            {/* Contact button or sold message */}
+            {isAvailable ? (
+              <>
+                <Button
+                  className="w-full bg-green-600 hover:bg-green-700"
+                  size="lg"
+                  onClick={handleWhatsAppContact}
+                  disabled={loadingContact}
+                >
+                  {loadingContact ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : (
+                    <MessageSquare className="w-4 h-4 mr-2" />
+                  )}
+                  {user ? "Contact on WhatsApp" : "Login to Contact Seller"}
+                </Button>
+                
+                {/* Safety Tips Section */}
+                <SafetyTipsSection />
+              </>
             ) : (
               <div className="p-4 bg-secondary rounded-lg text-center">
                 <Badge variant="destructive" className="text-sm px-4 py-1.5">
