@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getBooksPaginated } from "@/services/paginatedService";
 import { SectionLoader, EmptyState, LoadMoreButton } from "@/components/common/SectionLoader";
 import { useOptimizedFetch, CACHE_TTL } from "@/hooks/useOptimizedFetch";
+import { useSkeletonSync } from "@/hooks/useSkeleton";
 import { Book } from "@/types/database";
 import { toast } from "sonner";
 import { getDisplayCategory } from "@/lib/bookCategorizer";
@@ -76,13 +77,16 @@ const Books = () => {
     return result.data;
   }, []);
 
-  const { isLoading } = useOptimizedFetch({
+  const { isLoading: rawLoading } = useOptimizedFetch({
     fetchFn: fetchBooks,
     defaultValue: [] as Book[],
     timeoutMs: 8000,
     cacheKey: 'books-page-0',
-    cacheTtl: CACHE_TTL.LONG, // 5 minutes cache for books
+    cacheTtl: CACHE_TTL.LONG,
   });
+
+  // Use skeleton sync for consistent loading behavior with minimum display time
+  const isLoading = useSkeletonSync(rawLoading, { minDisplayTime: 400 });
 
   const loadMore = async () => {
     if (loadingMore || !hasMore) return;

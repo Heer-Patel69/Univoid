@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getProjects, Project } from "@/services/projectsService";
 import { Helmet } from "react-helmet";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { useSkeletonSync } from "@/hooks/useSkeleton";
 
 interface LayoutContext {
   onAuthClick?: () => void;
@@ -22,22 +23,25 @@ const Projects = () => {
   const context = useOutletContext<LayoutContext>();
   
   const [projects, setProjects] = useState<Project[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [rawLoading, setRawLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Use skeleton sync for consistent loading behavior
+  const isLoading = useSkeletonSync(rawLoading, { minDisplayTime: 400 });
 
   useEffect(() => {
     loadProjects();
   }, [eventId]);
 
   const loadProjects = async () => {
-    setIsLoading(true);
+    setRawLoading(true);
     try {
       const data = await getProjects(eventId || undefined);
       setProjects(data);
     } catch (error) {
       console.error('Failed to load projects:', error);
     } finally {
-      setIsLoading(false);
+      setRawLoading(false);
     }
   };
 
