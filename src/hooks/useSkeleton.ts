@@ -1,138 +1,83 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface UseSkeletonOptions {
-  /** Initial loading state (default: true) */
-  initialLoading?: boolean;
   /** Minimum time to show skeleton in ms (prevents flash, default: 300) */
   minDisplayTime?: number;
-  /** Delay before showing skeleton in ms (avoids flash for fast loads, default: 0) */
-  showDelay?: number;
-}
-
-interface UseSkeletonReturn {
-  /** Whether skeleton should be shown */
-  isLoading: boolean;
-  /** Start loading (show skeleton) */
-  startLoading: () => void;
-  /** Stop loading (hide skeleton after minDisplayTime) */
-  stopLoading: () => void;
-  /** Set loading state directly */
-  setLoading: (loading: boolean) => void;
 }
 
 /**
- * Hook to manage skeleton loading states consistently.
- * Features:
- * - Minimum display time to prevent jarring flash
- * - Optional delay before showing skeleton for fast connections
- * - Clean API for controlling loading state
- */
-export function useSkeleton(options: UseSkeletonOptions = {}): UseSkeletonReturn {
-  const {
-    initialLoading = true,
-    minDisplayTime = 300,
-    showDelay = 0,
-  } = options;
-
-  const [isLoading, setIsLoading] = useState(showDelay > 0 ? false : initialLoading);
-  const loadingStartTime = useRef<number | null>(null);
-  const showDelayTimeout = useRef<NodeJS.Timeout | null>(null);
-  const hideTimeout = useRef<NodeJS.Timeout | null>(null);
-
-  // Cleanup timeouts on unmount
-  useEffect(() => {
-    return () => {
-      if (showDelayTimeout.current) clearTimeout(showDelayTimeout.current);
-      if (hideTimeout.current) clearTimeout(hideTimeout.current);
-    };
-  }, []);
-
-  // Handle initial loading with showDelay
-  useEffect(() => {
-    if (initialLoading && showDelay > 0) {
-      showDelayTimeout.current = setTimeout(() => {
-        setIsLoading(true);
-        loadingStartTime.current = Date.now();
-      }, showDelay);
-    } else if (initialLoading) {
-      loadingStartTime.current = Date.now();
-    }
-  }, []);
-
-  const startLoading = useCallback(() => {
-    if (hideTimeout.current) {
-      clearTimeout(hideTimeout.current);
-      hideTimeout.current = null;
-    }
-
-    if (showDelay > 0) {
-      showDelayTimeout.current = setTimeout(() => {
-        setIsLoading(true);
-        loadingStartTime.current = Date.now();
-      }, showDelay);
-    } else {
-      setIsLoading(true);
-      loadingStartTime.current = Date.now();
-    }
-  }, [showDelay]);
-
-  const stopLoading = useCallback(() => {
-    if (showDelayTimeout.current) {
-      clearTimeout(showDelayTimeout.current);
-      showDelayTimeout.current = null;
-    }
-
-    if (!loadingStartTime.current) {
-      setIsLoading(false);
-      return;
-    }
-
-    const elapsed = Date.now() - loadingStartTime.current;
-    const remaining = minDisplayTime - elapsed;
-
-    if (remaining > 0) {
-      hideTimeout.current = setTimeout(() => {
-        setIsLoading(false);
-        loadingStartTime.current = null;
-      }, remaining);
-    } else {
-      setIsLoading(false);
-      loadingStartTime.current = null;
-    }
-  }, [minDisplayTime]);
-
-  const setLoading = useCallback((loading: boolean) => {
-    if (loading) {
-      startLoading();
-    } else {
-      stopLoading();
-    }
-  }, [startLoading, stopLoading]);
-
-  return {
-    isLoading,
-    startLoading,
-    stopLoading,
-    setLoading,
-  };
-}
-
-/**
- * Hook to sync skeleton state with external loading state (e.g., from React Query).
- * Automatically applies minDisplayTime to prevent flash.
+ * Simple hook to sync skeleton state with external loading state.
+ * Applies minimum display time to prevent jarring flash.
+ * 
+ * @param externalLoading - The loading state from your data fetching
+ * @param options - Configuration options
+ * @returns Whether to show the skeleton
  */
 export function useSkeletonSync(
   externalLoading: boolean,
-  options: Omit<UseSkeletonOptions, 'initialLoading'> = {}
+  options: UseSkeletonOptions = {}
 ): boolean {
-  const { isLoading, setLoading } = useSkeleton({
-    ...options,
-    initialLoading: externalLoading,
-  });
+  const { minDisplayTime = 300 } = options;
+  
+  const [showSkeleton, setShowSkeleton] = useState(externalLoading);
+  const loadingStartTime = useRef<number | null>(null);
+  const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    setLoading(externalLoading);
-  }, [externalLoading, setLoading]);
+    // Cleanup any existing timeout
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+      hideTimeoutRef.current = null;
+    }
 
-  return isLoading;
+    if (externalLoading) {
+      // Start loading - show skeleton immediately
+      setShowSkeleton(true);
+      loadingStartTime.current = Date.now();
+    } else {
+      // Stop loading - ensure minimum display time
+      if (loadingStartTime.current) {
+        const elapsed = Date.now() - loadingStartTime.current;
+        const remaining = minDisplayTime - elapsed;
+
+        if (remaining > 0) {
+          // Wait for minimum display time
+          hideTimeoutRef.current = setTimeout(() => {
+            setShowSkeleton(false);
+            loadingStartTime.current = null;
+          }, remaining);
+        } else {
+          // Already shown long enough
+          setShowSkeleton(false);
+          loadingStartTime.current = null;
+        }
+      } else {
+        // No loading started, just hide
+        setShowSkeleton(false);
+      }
+    }
+
+    return () => {
+      if (hideTimeoutRef.current) {
+        clearTimeout(hideTimeoutRef.current);
+      }
+    };
+  }, [externalLoading, minDisplayTime]);
+
+  return showSkeleton;
+}
+
+/**
+ * @deprecated Use useSkeletonSync instead
+ */
+export function useSkeleton(options: { initialLoading?: boolean; minDisplayTime?: number } = {}) {
+  const { initialLoading = true, minDisplayTime = 300 } = options;
+  const [isLoading, setIsLoading] = useState(initialLoading);
+  
+  return {
+    isLoading: useSkeletonSync(isLoading, { minDisplayTime }),
+    startLoading: () => setIsLoading(true),
+    stopLoading: () => setIsLoading(false),
+    setLoading: setIsLoading,
+  };
 }
