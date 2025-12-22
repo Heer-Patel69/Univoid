@@ -5,12 +5,14 @@ import BookCarousel from "@/components/books/BookCarousel";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { User, MessageCircle, Loader2, X, ArrowLeft } from "lucide-react";
+import { User, Loader2, ArrowLeft, MessageSquare } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getBookById, getSellerContact } from "@/services/booksService";
 import { Book } from "@/types/database";
 import { toast } from "sonner";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb";
+import { openWhatsAppContact, getListingType } from "@/lib/whatsappContact";
+import { getDisplayCategory } from "@/lib/bookCategorizer";
 
 const BookDetail = () => {
   const { bookId } = useParams<{ bookId: string }>();
@@ -18,12 +20,6 @@ const BookDetail = () => {
   const [authOpen, setAuthOpen] = useState(false);
   const [book, setBook] = useState<Book | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedBookContact, setSelectedBookContact] = useState<{
-    mobile: string;
-    email: string;
-    address: string;
-  } | null>(null);
-  const [contactDialogOpen, setContactDialogOpen] = useState(false);
   const [loadingContact, setLoadingContact] = useState(false);
 
   useEffect(() => {
@@ -43,26 +39,31 @@ const BookDetail = () => {
     fetchBook();
   }, [bookId]);
 
-  const handleContact = async () => {
+  const handleWhatsAppContact = async () => {
     if (!book) return;
     
-    if (user) {
-      setLoadingContact(true);
-      try {
-        const contact = await getSellerContact(book.id);
-        if (contact) {
-          setSelectedBookContact(contact);
-          setContactDialogOpen(true);
-        } else {
-          toast.error("Could not retrieve seller contact");
-        }
-      } catch (error) {
-        toast.error("Failed to get seller contact");
-      } finally {
-        setLoadingContact(false);
-      }
-    } else {
+    if (!user) {
       setAuthOpen(true);
+      return;
+    }
+
+    setLoadingContact(true);
+    try {
+      const contact = await getSellerContact(book.id);
+      if (contact && contact.mobile && contact.mobile !== '••••••••••') {
+        openWhatsAppContact({
+          bookName: book.title,
+          price: book.price,
+          listingType: getListingType(book.price),
+          sellerMobile: contact.mobile,
+        });
+      } else {
+        toast.error("Seller's WhatsApp number is not available");
+      }
+    } catch (error) {
+      toast.error("Failed to get seller contact");
+    } finally {
+      setLoadingContact(false);
     }
   };
 
@@ -91,6 +92,9 @@ const BookDetail = () => {
     );
   }
 
+  const listingType = getListingType(book.price);
+  const listingLabel = book.price && book.price > 0 ? 'For Sale' : 'Exchange';
+
   return (
     <div className="py-8">
       <div className="container-wide max-w-4xl">
@@ -116,11 +120,12 @@ const BookDetail = () => {
 
             <div className="flex flex-wrap gap-2 mb-4">
               <Badge variant={book.price ? "default" : "outline"}>
-                {book.price ? "For Sale" : "Exchange"}
+                {listingLabel}
               </Badge>
               {book.condition && (
                 <Badge variant="secondary">{book.condition}</Badge>
               )}
+              <Badge variant="outline">{getDisplayCategory(book.category)}</Badge>
               {book.is_sold && (
                 <Badge variant="destructive">Sold</Badge>
               )}
@@ -153,17 +158,17 @@ const BookDetail = () => {
 
             {!book.is_sold && (
               <Button
-                className="w-full"
+                className="w-full bg-green-600 hover:bg-green-700"
                 size="lg"
-                onClick={handleContact}
+                onClick={handleWhatsAppContact}
                 disabled={loadingContact}
               >
                 {loadingContact ? (
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
                 ) : (
-                  <MessageCircle className="w-4 h-4 mr-2" />
+                  <MessageSquare className="w-4 h-4 mr-2" />
                 )}
-                {user ? "Contact Seller" : "Login to Contact Seller"}
+                {user ? "Contact on WhatsApp" : "Login to Contact Seller"}
               </Button>
             )}
           </div>
@@ -175,41 +180,6 @@ const BookDetail = () => {
         onClose={() => setAuthOpen(false)}
         message="Login to contact the seller"
       />
-
-      {/* Contact Modal */}
-      {contactDialogOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div 
-            className="fixed inset-0 bg-black/80" 
-            onClick={() => setContactDialogOpen(false)}
-          />
-          <div className="relative z-50 w-full max-w-md mx-4 bg-background border rounded-lg shadow-lg p-6">
-            <button
-              onClick={() => setContactDialogOpen(false)}
-              className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100"
-            >
-              <X className="h-4 w-4" />
-            </button>
-            <h2 className="text-lg font-semibold mb-4">Seller Contact Information</h2>
-            {selectedBookContact && (
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Email</p>
-                  <p className="font-medium text-foreground">{selectedBookContact.email}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Mobile</p>
-                  <p className="font-medium text-foreground">{selectedBookContact.mobile || "Not provided"}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Location</p>
-                  <p className="font-medium text-foreground">{selectedBookContact.address}</p>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 };
