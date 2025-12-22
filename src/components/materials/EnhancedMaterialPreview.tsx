@@ -63,7 +63,25 @@ export default function EnhancedMaterialPreview({
   const [hasAdminPreviewed, setHasAdminPreviewed] = useState(false);
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [urlError, setUrlError] = useState<string | null>(null);
-  const [useGoogleViewer, setUseGoogleViewer] = useState(false);
+  
+  // Load preferred viewer from localStorage
+  const getPreferredViewer = () => {
+    try {
+      return localStorage.getItem('pdf-viewer-preference') === 'google';
+    } catch {
+      return false;
+    }
+  };
+  const [useGoogleViewer, setUseGoogleViewer] = useState(getPreferredViewer);
+  
+  // Save viewer preference to localStorage
+  const saveViewerPreference = (useGoogle: boolean) => {
+    try {
+      localStorage.setItem('pdf-viewer-preference', useGoogle ? 'google' : 'native');
+    } catch {
+      // Ignore storage errors
+    }
+  };
   
   // Reset state when modal opens/closes or material changes
   useEffect(() => {
@@ -74,7 +92,8 @@ export default function EnhancedMaterialPreview({
       setHasAdminPreviewed(false);
       setSignedUrl(null);
       setUrlError(null);
-      setUseGoogleViewer(false);
+      // Keep the user's preferred viewer choice from localStorage
+      setUseGoogleViewer(getPreferredViewer());
       
       // Generate signed URL for preview
       generateSignedUrl();
@@ -258,11 +277,12 @@ export default function EnhancedMaterialPreview({
               <Button 
                 variant="default" 
                 size="sm"
-                onClick={() => {
-                  setPreviewError(false);
-                  setIsLoading(true);
-                  setUseGoogleViewer(true);
-                }}
+              onClick={() => {
+                setPreviewError(false);
+                setIsLoading(true);
+                setUseGoogleViewer(true);
+                saveViewerPreference(true);
+              }}
               >
                 <Eye className="w-4 h-4 mr-2" />
                 Try Google Viewer
@@ -310,11 +330,13 @@ export default function EnhancedMaterialPreview({
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => {
-                setIsLoading(true);
-                setPreviewError(false);
-                setUseGoogleViewer(!useGoogleViewer);
-              }}
+            onClick={() => {
+              setIsLoading(true);
+              setPreviewError(false);
+              const newValue = !useGoogleViewer;
+              setUseGoogleViewer(newValue);
+              saveViewerPreference(newValue);
+            }}
               className="text-xs opacity-80 hover:opacity-100"
             >
               {useGoogleViewer ? 'Native Viewer' : 'Google Viewer'}
