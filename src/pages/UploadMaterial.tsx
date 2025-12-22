@@ -300,6 +300,7 @@ const UploadMaterial = () => {
                   disabled={!canUpload}
                   isUploading={isSubmitting}
                   uploadProgress={uploadProgress}
+                  maxSizeMB={100}
                   hint="PDF, DOC, PPT, images, ZIP (max 100MB, NO videos)"
                 />
 
