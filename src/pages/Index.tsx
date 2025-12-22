@@ -102,7 +102,7 @@ const Index = () => {
     },
     { 
       icon: Puzzle, 
-      title: "Projects & Task Plaza", 
+      title: "Projects Partner", 
       description: "Collaborate on real projects or find short tasks." 
     },
     { 
