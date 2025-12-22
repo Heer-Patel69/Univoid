@@ -44,7 +44,6 @@ const routePreloaders: Record<string, () => Promise<unknown>> = {
   "/dashboard": () => import("@/pages/Dashboard"),
   "/materials": () => import("@/pages/Materials"),
   "/events": () => import("@/pages/Events"),
-  "/scholarships": () => import("@/pages/Scholarships"),
   "/projects": () => import("@/pages/Projects"),
   "/tasks": () => import("@/pages/Tasks"),
   "/books": () => import("@/pages/Books"),
