@@ -1602,6 +1602,13 @@ export type Database = {
         }[]
       }
       get_contributor_name: { Args: { user_id: string }; Returns: string }
+      get_contributor_names: {
+        Args: { user_ids: string[] }
+        Returns: {
+          full_name: string
+          user_id: string
+        }[]
+      }
       get_event_registrations_with_profiles: {
         Args: { p_event_id: string }
         Returns: {
