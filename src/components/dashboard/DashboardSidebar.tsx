@@ -1,8 +1,6 @@
 import { useLocation } from "react-router-dom";
 import { PrefetchLink } from "@/components/common/PrefetchLink";
 import { useAuth } from "@/contexts/AuthContext";
-import { useScholarshipBadge } from "@/hooks/useScholarshipBadge";
-import { useEffect } from "react";
 import {
   LayoutDashboard,
   User,
@@ -15,7 +13,6 @@ import {
   Settings,
   LogOut,
   Shield,
-  GraduationCap,
   Newspaper,
   Repeat2,
   Ticket,
@@ -32,14 +29,6 @@ interface DashboardSidebarProps {
 const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
   const { profile, isOrganizer, isAdmin, signOut } = useAuth();
   const location = useLocation();
-  const { hasNewScholarships, newCount, markAsSeen } = useScholarshipBadge();
-
-  // Clear badge when on scholarships page
-  useEffect(() => {
-    if (location.pathname.startsWith("/scholarships") && hasNewScholarships) {
-      markAsSeen();
-    }
-  }, [location.pathname, hasNewScholarships, markAsSeen]);
 
   const isActive = (href: string) => {
     if (href === "/") return location.pathname === "/";
@@ -56,7 +45,6 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
   // Browse Items
   const browseItems = [
     { label: "Materials", icon: BookOpen, href: "/materials" },
-    { label: "Scholarships", icon: GraduationCap, href: "/scholarships", showBadge: true },
     { label: "Events", icon: Calendar, href: "/events" },
     { label: "Projects", icon: Folder, href: "/projects" },
     { label: "Task Plaza", icon: Briefcase, href: "/tasks" },
@@ -73,8 +61,7 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
     { label: "Post Task", icon: Briefcase, href: "/tasks/create" },
   ];
 
-  const renderNavItem = (item: { label: string; icon: React.ElementType; href: string; showBadge?: boolean }) => {
-    const showBadge = item.showBadge && hasNewScholarships && !isActive(item.href);
+  const renderNavItem = (item: { label: string; icon: React.ElementType; href: string }) => {
     return (
       <PrefetchLink
         key={item.href}
@@ -88,11 +75,6 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
       >
         <item.icon className="w-4 h-4 stroke-[2px]" />
         {item.label}
-        {showBadge && (
-          <span className="ml-auto min-w-[20px] h-[20px] bg-foreground text-background text-[10px] font-bold rounded-full flex items-center justify-center px-1.5">
-            {newCount > 9 ? "9+" : newCount}
-          </span>
-        )}
       </PrefetchLink>
     );
   };

@@ -10,7 +10,7 @@ import { DoodleStar, DoodleBook, DoodleLightbulb, DoodleRocket, DoodleHeart, Doo
 import { FloatingDoodles } from "@/components/common/FloatingDoodles";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRoleRedirect } from "@/hooks/useRoleRedirect";
-import { ArrowRight, GraduationCap, FileText, Users, BookOpen, Bell, Library, Award, Calendar, Puzzle, Repeat, Newspaper, LogIn, UserCheck, Map, Zap, CheckCircle, Plus, Minus, Briefcase } from "lucide-react";
+import { ArrowRight, FileText, Users, BookOpen, Bell, Library, Calendar, Puzzle, Repeat, Newspaper, LogIn, UserCheck, Map, Zap, CheckCircle, Plus, Minus, Briefcase } from "lucide-react";
 const Index = () => {
   const [authOpen, setAuthOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -49,9 +49,6 @@ const Index = () => {
     return null;
   }
   const trustItems = [{
-    icon: GraduationCap,
-    label: "India-only Scholarships"
-  }, {
     icon: FileText,
     label: "Student-shared Study Materials"
   }, {
@@ -69,17 +66,17 @@ const Index = () => {
     title: "Study Materials",
     description: "Find and download notes, PDFs, and resources shared by students."
   }, {
-    icon: Award,
-    title: "Scholarships (India-Only)",
-    description: "Get scholarship updates personalized by your state and course."
-  }, {
     icon: Calendar,
     title: "Events",
     description: "Discover campus events, workshops, and hackathons."
   }, {
     icon: Puzzle,
-    title: "Projects & Task Plaza",
+    title: "Projects Partner",
     description: "Collaborate on real projects or find short tasks."
+  }, {
+    icon: Briefcase,
+    title: "Task Plaza",
+    description: "Connect with students, take up tasks, earn, and build projects together."
   }, {
     icon: Repeat,
     title: "Book Exchange",
@@ -87,7 +84,7 @@ const Index = () => {
   }, {
     icon: Newspaper,
     title: "Campus News",
-    description: "Stay updated with scholarships, jobs, and student news."
+    description: "Stay updated with jobs, and student news."
   }];
   const steps = [{
     icon: LogIn,
@@ -111,9 +108,6 @@ const Index = () => {
     q: "Is UniVoid free?",
     a: "Yes, UniVoid is completely free for students."
   }, {
-    q: "Are scholarships verified?",
-    a: "Scholarships are sourced from trusted portals, but verify on official sites."
-  }, {
     q: "Can I upload my own study material?",
     a: "Yes. Upload notes to help others and earn recognition."
   }, {
@@ -121,7 +115,7 @@ const Index = () => {
     a: "List books and connect directly with students near you."
   }, {
     q: "Will I get notifications?",
-    a: "Yes, for scholarships, events, and tasks relevant to you."
+    a: "Yes, for events and tasks relevant to you."
   }, {
     q: "Is profile completion mandatory?",
     a: "Yes. It helps personalize content for you."
@@ -176,7 +170,7 @@ const Index = () => {
               <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-3xl mx-auto leading-relaxed" style={{
               transform: `translateY(${scrollY * 0.05}px)`
             }}>
-                Study materials, scholarships, events, projects, tasks, and book exchange — personalized for Indian students.
+                Study materials, events, projects, tasks, and book exchange — personalized for Indian students.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button size="lg" onClick={() => setAuthOpen(true)} className="btn-sketch btn-sketch-primary font-semibold text-base h-14 px-8">

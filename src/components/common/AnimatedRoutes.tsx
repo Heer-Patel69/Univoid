@@ -42,16 +42,12 @@ const TaskDetail = lazy(() => import("@/pages/TaskDetail"));
 const CreateTask = lazy(() => import("@/pages/CreateTask"));
 const EventCheckIn = lazy(() => import("@/pages/EventCheckIn"));
 const Settings = lazy(() => import("@/pages/Settings"));
-const Scholarships = lazy(() => import("@/pages/Scholarships"));
-const ScholarshipDetail = lazy(() => import("@/pages/ScholarshipDetail"));
-
 // Preload critical pages after initial render
 const preloadCriticalPages = () => {
   // Preload most commonly visited pages
   import("@/pages/Dashboard");
   import("@/pages/Materials");
   import("@/pages/Events");
-  import("@/pages/Scholarships");
 };
 
 // Minimal loading - null for instant feel
@@ -96,12 +92,6 @@ export const AnimatedRoutes = () => {
         } />
         <Route path="/events/:eventId" element={
           <Suspense fallback={<MinimalLoader />}><EventDetail /></Suspense>
-        } />
-        <Route path="/scholarships" element={
-          <Suspense fallback={<MinimalLoader />}><Scholarships /></Suspense>
-        } />
-        <Route path="/scholarships/:scholarshipId" element={
-          <Suspense fallback={<MinimalLoader />}><ScholarshipDetail /></Suspense>
         } />
         <Route path="/projects" element={
           <Suspense fallback={<MinimalLoader />}><Projects /></Suspense>
