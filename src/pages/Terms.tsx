@@ -265,8 +265,8 @@ const Terms = () => {
               </div>
               <p className="text-muted-foreground leading-relaxed">
                 For any questions about these terms, please contact us at:{" "}
-                <a href="mailto:support@univoid.in" className="text-primary hover:underline font-medium">
-                  support@univoid.in
+                <a href="mailto:univoid35@gmail.com" className="text-primary hover:underline font-medium">
+                  univoid35@gmail.com
                 </a>
               </p>
             </section>

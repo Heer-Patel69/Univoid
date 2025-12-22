@@ -47,8 +47,8 @@ const PrivacyPolicy = () => {
               </p>
               <p className="text-muted-foreground leading-relaxed">
                 For any privacy-related queries, you can reach us at:{" "}
-                <a href="mailto:support@univoid.in" className="text-primary hover:underline font-medium">
-                  ​univoid35@gmail.com
+                <a href="mailto:univoid35@gmail.com" className="text-primary hover:underline font-medium">
+                  univoid35@gmail.com
                 </a>
               </p>
             </section>

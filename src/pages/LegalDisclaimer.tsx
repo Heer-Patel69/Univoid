@@ -291,7 +291,7 @@ const LegalDisclaimer = () => {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-primary mt-1">•</span>
-                    <span>Contact us at <a href="mailto:support@univoid.in" className="text-primary hover:underline">support@univoid.in</a> with details of your complaint</span>
+                    <span>Contact us at <a href="mailto:univoid35@gmail.com" className="text-primary hover:underline">univoid35@gmail.com</a> with details of your complaint</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-primary mt-1">•</span>
@@ -359,8 +359,8 @@ const LegalDisclaimer = () => {
                 </p>
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Mail className="w-4 h-4 text-primary" />
-                  <a href="mailto:support@univoid.in" className="text-primary hover:underline font-medium">
-                    support@univoid.in
+                  <a href="mailto:univoid35@gmail.com" className="text-primary hover:underline font-medium">
+                    univoid35@gmail.com
                   </a>
                 </div>
                 <p className="text-sm text-muted-foreground mt-4">
