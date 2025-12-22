@@ -132,8 +132,11 @@ const BookDetail = () => {
                 <Badge variant="secondary">{book.condition}</Badge>
               )}
               <Badge variant="outline">{getDisplayCategory(book.category)}</Badge>
-              {book.is_sold && (
-                <Badge variant="destructive">Sold</Badge>
+              {(book.is_sold || (book as any).book_status === 'sold') && (
+                <Badge variant="destructive">Sold Out</Badge>
+              )}
+              {(book as any).book_status === 'rented' && (
+                <Badge className="bg-yellow-500">Rented</Badge>
               )}
             </div>
 
@@ -164,7 +167,8 @@ const BookDetail = () => {
               </CardContent>
             </Card>
 
-            {!book.is_sold && (
+            {/* Hide contact button for sold/rented books */}
+            {!book.is_sold && (book as any).book_status !== 'sold' && (book as any).book_status !== 'rented' ? (
               <Button
                 className="w-full bg-green-600 hover:bg-green-700"
                 size="lg"
@@ -178,6 +182,15 @@ const BookDetail = () => {
                 )}
                 {user ? "Contact on WhatsApp" : "Login to Contact Seller"}
               </Button>
+            ) : (
+              <div className="p-4 bg-secondary rounded-lg text-center">
+                <Badge variant="destructive" className="text-sm px-4 py-1.5">
+                  {(book as any).book_status === 'rented' ? 'Currently Rented' : 'Sold Out'}
+                </Badge>
+                <p className="text-sm text-muted-foreground mt-2">
+                  This book is no longer available
+                </p>
+              </div>
             )}
           </div>
         </div>
