@@ -92,7 +92,7 @@ const Index = () => {
     },
     { 
       icon: Award, 
-      title: "Scholarships (India-Only)", 
+      title: "Task Plaza", 
       description: "Get scholarship updates personalized by your state and course." 
     },
     { 
