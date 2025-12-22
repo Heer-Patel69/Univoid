@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const ADMIN_EMAIL = "univoid35@gmail.com";
+const SENDER_EMAIL = "UniVoid <no-reply@univoid.in>";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,7 +11,16 @@ const corsHeaders = {
 interface ContactEmailPayload {
   name: string;
   email: string;
+  subject?: string;
   message: string;
+}
+
+// Basic input sanitization
+function sanitizeInput(input: string, maxLength: number = 500): string {
+  return input
+    .trim()
+    .slice(0, maxLength)
+    .replace(/[<>]/g, ""); // Remove potential HTML tags
 }
 
 serve(async (req) => {
@@ -20,15 +30,40 @@ serve(async (req) => {
   }
 
   try {
-    const { name, email, message }: ContactEmailPayload = await req.json();
+    const payload: ContactEmailPayload = await req.json();
+    
+    // Validate required fields
+    if (!payload.name || !payload.email || !payload.message) {
+      console.error("Missing required fields");
+      return new Response(
+        JSON.stringify({ error: "Missing required fields" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Sanitize inputs
+    const name = sanitizeInput(payload.name, 100);
+    const email = sanitizeInput(payload.email, 255);
+    const subject = sanitizeInput(payload.subject || "General Inquiry", 200);
+    const message = sanitizeInput(payload.message, 2000);
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      console.error("Invalid email format:", email);
+      return new Response(
+        JSON.stringify({ error: "Invalid email format" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
     if (!RESEND_API_KEY) {
-      console.log("No RESEND_API_KEY configured - skipping email");
+      console.error("RESEND_API_KEY not configured");
       return new Response(
-        JSON.stringify({ success: true, message: "Email skipped - no API key" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Email service not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -46,7 +81,7 @@ serve(async (req) => {
             .field { margin-bottom: 15px; }
             .label { font-weight: bold; color: #666; }
             .value { margin-top: 5px; }
-            .message { background: white; padding: 15px; border-radius: 4px; border-left: 4px solid #4F46E5; }
+            .message { background: white; padding: 15px; border-radius: 4px; border-left: 4px solid #4F46E5; white-space: pre-wrap; }
             .footer { text-align: center; padding: 15px; color: #666; font-size: 12px; }
           </style>
         </head>
@@ -65,6 +100,10 @@ serve(async (req) => {
                 <div class="value"><a href="mailto:${email}">${email}</a></div>
               </div>
               <div class="field">
+                <div class="label">Subject:</div>
+                <div class="value">${subject}</div>
+              </div>
+              <div class="field">
                 <div class="label">Received at:</div>
                 <div class="value">${timestamp}</div>
               </div>
@@ -81,6 +120,8 @@ serve(async (req) => {
       </html>
     `;
 
+    console.log("Sending email to:", ADMIN_EMAIL);
+
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -88,9 +129,9 @@ serve(async (req) => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "UniVoid <onboarding@resend.dev>",
+        from: SENDER_EMAIL,
         to: [ADMIN_EMAIL],
-        subject: `New Contact Message from ${name}`,
+        subject: `[UniVoid Contact] ${subject} - from ${name}`,
         html: emailHtml,
         reply_to: email,
       }),
@@ -111,7 +152,7 @@ serve(async (req) => {
     );
   } catch (error: unknown) {
     console.error("Error in send-contact-email:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorMessage = error instanceof Error ? error.message : "Failed to send email";
     return new Response(
       JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
