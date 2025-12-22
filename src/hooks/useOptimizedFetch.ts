@@ -35,19 +35,44 @@ export function useOptimizedFetch<T>({
   cacheKey,
   cacheTtl = DEFAULT_CACHE_TTL,
 }: UseOptimizedFetchOptions<T>): UseOptimizedFetchResult<T> {
-  const [data, setData] = useState<T>(defaultValue);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const isMounted = useRef(true);
-  const abortControllerRef = useRef<AbortController | null>(null);
-
-  const fetchData = useCallback(async () => {
-    // Check cache first
+  const [data, setData] = useState<T>(() => {
+    // Initialize from cache if available
     if (cacheKey) {
       const cached = cache.get(cacheKey);
       if (cached && Date.now() - cached.timestamp < cacheTtl) {
-        setData(cached.data as T);
-        setIsLoading(false);
+        return cached.data as T;
+      }
+    }
+    return defaultValue;
+  });
+  const [isLoading, setIsLoading] = useState(() => {
+    // Don't show loading if we have valid cache
+    if (cacheKey) {
+      const cached = cache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < cacheTtl) {
+        return false;
+      }
+    }
+    return true;
+  });
+  const [error, setError] = useState<Error | null>(null);
+  const isMounted = useRef(true);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const hasFetchedRef = useRef(false);
+
+  // Store fetchFn in ref to avoid dependency issues
+  const fetchFnRef = useRef(fetchFn);
+  fetchFnRef.current = fetchFn;
+
+  const fetchData = useCallback(async (skipCache = false) => {
+    // Check cache first (unless skipping)
+    if (cacheKey && !skipCache) {
+      const cached = cache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < cacheTtl) {
+        if (isMounted.current) {
+          setData(cached.data as T);
+          setIsLoading(false);
+        }
         return;
       }
     }
@@ -58,13 +83,17 @@ export function useOptimizedFetch<T>({
     }
     abortControllerRef.current = new AbortController();
 
+    if (isMounted.current) {
+      setIsLoading(true);
+    }
+
     try {
       // Create timeout promise
       const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => reject(new Error('Request timeout')), timeoutMs);
       });
 
-      const result = await Promise.race([fetchFn(), timeoutPromise]);
+      const result = await Promise.race([fetchFnRef.current(), timeoutPromise]);
 
       if (isMounted.current) {
         setData(result);
@@ -78,7 +107,6 @@ export function useOptimizedFetch<T>({
     } catch (err) {
       if (isMounted.current) {
         setError(err as Error);
-        // Keep default value on error - don't leave in loading state
         console.error('Fetch error:', err);
       }
     } finally {
@@ -86,19 +114,22 @@ export function useOptimizedFetch<T>({
         setIsLoading(false);
       }
     }
-  }, [fetchFn, timeoutMs, cacheKey, cacheTtl]);
+  }, [cacheKey, cacheTtl, timeoutMs]);
 
   useEffect(() => {
     isMounted.current = true;
+    hasFetchedRef.current = false;
+
+    // Always fetch on mount
+    fetchData();
+    hasFetchedRef.current = true;
 
     // Safety timeout - always stop loading after timeout + buffer
     const safetyTimeout = setTimeout(() => {
-      if (isMounted.current && isLoading) {
+      if (isMounted.current) {
         setIsLoading(false);
       }
     }, timeoutMs + 2000);
-
-    fetchData();
 
     return () => {
       isMounted.current = false;
@@ -107,15 +138,14 @@ export function useOptimizedFetch<T>({
         abortControllerRef.current.abort();
       }
     };
-  }, [fetchData, timeoutMs, isLoading]);
+  }, [fetchData, timeoutMs]);
 
   const refetch = useCallback(async () => {
     // Clear cache on refetch
     if (cacheKey) {
       cache.delete(cacheKey);
     }
-    setIsLoading(true);
-    await fetchData();
+    await fetchData(true);
   }, [fetchData, cacheKey]);
 
   return { data, isLoading, error, refetch };
