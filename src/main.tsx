@@ -1,6 +1,10 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import { setupGlobalErrorHandler } from "@/services/errorLoggingService";
+
+// Set up global error handler for uncaught errors
+setupGlobalErrorHandler();
 
 // Register service worker for caching and offline support
 const registerServiceWorker = async () => {
@@ -28,10 +32,8 @@ const registerServiceWorker = async () => {
           });
         }
       });
-
-      console.log('[App] Service worker registered');
-    } catch (error) {
-      console.error('[App] Service worker registration failed:', error);
+    } catch {
+      // Service worker registration failed silently
     }
   }
 };
