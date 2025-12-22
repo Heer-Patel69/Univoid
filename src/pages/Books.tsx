@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { useNavigate, Link, useOutletContext } from "react-router-dom";
 import { BottomNav } from "@/components/layout/BottomNav";
 import ReportButton from "@/components/reports/ReportButton";
@@ -11,12 +11,13 @@ import { Search, BookOpen, User, ArrowRight, Images, Filter, ArrowUpDown } from 
 import { useAuth } from "@/contexts/AuthContext";
 import { getBooksPaginated } from "@/services/paginatedService";
 import { SectionLoader, EmptyState, LoadMoreButton } from "@/components/common/SectionLoader";
-import { useOptimizedFetch, CACHE_TTL } from "@/hooks/useOptimizedFetch";
+import { useOptimizedFetch, CACHE_TTL, clearFetchCache } from "@/hooks/useOptimizedFetch";
 import { useSkeletonSync } from "@/hooks/useSkeleton";
 import { Book } from "@/types/database";
 import { toast } from "sonner";
 import { getDisplayCategory } from "@/lib/bookCategorizer";
 import { getListingType } from "@/lib/whatsappContact";
+import { supabase } from "@/integrations/supabase/client";
 
 const LISTING_LABELS: Record<string, string> = {
   sell: 'For Sale',
@@ -87,6 +88,47 @@ const Books = () => {
 
   // Use skeleton sync for consistent loading behavior with minimum display time
   const isLoading = useSkeletonSync(rawLoading, { minDisplayTime: 400 });
+
+  // Real-time subscription for instant updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('books-page-realtime')
+      .on(
+        'postgres_changes' as any,
+        { event: '*', schema: 'public', table: 'books' },
+        (payload: any) => {
+          const newData = payload.new as Book;
+          
+          if (payload.eventType === 'INSERT' && newData?.status === 'approved') {
+            setAllBooks(prev => {
+              if (prev.some(b => b.id === newData.id)) return prev;
+              return [newData, ...prev];
+            });
+            clearFetchCache('books-page-0');
+          } else if (payload.eventType === 'UPDATE') {
+            if (newData?.status === 'approved' && !newData.is_sold) {
+              setAllBooks(prev => {
+                if (prev.some(b => b.id === newData.id)) {
+                  return prev.map(b => b.id === newData.id ? { ...b, ...newData } : b);
+                }
+                return [newData, ...prev];
+              });
+            } else {
+              setAllBooks(prev => prev.filter(b => b.id !== newData.id));
+            }
+            clearFetchCache('books-page-0');
+          } else if (payload.eventType === 'DELETE') {
+            setAllBooks(prev => prev.filter(b => b.id !== payload.old?.id));
+            clearFetchCache('books-page-0');
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const loadMore = async () => {
     if (loadingMore || !hasMore) return;

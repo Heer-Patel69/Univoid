@@ -11,6 +11,7 @@ import { getProjects, Project } from "@/services/projectsService";
 import { Helmet } from "react-helmet";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useSkeletonSync } from "@/hooks/useSkeleton";
+import { supabase } from "@/integrations/supabase/client";
 
 interface LayoutContext {
   onAuthClick?: () => void;
@@ -31,6 +32,35 @@ const Projects = () => {
 
   useEffect(() => {
     loadProjects();
+
+    // Real-time subscription for instant updates
+    const channel = supabase
+      .channel('projects-page-realtime')
+      .on(
+        'postgres_changes' as any,
+        { event: '*', schema: 'public', table: 'projects' },
+        (payload: any) => {
+          const newData = payload.new as Project;
+          
+          if (payload.eventType === 'INSERT' && newData?.is_open) {
+            setProjects(prev => {
+              if (prev.some(p => p.id === newData.id)) return prev;
+              return [newData, ...prev];
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            setProjects(prev => prev.map(p => 
+              p.id === newData.id ? { ...p, ...newData } : p
+            ));
+          } else if (payload.eventType === 'DELETE') {
+            setProjects(prev => prev.filter(p => p.id !== payload.old?.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [eventId]);
 
   const loadProjects = async () => {
