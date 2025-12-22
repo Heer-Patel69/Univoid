@@ -135,135 +135,172 @@ export async function uploadMaterial(
   userId: string,
   options?: UploadOptions
 ): Promise<{ id: string | null; error: Error | null }> {
-  // Validate file
-  const validationError = validateMaterialFile(file);
-  if (validationError) {
-    return { id: null, error: new Error(validationError) };
-  }
-
-  // Check for blocked video formats
-  const fileExt = file.name.split('.').pop()?.toLowerCase() || '';
-  if (BLOCKED_VIDEO_FORMATS.includes(fileExt)) {
-    return { id: null, error: new Error('Video files are not allowed') };
-  }
-
-  // Check file size (100MB limit)
-  if (file.size > MAX_FILE_SIZE_BYTES) {
-    return { id: null, error: new Error('File size must be less than 100MB') };
-  }
-
-  options?.onProgress?.(5);
-
-  // Compress file if possible (images)
-  let uploadFile = file;
   try {
-    const compressionResult = await compressFile(file, (p) => {
-      options?.onCompressionProgress?.(p.stage, p.progress);
-    });
-    uploadFile = compressionResult.file;
-  } catch (error) {
-    materialsLogger.warn('File compression failed, using original', error, { fileName: file.name });
-  }
-
-  options?.onProgress?.(15);
-
-  // Upload file to storage
-  const filePath = `${userId}/${Date.now()}-${uploadFile.name}`;
-  const { error: uploadError } = await supabase.storage
-    .from('materials')
-    .upload(filePath, uploadFile, {
-      cacheControl: '3600',
-      upsert: false,
-    });
-
-  options?.onProgress?.(60);
-
-  if (uploadError) {
-    return { id: null, error: uploadError as Error };
-  }
-
-  // Server-side PDF compression via edge function
-  let finalFilePath = filePath;
-  if (fileExt === 'pdf') {
-    options?.onCompressionProgress?.('Compressing PDF on server...', 50);
-    try {
-      const { data: compressionResult, error: compressionError } = await supabase.functions.invoke('compress-pdf', {
-        body: { filePath, bucket: 'materials' },
-      });
-      
-      if (!compressionError && compressionResult?.success) {
-        finalFilePath = compressionResult.newFilePath;
-      }
-    } catch (error) {
-      materialsLogger.warn('Server-side PDF compression failed', error, { filePath });
+    // Validate file
+    const validationError = validateMaterialFile(file);
+    if (validationError) {
+      return { id: null, error: new Error(validationError) };
     }
+
+    // Check for blocked video formats
+    const fileExt = file.name.split('.').pop()?.toLowerCase() || '';
+    if (BLOCKED_VIDEO_FORMATS.includes(fileExt)) {
+      return { id: null, error: new Error('Video files are not allowed') };
+    }
+
+    // Check file size (100MB limit)
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      return { id: null, error: new Error('File size must be less than 100MB') };
+    }
+
+    options?.onProgress?.(5);
+
+    // Compress file if possible (images)
+    let uploadFile = file;
+    try {
+      const compressionResult = await compressFile(file, (p) => {
+        options?.onCompressionProgress?.(p.stage, p.progress);
+      });
+      uploadFile = compressionResult.file;
+    } catch (error) {
+      materialsLogger.warn('File compression failed, using original', error, { fileName: file.name });
+    }
+
+    options?.onProgress?.(15);
+
+    // Upload file to storage
+    const filePath = `${userId}/${Date.now()}-${uploadFile.name}`;
+    const { error: uploadError } = await supabase.storage
+      .from('materials')
+      .upload(filePath, uploadFile, {
+        cacheControl: '3600',
+        upsert: false,
+      });
+
+    options?.onProgress?.(60);
+
+    if (uploadError) {
+      console.error('Storage upload error:', uploadError);
+      // Provide user-friendly message for common errors
+      if (uploadError.message?.includes('exceeded') || uploadError.message?.includes('size')) {
+        return { id: null, error: new Error('File too large for upload. Please try a smaller file.') };
+      }
+      if (uploadError.message?.includes('network') || uploadError.message?.includes('fetch')) {
+        return { id: null, error: new Error('Network error during upload. Please check your connection and try again.') };
+      }
+      return { id: null, error: new Error(`Upload failed: ${uploadError.message}`) };
+    }
+
+    // Server-side PDF compression via edge function (non-blocking, with timeout)
+    let finalFilePath = filePath;
+    if (fileExt === 'pdf') {
+      options?.onCompressionProgress?.('Compressing PDF on server...', 50);
+      try {
+        const compressionPromise = supabase.functions.invoke('compress-pdf', {
+          body: { filePath, bucket: 'materials' },
+        });
+        
+        // 30 second timeout for PDF compression
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('PDF compression timeout')), 30000)
+        );
+        
+        const result = await Promise.race([compressionPromise, timeoutPromise]) as { data: any; error: any };
+        
+        if (!result.error && result.data?.success) {
+          finalFilePath = result.data.newFilePath;
+        }
+      } catch (error) {
+        // PDF compression failure is non-critical, continue with original file
+        materialsLogger.warn('Server-side PDF compression failed or timed out', error, { filePath });
+      }
+    }
+
+    options?.onProgress?.(70);
+
+    // Get file URL (signed URL for private bucket)
+    const { data: urlData, error: urlError } = await supabase.storage
+      .from('materials')
+      .createSignedUrl(finalFilePath, 60 * 60 * 24 * 365); // 1 year
+
+    if (urlError) {
+      console.error('Signed URL error:', urlError);
+      return { id: null, error: new Error('Failed to generate file URL. Please try again.') };
+    }
+
+    const fileUrl = urlData?.signedUrl || '';
+
+    // Determine preview URL based on file type
+    const isImageFile = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(fileExt.toLowerCase());
+    const previewFileUrl = isImageFile ? fileUrl : null;
+    const previewPageLimit = isImageFile ? 1 : 5;
+
+    options?.onProgress?.(80);
+
+    // Create material record - pending review
+    const { data, error } = await supabase
+      .from('materials')
+      .insert({
+        title,
+        description,
+        file_url: fileUrl,
+        file_type: fileExt,
+        file_size: uploadFile.size,
+        created_by: userId,
+        status: 'pending', // Requires admin approval
+        course: options?.course || null,
+        branch: options?.branch || null,
+        subject: options?.subject || null,
+        language: options?.language || null,
+        college: options?.college || null,
+        preview_file_url: previewFileUrl,
+        preview_page_limit: previewPageLimit,
+        preview_ready: isImageFile, // Images are ready immediately
+      })
+      .select('id')
+      .single();
+
+    options?.onProgress?.(100);
+
+    if (error) {
+      console.error('Database insert error:', error);
+      return { id: null, error: new Error('Failed to save material. Please try again.') };
+    }
+
+    // Get uploader name for notification
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', userId)
+      .maybeSingle();
+
+    // Notify admins about new pending content (async, don't await)
+    supabase.functions.invoke('notify-pending-review', {
+      body: {
+        materialId: data.id,
+        title,
+        uploaderName: profile?.full_name || 'A user',
+        contentType: 'material',
+      },
+    }).catch((err) => console.error('Failed to send notification:', err));
+
+    return { id: data.id, error: null };
+  } catch (error) {
+    // Catch-all for any unexpected errors (network issues, etc.)
+    console.error('Unexpected upload error:', error);
+    
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    // Handle common network errors with friendly messages
+    if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
+      return { id: null, error: new Error('Network error. Please check your internet connection and try again.') };
+    }
+    if (errorMessage.includes('timeout') || errorMessage.includes('Timeout')) {
+      return { id: null, error: new Error('Upload timed out. Please try again with a stable connection.') };
+    }
+    
+    return { id: null, error: new Error(`Upload failed: ${errorMessage}`) };
   }
-
-  options?.onProgress?.(70);
-
-  // Get file URL (signed URL for private bucket)
-  const { data: urlData } = await supabase.storage
-    .from('materials')
-    .createSignedUrl(finalFilePath, 60 * 60 * 24 * 365); // 1 year
-
-  const fileUrl = urlData?.signedUrl || '';
-
-  // Determine preview URL based on file type
-  // For images: use the same URL as file_url (no conversion needed)
-  // For PDFs/docs: would need separate preview generation (future enhancement)
-  const isImageFile = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(fileExt.toLowerCase());
-  const previewFileUrl = isImageFile ? fileUrl : null;
-  const previewPageLimit = isImageFile ? 1 : 5;
-
-  options?.onProgress?.(80);
-
-  // Create material record - pending review
-  const { data, error } = await supabase
-    .from('materials')
-    .insert({
-      title,
-      description,
-      file_url: fileUrl,
-      file_type: fileExt,
-      file_size: uploadFile.size,
-      created_by: userId,
-      status: 'pending', // Requires admin approval
-      course: options?.course || null,
-      branch: options?.branch || null,
-      subject: options?.subject || null,
-      language: options?.language || null,
-      college: options?.college || null,
-      preview_file_url: previewFileUrl,
-      preview_page_limit: previewPageLimit,
-      preview_ready: isImageFile, // Images are ready immediately
-    })
-    .select('id')
-    .single();
-
-  options?.onProgress?.(100);
-
-  if (error) {
-    return { id: null, error: error as Error };
-  }
-
-  // Get uploader name for notification
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name')
-    .eq('id', userId)
-    .single();
-
-  // Notify admins about new pending content (async, don't await)
-  supabase.functions.invoke('notify-pending-review', {
-    body: {
-      materialId: data.id,
-      title,
-      uploaderName: profile?.full_name || 'A user',
-      contentType: 'material',
-    },
-  }).catch((err) => console.error('Failed to send notification:', err));
-
-  return { id: data.id, error: null };
 }
 
 export async function getMyMaterials(userId: string): Promise<Material[]> {
