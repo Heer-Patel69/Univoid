@@ -93,7 +93,7 @@ const Index = () => {
     { 
       icon: Award, 
       title: "Task Plaza", 
-      description: "Get scholarship updates personalized by your state and course." 
+      description: "Connect with students, take up tasks, earn, and build projects together." 
     },
     { 
       icon: Calendar, 
