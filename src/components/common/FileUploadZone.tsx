@@ -15,6 +15,7 @@ interface FileUploadZoneProps {
   uploadProgress?: number;
   label?: string;
   hint?: string;
+  uploadStage?: string; // Optional stage description like "Compressing..." or "Uploading..."
 }
 
 export function FileUploadZone({
@@ -28,6 +29,7 @@ export function FileUploadZone({
   uploadProgress = 0,
   label = "Upload File",
   hint,
+  uploadStage,
 }: FileUploadZoneProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -139,10 +141,26 @@ export function FileUploadZone({
         {isUploading ? (
           <div className="space-y-3">
             <Loader2 className="w-8 h-8 text-primary mx-auto animate-spin" />
-            <p className="text-sm text-foreground font-medium">Uploading...</p>
+            <div className="space-y-1">
+              <p className="text-sm text-foreground font-medium">
+                {uploadStage || (uploadProgress < 15 ? "Preparing..." : uploadProgress < 70 ? "Uploading..." : "Processing...")}
+              </p>
+              {file && (
+                <p className="text-xs text-muted-foreground truncate max-w-[200px] mx-auto">
+                  {file.name}
+                </p>
+              )}
+            </div>
             <div className="max-w-xs mx-auto">
               <Progress value={uploadProgress} className="h-2" />
-              <p className="text-xs text-muted-foreground mt-1">{Math.round(uploadProgress)}%</p>
+              <div className="flex justify-between items-center mt-1">
+                <p className="text-xs text-muted-foreground">{Math.round(uploadProgress)}%</p>
+                {file && uploadProgress > 0 && uploadProgress < 100 && (
+                  <p className="text-xs text-muted-foreground">
+                    {((file.size / 1024 / 1024) * (uploadProgress / 100)).toFixed(1)} / {(file.size / 1024 / 1024).toFixed(1)} MB
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         ) : file ? (
