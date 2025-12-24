@@ -73,10 +73,49 @@ const Materials = () => {
   const [filters, setFilters] = useState<MaterialFiltersState>(initialFilters);
   const [previewMaterial, setPreviewMaterial] = useState<Material | null>(null);
   const [page, setPage] = useState(0);
-  const [allMaterials, setAllMaterials] = useState<Material[]>([]);
-  const [hasMore, setHasMore] = useState(true);
+  // SessionStorage cache key and TTL (5 minutes)
+  const MATERIALS_CACHE_KEY = 'materials_cache';
+  const CACHE_TTL = 5 * 60 * 1000;
+
+  // Helper to get cached materials from sessionStorage
+  const getSessionCache = useCallback((): { data: Material[]; hasMore: boolean } | null => {
+    try {
+      const stored = sessionStorage.getItem(MATERIALS_CACHE_KEY);
+      if (!stored) return null;
+      const { data, hasMore, timestamp } = JSON.parse(stored);
+      if (Date.now() - timestamp < CACHE_TTL) {
+        return { data, hasMore };
+      }
+      sessionStorage.removeItem(MATERIALS_CACHE_KEY);
+    } catch {
+      // Ignore storage errors
+    }
+    return null;
+  }, []);
+
+  // Helper to set sessionStorage cache
+  const setSessionCache = useCallback((data: Material[], hasMore: boolean) => {
+    try {
+      sessionStorage.setItem(MATERIALS_CACHE_KEY, JSON.stringify({ data, hasMore, timestamp: Date.now() }));
+    } catch {
+      // Ignore storage errors (quota exceeded, etc.)
+    }
+  }, []);
+
+  // Initialize state from sessionStorage if available
+  const [allMaterials, setAllMaterials] = useState<Material[]>(() => {
+    const cached = getSessionCache();
+    return cached?.data || [];
+  });
+  const [hasMore, setHasMore] = useState(() => {
+    const cached = getSessionCache();
+    return cached?.hasMore ?? true;
+  });
   const [loadingMore, setLoadingMore] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(() => {
+    const cached = getSessionCache();
+    return !cached; // Don't show loading if we have cached data
+  });
   const [isFiltering, setIsFiltering] = useState(false);
   const [likingIds, setLikingIds] = useState<Set<string>>(new Set());
 
@@ -88,8 +127,10 @@ const Materials = () => {
     setAllMaterials(result.data);
     setHasMore(result.hasMore);
     setIsLoading(false);
+    // Cache to sessionStorage
+    setSessionCache(result.data, result.hasMore);
     return result.data;
-  }, [batchSize]);
+  }, [batchSize, setSessionCache]);
 
   // Initial fetch + real-time subscription
   useEffect(() => {
@@ -184,7 +225,15 @@ const Materials = () => {
         college: filters.college || undefined,
       };
       const result = await getMaterialsPaginated(nextPage, batchSize, apiFilters);
-      setAllMaterials(prev => [...prev, ...result.data]);
+      setAllMaterials(prev => {
+        const combined = [...prev, ...result.data];
+        // Update sessionStorage with combined data (only for unfiltered)
+        const hasActiveFilters = filters.search || filters.course || filters.branch || filters.subject || filters.language || filters.college;
+        if (!hasActiveFilters) {
+          setSessionCache(combined, result.hasMore);
+        }
+        return combined;
+      });
       setHasMore(result.hasMore);
       setPage(nextPage);
     } catch (error) {
@@ -192,7 +241,7 @@ const Materials = () => {
     } finally {
       setLoadingMore(false);
     }
-  }, [loadingMore, hasMore, page, filters, batchSize]);
+  }, [loadingMore, hasMore, page, filters, batchSize, setSessionCache]);
 
   const handleDownload = useCallback(async (material: Material) => {
     if (!user) {
