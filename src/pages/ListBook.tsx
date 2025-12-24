@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,18 +7,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/contexts/AuthContext";
 import { createBook, canListBook } from "@/services/booksService";
 import { toast } from "sonner";
-import { ArrowLeft, BookOpen, Loader2, CheckCircle, DollarSign, Repeat2, Gift, Clock, Sparkles, AlertTriangle } from "lucide-react";
+import { ArrowLeft, BookOpen, Loader2, CheckCircle, DollarSign, Repeat2, Gift, Clock, AlertTriangle } from "lucide-react";
 import BookImageUpload from "@/components/books/BookImageUpload";
 import BookScanner from "@/components/books/BookScanner";
 import { CompressedImage } from "@/lib/imageCompression";
 import { BookListingType } from "@/types/database";
-import { useBookCategorization } from "@/hooks/useBookCategorization";
-import { useDebounce } from "@/hooks/useDebounce";
 
 const MAX_BOOK_IMAGES = 1;
 
@@ -50,73 +47,31 @@ const ListBook = () => {
   const [images, setImages] = useState<CompressedImage[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [categoryManuallySet, setCategoryManuallySet] = useState(false);
+  const [categoryError, setCategoryError] = useState(false);
 
-  const { isDetecting, detectedCategory, detectCategory, clearDetection } = useBookCategorization();
-  const debouncedTitle = useDebounce(title, 800);
-
-  // Auto-detect category when title changes
-  useEffect(() => {
-    if (debouncedTitle.length >= 3 && !categoryManuallySet) {
-      // Get first image as base64 if available
-      const getImageBase64 = async () => {
-        if (images.length > 0 && images[0].file) {
-          return new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.readAsDataURL(images[0].file);
-          });
-        }
-        return undefined;
-      };
-
-      getImageBase64().then(imageBase64 => {
-        detectCategory(debouncedTitle, imageBase64);
-      });
-    }
-  }, [debouncedTitle, detectCategory, categoryManuallySet, images]);
-
-  // Apply detected category
-  useEffect(() => {
-    if (detectedCategory && !categoryManuallySet) {
-      setCategory(detectedCategory.category);
-    }
-  }, [detectedCategory, categoryManuallySet]);
-
-  // Handle manual category change
-  const handleCategoryChange = useCallback((value: string) => {
-    setCategory(value);
-    setCategoryManuallySet(true);
-  }, []);
-
-  // Handle book scanned from ISBN or cover scan
+  // Handle book scanned from ISBN or cover scan (title & author only, NO category)
   const handleBookScanned = (bookInfo: { title: string; author?: string }) => {
     setTitle(bookInfo.title);
     if (bookInfo.author) {
       setAuthor(bookInfo.author);
     }
-    setCategoryManuallySet(false); // Allow AI to detect category for scanned books
   };
 
-  // Handle AI detection from image upload
-  const handleBookDetected = useCallback((info: { title?: string; author?: string; category?: string }) => {
+  // Handle image detection (title & author only, NO category)
+  const handleBookDetected = useCallback((info: { title?: string; author?: string }) => {
     if (info.title && !title) {
       setTitle(info.title);
     }
     if (info.author && !author) {
       setAuthor(info.author);
     }
-    if (info.category && !categoryManuallySet) {
-      setCategory(info.category);
-    }
-    setCategoryManuallySet(false); // Allow AI category detection
-  }, [title, author, categoryManuallySet]);
+  }, [title, author]);
 
   // Check if user can list books
   const listingPermission = canListBook(profile?.mobile_number);
   
-  // Check if form is valid for submission
-  const isFormValid = title.trim().length > 0 && images.length > 0 && listingPermission.canList;
+  // Check if form is valid for submission - category is now REQUIRED
+  const isFormValid = title.trim().length > 0 && images.length > 0 && category !== '' && listingPermission.canList;
 
   // Show price field only for sell and rent
   const showPriceField = listingType === 'sell' || listingType === 'rent';
@@ -136,6 +91,13 @@ const ListBook = () => {
 
     if (images.length === 0) {
       toast.error("Please add at least one image");
+      return;
+    }
+
+    // Category is REQUIRED - no auto-detection
+    if (!category) {
+      toast.error("Please select a category");
+      setCategoryError(true);
       return;
     }
 
@@ -187,8 +149,7 @@ const ListBook = () => {
     setListingType("sell");
     setPrice("");
     setImages([]);
-    setCategoryManuallySet(false);
-    clearDetection();
+    setCategoryError(false);
   };
 
   if (isSuccess) {
@@ -317,25 +278,17 @@ const ListBook = () => {
                   />
                 </div>
 
-                {/* Category with AI Detection */}
+                {/* Category - Manual Selection Only */}
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="category">Category</Label>
-                    {isDetecting && (
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                        <span>Detecting...</span>
-                      </div>
-                    )}
-                    {detectedCategory && !isDetecting && !categoryManuallySet && (
-                      <Badge variant="secondary" className="text-xs gap-1">
-                        <Sparkles className="w-3 h-3" />
-                        AI Detected ({detectedCategory.confidence})
-                      </Badge>
-                    )}
-                  </div>
-                  <Select value={category} onValueChange={handleCategoryChange}>
-                    <SelectTrigger>
+                  <Label htmlFor="category">Category *</Label>
+                  <Select 
+                    value={category} 
+                    onValueChange={(value) => {
+                      setCategory(value);
+                      setCategoryError(false);
+                    }}
+                  >
+                    <SelectTrigger className={categoryError ? "border-destructive" : ""}>
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
@@ -346,9 +299,11 @@ const ListBook = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-muted-foreground">
-                    Category is auto-detected from title & cover image
-                  </p>
+                  {categoryError && (
+                    <p className="text-xs text-destructive">
+                      Please select a category
+                    </p>
+                  )}
                 </div>
 
                 <div className={showPriceField ? "grid grid-cols-2 gap-4" : ""}>
