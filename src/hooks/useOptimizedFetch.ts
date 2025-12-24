@@ -28,6 +28,30 @@ export const CACHE_TTL = {
 
 const DEFAULT_CACHE_TTL = CACHE_TTL.MEDIUM;
 
+// SessionStorage helpers for persistence across tab close/reopen
+function getSessionCache<T>(key: string, ttl: number): T | null {
+  try {
+    const stored = sessionStorage.getItem(`cache_${key}`);
+    if (!stored) return null;
+    const { data, timestamp } = JSON.parse(stored);
+    if (Date.now() - timestamp < ttl) {
+      return data as T;
+    }
+    sessionStorage.removeItem(`cache_${key}`);
+  } catch {
+    // Ignore storage errors
+  }
+  return null;
+}
+
+function setSessionCache<T>(key: string, data: T): void {
+  try {
+    sessionStorage.setItem(`cache_${key}`, JSON.stringify({ data, timestamp: Date.now() }));
+  } catch {
+    // Ignore storage errors (quota exceeded, etc.)
+  }
+}
+
 export function useOptimizedFetch<T>({
   fetchFn,
   defaultValue,
@@ -36,20 +60,32 @@ export function useOptimizedFetch<T>({
   cacheTtl = DEFAULT_CACHE_TTL,
 }: UseOptimizedFetchOptions<T>): UseOptimizedFetchResult<T> {
   const [data, setData] = useState<T>(() => {
-    // Initialize from cache if available
+    // Initialize from memory cache first, then sessionStorage fallback
     if (cacheKey) {
+      // Check memory cache
       const cached = cache.get(cacheKey);
       if (cached && Date.now() - cached.timestamp < cacheTtl) {
         return cached.data as T;
+      }
+      // Fallback to sessionStorage
+      const sessionCached = getSessionCache<T>(cacheKey, cacheTtl);
+      if (sessionCached) {
+        // Restore to memory cache
+        cache.set(cacheKey, { data: sessionCached, timestamp: Date.now() });
+        return sessionCached;
       }
     }
     return defaultValue;
   });
   const [isLoading, setIsLoading] = useState(() => {
-    // Don't show loading if we have valid cache
+    // Don't show loading if we have valid cache (memory or session)
     if (cacheKey) {
       const cached = cache.get(cacheKey);
       if (cached && Date.now() - cached.timestamp < cacheTtl) {
+        return false;
+      }
+      const sessionCached = getSessionCache<T>(cacheKey, cacheTtl);
+      if (sessionCached) {
         return false;
       }
     }
@@ -65,12 +101,22 @@ export function useOptimizedFetch<T>({
   fetchFnRef.current = fetchFn;
 
   const fetchData = useCallback(async (skipCache = false) => {
-    // Check cache first (unless skipping)
+    // Check memory cache first, then sessionStorage (unless skipping)
     if (cacheKey && !skipCache) {
       const cached = cache.get(cacheKey);
       if (cached && Date.now() - cached.timestamp < cacheTtl) {
         if (isMounted.current) {
           setData(cached.data as T);
+          setIsLoading(false);
+        }
+        return;
+      }
+      // Fallback to sessionStorage
+      const sessionCached = getSessionCache<T>(cacheKey, cacheTtl);
+      if (sessionCached) {
+        cache.set(cacheKey, { data: sessionCached, timestamp: Date.now() });
+        if (isMounted.current) {
+          setData(sessionCached);
           setIsLoading(false);
         }
         return;
@@ -99,9 +145,10 @@ export function useOptimizedFetch<T>({
         setData(result);
         setError(null);
         
-        // Update cache
+        // Update both memory cache and sessionStorage
         if (cacheKey) {
           cache.set(cacheKey, { data: result, timestamp: Date.now() });
+          setSessionCache(cacheKey, result);
         }
       }
     } catch (err) {
@@ -141,9 +188,12 @@ export function useOptimizedFetch<T>({
   }, [fetchData, timeoutMs]);
 
   const refetch = useCallback(async () => {
-    // Clear cache on refetch
+    // Clear both memory cache and sessionStorage on refetch
     if (cacheKey) {
       cache.delete(cacheKey);
+      try {
+        sessionStorage.removeItem(`cache_${cacheKey}`);
+      } catch { /* ignore */ }
     }
     await fetchData(true);
   }, [fetchData, cacheKey]);
@@ -151,11 +201,22 @@ export function useOptimizedFetch<T>({
   return { data, isLoading, error, refetch };
 }
 
-// Clear specific cache or all cache
+// Clear specific cache or all cache (both memory and sessionStorage)
 export function clearFetchCache(key?: string) {
   if (key) {
     cache.delete(key);
+    try {
+      sessionStorage.removeItem(`cache_${key}`);
+    } catch { /* ignore */ }
   } else {
     cache.clear();
+    try {
+      // Clear all cache_ prefixed items from sessionStorage
+      Object.keys(sessionStorage).forEach(k => {
+        if (k.startsWith('cache_')) {
+          sessionStorage.removeItem(k);
+        }
+      });
+    } catch { /* ignore */ }
   }
 }
