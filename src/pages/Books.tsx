@@ -67,24 +67,34 @@ const Books = () => {
   const [selectedListingType, setSelectedListingType] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("newest");
   const [page, setPage] = useState(0);
-  const [allBooks, setAllBooks] = useState<Book[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [localBooks, setLocalBooks] = useState<Book[]>([]);
 
+  // Fetch books with caching - data persists across navigation
   const fetchBooks = useCallback(async () => {
     const result = await getBooksPaginated(0, 12);
-    setAllBooks(result.data);
     setHasMore(result.hasMore);
     return result.data;
   }, []);
 
-  const { isLoading: rawLoading } = useOptimizedFetch({
+  const { data: cachedBooks, isLoading: rawLoading } = useOptimizedFetch({
     fetchFn: fetchBooks,
     defaultValue: [] as Book[],
     timeoutMs: 8000,
-    cacheKey: 'books-page-0',
+    cacheKey: 'books-page-data',
     cacheTtl: CACHE_TTL.LONG,
   });
+
+  // Sync local state with cached data
+  useEffect(() => {
+    if (cachedBooks.length > 0) {
+      setLocalBooks(cachedBooks);
+    }
+  }, [cachedBooks]);
+
+  // Combined books list (cached + local additions from real-time/load more)
+  const allBooks = localBooks.length > 0 ? localBooks : cachedBooks;
 
   // Use skeleton sync for consistent loading behavior with minimum display time
   const isLoading = useSkeletonSync(rawLoading, { minDisplayTime: 400 });
@@ -100,26 +110,26 @@ const Books = () => {
           const newData = payload.new as Book;
           
           if (payload.eventType === 'INSERT' && newData?.status === 'approved') {
-            setAllBooks(prev => {
+            setLocalBooks(prev => {
               if (prev.some(b => b.id === newData.id)) return prev;
               return [newData, ...prev];
             });
-            clearFetchCache('books-page-0');
+            clearFetchCache('books-page-data');
           } else if (payload.eventType === 'UPDATE') {
             if (newData?.status === 'approved' && !newData.is_sold) {
-              setAllBooks(prev => {
+              setLocalBooks(prev => {
                 if (prev.some(b => b.id === newData.id)) {
                   return prev.map(b => b.id === newData.id ? { ...b, ...newData } : b);
                 }
                 return [newData, ...prev];
               });
             } else {
-              setAllBooks(prev => prev.filter(b => b.id !== newData.id));
+              setLocalBooks(prev => prev.filter(b => b.id !== newData.id));
             }
-            clearFetchCache('books-page-0');
+            clearFetchCache('books-page-data');
           } else if (payload.eventType === 'DELETE') {
-            setAllBooks(prev => prev.filter(b => b.id !== payload.old?.id));
-            clearFetchCache('books-page-0');
+            setLocalBooks(prev => prev.filter(b => b.id !== payload.old?.id));
+            clearFetchCache('books-page-data');
           }
         }
       )
@@ -136,7 +146,7 @@ const Books = () => {
     try {
       const nextPage = page + 1;
       const result = await getBooksPaginated(nextPage, 12);
-      setAllBooks(prev => [...prev, ...result.data]);
+      setLocalBooks(prev => [...prev, ...result.data]);
       setHasMore(result.hasMore);
       setPage(nextPage);
     } catch (error) {
