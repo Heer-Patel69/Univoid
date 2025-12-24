@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Camera, Loader2, ScanBarcode, BookOpen } from "lucide-react";
+import { Camera, Loader2, ScanBarcode, BookOpen, AlertCircle } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { useCustomBookScanner } from "@/hooks/useCustomBookScanner";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface BookScannerProps {
   onBookScanned: (bookInfo: { title: string; author?: string }) => void;
@@ -29,6 +30,9 @@ const BookScanner = ({ onBookScanned, onImageCaptured }: BookScannerProps) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const scannerContainerId = "book-scanner-container";
+
+  // Use custom book scanner hook (calls YOUR external API, not Lovable AI)
+  const { scanBookImageBase64, scanning: customScanning, error: scanError, isConfigured } = useCustomBookScanner();
 
   const stopScanner = async () => {
     if (scannerRef.current) {
@@ -85,21 +89,19 @@ const BookScanner = ({ onBookScanned, onImageCaptured }: BookScannerProps) => {
     }
   };
 
+  /**
+   * Extract book info from cover using custom external API.
+   * This does NOT use Lovable AI - it calls YOUR custom OCR/ML service.
+   */
   const extractBookInfoFromCover = async (imageBase64: string): Promise<{ title: string; author?: string } | null> => {
     try {
-      const { data, error } = await supabase.functions.invoke("extract-book-cover", {
-        body: { image: imageBase64 },
-      });
+      // Use custom book scanner API
+      const result = await scanBookImageBase64(imageBase64);
 
-      if (error) {
-        console.error("Edge function error:", error);
-        return null;
-      }
-
-      if (data?.title) {
+      if (result?.title) {
         return {
-          title: data.title,
-          author: data.author || undefined,
+          title: result.title,
+          author: result.author || undefined,
         };
       }
 
@@ -301,6 +303,16 @@ const BookScanner = ({ onBookScanned, onImageCaptured }: BookScannerProps) => {
           </DialogHeader>
 
           <div className="space-y-4">
+            {/* API Configuration Warning */}
+            {!isConfigured && scanMode === "cover" && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Book scanner API not configured. Set VITE_BOOK_SCANNER_API_URL in your environment.
+                </AlertDescription>
+              </Alert>
+            )}
+
             {/* Mode Toggle */}
             <div className="flex gap-2 p-1 bg-muted rounded-lg">
               <Button
