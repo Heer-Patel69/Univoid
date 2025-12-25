@@ -827,3 +827,10 @@
 .driver-popover-arrow-side-bottom {
   border-bottom-color: hsl(var(--card)) !important;
 }
+
+/* Hide Lovable floating badge */
+a[href*="lovable"],
+div[class*="lovable"],
+iframe[src*="lovable"] {
+  display: none !important;
+}
