@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://univoid.in/sitemap.xml
+Sitemap: https://univoid.tech/sitemap.xml
