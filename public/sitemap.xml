@@ -1,72 +1,72 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://univoid.in/</loc>
+    <loc>https://univoid.tech/</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://univoid.in/materials</loc>
+    <loc>https://univoid.tech/materials</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://univoid.in/events</loc>
+    <loc>https://univoid.tech/events</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://univoid.in/projects</loc>
+    <loc>https://univoid.tech/projects</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://univoid.in/tasks</loc>
+    <loc>https://univoid.tech/tasks</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://univoid.in/books</loc>
+    <loc>https://univoid.tech/books</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://univoid.in/news</loc>
+    <loc>https://univoid.tech/news</loc>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://univoid.in/leaderboard</loc>
+    <loc>https://univoid.tech/leaderboard</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://univoid.in/contact</loc>
+    <loc>https://univoid.tech/contact</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://univoid.in/privacy-policy</loc>
+    <loc>https://univoid.tech/privacy-policy</loc>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://univoid.in/terms</loc>
+    <loc>https://univoid.tech/terms</loc>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://univoid.in/refund-policy</loc>
+    <loc>https://univoid.tech/refund-policy</loc>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://univoid.in/cookie-policy</loc>
+    <loc>https://univoid.tech/cookie-policy</loc>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://univoid.in/legal-disclaimer</loc>
+    <loc>https://univoid.tech/legal-disclaimer</loc>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
