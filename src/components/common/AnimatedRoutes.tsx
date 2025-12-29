@@ -236,6 +236,10 @@ export const AnimatedRoutes = () => {
         <Route path="/organizer/check-in/:eventId" element={
           <Suspense fallback={<DashboardSkeleton />}><EventCheckIn /></Suspense>
         } />
+        {/* Volunteer check-in route - same component, different path */}
+        <Route path="/events/:eventId/check-in" element={
+          <Suspense fallback={<DashboardSkeleton />}><EventCheckIn /></Suspense>
+        } />
       </Route>
 
       {/* Admin with DashboardLayout */}

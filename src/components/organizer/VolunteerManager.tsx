@@ -11,10 +11,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Users, CheckCircle, XCircle, Trash2, UserPlus, ClipboardList, Mail, Clock } from "lucide-react";
+import { Plus, Users, CheckCircle, XCircle, Trash2, UserPlus, ClipboardList, Mail, Clock, TicketCheck } from "lucide-react";
 import { format } from "date-fns";
 import { AddVolunteerModal } from "@/components/volunteers/AddVolunteerModal";
 import { VolunteerAttendanceList } from "./VolunteerAttendanceList";
+import { VolunteerCheckInAnalytics } from "./VolunteerCheckInAnalytics";
 
 interface VolunteerManagerProps {
   eventId: string;
@@ -443,6 +444,22 @@ export function VolunteerManager({ eventId, eventTitle, organizerId }: Volunteer
           </div>
         </div>
       )}
+
+      {/* Volunteer Check-in Analytics */}
+      <Card className="mt-6">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <TicketCheck className="w-4 h-4" />
+            Check-in Performance
+          </CardTitle>
+          <CardDescription>
+            See how many attendees each volunteer has checked in
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <VolunteerCheckInAnalytics eventId={eventId} />
+        </CardContent>
+      </Card>
 
       {/* Attendance Tracking Section */}
       {roles && roles.length > 0 && (
