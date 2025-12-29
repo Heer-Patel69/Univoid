@@ -50,11 +50,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       authUser.identities?.some((identity: any) => identity.provider && identity.provider !== 'email');
     
     if (isOAuthUser) {
-      // Auto-mark OAuth users as email verified in profiles table
-      await supabase
+      // Only auto-verify if the email was confirmed by the OAuth provider
+      const emailConfirmed = authUser.email_confirmed_at !== null && authUser.email_confirmed_at !== undefined;
+      const providerEmail = authUser.email;
+      
+      // Get current profile to check if email matches
+      const { data: currentProfile } = await supabase
         .from('profiles')
-        .update({ email_verified: true })
-        .eq('id', authUser.id);
+        .select('email')
+        .eq('id', authUser.id)
+        .single();
+      
+      // Only set email_verified to true if:
+      // 1. Email is confirmed by OAuth provider
+      // 2. Current profile email matches OAuth email (prevent email spoofing)
+      const shouldVerify = emailConfirmed && 
+        (!currentProfile || currentProfile.email === providerEmail);
+      
+      if (shouldVerify) {
+        await supabase
+          .from('profiles')
+          .update({ email_verified: true })
+          .eq('id', authUser.id);
+      }
     }
   };
 
