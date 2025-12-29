@@ -3,7 +3,7 @@ import { Plus, Eye, Save, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import FormFieldItem from "./FormFieldItem";
 import FieldTypePicker from "./FieldTypePicker";
 import FormPreview from "./FormPreview";
@@ -106,7 +106,7 @@ const FormBuilder = ({ fields, onChange, eventTitle }: FormBuilderProps) => {
                 <FieldTypePicker onSelect={addField} />
               </div>
             ) : (
-              <ScrollArea className="max-h-[500px] pr-4">
+              <div className="max-h-[500px] overflow-y-auto pr-4">
                 <div className="space-y-3">
                   {fields.map((field, index) => (
                     <FormFieldItem
@@ -122,7 +122,7 @@ const FormBuilder = ({ fields, onChange, eventTitle }: FormBuilderProps) => {
                     />
                   ))}
                 </div>
-              </ScrollArea>
+              </div>
             )}
 
             {/* Add Field Button */}

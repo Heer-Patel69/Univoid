@@ -40,7 +40,11 @@ const FieldTypePicker = ({ onSelect }: FieldTypePickerProps) => {
           <ChevronDown className="w-4 h-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-64">
+      <DropdownMenuContent 
+        align="start" 
+        className="w-64 max-h-[60vh] overflow-y-auto bg-popover z-50"
+        sideOffset={4}
+      >
         {FIELD_TYPES.map((fieldType) => {
           const IconComponent = iconMap[fieldType.icon] || Type;
           return (
