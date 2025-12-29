@@ -1,5 +1,5 @@
-import { useState, useCallback } from "react";
-import { Plus, Eye, Save, FileText } from "lucide-react";
+import { useState, useCallback, useRef } from "react";
+import { Eye, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -23,6 +23,8 @@ const generateTempId = () => `temp_${Date.now()}_${Math.random().toString(36).su
 
 const FormBuilder = ({ fields, onChange, eventTitle }: FormBuilderProps) => {
   const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   const addField = useCallback((type: FormFieldType) => {
     const defaultOptions = ['select', 'radio', 'checkbox'].includes(type)
@@ -67,6 +69,47 @@ const FormBuilder = ({ fields, onChange, eventTitle }: FormBuilderProps) => {
     const updatedFields = newFields.map((f, i) => ({ ...f, field_order: i }));
     onChange(updatedFields);
   }, [fields, onChange]);
+
+  // Drag and drop handlers
+  const handleDragStart = useCallback((index: number) => {
+    setDraggedIndex(index);
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (draggedIndex !== null && draggedIndex !== index) {
+      setDragOverIndex(index);
+    }
+  }, [draggedIndex]);
+
+  const handleDragLeave = useCallback(() => {
+    setDragOverIndex(null);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    const newFields = [...fields];
+    const [draggedField] = newFields.splice(draggedIndex, 1);
+    newFields.splice(dropIndex, 0, draggedField);
+    
+    // Update field_order values
+    const updatedFields = newFields.map((f, i) => ({ ...f, field_order: i }));
+    onChange(updatedFields);
+    
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  }, [draggedIndex, fields, onChange]);
+
+  const handleDragEnd = useCallback(() => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  }, []);
 
   return (
     <Card>
@@ -119,6 +162,13 @@ const FormBuilder = ({ fields, onChange, eventTitle }: FormBuilderProps) => {
                       onMoveDown={() => moveField(index, 'down')}
                       isFirst={index === 0}
                       isLast={index === fields.length - 1}
+                      isDragging={draggedIndex === index}
+                      isDragOver={dragOverIndex === index}
+                      onDragStart={() => handleDragStart(index)}
+                      onDragOver={(e) => handleDragOver(e, index)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, index)}
+                      onDragEnd={handleDragEnd}
                     />
                   ))}
                 </div>

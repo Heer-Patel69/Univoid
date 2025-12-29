@@ -20,6 +20,14 @@ interface FormFieldItemProps {
   onMoveDown: (index: number) => void;
   isFirst: boolean;
   isLast: boolean;
+  // Drag and drop props
+  isDragging?: boolean;
+  isDragOver?: boolean;
+  onDragStart?: () => void;
+  onDragOver?: (e: React.DragEvent) => void;
+  onDragLeave?: () => void;
+  onDrop?: (e: React.DragEvent) => void;
+  onDragEnd?: () => void;
 }
 
 const FormFieldItem = ({
@@ -31,6 +39,13 @@ const FormFieldItem = ({
   onMoveDown,
   isFirst,
   isLast,
+  isDragging = false,
+  isDragOver = false,
+  onDragStart,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  onDragEnd,
 }: FormFieldItemProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const fieldMeta = FIELD_TYPES.find(f => f.type === field.field_type);
@@ -56,11 +71,31 @@ const FormFieldItem = ({
   };
 
   return (
-    <Card className="p-4">
+    <Card 
+      className={`p-4 transition-all duration-200 ${
+        isDragging ? 'opacity-50 scale-[0.98] ring-2 ring-primary' : ''
+      } ${
+        isDragOver ? 'ring-2 ring-primary ring-offset-2 bg-primary/5' : ''
+      }`}
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', field.tempId);
+        onDragStart?.();
+      }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        onDragOver?.(e);
+      }}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      onDragEnd={onDragEnd}
+    >
       <div className="flex items-start gap-3">
         {/* Drag Handle */}
         <div className="flex flex-col items-center gap-1 pt-1">
-          <GripVertical className="w-5 h-5 text-muted-foreground cursor-grab" />
+          <GripVertical className="w-5 h-5 text-muted-foreground cursor-grab active:cursor-grabbing" />
           <Button
             variant="ghost"
             size="icon"
