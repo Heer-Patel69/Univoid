@@ -574,6 +574,47 @@ export type Database = {
           },
         ]
       }
+      event_sheets_config: {
+        Row: {
+          auto_sync: boolean
+          created_at: string
+          event_id: string
+          id: string
+          last_sync_at: string | null
+          sheet_name: string
+          spreadsheet_id: string
+          updated_at: string
+        }
+        Insert: {
+          auto_sync?: boolean
+          created_at?: string
+          event_id: string
+          id?: string
+          last_sync_at?: string | null
+          sheet_name?: string
+          spreadsheet_id: string
+          updated_at?: string
+        }
+        Update: {
+          auto_sync?: boolean
+          created_at?: string
+          event_id?: string
+          id?: string
+          last_sync_at?: string | null
+          sheet_name?: string
+          spreadsheet_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_sheets_config_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_tickets: {
         Row: {
           abuse_flag: boolean | null
