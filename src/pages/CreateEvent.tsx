@@ -12,13 +12,16 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import AuthModal from "@/components/auth/AuthModal";
-import { ArrowLeft, ArrowRight, Check, Calendar, FileText, Ticket, CreditCard, Image } from "lucide-react";
+import { FormBuilder, type FormBuilderField } from "@/components/events/FormBuilder";
+import { createFormFields } from "@/services/eventFormService";
+import { ArrowLeft, ArrowRight, Check, Calendar, FileText, Ticket, CreditCard, Image, ClipboardList } from "lucide-react";
 
 const STEPS = [
   { id: 1, title: "Basic Info", icon: Calendar },
   { id: 2, title: "Description", icon: FileText },
-  { id: 3, title: "Ticketing", icon: Ticket },
-  { id: 4, title: "Payment", icon: CreditCard },
+  { id: 3, title: "Custom Form", icon: ClipboardList },
+  { id: 4, title: "Ticketing", icon: Ticket },
+  { id: 5, title: "Payment", icon: CreditCard },
 ];
 
 const CATEGORIES = ["Tech", "Cultural", "Sports", "Academic", "Workshop", "Seminar"];
@@ -51,6 +54,9 @@ const CreateEvent = () => {
     upi_qr_url: "",
     upi_vpa: "",
   });
+
+  // Custom form fields
+  const [customFields, setCustomFields] = useState<FormBuilderField[]>([]);
 
   const [flyerFile, setFlyerFile] = useState<File | null>(null);
   const [qrFile, setQrFile] = useState<File | null>(null);
@@ -111,6 +117,24 @@ const CreateEvent = () => {
       }).select().single();
 
       if (error) throw error;
+
+      // Save custom form fields if any
+      if (customFields.length > 0) {
+        const fieldsToSave = customFields.map((field, index) => ({
+          field_type: field.field_type,
+          label: field.label,
+          description: field.description,
+          placeholder: field.placeholder,
+          is_required: field.is_required,
+          field_order: index,
+          options: field.options,
+          validation_rules: field.validation_rules,
+          conditional_logic: field.conditional_logic,
+        }));
+
+        await createFormFields(data.id, fieldsToSave);
+      }
+
       setUploading(false);
       return data;
     },
@@ -128,13 +152,14 @@ const CreateEvent = () => {
     switch (currentStep) {
       case 1: return formData.title && formData.category && formData.event_type && formData.start_date;
       case 2: return true;
-      case 3: return true;
-      case 4: return !formData.is_paid || (formData.upi_vpa || qrFile);
+      case 3: return true; // Custom form is optional
+      case 4: return true;
+      case 5: return !formData.is_paid || (formData.upi_vpa || qrFile);
       default: return true;
     }
   };
 
-  const nextStep = () => currentStep < 4 && setCurrentStep(currentStep + 1);
+  const nextStep = () => currentStep < 5 && setCurrentStep(currentStep + 1);
   const prevStep = () => currentStep > 1 && setCurrentStep(currentStep - 1);
 
   if (!user) {
@@ -162,9 +187,9 @@ const CreateEvent = () => {
         <h1 className="font-display text-3xl font-bold mb-8">Create Event</h1>
 
         {/* Stepper */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-8 overflow-x-auto pb-2">
           {STEPS.map((step, idx) => (
-            <div key={step.id} className="flex items-center">
+            <div key={step.id} className="flex items-center shrink-0">
               <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all ${
                 currentStep >= step.id ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground/30 text-muted-foreground"
               }`}>
@@ -173,7 +198,7 @@ const CreateEvent = () => {
               <span className={`ml-2 hidden sm:block text-sm font-medium ${currentStep >= step.id ? "text-foreground" : "text-muted-foreground"}`}>
                 {step.title}
               </span>
-              {idx < STEPS.length - 1 && <div className={`w-8 sm:w-16 h-0.5 mx-2 ${currentStep > step.id ? "bg-primary" : "bg-muted"}`} />}
+              {idx < STEPS.length - 1 && <div className={`w-6 sm:w-12 h-0.5 mx-2 ${currentStep > step.id ? "bg-primary" : "bg-muted"}`} />}
             </div>
           ))}
         </div>
@@ -184,8 +209,9 @@ const CreateEvent = () => {
             <CardDescription>
               {currentStep === 1 && "Set up the basic details of your event"}
               {currentStep === 2 && "Add a description and any terms"}
-              {currentStep === 3 && "Configure ticketing options"}
-              {currentStep === 4 && "Set up payment collection"}
+              {currentStep === 3 && "Create custom registration form fields"}
+              {currentStep === 4 && "Configure ticketing options"}
+              {currentStep === 5 && "Set up payment collection"}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -278,8 +304,17 @@ const CreateEvent = () => {
               </>
             )}
 
-            {/* Step 3: Ticketing */}
+            {/* Step 3: Custom Form Builder */}
             {currentStep === 3 && (
+              <FormBuilder 
+                fields={customFields} 
+                onChange={setCustomFields}
+                eventTitle={formData.title || "Your Event"}
+              />
+            )}
+
+            {/* Step 4: Ticketing */}
+            {currentStep === 4 && (
               <>
                 <div className="flex items-center justify-between p-4 bg-muted rounded-xl">
                   <div>
@@ -304,8 +339,8 @@ const CreateEvent = () => {
               </>
             )}
 
-            {/* Step 4: Payment */}
-            {currentStep === 4 && (
+            {/* Step 5: Payment */}
+            {currentStep === 5 && (
               <>
                 {!formData.is_paid ? (
                   <div className="text-center py-8">
@@ -338,7 +373,7 @@ const CreateEvent = () => {
             {/* Navigation */}
             <div className="flex justify-between pt-4">
               <Button variant="outline" onClick={prevStep} disabled={currentStep === 1}><ArrowLeft className="w-4 h-4 mr-2" /> Previous</Button>
-              {currentStep < 4 ? (
+              {currentStep < 5 ? (
                 <Button onClick={nextStep} disabled={!canProceed()}>Next <ArrowRight className="w-4 h-4 ml-2" /></Button>
               ) : (
                 <Button onClick={() => createEventMutation.mutate()} disabled={!canProceed() || createEventMutation.isPending || uploading}>
