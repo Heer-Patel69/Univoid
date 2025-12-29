@@ -168,7 +168,11 @@ const EventCheckIn = () => {
   });
 
   const handleQRScan = async (qrCode: string) => {
-    if (isScanning || checkInMutation.isPending) return;
+    // Prevent double scans - scanner handles debouncing, but double-check here
+    if (isScanning || checkInMutation.isPending) {
+      console.log("Scan blocked - already processing");
+      return;
+    }
     setIsScanning(true);
     checkInMutation.mutate({ qrCode, method: 'qr' });
   };
