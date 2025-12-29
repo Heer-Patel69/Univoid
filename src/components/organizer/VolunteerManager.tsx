@@ -141,7 +141,7 @@ export function VolunteerManager({ eventId, organizerId }: VolunteerManagerProps
 
   // Update assignment status mutation
   const updateAssignmentMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+    mutationFn: async ({ id, status, userId: targetUserId }: { id: string; status: string; userId: string }) => {
       const updates: Record<string, unknown> = { status };
       if (status === "approved") {
         updates.assigned_at = new Date().toISOString();
@@ -154,6 +154,19 @@ export function VolunteerManager({ eventId, organizerId }: VolunteerManagerProps
         .eq("id", id);
 
       if (error) throw error;
+
+      // Send notification email in background
+      try {
+        await supabase.functions.invoke("send-volunteer-notification", {
+          body: {
+            type: status === "approved" ? "approved" : "rejected",
+            roleId: selectedRole,
+            userId: targetUserId,
+          },
+        });
+      } catch (emailError) {
+        console.error("Failed to send volunteer notification:", emailError);
+      }
     },
     onSuccess: (_, { status }) => {
       toast({ title: status === "approved" ? "Volunteer approved!" : "Application rejected" });
@@ -376,7 +389,7 @@ export function VolunteerManager({ eventId, organizerId }: VolunteerManagerProps
                                   <div className="flex gap-2">
                                     <Button 
                                       size="sm" 
-                                      onClick={() => updateAssignmentMutation.mutate({ id: assignment.id, status: "approved" })}
+                                      onClick={() => updateAssignmentMutation.mutate({ id: assignment.id, status: "approved", userId: assignment.user_id })}
                                       disabled={selectedRoleData.slots_filled >= selectedRoleData.slots_available}
                                     >
                                       <CheckCircle className="w-3 h-3 mr-1" /> Approve
@@ -384,7 +397,7 @@ export function VolunteerManager({ eventId, organizerId }: VolunteerManagerProps
                                     <Button 
                                       size="sm" 
                                       variant="destructive"
-                                      onClick={() => updateAssignmentMutation.mutate({ id: assignment.id, status: "rejected" })}
+                                      onClick={() => updateAssignmentMutation.mutate({ id: assignment.id, status: "rejected", userId: assignment.user_id })}
                                     >
                                       <XCircle className="w-3 h-3 mr-1" /> Reject
                                     </Button>
