@@ -12,6 +12,29 @@ interface SheetSyncRequest {
   sheetName?: string;
 }
 
+interface FormField {
+  id: string;
+  label: string;
+  field_type: string;
+  field_order: number;
+  is_required: boolean;
+  options?: { label: string; value: string }[] | null;
+}
+
+interface Registration {
+  id: string;
+  created_at: string;
+  payment_status: string;
+  custom_data: Record<string, unknown> | null;
+  user_id: string;
+  profiles: {
+    full_name?: string;
+    email?: string;
+    mobile_number?: string;
+    college_name?: string;
+  } | null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -33,16 +56,32 @@ serve(async (req) => {
       throw new Error("Missing eventId or spreadsheetId");
     }
 
-    // Get event details first to verify it exists
+    console.log(`Starting dynamic sync for event: ${eventId}`);
+
+    // Get event details
     const { data: event, error: eventError } = await supabase
       .from("events")
-      .select("title, start_date, organizer_id")
+      .select("title, start_date, organizer_id, is_paid, price")
       .eq("id", eventId)
       .single();
 
     if (eventError) throw eventError;
 
-    // Fetch registrations with a join to profiles (using service role bypasses RLS)
+    // Fetch form fields for the event (sorted by field_order)
+    const { data: formFields, error: fieldsError } = await supabase
+      .from("event_form_fields")
+      .select("id, label, field_type, field_order, is_required, options")
+      .eq("event_id", eventId)
+      .order("field_order", { ascending: true });
+
+    if (fieldsError) {
+      console.error("Error fetching form fields:", fieldsError);
+      // Continue without form fields - use fallback columns
+    }
+
+    console.log(`Found ${formFields?.length || 0} custom form fields`);
+
+    // Fetch registrations with profiles
     const { data: registrations, error: regError } = await supabase
       .from("event_registrations")
       .select(`
@@ -55,11 +94,11 @@ serve(async (req) => {
           full_name,
           email,
           mobile_number,
-          college_name,
-          profile_photo_url
+          college_name
         )
       `)
-      .eq("event_id", eventId);
+      .eq("event_id", eventId)
+      .order("created_at", { ascending: true });
 
     if (regError) throw regError;
 
@@ -69,36 +108,15 @@ serve(async (req) => {
     // Get access token using JWT
     const accessToken = await getGoogleAccessToken(credentials);
 
-    // Prepare data for sheets
-    const headers = [
-      "Registration ID",
-      "Full Name",
-      "Email",
-      "Mobile",
-      "College",
-      "Payment Status",
-      "Registered At",
-      "Club Membership",
-      "Applied Price",
-      "Custom Data",
-    ];
+    // Build dynamic headers
+    const headers = buildDynamicHeaders(formFields || [], event);
+    
+    // Build rows with dynamic column mapping
+    const rows = (registrations || []).map((reg) => 
+      buildDynamicRow(reg as Registration, formFields || [], event)
+    );
 
-    const rows = (registrations || []).map((reg) => {
-      const customData = (reg.custom_data as Record<string, unknown>) || {};
-      const profile = reg.profiles as { full_name?: string; email?: string; mobile_number?: string; college_name?: string } | null;
-      return [
-        String(reg.id || ""),
-        String(profile?.full_name || ""),
-        String(profile?.email || ""),
-        String(profile?.mobile_number || ""),
-        String(profile?.college_name || ""),
-        String(reg.payment_status || ""),
-        reg.created_at ? new Date(reg.created_at).toLocaleString() : "",
-        customData._club_id ? "Yes" : "No",
-        String(customData._applied_price || ""),
-        JSON.stringify(customData),
-      ];
-    });
+    console.log(`Syncing ${rows.length} registrations with ${headers.length} columns`);
 
     // Clear and update sheet
     await clearSheet(accessToken, spreadsheetId, sheetName);
@@ -107,8 +125,9 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `Synced ${rows.length} registrations to Google Sheets`,
-        rowCount: rows.length 
+        message: `Synced ${rows.length} registrations with ${headers.length} columns to Google Sheets`,
+        rowCount: rows.length,
+        columnCount: headers.length
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
@@ -121,6 +140,176 @@ serve(async (req) => {
     );
   }
 });
+
+// Build dynamic column headers based on form schema
+function buildDynamicHeaders(
+  formFields: FormField[], 
+  event: { is_paid: boolean; title: string }
+): string[] {
+  // Fixed columns that always appear first
+  const fixedHeaders = [
+    "Timestamp",
+    "Registration ID",
+    "Full Name",
+    "Email",
+    "Mobile",
+    "College",
+    "Payment Status",
+  ];
+
+  // Add payment amount column if event is paid
+  if (event.is_paid) {
+    fixedHeaders.push("Amount Paid");
+  }
+
+  // Add club membership columns
+  fixedHeaders.push("Club Member", "Club Name", "Club ID");
+
+  // Add dynamic form field columns (in order)
+  const dynamicHeaders = formFields.map(field => field.label);
+
+  return [...fixedHeaders, ...dynamicHeaders];
+}
+
+// Build a row with dynamic column mapping
+function buildDynamicRow(
+  reg: Registration,
+  formFields: FormField[],
+  event: { is_paid: boolean }
+): string[] {
+  const customData = reg.custom_data || {};
+  const profile = reg.profiles;
+
+  // Fixed columns
+  const row: string[] = [
+    // Timestamp
+    reg.created_at ? new Date(reg.created_at).toLocaleString() : "",
+    // Registration ID
+    String(reg.id || ""),
+    // Profile fields
+    String(profile?.full_name || ""),
+    String(profile?.email || ""),
+    String(profile?.mobile_number || ""),
+    String(profile?.college_name || ""),
+    // Payment status
+    String(reg.payment_status || ""),
+  ];
+
+  // Add payment amount if paid event
+  if (event.is_paid) {
+    row.push(String(customData._applied_price || customData._amount || ""));
+  }
+
+  // Club membership columns
+  const isClubMember = Boolean(customData._club_id || customData._is_club_member);
+  row.push(isClubMember ? "Yes" : "No");
+  row.push(String(customData._club_name || ""));
+  row.push(String(customData._club_membership_id || customData._membership_id || ""));
+
+  // Add dynamic form field values (in order)
+  for (const field of formFields) {
+    try {
+      const value = getFieldValue(customData, field);
+      row.push(value);
+    } catch (e) {
+      console.error(`Error extracting field ${field.label}:`, e);
+      row.push(""); // Don't fail entire sync
+    }
+  }
+
+  return row;
+}
+
+// Extract field value from custom_data
+function getFieldValue(
+  customData: Record<string, unknown>,
+  field: FormField
+): string {
+  // Try multiple key formats (field ID, label, lowercase label)
+  const possibleKeys = [
+    field.id,
+    field.label,
+    field.label.toLowerCase(),
+    field.label.toLowerCase().replace(/\s+/g, "_"),
+    field.label.replace(/\s+/g, "_"),
+  ];
+
+  let value: unknown = undefined;
+  
+  for (const key of possibleKeys) {
+    if (key in customData) {
+      value = customData[key];
+      break;
+    }
+  }
+
+  if (value === undefined || value === null) {
+    return "";
+  }
+
+  // Handle different field types
+  switch (field.field_type) {
+    case "checkbox":
+      if (Array.isArray(value)) {
+        return value.join(", ");
+      }
+      return value === true ? "Yes" : value === false ? "No" : String(value);
+
+    case "file":
+      if (typeof value === "string" && value.startsWith("http")) {
+        return value; // Return file URL
+      }
+      if (Array.isArray(value)) {
+        return value.join(", ");
+      }
+      return String(value || "");
+
+    case "select":
+    case "radio":
+      // Try to get the label from options if value is a key
+      if (field.options && Array.isArray(field.options)) {
+        const option = field.options.find(
+          (opt) => opt.value === value || opt.label === value
+        );
+        if (option) {
+          return option.label;
+        }
+      }
+      return String(value);
+
+    case "date":
+      if (value instanceof Date) {
+        return value.toLocaleDateString();
+      }
+      if (typeof value === "string") {
+        try {
+          return new Date(value).toLocaleDateString();
+        } catch {
+          return value;
+        }
+      }
+      return String(value);
+
+    case "datetime":
+      if (value instanceof Date) {
+        return value.toLocaleString();
+      }
+      if (typeof value === "string") {
+        try {
+          return new Date(value).toLocaleString();
+        } catch {
+          return value;
+        }
+      }
+      return String(value);
+
+    default:
+      if (typeof value === "object") {
+        return JSON.stringify(value);
+      }
+      return String(value);
+  }
+}
 
 async function getGoogleAccessToken(credentials: { client_email: string; private_key: string }) {
   const header = { alg: "RS256", typ: "JWT" };
@@ -195,7 +384,7 @@ async function clearSheet(accessToken: string, spreadsheetId: string, sheetName:
   );
 }
 
-async function updateSheet(accessToken: string, spreadsheetId: string, sheetName: string, data: (string | number | boolean)[][]) {
+async function updateSheet(accessToken: string, spreadsheetId: string, sheetName: string, data: string[][]) {
   const response = await fetch(
     `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(sheetName)}!A1:append?valueInputOption=USER_ENTERED`,
     {
