@@ -1649,6 +1649,94 @@ export type Database = {
         }
         Relationships: []
       }
+      volunteer_assignments: {
+        Row: {
+          assigned_at: string | null
+          assigned_by: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          role_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          role_id: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          role_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "volunteer_assignments_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "volunteer_roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      volunteer_roles: {
+        Row: {
+          created_at: string
+          description: string | null
+          event_id: string
+          id: string
+          perks: string | null
+          responsibilities: string[] | null
+          slots_available: number
+          slots_filled: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          event_id: string
+          id?: string
+          perks?: string | null
+          responsibilities?: string[] | null
+          slots_available?: number
+          slots_filled?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          event_id?: string
+          id?: string
+          perks?: string | null
+          responsibilities?: string[] | null
+          slots_available?: number
+          slots_filled?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "volunteer_roles_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       xp_transactions: {
         Row: {
           amount: number

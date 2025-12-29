@@ -14,9 +14,12 @@ import AuthModal from "@/components/auth/AuthModal";
 import QRScanner from "@/components/events/QRScanner";
 import { GoogleSheetsSync } from "@/components/organizer/GoogleSheetsSync";
 import { ClubMembershipManager } from "@/components/organizer/ClubMembershipManager";
+import { VolunteerManager } from "@/components/organizer/VolunteerManager";
+import { EventAnalytics } from "@/components/organizer/EventAnalytics";
 import { 
   Plus, Calendar, Users, CheckCircle, XCircle, Eye, 
-  ScanLine, Pencil, TicketCheck, Clock, TrendingUp, Shield, FileSpreadsheet 
+  ScanLine, Pencil, TicketCheck, Clock, TrendingUp, Shield, FileSpreadsheet, 
+  UserPlus, BarChart3 
 } from "lucide-react";
 import { format } from "date-fns";
 import type { Event, EventRegistration } from "@/services/eventsService";
@@ -390,9 +393,15 @@ const OrganizerDashboard = () => {
                   </CardHeader>
                   <CardContent>
                     <Tabs defaultValue="registrations">
-                      <TabsList className="mb-4 flex-wrap h-auto">
+                      <TabsList className="mb-4 flex-wrap h-auto gap-1">
                         <TabsTrigger value="registrations" className="gap-1">
                           <Users className="w-4 h-4" /> Registrations
+                        </TabsTrigger>
+                        <TabsTrigger value="analytics" className="gap-1">
+                          <BarChart3 className="w-4 h-4" /> Analytics
+                        </TabsTrigger>
+                        <TabsTrigger value="volunteers" className="gap-1">
+                          <UserPlus className="w-4 h-4" /> Volunteers
                         </TabsTrigger>
                         <TabsTrigger value="clubs" className="gap-1">
                           <Shield className="w-4 h-4" /> Club Members
@@ -461,6 +470,17 @@ const OrganizerDashboard = () => {
                             </TabsContent>
                           ))}
                         </Tabs>
+                      </TabsContent>
+
+                      <TabsContent value="analytics">
+                        <EventAnalytics eventId={selectedEvent!} />
+                      </TabsContent>
+
+                      <TabsContent value="volunteers">
+                        <VolunteerManager 
+                          eventId={selectedEvent!} 
+                          organizerId={user.id} 
+                        />
                       </TabsContent>
 
                       <TabsContent value="clubs">
