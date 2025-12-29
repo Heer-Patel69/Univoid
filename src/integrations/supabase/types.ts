@@ -287,6 +287,92 @@ export type Database = {
         }
         Relationships: []
       }
+      event_form_fields: {
+        Row: {
+          conditional_logic: Json | null
+          created_at: string
+          description: string | null
+          event_id: string
+          field_order: number
+          field_type: Database["public"]["Enums"]["form_field_type"]
+          id: string
+          is_required: boolean
+          label: string
+          options: Json | null
+          placeholder: string | null
+          updated_at: string
+          validation_rules: Json | null
+        }
+        Insert: {
+          conditional_logic?: Json | null
+          created_at?: string
+          description?: string | null
+          event_id: string
+          field_order?: number
+          field_type?: Database["public"]["Enums"]["form_field_type"]
+          id?: string
+          is_required?: boolean
+          label: string
+          options?: Json | null
+          placeholder?: string | null
+          updated_at?: string
+          validation_rules?: Json | null
+        }
+        Update: {
+          conditional_logic?: Json | null
+          created_at?: string
+          description?: string | null
+          event_id?: string
+          field_order?: number
+          field_type?: Database["public"]["Enums"]["form_field_type"]
+          id?: string
+          is_required?: boolean
+          label?: string
+          options?: Json | null
+          placeholder?: string | null
+          updated_at?: string
+          validation_rules?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_form_fields_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_form_templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          fields: Json
+          id: string
+          name: string
+          organizer_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          fields?: Json
+          id?: string
+          name: string
+          organizer_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          fields?: Json
+          id?: string
+          name?: string
+          organizer_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       event_materials: {
         Row: {
           created_at: string
@@ -1721,6 +1807,19 @@ export type Database = {
       book_status: "available" | "sold" | "rented"
       content_status: "pending" | "approved" | "rejected"
       event_status: "draft" | "published" | "cancelled" | "completed"
+      form_field_type:
+        | "text"
+        | "textarea"
+        | "email"
+        | "phone"
+        | "number"
+        | "date"
+        | "time"
+        | "datetime"
+        | "select"
+        | "radio"
+        | "checkbox"
+        | "file"
       organizer_application_status: "pending" | "approved" | "rejected"
       ticket_status: "pending" | "approved" | "rejected" | "used"
     }
@@ -1854,6 +1953,20 @@ export const Constants = {
       book_status: ["available", "sold", "rented"],
       content_status: ["pending", "approved", "rejected"],
       event_status: ["draft", "published", "cancelled", "completed"],
+      form_field_type: [
+        "text",
+        "textarea",
+        "email",
+        "phone",
+        "number",
+        "date",
+        "time",
+        "datetime",
+        "select",
+        "radio",
+        "checkbox",
+        "file",
+      ],
       organizer_application_status: ["pending", "approved", "rejected"],
       ticket_status: ["pending", "approved", "rejected", "used"],
     },
