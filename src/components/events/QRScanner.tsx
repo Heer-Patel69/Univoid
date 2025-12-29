@@ -77,26 +77,14 @@ export default function QRScanner({ onScan, eventId }: QRScannerProps) {
       );
       const cameraId = backCamera?.id || devices[0].id;
 
-      // Optimized camera constraints for FAST QR detection
-      const cameraConstraints = {
-        facingMode: backCamera ? 'environment' : 'user',
-        width: { ideal: 640, max: 1280 }, // Lower res = faster processing
-        height: { ideal: 480, max: 720 },
-        frameRate: { ideal: 30, min: 15 },
-        // Lock focus for stable scanning
-        focusMode: { ideal: 'continuous' } as any,
-        // Lock exposure for consistent detection
-        exposureMode: { ideal: 'continuous' } as any,
-      };
-
-      // Optimized scanner config for INSTANT detection
+      // Start with just cameraId - simpler and more reliable
       await scanner.start(
-        { deviceId: { exact: cameraId }, ...cameraConstraints },
+        cameraId,
         {
-          fps: 30, // Maximum FPS for instant detection
-          qrbox: { width: 280, height: 280 }, // Optimal scan box size
+          fps: 15, // Lower FPS for better compatibility
+          qrbox: { width: 250, height: 250 },
           aspectRatio: 1,
-          disableFlip: false, // Allow mirrored QR codes
+          disableFlip: false,
         },
         async (decodedText) => {
           // Prevent duplicate scans
