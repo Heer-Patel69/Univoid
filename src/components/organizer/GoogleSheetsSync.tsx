@@ -16,17 +16,22 @@ interface GoogleSheetsSyncProps {
   eventTitle: string;
 }
 
-interface Registration {
+interface FormField {
   id: string;
+  label: string;
+  field_type: string;
+  field_order: number;
+}
+
+interface RegistrationData {
+  registration_id: string;
   created_at: string;
   payment_status: string;
   custom_data: Record<string, unknown> | null;
-  profiles: {
-    full_name: string | null;
-    email: string | null;
-    mobile_number: string | null;
-    college_name: string | null;
-  } | null;
+  full_name: string | null;
+  email: string | null;
+  mobile_number: string | null;
+  college_name: string | null;
 }
 
 export function GoogleSheetsSync({ eventId, eventTitle }: GoogleSheetsSyncProps) {
@@ -52,6 +57,21 @@ export function GoogleSheetsSync({ eventId, eventTitle }: GoogleSheetsSyncProps)
     },
   });
 
+  // Fetch form fields for dynamic columns
+  const { data: formFields } = useQuery({
+    queryKey: ["form-fields", eventId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("event_form_fields")
+        .select("id, label, field_type, field_order")
+        .eq("event_id", eventId)
+        .order("field_order", { ascending: true });
+      
+      if (error) throw error;
+      return data as FormField[];
+    },
+  });
+
   // Load config into state when fetched
   useEffect(() => {
     if (config) {
@@ -73,16 +93,7 @@ export function GoogleSheetsSync({ eventId, eventTitle }: GoogleSheetsSyncProps)
       });
       
       if (error) throw error;
-      return data as Array<{
-        registration_id: string;
-        created_at: string;
-        payment_status: string;
-        custom_data: Record<string, unknown> | null;
-        full_name: string | null;
-        email: string | null;
-        mobile_number: string | null;
-        college_name: string | null;
-      }>;
+      return data as RegistrationData[];
     },
   });
 
@@ -188,25 +199,42 @@ export function GoogleSheetsSync({ eventId, eventTitle }: GoogleSheetsSyncProps)
       return;
     }
 
-    const headers = ["Registration ID", "Full Name", "Email", "Mobile", "College", "Payment Status", "Registered At", "Custom Data"];
+    // Build dynamic headers: fixed columns + form field labels
+    const fixedHeaders = ["Timestamp", "Registration ID", "Full Name", "Email", "Mobile", "College", "Payment Status", "Club Member", "Club Name", "Club ID"];
+    const dynamicHeaders = (formFields || []).map(f => f.label);
+    const headers = [...fixedHeaders, ...dynamicHeaders];
     
     const rows = registrations.map((reg) => {
       const customData = reg.custom_data || {};
-      return [
+      
+      // Fixed columns
+      const fixedCols = [
+        new Date(reg.created_at).toLocaleString(),
         reg.registration_id,
         reg.full_name || "",
         reg.email || "",
         reg.mobile_number || "",
         reg.college_name || "",
         reg.payment_status,
-        new Date(reg.created_at).toLocaleString(),
-        JSON.stringify(customData).replace(/"/g, '""'),
+        customData._club_id ? "Yes" : "No",
+        String(customData._club_name || ""),
+        String(customData._club_membership_id || customData._membership_id || ""),
       ];
+      
+      // Dynamic form field columns
+      const dynamicCols = (formFields || []).map(field => {
+        const value = customData[field.id] || customData[field.label] || customData[field.label.toLowerCase()] || "";
+        if (Array.isArray(value)) return value.join(", ");
+        if (typeof value === "object") return JSON.stringify(value);
+        return String(value);
+      });
+      
+      return [...fixedCols, ...dynamicCols];
     });
 
     const csvContent = [
       headers.join(","),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(","))
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))
     ].join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -221,7 +249,7 @@ export function GoogleSheetsSync({ eventId, eventTitle }: GoogleSheetsSyncProps)
     
     toast({
       title: "CSV Downloaded",
-      description: `Exported ${registrations.length} registrations`,
+      description: `Exported ${registrations.length} registrations with ${headers.length} columns`,
     });
   };
 
