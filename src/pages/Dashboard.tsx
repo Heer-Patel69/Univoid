@@ -6,8 +6,10 @@ import ProfileSnapshot from "@/components/dashboard/ProfileSnapshot";
 import QuickStatsGrid from "@/components/dashboard/QuickStatsGrid";
 import RecommendationsSection from "@/components/dashboard/RecommendationsSection";
 import UserContentManager from "@/components/dashboard/UserContentManager";
+import { UserVolunteerInvites, VolunteerDashboard } from "@/components/volunteers";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Loader2, 
   Trophy,
@@ -19,6 +21,7 @@ import {
   BookOpen,
   Calendar,
   Plus,
+  UserCheck,
 } from "lucide-react";
 
 const Dashboard = () => {
@@ -100,6 +103,30 @@ const Dashboard = () => {
       <div className="grid lg:grid-cols-3 gap-4 lg:gap-6">
         {/* Main Content - 2 cols */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Volunteer Section */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <UserCheck className="w-4 h-4" />
+                Volunteer Hub
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="invites">
+                <TabsList className="mb-4">
+                  <TabsTrigger value="invites">Invitations</TabsTrigger>
+                  <TabsTrigger value="events">My Events</TabsTrigger>
+                </TabsList>
+                <TabsContent value="invites">
+                  <UserVolunteerInvites />
+                </TabsContent>
+                <TabsContent value="events">
+                  <VolunteerDashboard />
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+
           {/* Recommendations */}
           <RecommendationsSection profile={profile} />
 

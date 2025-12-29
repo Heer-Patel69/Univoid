@@ -20,10 +20,11 @@ import {
   lookupTicketById,
   type SecureCheckInResult 
 } from "@/services/ticketService";
+import { isAcceptedVolunteer, ROLE_LABELS, type VolunteerInviteRole } from "@/services/volunteerInviteService";
 import { 
   ScanLine, ArrowLeft, CheckCircle, XCircle, 
   Users, TicketCheck, Clock, AlertTriangle, User,
-  Shield, Search, Fingerprint
+  Shield, Search, Fingerprint, UserCheck
 } from "lucide-react";
 import { format } from "date-fns";
 import type { Event } from "@/services/eventsService";
@@ -58,19 +59,30 @@ const EventCheckIn = () => {
   // Check if user is the organizer
   const isOrganizer = user?.id === event?.organizer_id;
 
-  // Fetch check-in stats
+  // Check if user is an accepted volunteer for this event
+  const { data: volunteerStatus } = useQuery({
+    queryKey: ["volunteer-status", eventId, user?.id],
+    queryFn: () => isAcceptedVolunteer(eventId!, user!.id),
+    enabled: !!eventId && !!user && !isOrganizer,
+  });
+
+  const isVolunteer = volunteerStatus?.isVolunteer || false;
+  const volunteerRole = volunteerStatus?.role;
+  const canAccessCheckIn = isOrganizer || (isVolunteer && (volunteerRole === 'all' || volunteerRole === 'qr_checkin' || volunteerRole === 'entry'));
+
+  // Fetch check-in stats (available to organizer and volunteers)
   const { data: checkInStats, refetch: refetchStats } = useQuery({
     queryKey: ["event-checkin-stats", eventId],
     queryFn: () => fetchCheckInStats(eventId!),
-    enabled: !!eventId && !!user && isOrganizer,
+    enabled: !!eventId && !!user && canAccessCheckIn,
     refetchInterval: 5000,
   });
 
-  // Fetch recent check-ins
+  // Fetch recent check-ins (available to organizer and volunteers)
   const { data: recentCheckIns } = useQuery({
     queryKey: ["recent-checkins", eventId],
     queryFn: () => fetchRecentCheckIns(eventId!, 10),
-    enabled: !!eventId && !!user && isOrganizer,
+    enabled: !!eventId && !!user && canAccessCheckIn,
     refetchInterval: 5000,
   });
 
@@ -190,12 +202,12 @@ const EventCheckIn = () => {
     );
   }
 
-  if (!isOrganizer) {
+  if (!canAccessCheckIn) {
     return (
       <main className="flex-1 container mx-auto px-4 py-20 text-center">
         <AlertTriangle className="w-16 h-16 text-destructive mx-auto mb-4" />
         <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
-        <p className="text-muted-foreground mb-6">Only the event organizer can access check-in</p>
+        <p className="text-muted-foreground mb-6">Only the event organizer or volunteers can access check-in</p>
         <Link to="/events">
           <Button>View Events</Button>
         </Link>
@@ -231,9 +243,17 @@ const EventCheckIn = () => {
                   {format(new Date(event.start_date), "EEEE, MMM d 'at' h:mm a")}
                 </CardDescription>
               </div>
-              <Badge variant={event.status === "published" ? "default" : "secondary"}>
-                {event.status}
-              </Badge>
+              <div className="flex items-center gap-2">
+                {isVolunteer && volunteerRole && (
+                  <Badge variant="outline" className="gap-1">
+                    <UserCheck className="w-3 h-3" />
+                    {ROLE_LABELS[volunteerRole]}
+                  </Badge>
+                )}
+                <Badge variant={event.status === "published" ? "default" : "secondary"}>
+                  {event.status}
+                </Badge>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="pt-0">
