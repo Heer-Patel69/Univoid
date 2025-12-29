@@ -53,3 +53,6 @@ verify_jwt = false
 
 [functions.sync-to-sheets]
 verify_jwt = true
+
+[functions.send-volunteer-notification]
+verify_jwt = true
