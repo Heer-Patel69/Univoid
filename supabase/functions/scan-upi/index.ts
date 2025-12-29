@@ -1,7 +1,4 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
-import jsQR from 'https://esm.sh/jsqr@1.4.0';
-import { PNG } from 'https://esm.sh/pngjs@7.0.0';
-import jpeg from 'https://esm.sh/jpeg-js@0.4.4';
 
 type RequestBody = {
   bucket: string;
@@ -21,37 +18,32 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 const UPI_REGEX = /^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/;
 
 function parseUpiIdFromContent(data: string): string | null {
-  const match = data.match(/upi:\/\/pay\?([^ \n\r\t]+)/i);
-  if (!match) return null;
-
-  try {
-    const url = new URL(`upi://pay?${match[1]}`);
-    const pa = url.searchParams.get('pa');
-    if (pa && UPI_REGEX.test(pa)) return pa;
-  } catch (_e) {
-    return null;
+  // Try standard UPI URL format
+  const upiMatch = data.match(/upi:\/\/pay\?([^ \n\r\t]+)/i);
+  if (upiMatch) {
+    try {
+      const url = new URL(`upi://pay?${upiMatch[1]}`);
+      const pa = url.searchParams.get('pa');
+      if (pa && UPI_REGEX.test(pa)) return pa;
+    } catch (_e) {
+      // Continue to other extraction methods
+    }
   }
+
+  // Try to find pa= parameter directly
+  const paMatch = data.match(/pa=([^&\s]+)/i);
+  if (paMatch) {
+    const pa = decodeURIComponent(paMatch[1]);
+    if (UPI_REGEX.test(pa)) return pa;
+  }
+
+  // Try to find any UPI ID pattern in the string
+  const upiIdMatch = data.match(/([a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64})/);
+  if (upiIdMatch && UPI_REGEX.test(upiIdMatch[1])) {
+    return upiIdMatch[1];
+  }
+
   return null;
-}
-
-function bufferToImageData(buffer: Uint8Array, contentType?: string): { data: Uint8ClampedArray; width: number; height: number } {
-  if (contentType?.includes('png')) {
-    const png = PNG.sync.read(buffer);
-    return { data: new Uint8ClampedArray(png.data), width: png.width, height: png.height };
-  }
-  if (contentType?.includes('jpeg') || contentType?.includes('jpg')) {
-    const { data, width, height } = jpeg.decode(buffer, { useTArray: true });
-    return { data: new Uint8ClampedArray(data), width, height };
-  }
-  // Try both decoders as fallback
-  try {
-    const png = PNG.sync.read(buffer);
-    return { data: new Uint8ClampedArray(png.data), width: png.width, height: png.height };
-  } catch {
-    // Fallback to JPEG
-  }
-  const { data, width, height } = jpeg.decode(buffer, { useTArray: true });
-  return { data: new Uint8ClampedArray(data), width, height };
 }
 
 Deno.serve(async (req) => {
@@ -72,41 +64,53 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { data: fileData, error } = await supabase.storage.from(bucket).download(path);
-    if (error || !fileData) {
-      console.error('scan-upi: File download failed', error);
-      return new Response(JSON.stringify({ success: false, error: 'File download failed' }), {
+    // Get signed URL for the image
+    const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+      .from(bucket)
+      .createSignedUrl(path, 60);
+
+    if (signedUrlError || !signedUrlData?.signedUrl) {
+      console.error('scan-upi: Could not get signed URL', signedUrlError);
+      return new Response(JSON.stringify({ success: false, error: 'Could not access file' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const arrayBuffer = await fileData.arrayBuffer();
-    const buffer = new Uint8Array(arrayBuffer);
+    // Use Google's ZXing-based QR decoder API (free, no API key needed)
+    const zxingUrl = `https://api.qrserver.com/v1/read-qr-code/?fileurl=${encodeURIComponent(signedUrlData.signedUrl)}`;
     
-    // Detect content type from file extension
-    const ext = path.split('.').pop()?.toLowerCase();
-    const contentType = ext === 'png' ? 'image/png' : 'image/jpeg';
+    console.log('scan-upi: Calling QR decode API');
     
-    const { data, width, height } = bufferToImageData(buffer, contentType);
+    const qrResponse = await fetch(zxingUrl);
+    const qrResult = await qrResponse.json();
+    
+    console.log('scan-upi: QR decode result', JSON.stringify(qrResult));
 
-    console.log('scan-upi: Image decoded', { width, height });
-
-    const qr = jsQR(data, width, height);
-    if (!qr?.data) {
-      console.log('scan-upi: QR decode failed');
-      return new Response(JSON.stringify({ success: false, error: 'QR decode failed - no QR code found in image' }), {
+    // Extract QR data from response
+    const qrData = qrResult?.[0]?.symbol?.[0]?.data;
+    
+    if (!qrData) {
+      const qrError = qrResult?.[0]?.symbol?.[0]?.error;
+      console.log('scan-upi: QR decode failed', qrError);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: qrError || 'QR decode failed - no QR code found in image' 
+      }), {
         status: 422,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    console.log('scan-upi: QR content', qr.data);
+    console.log('scan-upi: QR content', qrData);
 
-    const upiId = parseUpiIdFromContent(qr.data);
+    const upiId = parseUpiIdFromContent(qrData);
     if (!upiId) {
       console.log('scan-upi: UPI ID not found in QR content');
-      return new Response(JSON.stringify({ success: false, error: 'UPI ID not found in QR - ensure this is a valid UPI payment QR' }), {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'UPI ID not found in QR - ensure this is a valid UPI payment QR' 
+      }), {
         status: 422,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
