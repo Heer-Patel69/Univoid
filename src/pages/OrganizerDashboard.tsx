@@ -12,9 +12,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import AuthModal from "@/components/auth/AuthModal";
 import QRScanner from "@/components/events/QRScanner";
+import { GoogleSheetsSync } from "@/components/organizer/GoogleSheetsSync";
+import { ClubMembershipManager } from "@/components/organizer/ClubMembershipManager";
 import { 
   Plus, Calendar, Users, CheckCircle, XCircle, Eye, 
-  ScanLine, Pencil, TicketCheck, Clock, TrendingUp 
+  ScanLine, Pencil, TicketCheck, Clock, TrendingUp, Shield, FileSpreadsheet 
 } from "lucide-react";
 import { format } from "date-fns";
 import type { Event, EventRegistration } from "@/services/eventsService";
@@ -387,63 +389,93 @@ const OrganizerDashboard = () => {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <Tabs defaultValue="pending">
-                      <TabsList className="mb-4">
-                        <TabsTrigger value="pending" className="gap-1">
-                          Pending 
-                          {pendingCount > 0 && <Badge variant="destructive" className="ml-1 h-5 px-1.5">{pendingCount}</Badge>}
+                    <Tabs defaultValue="registrations">
+                      <TabsList className="mb-4 flex-wrap h-auto">
+                        <TabsTrigger value="registrations" className="gap-1">
+                          <Users className="w-4 h-4" /> Registrations
                         </TabsTrigger>
-                        <TabsTrigger value="approved">Approved ({approvedCount})</TabsTrigger>
-                        <TabsTrigger value="rejected">Rejected</TabsTrigger>
+                        <TabsTrigger value="clubs" className="gap-1">
+                          <Shield className="w-4 h-4" /> Club Members
+                        </TabsTrigger>
+                        <TabsTrigger value="sheets" className="gap-1">
+                          <FileSpreadsheet className="w-4 h-4" /> Export
+                        </TabsTrigger>
                       </TabsList>
 
-                      {["pending", "approved", "rejected"].map(status => (
-                        <TabsContent key={status} value={status} className="space-y-3 mt-0">
-                          {registrations?.filter(r => r.payment_status === status).length === 0 ? (
-                            <p className="text-center py-8 text-muted-foreground text-sm">No {status} registrations</p>
-                          ) : (
-                            registrations?.filter(r => r.payment_status === status).map(reg => (
-                              <Card key={reg.registration_id} className="border">
-                                <CardContent className="p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                                  <div className="flex items-center gap-3">
-                                    <Avatar className="h-9 w-9">
-                                      <AvatarImage src={reg.profile_photo_url || undefined} />
-                                      <AvatarFallback className="text-xs">
-                                        {reg.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                      <p className="font-medium text-sm">{reg.full_name || 'Unknown User'}</p>
-                                      <p className="text-xs text-muted-foreground">{reg.email || 'No email'}</p>
-                                      {reg.mobile_number && (
-                                        <p className="text-xs text-muted-foreground">{reg.mobile_number}</p>
-                                      )}
-                                      <p className="text-xs text-muted-foreground/70">{format(new Date(reg.created_at), "MMM d, h:mm a")}</p>
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center gap-2 w-full sm:w-auto">
-                                    {reg.payment_screenshot_url && (
-                                      <a href={reg.payment_screenshot_url} target="_blank" rel="noopener noreferrer">
-                                        <Button variant="outline" size="sm" className="text-xs">Screenshot</Button>
-                                      </a>
-                                    )}
-                                    {status === "pending" && (
-                                      <>
-                                        <Button size="sm" className="flex-1 sm:flex-none text-xs" onClick={() => updateStatusMutation.mutate({ id: reg.registration_id, status: "approved", userId: reg.user_id })}>
-                                          <CheckCircle className="w-3 h-3 mr-1" /> Approve
-                                        </Button>
-                                        <Button size="sm" variant="destructive" className="flex-1 sm:flex-none text-xs" onClick={() => updateStatusMutation.mutate({ id: reg.registration_id, status: "rejected", userId: reg.user_id })}>
-                                          <XCircle className="w-3 h-3 mr-1" /> Reject
-                                        </Button>
-                                      </>
-                                    )}
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            ))
-                          )}
-                        </TabsContent>
-                      ))}
+                      <TabsContent value="registrations">
+                        <Tabs defaultValue="pending">
+                          <TabsList className="mb-4">
+                            <TabsTrigger value="pending" className="gap-1">
+                              Pending 
+                              {pendingCount > 0 && <Badge variant="destructive" className="ml-1 h-5 px-1.5">{pendingCount}</Badge>}
+                            </TabsTrigger>
+                            <TabsTrigger value="approved">Approved ({approvedCount})</TabsTrigger>
+                            <TabsTrigger value="rejected">Rejected</TabsTrigger>
+                          </TabsList>
+
+                          {["pending", "approved", "rejected"].map(status => (
+                            <TabsContent key={status} value={status} className="space-y-3 mt-0">
+                              {registrations?.filter(r => r.payment_status === status).length === 0 ? (
+                                <p className="text-center py-8 text-muted-foreground text-sm">No {status} registrations</p>
+                              ) : (
+                                registrations?.filter(r => r.payment_status === status).map(reg => (
+                                  <Card key={reg.registration_id} className="border">
+                                    <CardContent className="p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                      <div className="flex items-center gap-3">
+                                        <Avatar className="h-9 w-9">
+                                          <AvatarImage src={reg.profile_photo_url || undefined} />
+                                          <AvatarFallback className="text-xs">
+                                            {reg.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+                                          </AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                          <p className="font-medium text-sm">{reg.full_name || 'Unknown User'}</p>
+                                          <p className="text-xs text-muted-foreground">{reg.email || 'No email'}</p>
+                                          {reg.mobile_number && (
+                                            <p className="text-xs text-muted-foreground">{reg.mobile_number}</p>
+                                          )}
+                                          <p className="text-xs text-muted-foreground/70">{format(new Date(reg.created_at), "MMM d, h:mm a")}</p>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-2 w-full sm:w-auto">
+                                        {reg.payment_screenshot_url && (
+                                          <a href={reg.payment_screenshot_url} target="_blank" rel="noopener noreferrer">
+                                            <Button variant="outline" size="sm" className="text-xs">Screenshot</Button>
+                                          </a>
+                                        )}
+                                        {status === "pending" && (
+                                          <>
+                                            <Button size="sm" className="flex-1 sm:flex-none text-xs" onClick={() => updateStatusMutation.mutate({ id: reg.registration_id, status: "approved", userId: reg.user_id })}>
+                                              <CheckCircle className="w-3 h-3 mr-1" /> Approve
+                                            </Button>
+                                            <Button size="sm" variant="destructive" className="flex-1 sm:flex-none text-xs" onClick={() => updateStatusMutation.mutate({ id: reg.registration_id, status: "rejected", userId: reg.user_id })}>
+                                              <XCircle className="w-3 h-3 mr-1" /> Reject
+                                            </Button>
+                                          </>
+                                        )}
+                                      </div>
+                                    </CardContent>
+                                  </Card>
+                                ))
+                              )}
+                            </TabsContent>
+                          ))}
+                        </Tabs>
+                      </TabsContent>
+
+                      <TabsContent value="clubs">
+                        <ClubMembershipManager 
+                          eventId={selectedEvent!} 
+                          organizerId={user.id} 
+                        />
+                      </TabsContent>
+
+                      <TabsContent value="sheets">
+                        <GoogleSheetsSync 
+                          eventId={selectedEvent!} 
+                          eventTitle={selectedEventData.title} 
+                        />
+                      </TabsContent>
                     </Tabs>
                   </CardContent>
                 </Card>

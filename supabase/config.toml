@@ -50,3 +50,6 @@ verify_jwt = false
 
 [functions.send-registration-email]
 verify_jwt = false
+
+[functions.sync-to-sheets]
+verify_jwt = true
