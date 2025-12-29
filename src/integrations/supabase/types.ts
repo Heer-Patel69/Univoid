@@ -2131,6 +2131,15 @@ export type Database = {
       }
       is_admin_or_assistant: { Args: { _user_id: string }; Returns: boolean }
       is_email_blocked: { Args: { p_email: string }; Returns: boolean }
+      register_for_event_atomic: {
+        Args: {
+          p_custom_data?: Json
+          p_event_id: string
+          p_payment_screenshot_url?: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       secure_check_in: {
         Args: {
           p_device_fingerprint?: string
