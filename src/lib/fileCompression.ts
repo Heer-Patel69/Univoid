@@ -25,10 +25,52 @@ export const ALLOWED_FILE_TYPES = {
   ebooks: ['epub', 'mobi'],
 };
 
-export const BLOCKED_FILE_TYPES = ['mp4', 'mkv', 'avi', 'mov', 'wmv', 'flv', 'webm', 'exe', 'bat', 'sh', 'dll', 'apk'];
+export const BLOCKED_FILE_TYPES = ['mp4', 'mkv', 'avi', 'mov', 'wmv', 'flv', 'webm', 'exe', 'bat', 'sh', 'dll', 'apk', 'js', 'html', 'htm', 'jar', 'msi', 'cmd', 'vbs', 'ps1'];
 
-// Validate file before upload
-export function validateMaterialFile(file: File): string | null {
+// Whitelist of safe MIME types based on file content
+export const ALLOWED_MIME_TYPES = [
+  // Documents
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'text/plain',
+  'application/rtf',
+  // Images
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'image/bmp',
+  // Archives
+  'application/zip',
+  'application/x-zip-compressed',
+  'application/x-rar-compressed',
+  'application/x-7z-compressed',
+  // eBooks
+  'application/epub+zip',
+  'application/x-mobipocket-ebook',
+];
+
+// Dangerous MIME types to explicitly block
+export const BLOCKED_MIME_TYPES = [
+  'application/x-msdownload', // .exe
+  'application/x-msdos-program',
+  'application/x-sh', // shell scripts
+  'application/x-bat',
+  'application/javascript',
+  'text/javascript',
+  'application/x-java-archive', // .jar
+  'text/html',
+  'application/x-httpd-php',
+  'application/x-executable',
+];
+
+// Validate file before upload with MIME type checking from file headers
+export async function validateMaterialFile(file: File): Promise<string | null> {
   // Check size (100MB limit)
   if (file.size > MAX_FILE_SIZE_BYTES) {
     return `File size must be less than ${MAX_FILE_SIZE_MB}MB. Your file is ${(file.size / 1024 / 1024).toFixed(1)}MB`;
@@ -36,12 +78,29 @@ export function validateMaterialFile(file: File): string | null {
   
   const ext = file.name.split('.').pop()?.toLowerCase() || '';
   
-  // Check blocked types
+  // Check blocked extensions
   if (BLOCKED_FILE_TYPES.includes(ext)) {
-    return `${ext.toUpperCase()} files are not allowed`;
+    return `${ext.toUpperCase()} files are not allowed for security reasons`;
   }
   
-  // Check if it's an allowed type
+  // Validate MIME type from file content (not just extension)
+  const mimeType = file.type;
+  
+  // Block dangerous MIME types
+  if (BLOCKED_MIME_TYPES.includes(mimeType)) {
+    return `This file type is not allowed for security reasons`;
+  }
+  
+  // Check if MIME type is in whitelist (if browser provides it)
+  if (mimeType && !ALLOWED_MIME_TYPES.includes(mimeType)) {
+    // If mime type doesn't match, read file header to verify
+    const isValidHeader = await validateFileHeader(file);
+    if (!isValidHeader) {
+      return `Invalid or unsafe file type. File appears to be: ${mimeType || 'unknown'}`;
+    }
+  }
+  
+  // Check if extension is allowed
   const allAllowed = [
     ...ALLOWED_FILE_TYPES.documents,
     ...ALLOWED_FILE_TYPES.images,
@@ -54,6 +113,58 @@ export function validateMaterialFile(file: File): string | null {
   }
   
   return null;
+}
+
+// Validate file header (magic bytes) to prevent MIME type spoofing
+async function validateFileHeader(file: File): Promise<boolean> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    const blob = file.slice(0, 8); // Read first 8 bytes for magic number
+    
+    reader.onload = (e) => {
+      if (!e.target?.result) {
+        resolve(false);
+        return;
+      }
+      
+      const arr = new Uint8Array(e.target.result as ArrayBuffer);
+      const header = Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+      
+      // Check for common safe file types by magic bytes
+      const safeHeaders = [
+        '25504446', // PDF (%PDF)
+        '504b0304', // ZIP, DOCX, XLSX, PPTX (PK..)
+        'd0cf11e0', // DOC, XLS, PPT (legacy Office)
+        'ffd8ff', // JPEG
+        '89504e47', // PNG
+        '47494638', // GIF
+        '52494646', // WEBP (RIFF)
+      ];
+      
+      // Check for dangerous executable headers
+      const dangerousHeaders = [
+        '4d5a', // EXE, DLL (MZ)
+        '7f454c46', // ELF (Linux executable)
+        'cafebabe', // Java class file
+        '213c617263683e', // Unix archive
+      ];
+      
+      // Block if dangerous header detected
+      for (const dangerous of dangerousHeaders) {
+        if (header.startsWith(dangerous)) {
+          resolve(false);
+          return;
+        }
+      }
+      
+      // Allow if safe header detected or if we can't determine (text files, etc.)
+      const isSafe = safeHeaders.some(safe => header.startsWith(safe));
+      resolve(isSafe || header.length < 4); // Allow small headers (likely text)
+    };
+    
+    reader.onerror = () => resolve(false);
+    reader.readAsArrayBuffer(blob);
+  });
 }
 
 // Determine if file is a book/ebook

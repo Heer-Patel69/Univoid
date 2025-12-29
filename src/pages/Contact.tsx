@@ -37,10 +37,11 @@ const Contact = () => {
   });
 
   const onSubmit = async (data: ContactFormData) => {
-    // Rate limiting - prevent spam submissions
+    // Rate limiting - prevent spam submissions (60 seconds)
     const now = Date.now();
-    if (now - lastSubmitTime < 30000) {
-      toast.error("Please wait before submitting again");
+    if (now - lastSubmitTime < 60000) {
+      const remainingSeconds = Math.ceil((60000 - (now - lastSubmitTime)) / 1000);
+      toast.error(`Please wait ${remainingSeconds} seconds before submitting again`);
       return;
     }
 

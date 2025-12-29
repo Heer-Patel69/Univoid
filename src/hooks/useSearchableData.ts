@@ -3,6 +3,14 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type LookupTable = "lookup_states" | "lookup_cities" | "lookup_universities" | "lookup_branches";
 
+// Whitelist of allowed table names to prevent SQL injection
+const ALLOWED_LOOKUP_TABLES: readonly LookupTable[] = [
+  "lookup_states",
+  "lookup_cities", 
+  "lookup_universities",
+  "lookup_branches"
+] as const;
+
 interface LookupItem {
   id: string;
   name: string;
@@ -18,7 +26,12 @@ interface UseSearchableDataOptions {
   limit?: number;
 }
 
-// Helper to fetch from dynamic table
+// Validate table name against whitelist
+function isValidLookupTable(tableName: string): tableName is LookupTable {
+  return ALLOWED_LOOKUP_TABLES.includes(tableName as LookupTable);
+}
+
+// Helper to fetch from dynamic table with SQL injection prevention
 async function fetchFromTable(
   tableName: LookupTable,
   searchTerm: string | null,
@@ -28,10 +41,16 @@ async function fetchFromTable(
   popularOnly: boolean = false
 ): Promise<LookupItem[]> {
   try {
-    // Use any to bypass strict type checking for dynamic tables
-    const baseQuery = supabase.from(tableName as any);
+    // Validate table name against whitelist
+    if (!isValidLookupTable(tableName)) {
+      console.error('Invalid table name:', tableName);
+      return [];
+    }
     
-    let selectQuery = baseQuery.select("id, name, is_popular") as any;
+    // Build query with validated table name
+    const baseQuery = supabase.from(tableName);
+    
+    let selectQuery = baseQuery.select("id, name, is_popular");
 
     if (popularOnly) {
       selectQuery = selectQuery.eq("is_popular", true);

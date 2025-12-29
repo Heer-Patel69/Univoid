@@ -17,12 +17,35 @@ interface SubscriptionOptions {
 }
 
 /**
- * Global real-time subscription hook with debouncing
+ * Global real-time subscription hook with debouncing and automatic timeout
  * Provides instant UI updates across the app
+ * Automatically cleans up after 30 minutes of inactivity to prevent memory leaks
  */
 export function useRealtimeSubscription(options: SubscriptionOptions | SubscriptionOptions[]) {
   const channelRef = useRef<RealtimeChannel | null>(null);
   const debounceTimers = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastActivityRef = useRef<number>(Date.now());
+
+  const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+
+  const resetInactivityTimer = useCallback(() => {
+    lastActivityRef.current = Date.now();
+    
+    // Clear existing timer
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+    }
+    
+    // Set new inactivity timer
+    inactivityTimerRef.current = setTimeout(() => {
+      console.log('Realtime subscription cleanup due to inactivity');
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    }, INACTIVITY_TIMEOUT);
+  }, []);
 
   const createDebouncedHandler = useCallback((
     handler: ((payload: any) => void) | undefined,
@@ -32,6 +55,8 @@ export function useRealtimeSubscription(options: SubscriptionOptions | Subscript
     if (!handler) return undefined;
     
     return (payload: any) => {
+      resetInactivityTimer(); // Reset timer on any activity
+      
       const existingTimer = debounceTimers.current.get(key);
       if (existingTimer) {
         clearTimeout(existingTimer);
@@ -49,13 +74,16 @@ export function useRealtimeSubscription(options: SubscriptionOptions | Subscript
       
       debounceTimers.current.set(key, timer);
     };
-  }, []);
+  }, [resetInactivityTimer]);
 
   useEffect(() => {
     const subscriptions = Array.isArray(options) ? options : [options];
     const channelName = `realtime-${subscriptions.map(s => s.table).join('-')}-${Date.now()}`;
     
     const channel = supabase.channel(channelName);
+
+    // Initialize inactivity timer
+    resetInactivityTimer();
 
     subscriptions.forEach((sub, index) => {
       const debounceMs = sub.debounceMs ?? 300;
@@ -91,11 +119,16 @@ export function useRealtimeSubscription(options: SubscriptionOptions | Subscript
       debounceTimers.current.forEach(timer => clearTimeout(timer));
       debounceTimers.current.clear();
       
+      // Clear inactivity timer
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+      }
+      
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
       }
     };
-  }, [options, createDebouncedHandler]);
+  }, [options, createDebouncedHandler, resetInactivityTimer]);
 
   return channelRef.current;
 }

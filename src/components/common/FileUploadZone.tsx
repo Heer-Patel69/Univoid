@@ -51,15 +51,7 @@ export function FileUploadZone({
     setIsDragOver(false);
   }, []);
 
-  const validateFile = useCallback((selectedFile: File): boolean => {
-    // Check video files first
-    const videoExtensions = ['mp4', 'mkv', 'avi', 'mov', 'wmv', 'flv', 'webm'];
-    const ext = selectedFile.name.split('.').pop()?.toLowerCase() || '';
-    if (videoExtensions.includes(ext)) {
-      toast.error("Video files are not allowed. Please upload documents or images.");
-      return false;
-    }
-    
+  const validateFile = useCallback(async (selectedFile: File): Promise<boolean> => {
     // Check file size with clear error message
     const maxSizeBytes = maxSizeMB * 1024 * 1024;
     if (selectedFile.size > maxSizeBytes) {
@@ -68,10 +60,25 @@ export function FileUploadZone({
       return false;
     }
     
+    // Block dangerous file extensions
+    const dangerousExtensions = ['exe', 'bat', 'sh', 'dll', 'jar', 'js', 'html', 'htm', 'msi', 'cmd', 'vbs', 'ps1', 'app'];
+    const ext = selectedFile.name.split('.').pop()?.toLowerCase() || '';
+    if (dangerousExtensions.includes(ext)) {
+      toast.error("This file type is not allowed for security reasons.");
+      return false;
+    }
+    
+    // Check video files
+    const videoExtensions = ['mp4', 'mkv', 'avi', 'mov', 'wmv', 'flv', 'webm'];
+    if (videoExtensions.includes(ext)) {
+      toast.error("Video files are not allowed. Please upload documents or images.");
+      return false;
+    }
+    
     return true;
   }, [maxSizeMB]);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
@@ -80,16 +87,16 @@ export function FileUploadZone({
     
     const droppedFile = e.dataTransfer.files?.[0];
     if (droppedFile) {
-      if (validateFile(droppedFile)) {
+      if (await validateFile(droppedFile)) {
         onFileSelect(droppedFile);
       }
     }
   }, [disabled, isUploading, validateFile, onFileSelect]);
 
-  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
-      if (validateFile(selectedFile)) {
+      if (await validateFile(selectedFile)) {
         onFileSelect(selectedFile);
       }
     }

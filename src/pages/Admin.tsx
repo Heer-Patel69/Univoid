@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
+import DOMPurify from "dompurify";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -771,7 +772,15 @@ const Admin = () => {
                   </div>
 
                   <div className="mt-3 p-3 bg-muted/50 rounded-lg">
-                    <p className="text-sm text-foreground whitespace-pre-wrap">{message.message}</p>
+                    <p 
+                      className="text-sm text-foreground whitespace-pre-wrap"
+                      dangerouslySetInnerHTML={{
+                        __html: DOMPurify.sanitize(message.message, {
+                          ALLOWED_TAGS: ['br'],
+                          ALLOWED_ATTR: []
+                        })
+                      }}
+                    />
                   </div>
                 </div>
 
