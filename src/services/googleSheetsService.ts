@@ -13,10 +13,10 @@ export interface SheetSyncConfig {
 export async function syncToGoogleSheets(
   eventId: string,
   spreadsheetId: string,
-  sheetName: string = "Registrations"
-): Promise<{ success: boolean; message: string; rowCount?: number }> {
+  sheetName: string = ""
+): Promise<{ success: boolean; message: string; rowCount?: number; sheetName?: string }> {
   const { data, error } = await supabase.functions.invoke("sync-to-sheets", {
-    body: { eventId, spreadsheetId, sheetName },
+    body: { eventId, spreadsheetId, sheetName: sheetName || undefined },
   });
 
   if (error) throw error;
