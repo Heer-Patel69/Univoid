@@ -44,7 +44,7 @@ export const STATUS_LABELS: Record<VolunteerInviteStatus, string> = {
 
 /**
  * Find a user by email (must be registered on UniVoid)
- * Uses case-insensitive matching and handles OAuth users
+ * Uses the database function that checks both profiles and auth.users tables
  */
 export async function findUserByEmail(email: string): Promise<{ id: string; full_name: string; email: string } | null> {
   const normalizedEmail = email.toLowerCase().trim();
@@ -56,43 +56,28 @@ export async function findUserByEmail(email: string): Promise<{ id: string; full
 
   console.log('[Volunteer Invite] Searching for user with email:', normalizedEmail);
 
-  // Use filter with case-insensitive comparison
+  // Use the database function that has access to auth.users
   const { data, error } = await supabase
-    .from('profiles')
-    .select('id, full_name, email')
-    .filter('email', 'ilike', normalizedEmail)
-    .limit(1)
-    .maybeSingle();
+    .rpc('find_user_by_email', { search_email: normalizedEmail });
 
   if (error) {
     console.error('[Volunteer Invite] Error finding user by email:', error);
-    
-    // Fallback: try exact match with lowercase
-    console.log('[Volunteer Invite] Trying fallback exact match...');
-    const { data: fallbackData, error: fallbackError } = await supabase
-      .from('profiles')
-      .select('id, full_name, email')
-      .eq('email', normalizedEmail)
-      .maybeSingle();
-    
-    if (fallbackError) {
-      console.error('[Volunteer Invite] Fallback also failed:', fallbackError);
-      throw new Error('Failed to search for user');
-    }
-    
-    if (fallbackData) {
-      console.log('[Volunteer Invite] Found user via fallback:', { id: fallbackData.id, name: fallbackData.full_name });
-    }
-    return fallbackData;
+    throw new Error('Failed to search for user');
   }
 
-  if (data) {
-    console.log('[Volunteer Invite] Found user:', { id: data.id, name: data.full_name });
-  } else {
-    console.log('[Volunteer Invite] No user found with email:', normalizedEmail);
+  // The function returns an array, get the first result
+  if (data && data.length > 0) {
+    const user = data[0];
+    console.log('[Volunteer Invite] Found user:', { id: user.user_id, name: user.user_full_name });
+    return {
+      id: user.user_id,
+      full_name: user.user_full_name || normalizedEmail.split('@')[0],
+      email: user.user_email
+    };
   }
 
-  return data;
+  console.log('[Volunteer Invite] No user found with email:', normalizedEmail);
+  return null;
 }
 
 /**

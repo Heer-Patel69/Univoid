@@ -1955,6 +1955,14 @@ export type Database = {
         }
         Returns: string
       }
+      find_user_by_email: {
+        Args: { search_email: string }
+        Returns: {
+          user_email: string
+          user_full_name: string
+          user_id: string
+        }[]
+      }
       generate_secure_ticket_token: { Args: never; Returns: string }
       generate_ticket_qr: { Args: never; Returns: string }
       get_book_by_id_safe: {
