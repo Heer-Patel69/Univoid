@@ -1775,6 +1775,57 @@ export type Database = {
           },
         ]
       }
+      volunteer_attendance: {
+        Row: {
+          check_in_at: string
+          check_out_at: string | null
+          created_at: string
+          event_id: string
+          id: string
+          invite_id: string | null
+          notes: string | null
+          total_hours: number | null
+          user_id: string
+        }
+        Insert: {
+          check_in_at?: string
+          check_out_at?: string | null
+          created_at?: string
+          event_id: string
+          id?: string
+          invite_id?: string | null
+          notes?: string | null
+          total_hours?: number | null
+          user_id: string
+        }
+        Update: {
+          check_in_at?: string
+          check_out_at?: string | null
+          created_at?: string
+          event_id?: string
+          id?: string
+          invite_id?: string | null
+          notes?: string | null
+          total_hours?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "volunteer_attendance_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "volunteer_attendance_invite_id_fkey"
+            columns: ["invite_id"]
+            isOneToOne: false
+            referencedRelation: "event_volunteer_invites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       volunteer_roles: {
         Row: {
           created_at: string
