@@ -11,12 +11,14 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchEventById, checkUserRegistration, registerForEvent } from "@/services/eventsService";
 import { supabase } from "@/integrations/supabase/client";
 import AuthModal from "@/components/auth/AuthModal";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb";
+import DynamicRegistrationForm from "@/components/events/DynamicRegistrationForm";
 import { Calendar, MapPin, Users, IndianRupee, ExternalLink, Clock, Share2, CheckCircle, AlertCircle, Upload, Eye } from "lucide-react";
 
 const EventDetail = () => {
@@ -28,7 +30,6 @@ const EventDetail = () => {
   
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
-  const [customData, setCustomData] = useState<Record<string, string>>({});
   const [paymentScreenshot, setPaymentScreenshot] = useState<File | null>(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -48,7 +49,7 @@ const EventDetail = () => {
   });
 
   const registerMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (customData: Record<string, unknown>) => {
       if (!user || !event) throw new Error("Missing data");
 
       let screenshotUrl = null;
@@ -119,9 +120,12 @@ const EventDetail = () => {
           : "You're registered! Check your tickets.",
       });
       setIsRegisterOpen(false);
+      setPaymentScreenshot(null);
+      setAgreedToTerms(false);
       queryClient.invalidateQueries({ queryKey: ["registration", eventId] });
     },
     onError: (error: Error) => {
+      setUploading(false);
       toast({ title: "Registration Failed", description: error.message, variant: "destructive" });
     },
   });
@@ -161,6 +165,38 @@ const EventDetail = () => {
       </div>
     );
   }
+
+  // Payment section to pass to DynamicRegistrationForm
+  const paymentSection = event.is_paid ? (
+    <div className="space-y-4 p-4 bg-muted rounded-xl">
+      <p className="font-medium">Payment Instructions</p>
+      <p className="text-sm text-muted-foreground">Pay ₹{event.price} using UPI, then upload screenshot.</p>
+      {event.upi_qr_url && (
+        <div className="bg-white p-4 rounded-xl w-fit mx-auto">
+          <img src={event.upi_qr_url} alt="UPI QR" className="w-48 h-48 object-contain" loading="lazy" />
+        </div>
+      )}
+      {event.upi_vpa && <p className="text-center text-sm">UPI ID: <code className="bg-background px-2 py-1 rounded">{event.upi_vpa}</code></p>}
+      <div className="space-y-2">
+        <Label>Upload Payment Screenshot *</Label>
+        <div className="border-2 border-dashed rounded-xl p-4 text-center">
+          <Input type="file" accept="image/*" onChange={(e) => setPaymentScreenshot(e.target.files?.[0] || null)} className="hidden" id="payment-screenshot" />
+          <label htmlFor="payment-screenshot" className="cursor-pointer flex flex-col items-center gap-2">
+            <Upload className="w-8 h-8 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">{paymentScreenshot ? paymentScreenshot.name : "Click to upload"}</span>
+          </label>
+        </div>
+      </div>
+    </div>
+  ) : null;
+
+  // Terms section to pass to DynamicRegistrationForm
+  const termsSection = event.terms_conditions ? (
+    <div className="flex items-start gap-2">
+      <Checkbox id="terms" checked={agreedToTerms} onCheckedChange={(c) => setAgreedToTerms(c === true)} />
+      <label htmlFor="terms" className="text-sm text-muted-foreground">I agree to the event terms and conditions</label>
+    </div>
+  ) : null;
 
   return (
     <div className="container mx-auto px-4 py-6 pb-24 md:pb-8">
@@ -289,44 +325,27 @@ const EventDetail = () => {
                       {!user ? "Login to Register" : isEventPast ? "Event Ended" : isFull ? "Event Full" : "Register Now"}
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-md">
+                  <DialogContent className="max-w-md max-h-[90vh]">
                     <DialogHeader>
                       <DialogTitle>Register for {event.title}</DialogTitle>
-                      <DialogDescription>{event.is_paid ? `Pay ₹${event.price} and upload screenshot` : "Complete your registration"}</DialogDescription>
+                      <DialogDescription>
+                        {event.is_paid ? `Pay ₹${event.price} and complete the form` : "Complete your registration"}
+                      </DialogDescription>
                     </DialogHeader>
-                    <div className="space-y-4 py-4">
-                      {event.is_paid && (
-                        <div className="space-y-4 p-4 bg-muted rounded-xl">
-                          <p className="font-medium">Payment Instructions</p>
-                          <p className="text-sm text-muted-foreground">Pay ₹{event.price} using UPI, then upload screenshot.</p>
-                          {event.upi_qr_url && (
-                            <div className="bg-white p-4 rounded-xl w-fit mx-auto">
-                              <img src={event.upi_qr_url} alt="UPI QR" className="w-48 h-48 object-contain" loading="lazy" />
-                            </div>
-                          )}
-                          {event.upi_vpa && <p className="text-center text-sm">UPI ID: <code className="bg-background px-2 py-1 rounded">{event.upi_vpa}</code></p>}
-                          <div className="space-y-2">
-                            <Label>Upload Payment Screenshot *</Label>
-                            <div className="border-2 border-dashed rounded-xl p-4 text-center">
-                              <Input type="file" accept="image/*" onChange={(e) => setPaymentScreenshot(e.target.files?.[0] || null)} className="hidden" id="payment-screenshot" />
-                              <label htmlFor="payment-screenshot" className="cursor-pointer flex flex-col items-center gap-2">
-                                <Upload className="w-8 h-8 text-muted-foreground" />
-                                <span className="text-sm text-muted-foreground">{paymentScreenshot ? paymentScreenshot.name : "Click to upload"}</span>
-                              </label>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      {event.terms_conditions && (
-                        <div className="flex items-start gap-2">
-                          <Checkbox id="terms" checked={agreedToTerms} onCheckedChange={(c) => setAgreedToTerms(c === true)} />
-                          <label htmlFor="terms" className="text-sm text-muted-foreground">I agree to terms</label>
-                        </div>
-                      )}
-                      <Button className="w-full rounded-full" onClick={() => registerMutation.mutate()} disabled={registerMutation.isPending || uploading || (event.is_paid && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms)}>
-                        {uploading || registerMutation.isPending ? "Submitting..." : event.is_paid ? "Submit Registration" : "Confirm"}
-                      </Button>
-                    </div>
+                    <ScrollArea className="max-h-[60vh] pr-4">
+                      <div className="py-4">
+                        <DynamicRegistrationForm
+                          eventId={eventId!}
+                          onSubmit={(customData) => registerMutation.mutate(customData)}
+                          isSubmitting={registerMutation.isPending || uploading}
+                          isPaidEvent={event.is_paid}
+                          paymentSection={paymentSection}
+                          termsSection={termsSection}
+                          submitDisabled={(event.is_paid && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms)}
+                          submitLabel={event.is_paid ? "Submit Registration" : "Confirm Registration"}
+                        />
+                      </div>
+                    </ScrollArea>
                   </DialogContent>
                 </Dialog>
               )}
