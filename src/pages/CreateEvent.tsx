@@ -16,7 +16,8 @@ import { FormBuilder, type FormBuilderField } from "@/components/events/FormBuil
 import ClubPricingSection, { type EventClubConfig } from "@/components/events/ClubPricingSection";
 import { createFormFields } from "@/services/eventFormService";
 import { addClubToEvent } from "@/services/clubService";
-import { ArrowLeft, ArrowRight, Check, Calendar, FileText, Ticket, CreditCard, Image, ClipboardList } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Calendar, FileText, Ticket, CreditCard, Image, ClipboardList, Loader2 } from "lucide-react";
+import { useUpiScanner } from "@/hooks/useUpiScanner";
 
 const STEPS = [
   { id: 1, title: "Basic Info", icon: Calendar },
@@ -35,6 +36,7 @@ const CreateEvent = () => {
   const { toast } = useToast();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const { scanUpiFromFile, isScanning } = useUpiScanner();
   
   // Form state
   const [formData, setFormData] = useState({
@@ -66,6 +68,16 @@ const CreateEvent = () => {
   const [flyerFile, setFlyerFile] = useState<File | null>(null);
   const [qrFile, setQrFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+
+  const handleQrFileChange = async (file: File | null) => {
+    setQrFile(file);
+    if (file && user) {
+      const upiId = await scanUpiFromFile(file, user.id);
+      if (upiId) {
+        updateForm("upi_vpa", upiId);
+      }
+    }
+  };
 
   const updateForm = (field: string, value: unknown) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -372,19 +384,31 @@ const CreateEvent = () => {
                   </div>
                 ) : (
                   <>
-                    <p className="text-sm text-muted-foreground">Users will pay you directly via UPI. Upload your QR code and VPA ID.</p>
+                    <p className="text-sm text-muted-foreground">Users will pay you directly via UPI. Upload your QR code and the UPI ID will be auto-detected.</p>
                     <div className="space-y-2">
                       <Label>UPI QR Code</Label>
-                      <div className="border-2 border-dashed rounded-xl p-4 text-center">
-                        <Input type="file" accept="image/*" onChange={(e) => setQrFile(e.target.files?.[0] || null)} className="hidden" id="qr" />
+                      <div className="border-2 border-dashed rounded-xl p-4 text-center relative">
+                        <Input type="file" accept="image/*" onChange={(e) => handleQrFileChange(e.target.files?.[0] || null)} className="hidden" id="qr" />
                         <label htmlFor="qr" className="cursor-pointer flex flex-col items-center gap-2">
-                          <Image className="w-8 h-8 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">{qrFile ? qrFile.name : "Upload UPI QR image"}</span>
+                          {isScanning ? (
+                            <>
+                              <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                              <span className="text-sm text-muted-foreground">Scanning QR for UPI ID...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Image className="w-8 h-8 text-muted-foreground" />
+                              <span className="text-sm text-muted-foreground">{qrFile ? qrFile.name : "Upload UPI QR image"}</span>
+                            </>
+                          )}
                         </label>
                       </div>
+                      {qrFile && !isScanning && (
+                        <p className="text-xs text-muted-foreground">UPI ID will be auto-detected from the QR code</p>
+                      )}
                     </div>
                     <div className="space-y-2">
-                      <Label>UPI VPA ID</Label>
+                      <Label>UPI VPA ID {formData.upi_vpa && <span className="text-xs text-green-600">(auto-detected)</span>}</Label>
                       <Input value={formData.upi_vpa} onChange={(e) => updateForm("upi_vpa", e.target.value)} placeholder="yourname@upi" />
                     </div>
                   </>

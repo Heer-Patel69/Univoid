@@ -56,3 +56,6 @@ verify_jwt = true
 
 [functions.send-volunteer-notification]
 verify_jwt = true
+
+[functions.scan-upi]
+verify_jwt = true
