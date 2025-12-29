@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Suspense, lazy, useEffect, memo } from "react";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import AdminRoute from "@/components/auth/AdminRoute";
 import CheckInRedirect from "@/components/common/CheckInRedirect";
 import AppLayout from "@/components/layout/AppLayout";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -242,8 +243,8 @@ export const AnimatedRoutes = () => {
         } />
       </Route>
 
-      {/* Admin with DashboardLayout */}
-      <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+      {/* Admin with DashboardLayout - PROTECTED with AdminRoute */}
+      <Route element={<AdminRoute><DashboardLayout /></AdminRoute>}>
         <Route path="/admin" element={
           <Suspense fallback={<DashboardSkeleton />}><Admin /></Suspense>
         } />
