@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchEventById } from "@/services/eventsService";
 import AuthModal from "@/components/auth/AuthModal";
 import { ArrowLeft, Save, Image, Loader2 } from "lucide-react";
+import { useUpiScanner } from "@/hooks/useUpiScanner";
 
 const CATEGORIES = ["Tech", "Cultural", "Sports", "Academic", "Workshop", "Seminar"];
 const EVENT_TYPES = ["Hackathon", "Party", "Conference", "Workshop", "Competition", "Meetup", "Festival"];
@@ -26,6 +27,7 @@ const EditEvent = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const { scanUpiFromFile, isScanning } = useUpiScanner();
   
   const [formData, setFormData] = useState({
     title: "",
@@ -48,6 +50,16 @@ const EditEvent = () => {
 
   const [flyerFile, setFlyerFile] = useState<File | null>(null);
   const [qrFile, setQrFile] = useState<File | null>(null);
+
+  const handleQrFileChange = async (file: File | null) => {
+    setQrFile(file);
+    if (file && user) {
+      const upiId = await scanUpiFromFile(file, user.id);
+      if (upiId) {
+        setFormData(prev => ({ ...prev, upi_vpa: upiId }));
+      }
+    }
+  };
 
   const { data: event, isLoading } = useQuery({
     queryKey: ["event", eventId],
@@ -329,21 +341,33 @@ const EditEvent = () => {
                     <Input type="number" value={formData.price} onChange={(e) => updateForm("price", parseFloat(e.target.value) || 0)} />
                   </div>
                   <div className="space-y-2">
-                    <Label>UPI VPA ID</Label>
-                    <Input value={formData.upi_vpa} onChange={(e) => updateForm("upi_vpa", e.target.value)} placeholder="yourname@upi" />
-                  </div>
-                  <div className="space-y-2">
                     <Label>UPI QR Code</Label>
                     {event.upi_qr_url && (
                       <img src={event.upi_qr_url} alt="Current QR" className="w-24 h-24 object-contain rounded-lg mb-2" />
                     )}
                     <div className="border-2 border-dashed rounded-xl p-4 text-center">
-                      <Input type="file" accept="image/*" onChange={(e) => setQrFile(e.target.files?.[0] || null)} className="hidden" id="qr" />
+                      <Input type="file" accept="image/*" onChange={(e) => handleQrFileChange(e.target.files?.[0] || null)} className="hidden" id="qr" />
                       <label htmlFor="qr" className="cursor-pointer flex flex-col items-center gap-2">
-                        <Image className="w-8 h-8 text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground">{qrFile ? qrFile.name : "Upload new QR"}</span>
+                        {isScanning ? (
+                          <>
+                            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                            <span className="text-sm text-muted-foreground">Scanning QR for UPI ID...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Image className="w-8 h-8 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">{qrFile ? qrFile.name : "Upload new QR"}</span>
+                          </>
+                        )}
                       </label>
                     </div>
+                    {qrFile && !isScanning && (
+                      <p className="text-xs text-muted-foreground">UPI ID will be auto-detected from the QR code</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label>UPI VPA ID {formData.upi_vpa && <span className="text-xs text-green-600">(editable)</span>}</Label>
+                    <Input value={formData.upi_vpa} onChange={(e) => updateForm("upi_vpa", e.target.value)} placeholder="yourname@upi" />
                   </div>
                 </>
               )}
