@@ -16,6 +16,7 @@ import { GoogleSheetsSync } from "@/components/organizer/GoogleSheetsSync";
 import { ClubMembershipManager } from "@/components/organizer/ClubMembershipManager";
 import { VolunteerManager } from "@/components/organizer/VolunteerManager";
 import { EventAnalytics } from "@/components/organizer/EventAnalytics";
+import { VolunteerInviteList } from "@/components/volunteers";
 import { 
   Plus, Calendar, Users, CheckCircle, XCircle, Eye, 
   ScanLine, Pencil, TicketCheck, Clock, TrendingUp, Shield, FileSpreadsheet, 

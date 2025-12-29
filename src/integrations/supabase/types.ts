@@ -684,6 +684,50 @@ export type Database = {
           },
         ]
       }
+      event_volunteer_invites: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          event_id: string
+          id: string
+          invited_by: string
+          role: Database["public"]["Enums"]["volunteer_invite_role"]
+          status: Database["public"]["Enums"]["volunteer_invite_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          event_id: string
+          id?: string
+          invited_by: string
+          role?: Database["public"]["Enums"]["volunteer_invite_role"]
+          status?: Database["public"]["Enums"]["volunteer_invite_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          event_id?: string
+          id?: string
+          invited_by?: string
+          role?: Database["public"]["Enums"]["volunteer_invite_role"]
+          status?: Database["public"]["Enums"]["volunteer_invite_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_volunteer_invites_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           category: string
@@ -2067,6 +2111,8 @@ export type Database = {
         | "file"
       organizer_application_status: "pending" | "approved" | "rejected"
       ticket_status: "pending" | "approved" | "rejected" | "used"
+      volunteer_invite_role: "entry" | "qr_checkin" | "help_desk" | "all"
+      volunteer_invite_status: "pending" | "accepted" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2214,6 +2260,8 @@ export const Constants = {
       ],
       organizer_application_status: ["pending", "approved", "rejected"],
       ticket_status: ["pending", "approved", "rejected", "used"],
+      volunteer_invite_role: ["entry", "qr_checkin", "help_desk", "all"],
+      volunteer_invite_status: ["pending", "accepted", "rejected"],
     },
   },
 } as const
