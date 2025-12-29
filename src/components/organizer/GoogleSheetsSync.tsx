@@ -159,11 +159,28 @@ export function GoogleSheetsSync({ eventId, eventTitle }: GoogleSheetsSyncProps)
         description: data.message,
       });
     },
-    onError: (error: Error) => {
+    onError: (error: Error & { hint?: string; serviceAccountEmail?: string }) => {
+      // Check if error has additional context from the response
+      let errorMessage = error.message;
+      let description = errorMessage;
+      
+      // Try to parse JSON error from edge function
+      try {
+        const parsed = JSON.parse(errorMessage);
+        if (parsed.hint) {
+          description = parsed.hint;
+        } else if (parsed.error) {
+          description = parsed.error;
+        }
+      } catch {
+        // Not JSON, use the message as-is
+      }
+      
       toast({
         title: "Sync Failed",
-        description: error.message,
+        description: description,
         variant: "destructive",
+        duration: 10000, // Show longer for important errors
       });
     },
   });

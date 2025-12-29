@@ -19,7 +19,25 @@ export async function syncToGoogleSheets(
     body: { eventId, spreadsheetId, sheetName: sheetName || undefined },
   });
 
-  if (error) throw error;
+  if (error) {
+    // Try to extract helpful error message from the response
+    if (data?.hint) {
+      const customError = new Error(data.hint) as Error & { hint?: string; serviceAccountEmail?: string };
+      customError.hint = data.hint;
+      customError.serviceAccountEmail = data.serviceAccountEmail;
+      throw customError;
+    }
+    throw error;
+  }
+  
+  // Check if response contains an error (403 responses come through data, not error)
+  if (data?.error) {
+    const customError = new Error(data.hint || data.error) as Error & { hint?: string; serviceAccountEmail?: string };
+    customError.hint = data.hint;
+    customError.serviceAccountEmail = data.serviceAccountEmail;
+    throw customError;
+  }
+  
   return data;
 }
 

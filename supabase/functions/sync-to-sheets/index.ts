@@ -121,8 +121,21 @@ serve(async (req) => {
     // Get access token using JWT
     const accessToken = await getGoogleAccessToken(credentials);
 
+    // Validate sheet access before proceeding
+    const validationResult = await validateSheetAccess(accessToken, spreadsheetId, credentials.client_email);
+    if (!validationResult.accessible) {
+      return new Response(
+        JSON.stringify({ 
+          error: validationResult.error,
+          hint: validationResult.hint,
+          serviceAccountEmail: credentials.client_email
+        }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Get actual sheet name - use provided or default to first sheet
-    const actualSheetName = sheetName || await getFirstSheetName(accessToken, spreadsheetId);
+    const actualSheetName = sheetName || validationResult.firstSheetName || "Sheet1";
     console.log(`Using sheet name: ${actualSheetName}`);
 
     // Build dynamic headers
@@ -392,7 +405,68 @@ async function getGoogleAccessToken(credentials: { client_email: string; private
   return tokenData.access_token;
 }
 
-// Get the first sheet name from the spreadsheet
+// Validate that the sheet is accessible with proper permissions
+async function validateSheetAccess(
+  accessToken: string, 
+  spreadsheetId: string, 
+  serviceAccountEmail: string
+): Promise<{ accessible: boolean; error?: string; hint?: string; firstSheetName?: string }> {
+  try {
+    const response = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets.properties.title`,
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      const errorMessage = errorData.error?.message || "Unknown error";
+      const errorCode = errorData.error?.code || response.status;
+
+      console.error(`Sheet access validation failed: ${errorCode} - ${errorMessage}`);
+
+      // Handle specific error codes with helpful messages
+      if (errorCode === 404) {
+        return {
+          accessible: false,
+          error: "Spreadsheet not found",
+          hint: "The spreadsheet URL may be incorrect or the spreadsheet has been deleted. Please check the URL and try again."
+        };
+      }
+
+      if (errorCode === 403) {
+        return {
+          accessible: false,
+          error: "Access denied to spreadsheet",
+          hint: `The spreadsheet is not shared with the service account. Please share your Google Sheet with this email address as an Editor: ${serviceAccountEmail}`
+        };
+      }
+
+      return {
+        accessible: false,
+        error: `Cannot access spreadsheet: ${errorMessage}`,
+        hint: `Please ensure the spreadsheet is shared with: ${serviceAccountEmail}`
+      };
+    }
+
+    const data = await response.json();
+    const firstSheetName = data.sheets?.[0]?.properties?.title || "Sheet1";
+    
+    console.log(`Sheet access validated successfully. First sheet: ${firstSheetName}`);
+    
+    return { accessible: true, firstSheetName };
+  } catch (error) {
+    console.error("Sheet validation error:", error);
+    return {
+      accessible: false,
+      error: "Failed to validate sheet access",
+      hint: `Please check that the spreadsheet URL is correct and shared with: ${serviceAccountEmail}`
+    };
+  }
+}
+
+// Get the first sheet name from the spreadsheet (fallback function)
 async function getFirstSheetName(accessToken: string, spreadsheetId: string): Promise<string> {
   const response = await fetch(
     `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets.properties.title`,
