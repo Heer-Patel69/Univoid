@@ -5,8 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { syncToGoogleSheets, extractSpreadsheetId, isValidSpreadsheetUrl } from "@/services/googleSheetsService";
-import { FileSpreadsheet, RefreshCw, CheckCircle, ExternalLink, AlertCircle, Download } from "lucide-react";
+import { syncToGoogleSheets, extractSpreadsheetId, isValidSpreadsheetUrl, getServiceAccountInfo } from "@/services/googleSheetsService";
+import { FileSpreadsheet, RefreshCw, CheckCircle, ExternalLink, AlertCircle, Download, Copy, Check } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,6 +41,14 @@ export function GoogleSheetsSync({ eventId, eventTitle }: GoogleSheetsSyncProps)
   const [sheetName, setSheetName] = useState("");
   const [lastSync, setLastSync] = useState<Date | null>(null);
   const [autoSync, setAutoSync] = useState(false);
+  const [emailCopied, setEmailCopied] = useState(false);
+
+  // Fetch service account info
+  const { data: serviceAccountInfo } = useQuery({
+    queryKey: ["service-account-info"],
+    queryFn: getServiceAccountInfo,
+    staleTime: 1000 * 60 * 60, // Cache for 1 hour
+  });
 
   // Load existing config
   const { data: config } = useQuery({
@@ -303,13 +311,39 @@ export function GoogleSheetsSync({ eventId, eventTitle }: GoogleSheetsSyncProps)
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="text-xs">
-              Make sure your Google Sheet is shared with the service account email. 
-              Contact your admin for the service account email address.
-            </AlertDescription>
-          </Alert>
+          {serviceAccountInfo?.configured && serviceAccountInfo?.serviceAccountEmail ? (
+            <Alert className="border-green-200 bg-green-50 dark:bg-green-950/20">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-xs">
+                <p className="mb-2">Share your Google Sheet with this email address (as Editor):</p>
+                <div className="flex items-center gap-2 bg-background/80 rounded px-2 py-1.5 border">
+                  <code className="text-xs font-mono flex-1 truncate">
+                    {serviceAccountInfo.serviceAccountEmail}
+                  </code>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 shrink-0"
+                    onClick={() => {
+                      navigator.clipboard.writeText(serviceAccountInfo.serviceAccountEmail!);
+                      setEmailCopied(true);
+                      setTimeout(() => setEmailCopied(false), 2000);
+                      toast({ title: "Copied!", description: "Email copied to clipboard" });
+                    }}
+                  >
+                    {emailCopied ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-xs">
+                Google Sheets sync is not configured. Contact your admin to set up the service account.
+              </AlertDescription>
+            </Alert>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="spreadsheet-url">Google Sheets URL</Label>

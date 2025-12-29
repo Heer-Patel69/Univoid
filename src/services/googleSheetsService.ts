@@ -9,6 +9,20 @@ export interface SheetSyncConfig {
   last_sync_at?: string;
 }
 
+// Get service account info
+export async function getServiceAccountInfo(): Promise<{ serviceAccountEmail?: string; configured: boolean }> {
+  const { data, error } = await supabase.functions.invoke("sync-to-sheets", {
+    body: { action: "get-info" },
+  });
+
+  if (error) {
+    console.error("Failed to get service account info:", error);
+    return { configured: false };
+  }
+  
+  return data;
+}
+
 // Sync registrations to Google Sheets
 export async function syncToGoogleSheets(
   eventId: string,
