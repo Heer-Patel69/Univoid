@@ -121,6 +121,10 @@ serve(async (req) => {
     // Get access token using JWT
     const accessToken = await getGoogleAccessToken(credentials);
 
+    // Get actual sheet name - use provided or default to first sheet
+    const actualSheetName = sheetName || await getFirstSheetName(accessToken, spreadsheetId);
+    console.log(`Using sheet name: ${actualSheetName}`);
+
     // Build dynamic headers
     const headers = buildDynamicHeaders(formFields || [], event);
     
@@ -132,8 +136,8 @@ serve(async (req) => {
     console.log(`Syncing ${rows.length} registrations with ${headers.length} columns`);
 
     // Clear and update sheet
-    await clearSheet(accessToken, spreadsheetId, sheetName);
-    await updateSheet(accessToken, spreadsheetId, sheetName, [headers, ...rows]);
+    await clearSheet(accessToken, spreadsheetId, actualSheetName);
+    await updateSheet(accessToken, spreadsheetId, actualSheetName, [headers, ...rows]);
 
     return new Response(
       JSON.stringify({ 
@@ -387,21 +391,47 @@ async function getGoogleAccessToken(credentials: { client_email: string; private
   return tokenData.access_token;
 }
 
+// Get the first sheet name from the spreadsheet
+async function getFirstSheetName(accessToken: string, spreadsheetId: string): Promise<string> {
+  const response = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets.properties.title`,
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(`Failed to get sheet info: ${error.error?.message || "Unknown error"}`);
+  }
+
+  const data = await response.json();
+  if (data.sheets && data.sheets.length > 0) {
+    return data.sheets[0].properties.title;
+  }
+  return "Sheet1"; // Default fallback
+}
+
 async function clearSheet(accessToken: string, spreadsheetId: string, sheetName: string) {
-  await fetch(
+  const response = await fetch(
     `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(sheetName)}:clear`,
     {
       method: "POST",
       headers: { Authorization: `Bearer ${accessToken}` },
     }
   );
+  
+  // Ignore errors on clear - sheet might be empty
+  if (!response.ok) {
+    console.log(`Clear sheet warning (continuing anyway): ${response.status}`);
+  }
 }
 
 async function updateSheet(accessToken: string, spreadsheetId: string, sheetName: string, data: string[][]) {
   const response = await fetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(sheetName)}!A1:append?valueInputOption=USER_ENTERED`,
+    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(sheetName)}!A1?valueInputOption=USER_ENTERED`,
     {
-      method: "POST",
+      method: "PUT",
       headers: {
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
