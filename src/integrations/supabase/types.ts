@@ -185,6 +185,80 @@ export type Database = {
           },
         ]
       }
+      club_members: {
+        Row: {
+          club_id: string
+          created_at: string
+          id: string
+          membership_id: string | null
+          user_id: string
+          verified: boolean
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          id?: string
+          membership_id?: string | null
+          user_id: string
+          verified?: boolean
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          id?: string
+          membership_id?: string | null
+          user_id?: string
+          verified?: boolean
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_members_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clubs: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          short_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          short_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          short_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       contact_messages: {
         Row: {
           created_at: string
@@ -286,6 +360,48 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      event_clubs: {
+        Row: {
+          club_id: string
+          created_at: string
+          event_id: string
+          id: string
+          member_benefits: string | null
+          member_price: number
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          event_id: string
+          id?: string
+          member_benefits?: string | null
+          member_price?: number
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          member_benefits?: string | null
+          member_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_clubs_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_clubs_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       event_form_fields: {
         Row: {

@@ -13,7 +13,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import AuthModal from "@/components/auth/AuthModal";
 import { FormBuilder, type FormBuilderField } from "@/components/events/FormBuilder";
+import ClubPricingSection, { type EventClubConfig } from "@/components/events/ClubPricingSection";
 import { createFormFields } from "@/services/eventFormService";
+import { addClubToEvent } from "@/services/clubService";
 import { ArrowLeft, ArrowRight, Check, Calendar, FileText, Ticket, CreditCard, Image, ClipboardList } from "lucide-react";
 
 const STEPS = [
@@ -57,6 +59,9 @@ const CreateEvent = () => {
 
   // Custom form fields
   const [customFields, setCustomFields] = useState<FormBuilderField[]>([]);
+
+  // Club pricing configs
+  const [clubConfigs, setClubConfigs] = useState<EventClubConfig[]>([]);
 
   const [flyerFile, setFlyerFile] = useState<File | null>(null);
   const [qrFile, setQrFile] = useState<File | null>(null);
@@ -133,6 +138,13 @@ const CreateEvent = () => {
         }));
 
         await createFormFields(data.id, fieldsToSave);
+      }
+
+      // Save club pricing configs if any
+      if (clubConfigs.length > 0) {
+        for (const config of clubConfigs) {
+          await addClubToEvent(data.id, config.clubId, config.memberPrice, config.memberBenefits);
+        }
       }
 
       setUploading(false);
@@ -325,10 +337,20 @@ const CreateEvent = () => {
                 </div>
 
                 {formData.is_paid && (
-                  <div className="space-y-2">
-                    <Label>Ticket Price (₹) *</Label>
-                    <Input type="number" value={formData.price} onChange={(e) => updateForm("price", parseFloat(e.target.value) || 0)} placeholder="500" />
-                  </div>
+                  <>
+                    <div className="space-y-2">
+                      <Label>Standard Ticket Price (₹) *</Label>
+                      <Input type="number" value={formData.price} onChange={(e) => updateForm("price", parseFloat(e.target.value) || 0)} placeholder="500" />
+                      <p className="text-xs text-muted-foreground">This is the price for non-members</p>
+                    </div>
+
+                    {/* Club Pricing Section */}
+                    <ClubPricingSection
+                      clubs={clubConfigs}
+                      standardPrice={formData.price}
+                      onChange={setClubConfigs}
+                    />
+                  </>
                 )}
 
                 <div className="space-y-2">

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, isPast } from "date-fns";
@@ -19,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import AuthModal from "@/components/auth/AuthModal";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb";
 import DynamicRegistrationForm from "@/components/events/DynamicRegistrationForm";
+import ClubMembershipCheck from "@/components/events/ClubMembershipCheck";
 import { Calendar, MapPin, Users, IndianRupee, ExternalLink, Clock, Share2, CheckCircle, AlertCircle, Upload, Eye } from "lucide-react";
 
 const EventDetail = () => {
@@ -33,6 +34,17 @@ const EventDetail = () => {
   const [paymentScreenshot, setPaymentScreenshot] = useState<File | null>(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [uploading, setUploading] = useState(false);
+  
+  // Club membership state
+  const [selectedPrice, setSelectedPrice] = useState<number | null>(null);
+  const [selectedClubId, setSelectedClubId] = useState<string | null>(null);
+  const [membershipId, setMembershipId] = useState<string | null>(null);
+
+  const handlePriceChange = useCallback((price: number, clubId: string | null, memId: string | null) => {
+    setSelectedPrice(price);
+    setSelectedClubId(clubId);
+    setMembershipId(memId);
+  }, []);
 
   const { data: event, isLoading: eventLoading } = useQuery({
     queryKey: ["event", eventId],
@@ -73,10 +85,21 @@ const EventDetail = () => {
         setUploading(false);
       }
 
+      // Include club membership info in custom_data
+      const enhancedCustomData = {
+        ...customData,
+        ...(selectedClubId && {
+          _club_member: true,
+          _club_id: selectedClubId,
+          _membership_id: membershipId,
+          _applied_price: selectedPrice,
+        }),
+      };
+
       return registerForEvent({
         event_id: eventId!,
         user_id: user.id,
-        custom_data: customData,
+        custom_data: enhancedCustomData,
         payment_screenshot_url: screenshotUrl || undefined,
       });
     },
@@ -166,11 +189,23 @@ const EventDetail = () => {
     );
   }
 
+  // Determine the price to display
+  const displayPrice = selectedPrice !== null ? selectedPrice : event.price;
+
+  // Club membership section for paid events
+  const clubSection = event.is_paid ? (
+    <ClubMembershipCheck
+      eventId={eventId!}
+      standardPrice={event.price}
+      onPriceChange={handlePriceChange}
+    />
+  ) : null;
+
   // Payment section to pass to DynamicRegistrationForm
   const paymentSection = event.is_paid ? (
     <div className="space-y-4 p-4 bg-muted rounded-xl">
       <p className="font-medium">Payment Instructions</p>
-      <p className="text-sm text-muted-foreground">Pay ₹{event.price} using UPI, then upload screenshot.</p>
+      <p className="text-sm text-muted-foreground">Pay ₹{displayPrice} using UPI, then upload screenshot.</p>
       {event.upi_qr_url && (
         <div className="bg-white p-4 rounded-xl w-fit mx-auto">
           <img src={event.upi_qr_url} alt="UPI QR" className="w-48 h-48 object-contain" loading="lazy" />
@@ -329,11 +364,14 @@ const EventDetail = () => {
                     <DialogHeader>
                       <DialogTitle>Register for {event.title}</DialogTitle>
                       <DialogDescription>
-                        {event.is_paid ? `Pay ₹${event.price} and complete the form` : "Complete your registration"}
+                        {event.is_paid ? `Pay ₹${displayPrice} and complete the form` : "Complete your registration"}
                       </DialogDescription>
                     </DialogHeader>
                     <ScrollArea className="max-h-[60vh] pr-4">
-                      <div className="py-4">
+                      <div className="py-4 space-y-4">
+                        {/* Club membership selection for paid events */}
+                        {clubSection}
+                        
                         <DynamicRegistrationForm
                           eventId={eventId!}
                           onSubmit={(customData) => registerMutation.mutate(customData)}
