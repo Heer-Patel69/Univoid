@@ -38,7 +38,7 @@ export function GoogleSheetsSync({ eventId, eventTitle }: GoogleSheetsSyncProps)
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [spreadsheetUrl, setSpreadsheetUrl] = useState("");
-  const [sheetName, setSheetName] = useState("Registrations");
+  const [sheetName, setSheetName] = useState("");
   const [lastSync, setLastSync] = useState<Date | null>(null);
   const [autoSync, setAutoSync] = useState(false);
 
@@ -308,15 +308,15 @@ export function GoogleSheetsSync({ eventId, eventTitle }: GoogleSheetsSyncProps)
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="sheet-name">Sheet Tab Name</Label>
+            <Label htmlFor="sheet-name">Sheet Tab Name (optional)</Label>
             <Input
               id="sheet-name"
-              placeholder="Registrations"
+              placeholder="Leave empty to auto-detect first sheet"
               value={sheetName}
               onChange={(e) => setSheetName(e.target.value)}
             />
             <p className="text-xs text-muted-foreground">
-              The name of the tab where data will be written
+              Leave empty to use the first sheet tab, or enter a specific tab name
             </p>
           </div>
 

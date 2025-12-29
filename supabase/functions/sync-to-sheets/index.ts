@@ -142,9 +142,10 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `Synced ${rows.length} registrations with ${headers.length} columns to Google Sheets`,
+        message: `Synced ${rows.length} registrations to sheet "${actualSheetName}"`,
         rowCount: rows.length,
-        columnCount: headers.length
+        columnCount: headers.length,
+        sheetName: actualSheetName
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
