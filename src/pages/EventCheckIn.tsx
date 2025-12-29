@@ -225,7 +225,7 @@ const EventCheckIn = () => {
           variant="ghost" 
           size="sm" 
           className="mb-4 -ml-2"
-          onClick={() => navigate("/organizer/dashboard")}
+          onClick={() => navigate(isOrganizer ? "/organizer/dashboard" : "/dashboard")}
         >
           <ArrowLeft className="w-4 h-4 mr-1" /> Back
         </Button>
