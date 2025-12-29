@@ -56,16 +56,34 @@ export async function findUserByEmail(email: string): Promise<{ id: string; full
 
   console.log('[Volunteer Invite] Searching for user with email:', normalizedEmail);
 
-  // Use ilike for case-insensitive matching
+  // Use filter with case-insensitive comparison
   const { data, error } = await supabase
     .from('profiles')
     .select('id, full_name, email')
-    .ilike('email', normalizedEmail)
+    .filter('email', 'ilike', normalizedEmail)
+    .limit(1)
     .maybeSingle();
 
   if (error) {
     console.error('[Volunteer Invite] Error finding user by email:', error);
-    throw new Error('Failed to search for user');
+    
+    // Fallback: try exact match with lowercase
+    console.log('[Volunteer Invite] Trying fallback exact match...');
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from('profiles')
+      .select('id, full_name, email')
+      .eq('email', normalizedEmail)
+      .maybeSingle();
+    
+    if (fallbackError) {
+      console.error('[Volunteer Invite] Fallback also failed:', fallbackError);
+      throw new Error('Failed to search for user');
+    }
+    
+    if (fallbackData) {
+      console.log('[Volunteer Invite] Found user via fallback:', { id: fallbackData.id, name: fallbackData.full_name });
+    }
+    return fallbackData;
   }
 
   if (data) {
