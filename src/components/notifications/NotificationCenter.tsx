@@ -44,83 +44,104 @@ const categoryConfig: Record<NotificationCategory, { label: string; icon: React.
   system: { label: 'System', icon: <AlertCircle className="h-3.5 w-3.5" /> },
 };
 
+// List of admin-only routes that should redirect to dashboard for non-admins
+const ADMIN_ROUTES = ['/admin', '/admin/'];
+
 const NotificationItem = memo(({ 
   notification, 
   onMarkAsRead, 
   onDelete, 
   onClose,
-  getIcon 
+  getIcon,
+  isAdmin
 }: { 
   notification: Notification; 
   onMarkAsRead: (id: string) => void; 
   onDelete: (id: string) => void;
   onClose: () => void;
   getIcon: (type: string) => React.ReactNode;
-}) => (
-  <div
-    className={cn(
-      'p-3 hover:bg-muted/50 transition-colors relative group gpu-accelerated',
-      !notification.is_read && 'bg-primary/5'
-    )}
-  >
-    <div className="flex gap-3">
-      <div className="flex-shrink-0 mt-0.5">
-        {getIcon(notification.type)}
-      </div>
-      <div className="flex-1 min-w-0">
-        {notification.link ? (
-          <Link
-            to={notification.link}
-            onClick={() => {
-              onMarkAsRead(notification.id);
-              onClose();
-            }}
-            className="block"
-          >
-            <p className="text-sm font-semibold truncate hover:text-primary transition-colors">
+  isAdmin: boolean;
+}) => {
+  // Sanitize notification link - prevent non-admins from accessing admin routes
+  const getSafeLink = (link: string | null): string => {
+    if (!link) return '/dashboard';
+    
+    // If link points to admin route and user is not admin, redirect to dashboard
+    if (ADMIN_ROUTES.some(route => link.startsWith(route)) && !isAdmin) {
+      return '/dashboard';
+    }
+    
+    return link;
+  };
+
+  const safeLink = getSafeLink(notification.link);
+
+  return (
+    <div
+      className={cn(
+        'p-3 hover:bg-muted/50 transition-colors relative group gpu-accelerated',
+        !notification.is_read && 'bg-primary/5'
+      )}
+    >
+      <div className="flex gap-3">
+        <div className="flex-shrink-0 mt-0.5">
+          {getIcon(notification.type)}
+        </div>
+        <div className="flex-1 min-w-0">
+          {safeLink ? (
+            <Link
+              to={safeLink}
+              onClick={() => {
+                onMarkAsRead(notification.id);
+                onClose();
+              }}
+              className="block"
+            >
+              <p className="text-sm font-semibold truncate hover:text-primary transition-colors">
+                {notification.title}
+              </p>
+            </Link>
+          ) : (
+            <p className="text-sm font-semibold truncate">
               {notification.title}
             </p>
-          </Link>
-        ) : (
-          <p className="text-sm font-semibold truncate">
-            {notification.title}
+          )}
+          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+            {notification.message}
           </p>
-        )}
-        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-          {notification.message}
-        </p>
-        <p className="text-xs text-muted-foreground mt-1">
-          {formatDistanceToNow(new Date(notification.created_at), {
-            addSuffix: true,
-          })}
-        </p>
-      </div>
-      <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        {!notification.is_read && (
+          <p className="text-xs text-muted-foreground mt-1">
+            {formatDistanceToNow(new Date(notification.created_at), {
+              addSuffix: true,
+            })}
+          </p>
+        </div>
+        <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          {!notification.is_read && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={() => onMarkAsRead(notification.id)}
+            >
+              <Check className="h-3 w-3" />
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6"
-            onClick={() => onMarkAsRead(notification.id)}
+            className="h-6 w-6 text-muted-foreground hover:text-destructive"
+            onClick={() => onDelete(notification.id)}
           >
-            <Check className="h-3 w-3" />
+            <Trash2 className="h-3 w-3" />
           </Button>
-        )}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6 text-muted-foreground hover:text-destructive"
-          onClick={() => onDelete(notification.id)}
-        >
-          <Trash2 className="h-3 w-3" />
-        </Button>
+        </div>
       </div>
+      {!notification.is_read && (
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r" />
+      )}
     </div>
-    {!notification.is_read && (
-      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r" />
-    )}
-  </div>
-));
+  );
+});
 
 NotificationItem.displayName = 'NotificationItem';
 
@@ -203,7 +224,8 @@ const NotificationSettings = memo(({
 NotificationSettings.displayName = 'NotificationSettings';
 
 export const NotificationCenter = () => {
-  const { user } = useAuth();
+  const { user, isAdmin, isAdminOrAssistant } = useAuth();
+  const isUserAdmin = isAdmin || isAdminOrAssistant;
   const isMobile = useIsMobile();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -470,6 +492,7 @@ export const NotificationCenter = () => {
                 onDelete={deleteNotification}
                 onClose={handleClose}
                 getIcon={getIcon}
+                isAdmin={isUserAdmin}
               />
             ))}
             {hasMore && activeCategory === 'all' && (
