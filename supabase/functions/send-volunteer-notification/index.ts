@@ -10,11 +10,16 @@ const corsHeaders = {
 };
 
 interface VolunteerNotificationRequest {
-  type: "application_received" | "approved" | "rejected";
+  type: "application_received" | "approved" | "rejected" | "invite";
   assignmentId?: string;
-  roleId: string;
+  roleId?: string;
   userId: string;
   organizerEmail?: string;
+  // For invite type
+  eventId?: string;
+  eventTitle?: string;
+  organizerName?: string;
+  role?: string;
 }
 
 serve(async (req) => {
@@ -27,7 +32,94 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { type, roleId, userId, organizerEmail }: VolunteerNotificationRequest = await req.json();
+    const { type, roleId, userId, organizerEmail, eventId, eventTitle, organizerName, role: inviteRole }: VolunteerNotificationRequest = await req.json();
+
+    // Fetch user profile
+    const { data: userProfile, error: userError } = await supabase
+      .from("profiles")
+      .select("full_name, email")
+      .eq("id", userId)
+      .single();
+
+    if (userError || !userProfile) {
+      throw new Error("User not found");
+    }
+
+    let emailResponse;
+
+    // Handle invite notification (new invite system)
+    if (type === "invite") {
+      console.log("Sending volunteer invite email to:", userProfile.email);
+      
+      const roleLabels: Record<string, string> = {
+        entry: "Entry Management",
+        qr_checkin: "QR Check-in",
+        help_desk: "Help Desk",
+        all: "All Roles",
+      };
+      const roleName = roleLabels[inviteRole || "all"] || inviteRole || "Volunteer";
+
+      emailResponse = await resend.emails.send({
+        from: "Univoid <notifications@univoid.in>",
+        to: [userProfile.email],
+        subject: `🎉 You're invited to volunteer - ${eventTitle}`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          </head>
+          <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5;">
+            <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+              <div style="background: linear-gradient(135deg, #7c3aed, #6366f1); padding: 30px; text-align: center;">
+                <h1 style="color: white; margin: 0; font-size: 24px;">🙌 You're Invited!</h1>
+              </div>
+              <div style="padding: 30px;">
+                <p style="color: #333; font-size: 16px; line-height: 1.6;">
+                  Hi ${userProfile.full_name},
+                </p>
+                <p style="color: #333; font-size: 16px; line-height: 1.6;">
+                  <strong>${organizerName || "An organizer"}</strong> has invited you to be a volunteer for their event!
+                </p>
+                
+                <div style="background: #f0f4ff; border: 1px solid #7c3aed; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                  <p style="margin: 0 0 10px 0;"><strong>📅 Event:</strong> ${eventTitle}</p>
+                  <p style="margin: 0;"><strong>👤 Role:</strong> ${roleName}</p>
+                </div>
+
+                <p style="color: #666; font-size: 14px;">
+                  Log in to your dashboard to <strong>Accept</strong> or <strong>Decline</strong> this invitation.
+                </p>
+
+                <a href="https://univoid.in/dashboard?tab=volunteer-invites&event=${eventId}" 
+                   style="display: inline-block; background: #7c3aed; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 15px;">
+                  View Invitation
+                </a>
+              </div>
+              <div style="background: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #eee;">
+                <p style="color: #999; font-size: 12px; margin: 0;">
+                  © ${new Date().getFullYear()} Univoid. All rights reserved.
+                </p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `,
+      });
+
+      console.log("Volunteer invite email sent:", emailResponse);
+      
+      return new Response(
+        JSON.stringify({ success: true, emailResponse }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // For other types, fetch role details
+    if (!roleId) {
+      throw new Error("roleId is required for this notification type");
+    }
 
     // Fetch role details
     const { data: role, error: roleError } = await supabase
@@ -45,23 +137,10 @@ serve(async (req) => {
       throw new Error("Role not found");
     }
 
-    // Fetch user profile
-    const { data: userProfile, error: userError } = await supabase
-      .from("profiles")
-      .select("full_name, email")
-      .eq("id", userId)
-      .single();
-
-    if (userError || !userProfile) {
-      throw new Error("User not found");
-    }
-
     // deno-lint-ignore no-explicit-any
     const eventData = role.event as any;
-    const eventTitle = eventData?.title || "Event";
+    const roleEventTitle = eventData?.title || "Event";
     const organizerId = eventData?.organizer_id;
-
-    let emailResponse;
 
     if (type === "application_received") {
       // Notify organizer about new application
@@ -99,7 +178,7 @@ serve(async (req) => {
                   </p>
                   
                   <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0;">
-                    <p style="margin: 0 0 10px 0;"><strong>Event:</strong> ${eventTitle}</p>
+                    <p style="margin: 0 0 10px 0;"><strong>Event:</strong> ${roleEventTitle}</p>
                     <p style="margin: 0 0 10px 0;"><strong>Role:</strong> ${role.title}</p>
                     <p style="margin: 0 0 10px 0;"><strong>Applicant:</strong> ${userProfile.full_name}</p>
                     <p style="margin: 0;"><strong>Email:</strong> ${userProfile.email}</p>
@@ -130,7 +209,7 @@ serve(async (req) => {
       emailResponse = await resend.emails.send({
         from: "Univoid <notifications@univoid.in>",
         to: [userProfile.email],
-        subject: `🎉 You're approved as a volunteer - ${eventTitle}`,
+        subject: `🎉 You're approved as a volunteer - ${roleEventTitle}`,
         html: `
           <!DOCTYPE html>
           <html>
@@ -152,7 +231,7 @@ serve(async (req) => {
                 </p>
                 
                 <div style="background: #f0fdf4; border: 1px solid #22c55e; border-radius: 8px; padding: 20px; margin: 20px 0;">
-                  <p style="margin: 0 0 10px 0;"><strong>Event:</strong> ${eventTitle}</p>
+                  <p style="margin: 0 0 10px 0;"><strong>Event:</strong> ${roleEventTitle}</p>
                   <p style="margin: 0 0 10px 0;"><strong>Your Role:</strong> ${role.title}</p>
                   ${role.description ? `<p style="margin: 0 0 10px 0;"><strong>Description:</strong> ${role.description}</p>` : ""}
                   ${role.perks ? `<p style="margin: 0;"><strong>🎁 Perks:</strong> ${role.perks}</p>` : ""}
@@ -184,7 +263,7 @@ serve(async (req) => {
         user_id: userId,
         type: "volunteer",
         title: "Volunteer Application Approved! 🎉",
-        message: `You've been approved as a volunteer for "${role.title}" at ${eventTitle}.`,
+        message: `You've been approved as a volunteer for "${role.title}" at ${roleEventTitle}.`,
         link: "/dashboard",
       });
 
@@ -193,7 +272,7 @@ serve(async (req) => {
       emailResponse = await resend.emails.send({
         from: "Univoid <notifications@univoid.in>",
         to: [userProfile.email],
-        subject: `Volunteer Application Update - ${eventTitle}`,
+        subject: `Volunteer Application Update - ${roleEventTitle}`,
         html: `
           <!DOCTYPE html>
           <html>
@@ -211,7 +290,7 @@ serve(async (req) => {
                   Hi ${userProfile.full_name},
                 </p>
                 <p style="color: #333; font-size: 16px; line-height: 1.6;">
-                  Thank you for your interest in volunteering for <strong>${eventTitle}</strong>.
+                  Thank you for your interest in volunteering for <strong>${roleEventTitle}</strong>.
                 </p>
                 <p style="color: #333; font-size: 16px; line-height: 1.6;">
                   Unfortunately, we were unable to accept your application for the <strong>${role.title}</strong> role at this time. 
@@ -244,7 +323,7 @@ serve(async (req) => {
         user_id: userId,
         type: "volunteer",
         title: "Volunteer Application Update",
-        message: `Your application for "${role.title}" at ${eventTitle} was not accepted.`,
+        message: `Your application for "${role.title}" at ${roleEventTitle} was not accepted.`,
         link: "/events",
       });
     }

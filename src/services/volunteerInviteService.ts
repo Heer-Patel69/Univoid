@@ -120,6 +120,7 @@ export async function sendVolunteerInviteNotification(
   organizerName: string,
   role: VolunteerInviteRole
 ): Promise<void> {
+  // Send in-app notification
   const { error } = await supabase
     .from('notifications')
     .insert({
@@ -133,6 +134,23 @@ export async function sendVolunteerInviteNotification(
   if (error) {
     console.error('Error sending notification:', error);
     // Don't throw - notification failure shouldn't block the invite
+  }
+
+  // Send email notification (fire and forget)
+  try {
+    await supabase.functions.invoke('send-volunteer-notification', {
+      body: {
+        type: 'invite',
+        userId,
+        eventId,
+        eventTitle,
+        organizerName,
+        role,
+      },
+    });
+  } catch (emailError) {
+    console.error('Error sending email notification:', emailError);
+    // Don't throw - email failure shouldn't block the invite
   }
 }
 
