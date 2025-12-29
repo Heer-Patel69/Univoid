@@ -25,24 +25,31 @@ const Events = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   // Fetch events with filters
-  useEffect(() => {
-    const loadEvents = async () => {
-      setIsLoading(true);
-      try {
-        const data = await fetchEvents({
-          category: category !== "all" ? category : undefined,
-          is_paid: priceFilter === "all" ? undefined : priceFilter === "paid",
-          search: search || undefined,
-        });
-        setEvents(data);
-      } catch (error) {
-        console.error('Failed to fetch events:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const loadEvents = async () => {
+    setIsLoading(true);
+    try {
+      const data = await fetchEvents({
+        category: category !== "all" ? category : undefined,
+        is_paid: priceFilter === "all" ? undefined : priceFilter === "paid",
+        search: search || undefined,
+      });
+      setEvents(data);
+    } catch (error) {
+      console.error('Failed to fetch events:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     loadEvents();
+  }, [category, priceFilter, search]);
+
+  // Refetch on window focus for fresh data
+  useEffect(() => {
+    const handleFocus = () => loadEvents();
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, [category, priceFilter, search]);
 
   // Real-time subscription for instant updates
