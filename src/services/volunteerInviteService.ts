@@ -44,17 +44,34 @@ export const STATUS_LABELS: Record<VolunteerInviteStatus, string> = {
 
 /**
  * Find a user by email (must be registered on UniVoid)
+ * Uses case-insensitive matching and handles OAuth users
  */
 export async function findUserByEmail(email: string): Promise<{ id: string; full_name: string; email: string } | null> {
+  const normalizedEmail = email.toLowerCase().trim();
+  
+  if (!normalizedEmail || !normalizedEmail.includes('@')) {
+    console.warn('[Volunteer Invite] Invalid email format:', email);
+    return null;
+  }
+
+  console.log('[Volunteer Invite] Searching for user with email:', normalizedEmail);
+
+  // Use ilike for case-insensitive matching
   const { data, error } = await supabase
     .from('profiles')
     .select('id, full_name, email')
-    .eq('email', email.toLowerCase().trim())
+    .ilike('email', normalizedEmail)
     .maybeSingle();
 
   if (error) {
-    console.error('Error finding user by email:', error);
+    console.error('[Volunteer Invite] Error finding user by email:', error);
     throw new Error('Failed to search for user');
+  }
+
+  if (data) {
+    console.log('[Volunteer Invite] Found user:', { id: data.id, name: data.full_name });
+  } else {
+    console.log('[Volunteer Invite] No user found with email:', normalizedEmail);
   }
 
   return data;
