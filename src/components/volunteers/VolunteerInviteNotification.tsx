@@ -28,8 +28,9 @@ export function VolunteerInviteNotification({ invite }: VolunteerInviteNotificat
         title: "Invite Accepted!",
         description: "You're now a volunteer for this event.",
       });
+      // Invalidate both queries to refresh invites and volunteer events
       queryClient.invalidateQueries({ queryKey: ["user-volunteer-invites"] });
-      queryClient.invalidateQueries({ queryKey: ["volunteer-events"] });
+      queryClient.invalidateQueries({ queryKey: ["volunteer-events"] }); // This will match all volunteer-events queries
     },
     onError: (error: Error) => {
       toast({

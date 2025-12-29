@@ -412,6 +412,8 @@ export async function isAcceptedVolunteer(eventId: string, userId: string): Prom
  * Get all events where user is an accepted volunteer
  */
 export async function getVolunteerEvents(userId: string): Promise<{ id: string; event_id: string; role: VolunteerInviteRole; event: { id: string; title: string; start_date: string; end_date: string | null; status: string } }[]> {
+  console.log('[Volunteer Events] Fetching for user:', userId);
+  
   const { data: invites, error } = await supabase
     .from('event_volunteer_invites')
     .select('id, event_id, role')
@@ -419,9 +421,11 @@ export async function getVolunteerEvents(userId: string): Promise<{ id: string; 
     .eq('status', 'accepted');
 
   if (error) {
-    console.error('Error fetching volunteer events:', error);
+    console.error('[Volunteer Events] Error fetching invites:', error);
     return [];
   }
+
+  console.log('[Volunteer Events] Found accepted invites:', invites?.length || 0, invites);
 
   if (!invites || invites.length === 0) return [];
 
@@ -430,16 +434,18 @@ export async function getVolunteerEvents(userId: string): Promise<{ id: string; 
     .from('events')
     .select('id, title, start_date, end_date, status')
     .in('id', eventIds)
-    .in('status', ['published', 'completed']); // Only active events
+    .in('status', ['published', 'completed']);
 
   if (eventError) {
-    console.error('Error fetching events:', eventError);
+    console.error('[Volunteer Events] Error fetching events:', eventError);
     return [];
   }
 
+  console.log('[Volunteer Events] Found events:', events?.length || 0, events);
+
   const eventMap = new Map(events?.map(e => [e.id, e]) || []);
 
-  return invites
+  const result = invites
     .filter(i => eventMap.has(i.event_id))
     .map(i => ({
       id: i.id,
@@ -447,4 +453,7 @@ export async function getVolunteerEvents(userId: string): Promise<{ id: string; 
       role: i.role as VolunteerInviteRole,
       event: eventMap.get(i.event_id)!,
     }));
+  
+  console.log('[Volunteer Events] Returning:', result.length, 'events');
+  return result;
 }
