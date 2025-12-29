@@ -156,8 +156,19 @@ serve(async (req) => {
       );
     }
 
-    // Get actual sheet name - use provided or default to first sheet
-    const actualSheetName = sheetName || validationResult.firstSheetName || "Sheet1";
+    // Determine actual sheet name - use provided if it exists, otherwise use first sheet
+    let actualSheetName = validationResult.firstSheetName || "Sheet1";
+    
+    if (sheetName && sheetName.trim()) {
+      // Check if the requested sheet exists
+      const sheetExists = validationResult.allSheetNames?.includes(sheetName.trim());
+      if (sheetExists) {
+        actualSheetName = sheetName.trim();
+      } else {
+        console.log(`Requested sheet "${sheetName}" not found, using first sheet "${actualSheetName}" instead`);
+      }
+    }
+    
     console.log(`Using sheet name: ${actualSheetName}`);
 
     // Build dynamic headers
@@ -432,7 +443,7 @@ async function validateSheetAccess(
   accessToken: string, 
   spreadsheetId: string, 
   serviceAccountEmail: string
-): Promise<{ accessible: boolean; error?: string; hint?: string; firstSheetName?: string }> {
+): Promise<{ accessible: boolean; error?: string; hint?: string; firstSheetName?: string; allSheetNames?: string[] }> {
   try {
     const response = await fetch(
       `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets.properties.title`,
@@ -473,11 +484,12 @@ async function validateSheetAccess(
     }
 
     const data = await response.json();
-    const firstSheetName = data.sheets?.[0]?.properties?.title || "Sheet1";
+    const allSheetNames = data.sheets?.map((s: { properties: { title: string } }) => s.properties.title) || [];
+    const firstSheetName = allSheetNames[0] || "Sheet1";
     
-    console.log(`Sheet access validated successfully. First sheet: ${firstSheetName}`);
+    console.log(`Sheet access validated successfully. Available sheets: ${allSheetNames.join(", ")}`);
     
-    return { accessible: true, firstSheetName };
+    return { accessible: true, firstSheetName, allSheetNames };
   } catch (error) {
     console.error("Sheet validation error:", error);
     return {
