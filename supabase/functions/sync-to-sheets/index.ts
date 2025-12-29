@@ -33,20 +33,35 @@ serve(async (req) => {
       throw new Error("Missing eventId or spreadsheetId");
     }
 
-    // Fetch registrations with profiles
-    const { data: registrations, error: regError } = await supabase
-      .rpc("get_event_registrations_with_profiles", { p_event_id: eventId });
-
-    if (regError) throw regError;
-
-    // Get event details
+    // Get event details first to verify it exists
     const { data: event, error: eventError } = await supabase
       .from("events")
-      .select("title, start_date")
+      .select("title, start_date, organizer_id")
       .eq("id", eventId)
       .single();
 
     if (eventError) throw eventError;
+
+    // Fetch registrations with a join to profiles (using service role bypasses RLS)
+    const { data: registrations, error: regError } = await supabase
+      .from("event_registrations")
+      .select(`
+        id,
+        created_at,
+        payment_status,
+        custom_data,
+        user_id,
+        profiles:user_id (
+          full_name,
+          email,
+          mobile_number,
+          college_name,
+          profile_photo_url
+        )
+      `)
+      .eq("event_id", eventId);
+
+    if (regError) throw regError;
 
     // Parse service account key
     const credentials = JSON.parse(serviceAccountKey);
@@ -68,18 +83,19 @@ serve(async (req) => {
       "Custom Data",
     ];
 
-    const rows = (registrations || []).map((reg: Record<string, unknown>) => {
-      const customData = reg.custom_data as Record<string, unknown> || {};
+    const rows = (registrations || []).map((reg) => {
+      const customData = (reg.custom_data as Record<string, unknown>) || {};
+      const profile = reg.profiles as { full_name?: string; email?: string; mobile_number?: string; college_name?: string } | null;
       return [
-        reg.registration_id,
-        reg.full_name || "",
-        reg.email || "",
-        reg.mobile_number || "",
-        reg.college_name || "",
-        reg.payment_status,
-        new Date(reg.created_at as string).toLocaleString(),
+        String(reg.id || ""),
+        String(profile?.full_name || ""),
+        String(profile?.email || ""),
+        String(profile?.mobile_number || ""),
+        String(profile?.college_name || ""),
+        String(reg.payment_status || ""),
+        reg.created_at ? new Date(reg.created_at).toLocaleString() : "",
         customData._club_id ? "Yes" : "No",
-        customData._applied_price || "",
+        String(customData._applied_price || ""),
         JSON.stringify(customData),
       ];
     });
