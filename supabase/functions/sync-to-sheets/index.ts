@@ -7,8 +7,9 @@ const corsHeaders = {
 };
 
 interface SheetSyncRequest {
-  eventId: string;
-  spreadsheetId: string;
+  action?: "sync" | "get-info";
+  eventId?: string;
+  spreadsheetId?: string;
   sheetName?: string;
 }
 
@@ -46,15 +47,36 @@ serve(async (req) => {
       throw new Error("Google Service Account not configured");
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const body = await req.json();
+    const { action = "sync", eventId, spreadsheetId, sheetName } = body as SheetSyncRequest;
 
-    const { eventId, spreadsheetId, sheetName = "Registrations" }: SheetSyncRequest = await req.json();
+    // Handle get-info action - just return service account email
+    if (action === "get-info") {
+      try {
+        const credentials = JSON.parse(serviceAccountKey);
+        return new Response(
+          JSON.stringify({ 
+            serviceAccountEmail: credentials.client_email,
+            configured: true
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } catch {
+        return new Response(
+          JSON.stringify({ configured: false, error: "Invalid service account configuration" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
 
+    // For sync action, validate required fields
     if (!eventId || !spreadsheetId) {
       throw new Error("Missing eventId or spreadsheetId");
     }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     console.log(`Starting dynamic sync for event: ${eventId}`);
 
