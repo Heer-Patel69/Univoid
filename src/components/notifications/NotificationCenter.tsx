@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, memo, useRef } from 'react';
 import { 
   Bell, Check, Trash2, Calendar, BookOpen, Info, AlertCircle, 
-  FolderKanban, ListTodo, ChevronDown, ArrowLeft, Volume2, VolumeX, BellRing
+  FolderKanban, ListTodo, ChevronDown, ArrowLeft, Volume2, VolumeX, BellRing, UserPlus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -400,6 +400,8 @@ export const NotificationCenter = () => {
         return <ListTodo className="h-4 w-4 text-amber-500" />;
       case 'system':
         return <AlertCircle className="h-4 w-4 text-orange-500" />;
+      case 'volunteer_invite':
+        return <UserPlus className="h-4 w-4 text-emerald-500" />;
       default:
         return <Info className="h-4 w-4 text-blue-500" />;
     }

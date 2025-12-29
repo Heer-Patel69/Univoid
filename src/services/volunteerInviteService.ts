@@ -140,20 +140,21 @@ export async function sendVolunteerInviteNotification(
   organizerName: string,
   role: VolunteerInviteRole
 ): Promise<void> {
-  // Send in-app notification
+  // Send in-app notification - direct link to volunteer invites section
   const { error } = await supabase
     .from('notifications')
     .insert({
       user_id: userId,
-      title: `You've been invited as a Volunteer`,
-      message: `You've been invited as a Volunteer for "${eventTitle}"\nRole: ${ROLE_LABELS[role]}\nOrganizer: ${organizerName}`,
+      title: 'Volunteer Invitation',
+      message: `You've been invited to volunteer for "${eventTitle}" as ${ROLE_LABELS[role]}. Invited by: ${organizerName}`,
       type: 'volunteer_invite',
-      link: `/dashboard?tab=volunteer-invites&event=${eventId}`,
+      link: '/dashboard?tab=volunteer',
     });
 
   if (error) {
-    console.error('Error sending notification:', error);
-    // Don't throw - notification failure shouldn't block the invite
+    console.error('[Volunteer Invite] Error creating notification:', error);
+  } else {
+    console.log('[Volunteer Invite] Notification created for user:', userId);
   }
 
   // Send email notification (fire and forget)
