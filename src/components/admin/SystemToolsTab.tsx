@@ -29,12 +29,13 @@ export const SystemToolsTab = ({ userId }: SystemToolsTabProps) => {
 
     try {
       // First, create an in-app notification for the current user
+      // Link to dashboard instead of admin for safety (non-admins shouldn't be directed to /admin)
       const { error: notifError } = await supabase.from('notifications').insert({
         user_id: userId,
         title: testTitle,
         message: testMessage,
         type: 'system',
-        link: '/admin',
+        link: '/dashboard',
         is_read: false,
       });
 
@@ -50,7 +51,7 @@ export const SystemToolsTab = ({ userId }: SystemToolsTabProps) => {
             title: testTitle,
             body: testMessage,
             icon: '/favicon.jpg',
-            link: '/admin',
+            link: '/dashboard',
             tag: 'test-notification',
           },
         },
