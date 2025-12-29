@@ -7,12 +7,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { getVolunteerEvents, ROLE_LABELS, type VolunteerInviteRole } from "@/services/volunteerInviteService";
 import { supabase } from "@/integrations/supabase/client";
+import { VolunteerAttendanceCard } from "./VolunteerAttendanceCard";
 import { QrCode, Users, Calendar, MapPin, CheckCircle, Loader2, UserCheck } from "lucide-react";
 import { format, isAfter, isBefore } from "date-fns";
 import { Link } from "react-router-dom";
 
 interface VolunteerEventCardProps {
   eventId: string;
+  inviteId: string;
   role: VolunteerInviteRole;
   event: {
     id: string;
@@ -23,7 +25,7 @@ interface VolunteerEventCardProps {
   };
 }
 
-function VolunteerEventCard({ eventId, role, event }: VolunteerEventCardProps) {
+function VolunteerEventCard({ eventId, inviteId, role, event }: VolunteerEventCardProps) {
   const isEventActive = event.status === 'published' && 
     (event.end_date ? isAfter(new Date(event.end_date), new Date()) : isAfter(new Date(event.start_date), new Date()));
   const isEventCompleted = event.status === 'completed' || 
@@ -34,37 +36,44 @@ function VolunteerEventCard({ eventId, role, event }: VolunteerEventCardProps) {
   return (
     <Card className={`transition-all ${isEventActive ? '' : 'opacity-70'}`}>
       <CardContent className="p-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Badge variant={isEventActive ? "default" : "secondary"}>
-                {isEventActive ? "Active" : isEventCompleted ? "Completed" : "Upcoming"}
-              </Badge>
-              <Badge variant="outline">{ROLE_LABELS[role]}</Badge>
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Badge variant={isEventActive ? "default" : "secondary"}>
+                  {isEventActive ? "Active" : isEventCompleted ? "Completed" : "Upcoming"}
+                </Badge>
+                <Badge variant="outline">{ROLE_LABELS[role]}</Badge>
+              </div>
+              
+              <Link to={`/events/${eventId}`}>
+                <h3 className="font-semibold hover:text-primary transition-colors">
+                  {event.title}
+                </h3>
+              </Link>
+              
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Calendar className="h-3.5 w-3.5" />
+                {format(new Date(event.start_date), "MMM d, yyyy 'at' h:mm a")}
+              </div>
             </div>
-            
-            <Link to={`/events/${eventId}`}>
-              <h3 className="font-semibold hover:text-primary transition-colors">
-                {event.title}
-              </h3>
-            </Link>
-            
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Calendar className="h-3.5 w-3.5" />
-              {format(new Date(event.start_date), "MMM d, yyyy 'at' h:mm a")}
+
+            <div className="flex gap-2">
+              {canDoCheckin && isEventActive && (
+                <Link to={`/events/${eventId}/check-in`}>
+                  <Button size="sm" className="gap-1.5">
+                    <QrCode className="h-4 w-4" />
+                    Scan QR
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
 
-          <div className="flex gap-2">
-            {canDoCheckin && isEventActive && (
-              <Link to={`/events/${eventId}/check-in`}>
-                <Button size="sm" className="gap-1.5">
-                  <QrCode className="h-4 w-4" />
-                  Check-in
-                </Button>
-              </Link>
-            )}
-          </div>
+          {/* Attendance Tracker */}
+          {isEventActive && (
+            <VolunteerAttendanceCard eventId={eventId} inviteId={inviteId} />
+          )}
         </div>
       </CardContent>
     </Card>
@@ -146,7 +155,8 @@ export function VolunteerDashboard() {
                 {activeEvents.map(ve => (
                   <VolunteerEventCard 
                     key={ve.event_id} 
-                    eventId={ve.event_id} 
+                    eventId={ve.event_id}
+                    inviteId={ve.id}
                     role={ve.role} 
                     event={ve.event} 
                   />
@@ -165,7 +175,8 @@ export function VolunteerDashboard() {
                 {pastEvents.map(ve => (
                   <VolunteerEventCard 
                     key={ve.event_id} 
-                    eventId={ve.event_id} 
+                    eventId={ve.event_id}
+                    inviteId={ve.id}
                     role={ve.role} 
                     event={ve.event} 
                   />

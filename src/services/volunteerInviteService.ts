@@ -390,10 +390,10 @@ export async function isAcceptedVolunteer(eventId: string, userId: string): Prom
 /**
  * Get all events where user is an accepted volunteer
  */
-export async function getVolunteerEvents(userId: string): Promise<{ event_id: string; role: VolunteerInviteRole; event: { id: string; title: string; start_date: string; end_date: string | null; status: string } }[]> {
+export async function getVolunteerEvents(userId: string): Promise<{ id: string; event_id: string; role: VolunteerInviteRole; event: { id: string; title: string; start_date: string; end_date: string | null; status: string } }[]> {
   const { data: invites, error } = await supabase
     .from('event_volunteer_invites')
-    .select('event_id, role')
+    .select('id, event_id, role')
     .eq('user_id', userId)
     .eq('status', 'accepted');
 
@@ -421,6 +421,7 @@ export async function getVolunteerEvents(userId: string): Promise<{ event_id: st
   return invites
     .filter(i => eventMap.has(i.event_id))
     .map(i => ({
+      id: i.id,
       event_id: i.event_id,
       role: i.role as VolunteerInviteRole,
       event: eventMap.get(i.event_id)!,

@@ -11,9 +11,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Users, CheckCircle, XCircle, Trash2, UserPlus, ClipboardList, Mail } from "lucide-react";
+import { Plus, Users, CheckCircle, XCircle, Trash2, UserPlus, ClipboardList, Mail, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { AddVolunteerModal } from "@/components/volunteers/AddVolunteerModal";
+import { VolunteerAttendanceList } from "./VolunteerAttendanceList";
 
 interface VolunteerManagerProps {
   eventId: string;
@@ -441,6 +442,24 @@ export function VolunteerManager({ eventId, eventTitle, organizerId }: Volunteer
             )}
           </div>
         </div>
+      )}
+
+      {/* Attendance Tracking Section */}
+      {roles && roles.length > 0 && (
+        <Card className="mt-6">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              Volunteer Attendance
+            </CardTitle>
+            <CardDescription>
+              Track volunteer check-ins and hours worked
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <VolunteerAttendanceList eventId={eventId} />
+          </CardContent>
+        </Card>
       )}
     </div>
   );
