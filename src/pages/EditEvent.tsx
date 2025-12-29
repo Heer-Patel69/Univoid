@@ -341,7 +341,10 @@ const EditEvent = () => {
                     <Input type="number" value={formData.price} onChange={(e) => updateForm("price", parseFloat(e.target.value) || 0)} />
                   </div>
                   <div className="space-y-2">
-                    <Label>UPI QR Code</Label>
+                    <Label>UPI QR Code (Optional)</Label>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Upload the <strong>original QR image</strong> from your payment app. Screenshots or WhatsApp images may not work.
+                    </p>
                     {event.upi_qr_url && (
                       <img src={event.upi_qr_url} alt="Current QR" className="w-24 h-24 object-contain rounded-lg mb-2" />
                     )}
@@ -362,12 +365,20 @@ const EditEvent = () => {
                       </label>
                     </div>
                     {qrFile && !isScanning && (
-                      <p className="text-xs text-muted-foreground">UPI ID will be auto-detected from the QR code</p>
+                      <p className="text-xs text-muted-foreground">UPI ID will be auto-detected. If not detected, enter manually below.</p>
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label>UPI VPA ID {formData.upi_vpa && <span className="text-xs text-green-600">(editable)</span>}</Label>
-                    <Input value={formData.upi_vpa} onChange={(e) => updateForm("upi_vpa", e.target.value)} placeholder="yourname@upi" />
+                    <Label>UPI VPA ID *</Label>
+                    <p className="text-xs text-muted-foreground mb-1">
+                      Enter your UPI ID manually if QR scan fails (e.g., yourname@paytm)
+                    </p>
+                    <Input 
+                      value={formData.upi_vpa} 
+                      onChange={(e) => updateForm("upi_vpa", e.target.value)} 
+                      placeholder="yourname@upi"
+                      className={formData.upi_vpa ? "border-green-500" : ""}
+                    />
                   </div>
                 </>
               )}
