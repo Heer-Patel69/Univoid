@@ -119,14 +119,27 @@ const OrganizerDashboard = () => {
   const pendingCount = registrations?.filter((r: RegistrationWithProfile) => r.payment_status === "pending").length || 0;
   const approvedCount = registrations?.filter((r: RegistrationWithProfile) => r.payment_status === "approved").length || 0;
 
-  // Approve/Reject mutation with optimistic UI
+  // Approve/Reject mutation with optimistic UI and atomic locking
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status, userId }: { id: string; status: "approved" | "rejected"; userId: string }) => {
-      const { error } = await supabase
-        .from("event_registrations")
-        .update({ payment_status: status, reviewed_at: new Date().toISOString() })
-        .eq("id", id);
+      // Use atomic function to prevent race conditions
+      const { data, error } = await supabase.rpc('update_payment_status_atomic', {
+        p_registration_id: id,
+        p_new_status: status,
+        p_organizer_id: user!.id
+      });
+      
       if (error) throw error;
+      
+      // Check if operation was successful
+      if (!data || !data.success) {
+        throw new Error(data?.message || 'Failed to update payment status');
+      }
+      
+      // If already processed, just return (idempotent)
+      if (data.already_processed) {
+        return { alreadyProcessed: true, qrCode: null };
+      }
 
       let qrCode = null;
       if (status === "approved") {
@@ -151,6 +164,8 @@ const OrganizerDashboard = () => {
       } catch (emailError) {
         console.error("Failed to send status email:", emailError);
       }
+      
+      return { alreadyProcessed: false, qrCode };
     },
     onMutate: async ({ id, status }) => {
       // Cancel outgoing refetches
@@ -166,8 +181,12 @@ const OrganizerDashboard = () => {
       
       return { previousRegistrations };
     },
-    onSuccess: (_, { status }) => {
-      toast({ title: status === "approved" ? "✅ Approved & QR Sent!" : "❌ Registration Rejected" });
+    onSuccess: (result, { status }) => {
+      if (result?.alreadyProcessed) {
+        toast({ title: "ℹ️ Already Processed", description: `Payment was already ${status}` });
+      } else {
+        toast({ title: status === "approved" ? "✅ Approved & QR Sent!" : "❌ Registration Rejected" });
+      }
     },
     onError: (error: Error, _, context) => {
       // Rollback on error
