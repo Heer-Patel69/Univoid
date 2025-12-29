@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useParams, Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { format, isPast } from "date-fns";
 import DOMPurify from "dompurify";
 import { Button } from "@/components/ui/button";
@@ -14,26 +14,24 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { fetchEventById, checkUserRegistration, registerForEvent } from "@/services/eventsService";
-import { supabase } from "@/integrations/supabase/client";
+import { fetchEventById, checkUserRegistration } from "@/services/eventsService";
+import { useRegistration } from "@/hooks/useRegistration";
+import { useRealtimeCapacity } from "@/hooks/useRealtimeCapacity";
 import AuthModal from "@/components/auth/AuthModal";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb";
 import DynamicRegistrationForm from "@/components/events/DynamicRegistrationForm";
 import ClubMembershipCheck from "@/components/events/ClubMembershipCheck";
-import { Calendar, MapPin, Users, IndianRupee, ExternalLink, Clock, Share2, CheckCircle, AlertCircle, Upload, Eye } from "lucide-react";
+import { Calendar, MapPin, Users, IndianRupee, ExternalLink, Clock, Share2, CheckCircle, AlertCircle, Upload, Eye, Loader2 } from "lucide-react";
 
 const EventDetail = () => {
   const { eventId } = useParams<{ eventId: string }>();
-  const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [paymentScreenshot, setPaymentScreenshot] = useState<File | null>(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
-  const [uploading, setUploading] = useState(false);
   
   // Club membership state
   const [selectedPrice, setSelectedPrice] = useState<number | null>(null);
@@ -60,98 +58,47 @@ const EventDetail = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  const registerMutation = useMutation({
-    mutationFn: async (customData: Record<string, unknown>) => {
-      if (!user || !event) throw new Error("Missing data");
+  // Real-time capacity updates
+  const { 
+    registrationsCount, 
+    maxCapacity, 
+    isFull, 
+    spotsRemaining 
+  } = useRealtimeCapacity(eventId);
 
-      let screenshotUrl = null;
-      
-      if (event.is_paid && paymentScreenshot) {
-        setUploading(true);
-        const fileExt = paymentScreenshot.name.split(".").pop();
-        const fileName = `${user.id}/payments/${eventId}/${Date.now()}.${fileExt}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from("event-assets")
-          .upload(fileName, paymentScreenshot);
-        
-        if (uploadError) throw uploadError;
-        
-        const { data: { publicUrl } } = supabase.storage
-          .from("event-assets")
-          .getPublicUrl(fileName);
-        
-        screenshotUrl = publicUrl;
-        setUploading(false);
-      }
-
-      // Include club membership info in custom_data
-      const enhancedCustomData = {
-        ...customData,
-        ...(selectedClubId && {
-          _club_member: true,
-          _club_id: selectedClubId,
-          _membership_id: membershipId,
-          _applied_price: selectedPrice,
-        }),
-      };
-
-      return registerForEvent({
-        event_id: eventId!,
-        user_id: user.id,
-        custom_data: enhancedCustomData,
-        payment_screenshot_url: screenshotUrl || undefined,
-      });
-    },
-    onSuccess: async () => {
-      // Send confirmation email in background
-      try {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('email, full_name')
-          .eq('id', user!.id)
-          .single();
-
-        if (profile?.email) {
-          await supabase.functions.invoke('send-registration-email', {
-            body: {
-              userEmail: profile.email,
-              userName: profile.full_name,
-              eventTitle: event?.title,
-              eventDate: event?.start_date ? new Date(event.start_date).toLocaleDateString('en-IN', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              }) : '',
-              eventLocation: event?.venue_name || 'TBA',
-              isPaid: event?.is_paid || false,
-              ticketPrice: event?.price,
-            },
-          });
-        }
-      } catch (emailError) {
-        console.error('Failed to send confirmation email:', emailError);
-      }
-
-      toast({
-        title: event?.is_paid ? "Registration Submitted!" : "Registration Confirmed!",
-        description: event?.is_paid 
-          ? "Your payment is pending verification."
-          : "You're registered! Check your tickets.",
-      });
+  // Robust registration with debouncing and error handling
+  const { 
+    register, 
+    isSubmitting, 
+    isUploading 
+  } = useRegistration({
+    eventId: eventId!,
+    userId: user?.id || '',
+    eventTitle: event?.title,
+    isPaidEvent: event?.is_paid,
+    onSuccess: () => {
       setIsRegisterOpen(false);
       setPaymentScreenshot(null);
       setAgreedToTerms(false);
-      queryClient.invalidateQueries({ queryKey: ["registration", eventId] });
-    },
-    onError: (error: Error) => {
-      setUploading(false);
-      toast({ title: "Registration Failed", description: error.message, variant: "destructive" });
     },
   });
+
+  const handleRegister = useCallback(async (customData: Record<string, unknown>) => {
+    if (!user || !event) return;
+
+    // Include club membership info in custom_data
+    const enhancedCustomData = {
+      ...customData,
+      ...(selectedClubId && {
+        _club_member: true,
+        _club_id: selectedClubId,
+        _membership_id: membershipId,
+        _applied_price: selectedPrice,
+      }),
+    };
+
+    await register(enhancedCustomData, paymentScreenshot);
+  }, [user, event, selectedClubId, membershipId, selectedPrice, register, paymentScreenshot]);
 
   const handleShare = async () => {
     try {
@@ -163,7 +110,10 @@ const EventDetail = () => {
   };
 
   const isEventPast = event ? isPast(new Date(event.start_date)) : false;
-  const isFull = event?.max_capacity ? event.registrations_count >= event.max_capacity : false;
+  // Use real-time capacity, fallback to event data
+  const effectiveRegistrations = registrationsCount || event?.registrations_count || 0;
+  const effectiveCapacity = maxCapacity !== null ? maxCapacity : event?.max_capacity;
+  const isFullNow = effectiveCapacity ? effectiveRegistrations >= effectiveCapacity : isFull;
 
   if (eventLoading) {
     return (
@@ -326,17 +276,20 @@ const EventDetail = () => {
                 </div>
               </div>
 
-              {event.max_capacity && (
+              {effectiveCapacity && (
                 <div className="flex items-center gap-3">
                   <Users className="w-5 h-5 text-muted-foreground" />
                   <div className="flex-1">
                     <div className="flex justify-between text-sm mb-1">
-                      <span>{event.registrations_count} registered</span>
-                      <span>{event.max_capacity} spots</span>
+                      <span>{effectiveRegistrations} registered</span>
+                      <span>{effectiveCapacity} spots</span>
                     </div>
                     <div className="h-2 bg-muted rounded-full overflow-hidden">
-                      <div className={`h-full rounded-full ${isFull ? "bg-destructive" : "bg-primary"}`} style={{ width: `${Math.min((event.registrations_count / event.max_capacity) * 100, 100)}%` }} />
+                      <div className={`h-full rounded-full transition-all ${isFullNow ? "bg-destructive" : "bg-primary"}`} style={{ width: `${Math.min((effectiveRegistrations / effectiveCapacity) * 100, 100)}%` }} />
                     </div>
+                    {spotsRemaining !== null && spotsRemaining <= 10 && spotsRemaining > 0 && (
+                      <p className="text-xs text-destructive mt-1">Only {spotsRemaining} spots left!</p>
+                    )}
                   </div>
                 </div>
               )}
@@ -356,8 +309,8 @@ const EventDetail = () => {
               {!existingRegistration && (
                 <Dialog open={isRegisterOpen} onOpenChange={setIsRegisterOpen}>
                   <DialogTrigger asChild>
-                    <Button className="w-full rounded-full text-lg py-6" disabled={isEventPast || isFull || !user} onClick={() => !user && setShowAuthModal(true)}>
-                      {!user ? "Login to Register" : isEventPast ? "Event Ended" : isFull ? "Event Full" : "Register Now"}
+                    <Button className="w-full rounded-full text-lg py-6" disabled={isEventPast || isFullNow || !user || isSubmitting} onClick={() => !user && setShowAuthModal(true)}>
+                      {!user ? "Login to Register" : isEventPast ? "Event Ended" : isFullNow ? "Event Full" : "Register Now"}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-md max-h-[90vh]">
@@ -374,13 +327,13 @@ const EventDetail = () => {
                         
                         <DynamicRegistrationForm
                           eventId={eventId!}
-                          onSubmit={(customData) => registerMutation.mutate(customData)}
-                          isSubmitting={registerMutation.isPending || uploading}
+                          onSubmit={handleRegister}
+                          isSubmitting={isSubmitting || isUploading}
                           isPaidEvent={event.is_paid}
                           paymentSection={paymentSection}
                           termsSection={termsSection}
                           submitDisabled={(event.is_paid && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms)}
-                          submitLabel={event.is_paid ? "Submit Registration" : "Confirm Registration"}
+                          submitLabel={isSubmitting ? "Registering..." : (event.is_paid ? "Submit Registration" : "Confirm Registration")}
                         />
                       </div>
                     </ScrollArea>
