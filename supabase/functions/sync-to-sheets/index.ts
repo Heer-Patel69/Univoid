@@ -27,7 +27,7 @@ interface Registration {
   payment_status: string;
   custom_data: Record<string, unknown> | null;
   user_id: string;
-  profiles: {
+  profile?: {
     full_name?: string;
     email?: string;
     mobile_number?: string;
@@ -81,26 +81,39 @@ serve(async (req) => {
 
     console.log(`Found ${formFields?.length || 0} custom form fields`);
 
-    // Fetch registrations with profiles
+    // Fetch registrations (without join - no FK relationship to profiles)
     const { data: registrations, error: regError } = await supabase
       .from("event_registrations")
-      .select(`
-        id,
-        created_at,
-        payment_status,
-        custom_data,
-        user_id,
-        profiles:user_id (
-          full_name,
-          email,
-          mobile_number,
-          college_name
-        )
-      `)
+      .select("id, created_at, payment_status, custom_data, user_id")
       .eq("event_id", eventId)
       .order("created_at", { ascending: true });
 
     if (regError) throw regError;
+
+    // Fetch profiles separately for all user_ids
+    const userIds = (registrations || []).map(r => r.user_id).filter(Boolean);
+    let profileMap = new Map<string, { full_name?: string; email?: string; mobile_number?: string; college_name?: string }>();
+    
+    if (userIds.length > 0) {
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, full_name, email, mobile_number, college_name")
+        .in("id", userIds);
+
+      if (profilesError) {
+        console.error("Error fetching profiles:", profilesError);
+      } else {
+        (profiles || []).forEach(p => profileMap.set(p.id, p));
+      }
+    }
+
+    console.log(`Found ${registrations?.length || 0} registrations, ${profileMap.size} profiles`);
+
+    // Attach profiles to registrations
+    const registrationsWithProfiles = (registrations || []).map(reg => ({
+      ...reg,
+      profile: profileMap.get(reg.user_id) || null
+    })) as Registration[];
 
     // Parse service account key
     const credentials = JSON.parse(serviceAccountKey);
@@ -112,8 +125,8 @@ serve(async (req) => {
     const headers = buildDynamicHeaders(formFields || [], event);
     
     // Build rows with dynamic column mapping
-    const rows = (registrations || []).map((reg) => 
-      buildDynamicRow(reg as Registration, formFields || [], event)
+    const rows = registrationsWithProfiles.map((reg) => 
+      buildDynamicRow(reg, formFields || [], event)
     );
 
     console.log(`Syncing ${rows.length} registrations with ${headers.length} columns`);
@@ -178,7 +191,7 @@ function buildDynamicRow(
   event: { is_paid: boolean }
 ): string[] {
   const customData = reg.custom_data || {};
-  const profile = reg.profiles;
+  const profile = reg.profile;
 
   // Fixed columns
   const row: string[] = [
