@@ -10,16 +10,20 @@ const corsHeaders = {
 };
 
 interface VolunteerNotificationRequest {
-  type: "application_received" | "approved" | "rejected" | "invite";
+  type: "application_received" | "approved" | "rejected" | "invite" | "invite_accepted" | "invite_rejected";
   assignmentId?: string;
   roleId?: string;
-  userId: string;
+  userId?: string;
   organizerEmail?: string;
   // For invite type
   eventId?: string;
   eventTitle?: string;
   organizerName?: string;
   role?: string;
+  // For invite response types
+  organizerId?: string;
+  volunteerName?: string;
+  volunteerRole?: string;
 }
 
 serve(async (req) => {
@@ -32,23 +36,128 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { type, roleId, userId, organizerEmail, eventId, eventTitle, organizerName, role: inviteRole }: VolunteerNotificationRequest = await req.json();
-
-    // Fetch user profile
-    const { data: userProfile, error: userError } = await supabase
-      .from("profiles")
-      .select("full_name, email")
-      .eq("id", userId)
-      .single();
-
-    if (userError || !userProfile) {
-      throw new Error("User not found");
-    }
+    const { type, roleId, userId, organizerEmail, eventId, eventTitle, organizerName, role: inviteRole, organizerId, volunteerName, volunteerRole }: VolunteerNotificationRequest = await req.json();
 
     let emailResponse;
 
+    // Handle invite accepted/rejected notifications to organizer
+    if (type === "invite_accepted" || type === "invite_rejected") {
+      console.log(`Sending ${type} notification to organizer:`, organizerId);
+      
+      if (!organizerId) {
+        throw new Error("organizerId is required for invite response notifications");
+      }
+
+      // Fetch organizer email
+      const { data: organizerProfile, error: orgError } = await supabase
+        .from("profiles")
+        .select("full_name, email")
+        .eq("id", organizerId)
+        .single();
+
+      if (orgError || !organizerProfile) {
+        throw new Error("Organizer not found");
+      }
+
+      const roleLabels: Record<string, string> = {
+        entry: "Entry Management",
+        qr_checkin: "QR Check-in",
+        help_desk: "Help Desk",
+        all: "All Roles",
+      };
+      const roleName = roleLabels[volunteerRole || "all"] || volunteerRole || "Volunteer";
+      const isAccepted = type === "invite_accepted";
+
+      emailResponse = await resend.emails.send({
+        from: "Univoid <notifications@univoid.in>",
+        to: [organizerProfile.email],
+        subject: isAccepted 
+          ? `✅ Volunteer Accepted - ${eventTitle}`
+          : `❌ Volunteer Declined - ${eventTitle}`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          </head>
+          <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5;">
+            <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+              <div style="background: linear-gradient(135deg, ${isAccepted ? '#22c55e, #16a34a' : '#f97316, #ea580c'}); padding: 30px; text-align: center;">
+                <h1 style="color: white; margin: 0; font-size: 24px;">
+                  ${isAccepted ? '🎉 Volunteer Accepted!' : '📋 Invite Declined'}
+                </h1>
+              </div>
+              <div style="padding: 30px;">
+                <p style="color: #333; font-size: 16px; line-height: 1.6;">
+                  Hi ${organizerProfile.full_name},
+                </p>
+                <p style="color: #333; font-size: 16px; line-height: 1.6;">
+                  ${isAccepted 
+                    ? `<strong>${volunteerName}</strong> has <strong style="color: #22c55e;">accepted</strong> your volunteer invitation!`
+                    : `<strong>${volunteerName}</strong> has <strong style="color: #f97316;">declined</strong> your volunteer invitation.`
+                  }
+                </p>
+                
+                <div style="background: ${isAccepted ? '#f0fdf4' : '#fff7ed'}; border: 1px solid ${isAccepted ? '#22c55e' : '#f97316'}; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                  <p style="margin: 0 0 10px 0;"><strong>📅 Event:</strong> ${eventTitle}</p>
+                  <p style="margin: 0;"><strong>👤 Role:</strong> ${roleName}</p>
+                </div>
+
+                ${isAccepted 
+                  ? `<p style="color: #666; font-size: 14px;">
+                      They now have access to the volunteer dashboard and can help with check-ins. 
+                      You can manage volunteers from your organizer dashboard.
+                    </p>`
+                  : `<p style="color: #666; font-size: 14px;">
+                      You may want to invite another volunteer for this role.
+                    </p>`
+                }
+
+                <a href="https://univoid.in/organizer" 
+                   style="display: inline-block; background: ${isAccepted ? '#22c55e' : '#7c3aed'}; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 15px;">
+                  View Volunteers
+                </a>
+              </div>
+              <div style="background: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #eee;">
+                <p style="color: #999; font-size: 12px; margin: 0;">
+                  © ${new Date().getFullYear()} Univoid. All rights reserved.
+                </p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `,
+      });
+
+      console.log("Organizer notification sent:", emailResponse);
+      
+      return new Response(
+        JSON.stringify({ success: true, emailResponse }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // For user-targeted notifications, fetch user profile
+    let userProfile = null;
+    if (userId) {
+      const { data, error: userError } = await supabase
+        .from("profiles")
+        .select("full_name, email")
+        .eq("id", userId)
+        .single();
+
+      if (userError || !data) {
+        throw new Error("User not found");
+      }
+      userProfile = data;
+    }
+
     // Handle invite notification (new invite system)
     if (type === "invite") {
+      if (!userProfile) {
+        throw new Error("User profile required for invite notification");
+      }
       console.log("Sending volunteer invite email to:", userProfile.email);
       
       const roleLabels: Record<string, string> = {
@@ -140,17 +249,22 @@ serve(async (req) => {
     // deno-lint-ignore no-explicit-any
     const eventData = role.event as any;
     const roleEventTitle = eventData?.title || "Event";
-    const organizerId = eventData?.organizer_id;
+    const eventOrganizerId = eventData?.organizer_id;
+
+    // Ensure userProfile is available for notification types that need it
+    if (!userProfile) {
+      throw new Error("User profile is required for this notification type");
+    }
 
     if (type === "application_received") {
       // Notify organizer about new application
       let targetEmail = organizerEmail;
       
-      if (!targetEmail && organizerId) {
+      if (!targetEmail && eventOrganizerId) {
         const { data: organizerProfile } = await supabase
           .from("profiles")
           .select("email")
-          .eq("id", organizerId)
+          .eq("id", eventOrganizerId)
           .single();
         targetEmail = organizerProfile?.email;
       }

@@ -243,14 +243,54 @@ export async function getUserVolunteerInvites(userId: string): Promise<Volunteer
  * Accept a volunteer invite
  */
 export async function acceptVolunteerInvite(inviteId: string): Promise<void> {
+  // First get invite details for notification
+  const { data: invite, error: fetchError } = await supabase
+    .from('event_volunteer_invites')
+    .select('*, events(title, organizer_id)')
+    .eq('id', inviteId)
+    .single();
+
+  if (fetchError) {
+    console.error('Error fetching invite:', fetchError);
+    throw new Error('Failed to fetch invite details');
+  }
+
+  // Update the invite status
   const { error } = await supabase
     .from('event_volunteer_invites')
-    .update({ status: 'accepted' })
+    .update({ status: 'accepted', accepted_at: new Date().toISOString() })
     .eq('id', inviteId);
 
   if (error) {
     console.error('Error accepting invite:', error);
     throw new Error('Failed to accept invite');
+  }
+
+  // Get volunteer name for notification
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: volunteerProfile } = await supabase
+    .from('profiles')
+    .select('full_name')
+    .eq('id', user?.id)
+    .single();
+
+  // Send email notification to organizer (fire and forget)
+  if (invite?.events) {
+    const eventData = invite.events as { title: string; organizer_id: string };
+    try {
+      await supabase.functions.invoke('send-volunteer-notification', {
+        body: {
+          type: 'invite_accepted',
+          organizerId: eventData.organizer_id,
+          eventTitle: eventData.title,
+          eventId: invite.event_id,
+          volunteerName: volunteerProfile?.full_name || 'A volunteer',
+          volunteerRole: invite.role,
+        },
+      });
+    } catch (emailError) {
+      console.error('Error sending organizer notification:', emailError);
+    }
   }
 }
 
@@ -258,6 +298,19 @@ export async function acceptVolunteerInvite(inviteId: string): Promise<void> {
  * Reject a volunteer invite
  */
 export async function rejectVolunteerInvite(inviteId: string): Promise<void> {
+  // First get invite details for notification
+  const { data: invite, error: fetchError } = await supabase
+    .from('event_volunteer_invites')
+    .select('*, events(title, organizer_id)')
+    .eq('id', inviteId)
+    .single();
+
+  if (fetchError) {
+    console.error('Error fetching invite:', fetchError);
+    throw new Error('Failed to fetch invite details');
+  }
+
+  // Update the invite status
   const { error } = await supabase
     .from('event_volunteer_invites')
     .update({ status: 'rejected' })
@@ -266,6 +319,33 @@ export async function rejectVolunteerInvite(inviteId: string): Promise<void> {
   if (error) {
     console.error('Error rejecting invite:', error);
     throw new Error('Failed to reject invite');
+  }
+
+  // Get volunteer name for notification
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: volunteerProfile } = await supabase
+    .from('profiles')
+    .select('full_name')
+    .eq('id', user?.id)
+    .single();
+
+  // Send email notification to organizer (fire and forget)
+  if (invite?.events) {
+    const eventData = invite.events as { title: string; organizer_id: string };
+    try {
+      await supabase.functions.invoke('send-volunteer-notification', {
+        body: {
+          type: 'invite_rejected',
+          organizerId: eventData.organizer_id,
+          eventTitle: eventData.title,
+          eventId: invite.event_id,
+          volunteerName: volunteerProfile?.full_name || 'A volunteer',
+          volunteerRole: invite.role,
+        },
+      });
+    } catch (emailError) {
+      console.error('Error sending organizer notification:', emailError);
+    }
   }
 }
 
