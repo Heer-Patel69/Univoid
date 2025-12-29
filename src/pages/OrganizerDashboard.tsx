@@ -480,6 +480,7 @@ const OrganizerDashboard = () => {
                       <TabsContent value="volunteers">
                         <VolunteerManager 
                           eventId={selectedEvent!} 
+                          eventTitle={events?.find(e => e.id === selectedEvent)?.title || "Event"}
                           organizerId={user.id} 
                         />
                       </TabsContent>

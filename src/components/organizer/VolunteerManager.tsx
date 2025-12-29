@@ -9,14 +9,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Users, CheckCircle, XCircle, Trash2, UserPlus, ClipboardList } from "lucide-react";
+import { Plus, Users, CheckCircle, XCircle, Trash2, UserPlus, ClipboardList, Mail } from "lucide-react";
 import { format } from "date-fns";
+import { AddVolunteerModal } from "@/components/volunteers/AddVolunteerModal";
 
 interface VolunteerManagerProps {
   eventId: string;
+  eventTitle: string;
   organizerId: string;
 }
 
@@ -48,10 +49,11 @@ interface VolunteerAssignment {
   };
 }
 
-export function VolunteerManager({ eventId, organizerId }: VolunteerManagerProps) {
+export function VolunteerManager({ eventId, eventTitle, organizerId }: VolunteerManagerProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
   
   // Form state
@@ -217,70 +219,83 @@ export function VolunteerManager({ eventId, organizerId }: VolunteerManagerProps
           <h3 className="font-semibold">Volunteer Roles</h3>
           <p className="text-sm text-muted-foreground">Create and manage volunteer positions</p>
         </div>
-        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm" className="gap-2">
-              <Plus className="w-4 h-4" /> Add Role
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create Volunteer Role</DialogTitle>
-              <DialogDescription>Define a new volunteer position for your event</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>Role Title *</Label>
-                <Input 
-                  placeholder="e.g., Registration Desk" 
-                  value={roleTitle} 
-                  onChange={(e) => setRoleTitle(e.target.value)} 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Description</Label>
-                <Textarea 
-                  placeholder="What this role involves..." 
-                  value={roleDescription} 
-                  onChange={(e) => setRoleDescription(e.target.value)} 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Slots Available</Label>
-                <Input 
-                  type="number" 
-                  min={1} 
-                  value={slotsAvailable} 
-                  onChange={(e) => setSlotsAvailable(parseInt(e.target.value) || 1)} 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Responsibilities (one per line)</Label>
-                <Textarea 
-                  placeholder="Check-in attendees&#10;Distribute badges&#10;Guide guests" 
-                  value={responsibilities} 
-                  onChange={(e) => setResponsibilities(e.target.value)} 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Perks</Label>
-                <Input 
-                  placeholder="e.g., Free lunch, event t-shirt" 
-                  value={perks} 
-                  onChange={(e) => setPerks(e.target.value)} 
-                />
-              </div>
-              <Button 
-                className="w-full" 
-                onClick={() => createRoleMutation.mutate()} 
-                disabled={!roleTitle || createRoleMutation.isPending}
-              >
-                {createRoleMutation.isPending ? "Creating..." : "Create Role"}
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" className="gap-2" onClick={() => setInviteModalOpen(true)}>
+            <Mail className="w-4 h-4" /> Invite Volunteer
+          </Button>
+          <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="gap-2">
+                <Plus className="w-4 h-4" /> Add Role
               </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create Volunteer Role</DialogTitle>
+                <DialogDescription>Define a new volunteer position for your event</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label>Role Title *</Label>
+                  <Input 
+                    placeholder="e.g., Registration Desk" 
+                    value={roleTitle} 
+                    onChange={(e) => setRoleTitle(e.target.value)} 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Description</Label>
+                  <Textarea 
+                    placeholder="What this role involves..." 
+                    value={roleDescription} 
+                    onChange={(e) => setRoleDescription(e.target.value)} 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Slots Available</Label>
+                  <Input 
+                    type="number" 
+                    min={1} 
+                    value={slotsAvailable} 
+                    onChange={(e) => setSlotsAvailable(parseInt(e.target.value) || 1)} 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Responsibilities (one per line)</Label>
+                  <Textarea 
+                    placeholder="Check-in attendees&#10;Distribute badges&#10;Guide guests" 
+                    value={responsibilities} 
+                    onChange={(e) => setResponsibilities(e.target.value)} 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Perks</Label>
+                  <Input 
+                    placeholder="e.g., Free lunch, event t-shirt" 
+                    value={perks} 
+                    onChange={(e) => setPerks(e.target.value)} 
+                  />
+                </div>
+                <Button 
+                  className="w-full" 
+                  onClick={() => createRoleMutation.mutate()} 
+                  disabled={!roleTitle || createRoleMutation.isPending}
+                >
+                  {createRoleMutation.isPending ? "Creating..." : "Create Role"}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
+
+      {/* Invite Volunteer Modal */}
+      <AddVolunteerModal
+        open={inviteModalOpen}
+        onOpenChange={setInviteModalOpen}
+        eventId={eventId}
+        eventTitle={eventTitle}
+      />
 
       {isLoading ? (
         <div className="text-center py-8 text-muted-foreground">Loading...</div>
