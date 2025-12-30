@@ -217,12 +217,7 @@ const EventDetail = () => {
 
           <div className="flex flex-wrap items-start justify-between gap-4">
             <h1 className="font-display text-2xl md:text-3xl font-bold">{event.title}</h1>
-            <div className="flex items-center gap-2">
-              {!existingRegistration && !isEventPast && !isFullNow && (
-                <QuickRegisterButton eventId={eventId!} isPast={isEventPast} isFull={isFullNow} />
-              )}
-              <Button variant="outline" size="icon" onClick={handleShare}><Share2 className="w-4 h-4" /></Button>
-            </div>
+            <Button variant="outline" size="icon" onClick={handleShare}><Share2 className="w-4 h-4" /></Button>
           </div>
 
           {event.description && (
@@ -313,38 +308,57 @@ const EventDetail = () => {
               )}
 
               {!existingRegistration && (
-                <Dialog open={isRegisterOpen} onOpenChange={setIsRegisterOpen}>
-                  <DialogTrigger asChild>
-                    <Button className="w-full rounded-full text-lg py-6" disabled={isEventPast || isFullNow || !user || isSubmitting} onClick={() => !user && setShowAuthModal(true)}>
-                      {!user ? "Login to Register" : isEventPast ? "Event Ended" : isFullNow ? "Event Full" : "Register Now"}
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-md max-h-[90vh]">
-                    <DialogHeader>
-                      <DialogTitle>Register for {event.title}</DialogTitle>
-                      <DialogDescription>
-                        {event.is_paid ? `Pay ₹${displayPrice} and complete the form` : "Complete your registration"}
-                      </DialogDescription>
-                    </DialogHeader>
-                    <ScrollArea className="max-h-[60vh] pr-4">
-                      <div className="py-4 space-y-4">
-                        {/* Club membership selection for paid events */}
-                        {clubSection}
-                        
-                        <DynamicRegistrationForm
-                          eventId={eventId!}
-                          onSubmit={handleRegister}
-                          isSubmitting={isSubmitting || isUploading}
-                          isPaidEvent={event.is_paid}
-                          paymentSection={paymentSection}
-                          termsSection={termsSection}
-                          submitDisabled={(event.is_paid && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms)}
-                          submitLabel={isSubmitting ? "Registering..." : (event.is_paid ? "Submit Registration" : "Confirm Registration")}
-                        />
-                      </div>
-                    </ScrollArea>
-                  </DialogContent>
-                </Dialog>
+                <div className="space-y-3">
+                  {/* Primary CTA: Quick Register */}
+                  {!isEventPast && !isFullNow && (
+                    <QuickRegisterButton 
+                      eventId={eventId!} 
+                      isPast={isEventPast} 
+                      isFull={isFullNow}
+                      variant="primary"
+                      className="w-full"
+                    />
+                  )}
+
+                  {/* Secondary CTA: Login/Register via dialog */}
+                  <Dialog open={isRegisterOpen} onOpenChange={setIsRegisterOpen}>
+                    <DialogTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        className="w-full rounded-full" 
+                        disabled={isEventPast || isFullNow || isSubmitting} 
+                        onClick={() => !user && setShowAuthModal(true)}
+                      >
+                        {!user ? "Already have an account? Login" : isEventPast ? "Event Ended" : isFullNow ? "Event Full" : "Register with full details"}
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-md max-h-[90vh]">
+                      <DialogHeader>
+                        <DialogTitle>Register for {event.title}</DialogTitle>
+                        <DialogDescription>
+                          {event.is_paid ? `Pay ₹${displayPrice} and complete the form` : "Complete your registration"}
+                        </DialogDescription>
+                      </DialogHeader>
+                      <ScrollArea className="max-h-[60vh] pr-4">
+                        <div className="py-4 space-y-4">
+                          {/* Club membership selection for paid events */}
+                          {clubSection}
+                          
+                          <DynamicRegistrationForm
+                            eventId={eventId!}
+                            onSubmit={handleRegister}
+                            isSubmitting={isSubmitting || isUploading}
+                            isPaidEvent={event.is_paid}
+                            paymentSection={paymentSection}
+                            termsSection={termsSection}
+                            submitDisabled={(event.is_paid && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms)}
+                            submitLabel={isSubmitting ? "Registering..." : (event.is_paid ? "Submit Registration" : "Confirm Registration")}
+                          />
+                        </div>
+                      </ScrollArea>
+                    </DialogContent>
+                  </Dialog>
+                </div>
               )}
             </CardContent>
           </Card>

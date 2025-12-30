@@ -7,15 +7,31 @@ interface QuickRegisterButtonProps {
   isPast?: boolean;
   isFull?: boolean;
   className?: string;
+  variant?: "primary" | "secondary";
 }
 
 const QuickRegisterButton = ({ 
   eventId, 
   isPast = false, 
   isFull = false,
-  className = "" 
+  className = "",
+  variant = "secondary"
 }: QuickRegisterButtonProps) => {
   if (isPast || isFull) return null;
+
+  if (variant === "primary") {
+    return (
+      <Link to={`/register/${eventId}`} className={className}>
+        <Button 
+          className="w-full h-14 text-base font-bold shadow-lg hover:shadow-xl transition-shadow"
+          size="lg"
+        >
+          <Zap className="w-5 h-5 mr-2" />
+          Quick Register – No signup required
+        </Button>
+      </Link>
+    );
+  }
 
   return (
     <Link to={`/register/${eventId}`}>
