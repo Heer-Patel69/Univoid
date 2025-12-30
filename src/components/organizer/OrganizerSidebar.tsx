@@ -67,17 +67,16 @@ export function OrganizerSidebar({
           {selectedEventId && onBackToOverview && (
             <button
               onClick={onBackToOverview}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors w-full"
+              className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-primary hover:bg-primary/10 transition-colors w-full"
             >
               <ChevronLeft className="w-4 h-4" />
               Back to Overview
             </button>
           )}
 
-          {/* Overview link - only when no event selected */}
+          {/* Overview Mode Navigation */}
           {!selectedEventId && (
             <>
-              <p className="text-xs font-medium text-muted-foreground px-3 py-2">Navigation</p>
               <PrefetchLink
                 to="/organizer"
                 className={cn(
@@ -100,51 +99,18 @@ export function OrganizerSidebar({
             </>
           )}
 
-          <Separator className="my-3" />
-
-          {/* Event List - Only in Overview Mode */}
-          {!selectedEventId && events.length > 0 && (
-            <>
-              <p className="text-xs font-medium text-muted-foreground px-3 py-2">Your Events</p>
-              <div className="space-y-1">
-                {events.slice(0, 10).map(event => (
-                  <button
-                    key={event.id}
-                    onClick={() => onEventSelect?.(event.id)}
-                    className="flex flex-col items-start gap-1 px-3 py-2.5 rounded-lg text-sm transition-colors w-full text-left hover:bg-muted"
-                  >
-                    <span className="font-medium line-clamp-1">{event.title}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">
-                        {format(new Date(event.start_date), "MMM d")}
-                      </span>
-                      <Badge variant={event.status === "published" ? "default" : "secondary"} className="text-xs h-5">
-                        {event.registrations_count}
-                      </Badge>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-
-          {/* Current Event Info - Only in Event Management Mode */}
-          {selectedEventId && eventTitle && (
-            <>
-              <div className="px-3 py-3 bg-muted/50 rounded-lg">
-                <p className="text-xs font-medium text-muted-foreground mb-1">Managing</p>
-                <p className="text-sm font-semibold line-clamp-2">{eventTitle}</p>
-              </div>
-
-              {/* Quick Scan Button */}
+          {/* Event Management Mode - Quick Actions Only */}
+          {selectedEventId && (
+            <div className="space-y-1 pt-2">
+              <p className="text-xs font-medium text-muted-foreground px-3 py-1">Quick Actions</p>
               <PrefetchLink
                 to={`/organizer/check-in/${selectedEventId}`}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors mt-2"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
               >
                 <ScanLine className="w-4 h-4" />
-                Quick Scan
+                Check-in Scanner
               </PrefetchLink>
-            </>
+            </div>
           )}
         </nav>
       </ScrollArea>
