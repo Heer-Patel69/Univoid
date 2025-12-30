@@ -21,6 +21,7 @@ import AuthModal from "@/components/auth/AuthModal";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb";
 import DynamicRegistrationForm from "@/components/events/DynamicRegistrationForm";
 import ClubMembershipCheck from "@/components/events/ClubMembershipCheck";
+import QuickRegisterButton from "@/components/events/QuickRegisterButton";
 import { Calendar, MapPin, Users, IndianRupee, ExternalLink, Clock, Share2, CheckCircle, AlertCircle, Upload, Eye, Loader2 } from "lucide-react";
 
 const EventDetail = () => {
@@ -216,7 +217,12 @@ const EventDetail = () => {
 
           <div className="flex flex-wrap items-start justify-between gap-4">
             <h1 className="font-display text-2xl md:text-3xl font-bold">{event.title}</h1>
-            <Button variant="outline" size="icon" onClick={handleShare}><Share2 className="w-4 h-4" /></Button>
+            <div className="flex items-center gap-2">
+              {!existingRegistration && !isEventPast && !isFullNow && (
+                <QuickRegisterButton eventId={eventId!} isPast={isEventPast} isFull={isFullNow} />
+              )}
+              <Button variant="outline" size="icon" onClick={handleShare}><Share2 className="w-4 h-4" /></Button>
+            </div>
           </div>
 
           {event.description && (

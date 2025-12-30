@@ -15,7 +15,11 @@ export interface Profile {
   total_xp: number;
   created_at: string;
   updated_at: string;
-  // New onboarding fields
+  // Verification fields
+  email_verified?: boolean;
+  phone_verified?: boolean;
+  is_disabled?: boolean;
+  // Onboarding fields
   profile_complete?: boolean;
   degree?: string | null;
   branch?: string | null;
