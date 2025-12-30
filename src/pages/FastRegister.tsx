@@ -2,14 +2,13 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,8 +21,7 @@ import {
   Phone, 
   CheckCircle, 
   ArrowRight,
-  Ticket,
-  Clock
+  Ticket
 } from "lucide-react";
 
 type Step = 'auth' | 'phone' | 'register' | 'complete';
@@ -46,11 +44,7 @@ const FastRegister = () => {
   const [step, setStep] = useState<Step>('auth');
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [mobileNumber, setMobileNumber] = useState("");
-  const [otp, setOtp] = useState("");
-  const [isSendingOtp, setIsSendingOtp] = useState(false);
-  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
-  const [cooldownSeconds, setCooldownSeconds] = useState(0);
+  const [isSavingPhone, setIsSavingPhone] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [ticketId, setTicketId] = useState<string | null>(null);
 
@@ -76,28 +70,16 @@ const FastRegister = () => {
 
     if (!user) {
       setStep('auth');
-    } else if (!profile?.phone_verified) {
+    } else if (!profile?.mobile_number) {
+      // MVP: Only check if phone exists, not verified
       setStep('phone');
-      // Pre-fill mobile number if exists
-      if (profile?.mobile_number) {
-        setMobileNumber(profile.mobile_number);
-      }
     } else if (existingRegistration) {
       setStep('complete');
-      // Fetch ticket ID
       fetchTicketId();
     } else {
       setStep('register');
     }
   }, [user, profile, authLoading, existingRegistration]);
-
-  // Cooldown timer
-  useEffect(() => {
-    if (cooldownSeconds > 0) {
-      const timer = setTimeout(() => setCooldownSeconds(cooldownSeconds - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [cooldownSeconds]);
 
   const fetchTicketId = async () => {
     if (!user || !eventId) return;
@@ -110,7 +92,9 @@ const FastRegister = () => {
     if (data) setTicketId(data.id);
   };
 
-  const progress = step === 'auth' ? 25 : step === 'phone' ? 50 : step === 'register' ? 75 : 100;
+  // Progress: 3 steps in MVP (auth, phone, register/complete)
+  const progress = step === 'auth' ? 33 : step === 'phone' ? 66 : 100;
+  const stepNumber = step === 'auth' ? 1 : step === 'phone' ? 2 : 3;
 
   const handleGoogleSignIn = async () => {
     if (!eventId) return;
@@ -146,11 +130,11 @@ const FastRegister = () => {
   };
 
   const isValidMobileNumber = (number: string) => {
-    const mobileRegex = /^[6-9]\d{9}$/;
-    return mobileRegex.test(number.replace(/\s/g, ''));
+    // MVP: 10 digits, numbers only
+    return /^\d{10}$/.test(number.replace(/\s/g, ''));
   };
 
-  const handleSendOtp = async () => {
+  const handleSavePhone = async () => {
     if (!isValidMobileNumber(mobileNumber)) {
       toast({
         title: "Invalid number",
@@ -160,80 +144,34 @@ const FastRegister = () => {
       return;
     }
 
-    setIsSendingOtp(true);
+    setIsSavingPhone(true);
     try {
-      // First update profile with mobile number
-      const { error: updateError } = await supabase
+      // MVP: Save phone number without OTP verification
+      const { error } = await supabase
         .from('profiles')
-        .update({ mobile_number: mobileNumber.replace(/\s/g, '') })
+        .update({ 
+          mobile_number: mobileNumber.replace(/\s/g, ''),
+          phone_verified: false // Mark for future OTP integration
+        })
         .eq('id', user!.id);
-
-      if (updateError) throw updateError;
-
-      // Then send OTP
-      const { data, error } = await supabase.functions.invoke('phone-verification', {
-        body: { action: 'send' }
-      });
 
       if (error) throw error;
 
-      if (data?.success) {
-        setOtpSent(true);
-        setCooldownSeconds(60);
-        toast({
-          title: "OTP Sent",
-          description: "Check your phone for the verification code",
-        });
-      } else {
-        throw new Error(data?.error || 'Failed to send OTP');
-      }
+      toast({
+        title: "Phone saved!",
+        description: "Proceeding to registration",
+      });
+      
+      if (refreshProfile) await refreshProfile();
+      setStep('register');
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Failed to send OTP",
+        description: error.message || "Failed to save phone number",
         variant: "destructive",
       });
     } finally {
-      setIsSendingOtp(false);
-    }
-  };
-
-  const handleVerifyOtp = async () => {
-    if (otp.length !== 6) {
-      toast({
-        title: "Invalid OTP",
-        description: "Please enter the 6-digit code",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsVerifyingOtp(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('phone-verification', {
-        body: { action: 'verify', otp }
-      });
-
-      if (error) throw error;
-
-      if (data?.success) {
-        toast({
-          title: "Phone Verified!",
-          description: "Your phone number has been verified",
-        });
-        if (refreshProfile) await refreshProfile();
-        setStep('register');
-      } else {
-        throw new Error(data?.error || 'Verification failed');
-      }
-    } catch (error: any) {
-      toast({
-        title: "Verification Failed",
-        description: error.message || "Invalid OTP",
-        variant: "destructive",
-      });
-    } finally {
-      setIsVerifyingOtp(false);
+      setIsSavingPhone(false);
     }
   };
 
@@ -313,7 +251,7 @@ const FastRegister = () => {
       <div className="w-full max-w-md mb-4">
         <Progress value={progress} className="h-2" />
         <p className="text-xs text-muted-foreground text-center mt-2">
-          Step {step === 'auth' ? 1 : step === 'phone' ? 2 : step === 'register' ? 3 : 4} of 4
+          Step {stepNumber} of 3
         </p>
       </div>
 
@@ -322,7 +260,7 @@ const FastRegister = () => {
         <div className="bg-primary px-6 py-6 text-primary-foreground">
           <div className="flex items-center gap-2 mb-3">
             <Zap className="w-5 h-5" />
-            <span className="text-sm font-medium">Quick Event Registration</span>
+            <span className="text-sm font-medium">Quick Registration</span>
           </div>
           <h1 className="text-xl font-bold mb-2 line-clamp-2">{event.title}</h1>
           <div className="flex flex-wrap gap-4 text-sm text-primary-foreground/80">
@@ -346,13 +284,13 @@ const FastRegister = () => {
               <div className="text-center">
                 <h2 className="text-lg font-semibold mb-2">Sign in to Register</h2>
                 <p className="text-sm text-muted-foreground">
-                  Quick registration — no password needed
+                  Quick registration in 10 seconds — no password needed
                 </p>
               </div>
 
               <Button
                 variant="outline"
-                className="w-full h-12 font-bold text-base"
+                className="w-full h-14 font-bold text-base"
                 onClick={handleGoogleSignIn}
                 disabled={isGoogleLoading}
               >
@@ -373,99 +311,52 @@ const FastRegister = () => {
             </div>
           )}
 
-          {/* Step: Phone Verification */}
+          {/* Step: Phone Number (MVP - No OTP) */}
           {step === 'phone' && (
             <div className="space-y-6">
               <div className="text-center">
                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
                   <Phone className="w-6 h-6 text-primary" />
                 </div>
-                <h2 className="text-lg font-semibold mb-2">Verify Your Phone</h2>
+                <h2 className="text-lg font-semibold mb-2">Add Your Phone</h2>
                 <p className="text-sm text-muted-foreground">
-                  We'll send a verification code to your mobile
+                  We'll use this to contact you about the event
                 </p>
               </div>
 
-              {!otpSent ? (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Mobile Number</Label>
-                    <div className="flex gap-2">
-                      <div className="flex items-center px-3 bg-muted rounded-l-md border border-r-0 border-input">
-                        <span className="text-sm text-muted-foreground">+91</span>
-                      </div>
-                      <Input
-                        type="tel"
-                        value={mobileNumber}
-                        onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                        placeholder="10-digit number"
-                        className="rounded-l-none"
-                        maxLength={10}
-                      />
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Mobile Number</Label>
+                  <div className="flex gap-2">
+                    <div className="flex items-center px-3 bg-muted rounded-l-md border border-r-0 border-input">
+                      <span className="text-sm text-muted-foreground">+91</span>
                     </div>
-                    {mobileNumber && !isValidMobileNumber(mobileNumber) && (
-                      <p className="text-xs text-destructive">Enter a valid 10-digit mobile number</p>
-                    )}
+                    <Input
+                      type="tel"
+                      value={mobileNumber}
+                      onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                      placeholder="10-digit number"
+                      className="rounded-l-none"
+                      maxLength={10}
+                    />
                   </div>
-
-                  <Button
-                    className="w-full"
-                    onClick={handleSendOtp}
-                    disabled={!isValidMobileNumber(mobileNumber) || isSendingOtp}
-                  >
-                    {isSendingOtp ? (
-                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sending...</>
-                    ) : (
-                      <>Send OTP <ArrowRight className="w-4 h-4 ml-2" /></>
-                    )}
-                  </Button>
+                  {mobileNumber && !isValidMobileNumber(mobileNumber) && (
+                    <p className="text-xs text-destructive">Enter exactly 10 digits</p>
+                  )}
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label className="text-center block">Enter 6-digit OTP</Label>
-                    <div className="flex justify-center">
-                      <InputOTP maxLength={6} value={otp} onChange={setOtp}>
-                        <InputOTPGroup>
-                          <InputOTPSlot index={0} />
-                          <InputOTPSlot index={1} />
-                          <InputOTPSlot index={2} />
-                          <InputOTPSlot index={3} />
-                          <InputOTPSlot index={4} />
-                          <InputOTPSlot index={5} />
-                        </InputOTPGroup>
-                      </InputOTP>
-                    </div>
-                  </div>
 
-                  <Button
-                    className="w-full"
-                    onClick={handleVerifyOtp}
-                    disabled={otp.length !== 6 || isVerifyingOtp}
-                  >
-                    {isVerifyingOtp ? (
-                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Verifying...</>
-                    ) : (
-                      <>Verify & Continue <ArrowRight className="w-4 h-4 ml-2" /></>
-                    )}
-                  </Button>
-
-                  <div className="text-center">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleSendOtp}
-                      disabled={cooldownSeconds > 0 || isSendingOtp}
-                    >
-                      {cooldownSeconds > 0 ? (
-                        <>Resend in {cooldownSeconds}s</>
-                      ) : (
-                        <>Resend OTP</>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              )}
+                <Button
+                  className="w-full"
+                  onClick={handleSavePhone}
+                  disabled={!isValidMobileNumber(mobileNumber) || isSavingPhone}
+                >
+                  {isSavingPhone ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</>
+                  ) : (
+                    <>Continue <ArrowRight className="w-4 h-4 ml-2" /></>
+                  )}
+                </Button>
+              </div>
             </div>
           )}
 
@@ -478,7 +369,7 @@ const FastRegister = () => {
                 </div>
                 <h2 className="text-lg font-semibold mb-2">Ready to Register!</h2>
                 <p className="text-sm text-muted-foreground">
-                  Your identity is verified. Confirm your registration.
+                  Confirm your registration for this event
                 </p>
               </div>
 
@@ -490,7 +381,7 @@ const FastRegister = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Email</span>
-                  <span className="font-medium truncate ml-4">{profile?.email}</span>
+                  <span className="font-medium truncate max-w-[180px]">{profile?.email}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Phone</span>
@@ -498,95 +389,86 @@ const FastRegister = () => {
                 </div>
               </div>
 
-              {/* Price */}
-              <div className="flex items-center justify-between p-4 bg-primary/5 rounded-xl">
-                <span className="font-medium">Registration Fee</span>
-                <Badge variant="secondary" className="text-lg">
-                  {event.is_paid ? `₹${event.price}` : 'Free'}
-                </Badge>
+              {/* Event info */}
+              <div className="bg-muted/50 rounded-xl p-4 space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Event</span>
+                  <span className="font-medium text-right max-w-[180px] truncate">{event.title}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Date</span>
+                  <span className="font-medium">{format(new Date(event.start_date), "MMM d, yyyy")}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Price</span>
+                  <Badge variant={event.is_paid ? "default" : "secondary"}>
+                    {event.is_paid ? `₹${event.price}` : "Free"}
+                  </Badge>
+                </div>
               </div>
 
-              {event.is_paid ? (
-                <div className="text-center">
-                  <p className="text-sm text-muted-foreground mb-4">
-                    This is a paid event. Please use the full registration form.
-                  </p>
-                  <Link to={`/events/${eventId}`}>
-                    <Button className="w-full">Go to Event Page</Button>
-                  </Link>
-                </div>
-              ) : (
-                <Button
-                  className="w-full h-12 text-lg"
-                  onClick={handleQuickRegister}
-                  disabled={isRegistering}
-                >
-                  {isRegistering ? (
-                    <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Registering...</>
-                  ) : (
-                    <>Confirm Registration <Ticket className="w-5 h-5 ml-2" /></>
-                  )}
-                </Button>
-              )}
+              <Button
+                className="w-full h-12"
+                onClick={handleQuickRegister}
+                disabled={isRegistering}
+              >
+                {isRegistering ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Registering...</>
+                ) : (
+                  <>Confirm Registration <ArrowRight className="w-4 h-4 ml-2" /></>
+                )}
+              </Button>
             </div>
           )}
 
           {/* Step: Complete */}
           {step === 'complete' && (
-            <div className="space-y-6 text-center">
-              <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto">
-                <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
-              </div>
-              <div>
+            <div className="space-y-6">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Ticket className="w-8 h-8 text-green-600 dark:text-green-400" />
+                </div>
                 <h2 className="text-xl font-bold mb-2">You're Registered! 🎉</h2>
-                <p className="text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   Your ticket has been generated
                 </p>
               </div>
 
-              {ticketId && (
-                <div className="bg-muted rounded-xl p-4">
-                  <p className="text-xs text-muted-foreground mb-1">Ticket ID</p>
-                  <p className="font-mono text-sm font-medium">{ticketId}</p>
-                </div>
-              )}
+              <div className="space-y-3">
+                {ticketId && (
+                  <Link to={`/my-tickets`} className="block">
+                    <Button className="w-full" size="lg">
+                      View My Ticket
+                    </Button>
+                  </Link>
+                )}
 
-              <div className="flex flex-col gap-3">
-                <Link to="/my-events">
-                  <Button className="w-full">
-                    <Ticket className="w-4 h-4 mr-2" />
-                    View My Tickets
+                <Link to={`/events/${eventId}`} className="block">
+                  <Button variant="outline" className="w-full">
+                    View Event Details
                   </Button>
                 </Link>
-                <Link to="/dashboard">
-                  <Button variant="outline" className="w-full">
-                    Go to Dashboard
+
+                <Link to="/events" className="block">
+                  <Button variant="ghost" className="w-full">
+                    Browse More Events
                   </Button>
                 </Link>
               </div>
-
-              {!profile?.profile_complete && (
-                <div className="p-4 bg-primary/5 rounded-xl border border-primary/20">
-                  <p className="text-sm font-medium mb-2">Complete Your Profile</p>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    Unlock all UniVoid features by completing your profile
-                  </p>
-                  <Link to="/onboarding">
-                    <Button variant="outline" size="sm">Complete Profile</Button>
-                  </Link>
-                </div>
-              )}
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Link to full event page */}
-      <p className="text-sm text-muted-foreground mt-4">
-        <Link to={`/events/${eventId}`} className="hover:underline">
-          View full event details →
-        </Link>
-      </p>
+      {/* Skip to login for existing users */}
+      {step === 'auth' && (
+        <p className="text-sm text-muted-foreground mt-4 text-center">
+          Already have an account?{" "}
+          <Link to={`/events/${eventId}`} className="text-foreground font-semibold hover:underline">
+            Login here
+          </Link>
+        </p>
+      )}
     </div>
   );
 };
