@@ -224,11 +224,16 @@ export const AnimatedRoutes = () => {
         <Route path="/dashboard/my-tickets" element={<Navigate to="/my-events" replace />} />
       </Route>
 
-      {/* Organizer pages with DashboardLayout */}
-      <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-        <Route path="/organizer/dashboard" element={
+      {/* Organizer Dashboard - standalone layout (has its own sidebar) */}
+      <Route path="/organizer" element={
+        <ProtectedRoute>
           <Suspense fallback={<DashboardSkeleton />}><OrganizerDashboard /></Suspense>
-        } />
+        </ProtectedRoute>
+      } />
+      <Route path="/organizer/dashboard" element={<Navigate to="/organizer" replace />} />
+
+      {/* Other organizer pages with DashboardLayout */}
+      <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
         <Route path="/organizer/create-event" element={
           <Suspense fallback={<TextSkeleton />}><CreateEvent /></Suspense>
         } />
