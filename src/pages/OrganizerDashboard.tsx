@@ -18,18 +18,16 @@ import { MobileExportSheet } from "@/components/organizer/MobileExportSheet";
 import { ClubMembershipManager } from "@/components/organizer/ClubMembershipManager";
 import { VolunteerManager } from "@/components/organizer/VolunteerManager";
 import { EventAnalytics } from "@/components/organizer/EventAnalytics";
-import { VolunteerInviteList } from "@/components/volunteers";
 import { OrganizerSidebar } from "@/components/organizer/OrganizerSidebar";
 import { OrganizerBottomNav } from "@/components/organizer/OrganizerBottomNav";
-import { OrganizerBreadcrumb } from "@/components/organizer/OrganizerBreadcrumb";
-import { OrganizerDashboardSkeleton, RegistrationListSkeleton, EventCardSkeleton } from "@/components/organizer/OrganizerSkeleton";
+import { OrganizerDashboardSkeleton, RegistrationListSkeleton } from "@/components/organizer/OrganizerSkeleton";
 import { 
   Plus, Calendar, Users, CheckCircle, XCircle, Eye, 
-  ScanLine, Pencil, TicketCheck, Clock, TrendingUp, Shield, FileSpreadsheet, 
-  UserPlus, BarChart3 
+  ScanLine, Pencil, TicketCheck, Clock, FileSpreadsheet, 
+  UserPlus, BarChart3, Shield, ChevronLeft
 } from "lucide-react";
 import { format } from "date-fns";
-import type { Event, EventRegistration } from "@/services/eventsService";
+import type { Event } from "@/services/eventsService";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const OrganizerDashboard = () => {
@@ -153,24 +151,17 @@ const OrganizerDashboard = () => {
       }
     },
     onMutate: async ({ id, status }) => {
-      // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: ["event-registrations", selectedEvent] });
-      
-      // Snapshot previous value
       const previousRegistrations = queryClient.getQueryData(["event-registrations", selectedEvent]);
-      
-      // Optimistically update
       queryClient.setQueryData(["event-registrations", selectedEvent], (old: RegistrationWithProfile[] | undefined) => 
         old?.map(r => r.registration_id === id ? { ...r, payment_status: status } : r)
       );
-      
       return { previousRegistrations };
     },
     onSuccess: (_, { status }) => {
       toast({ title: status === "approved" ? "✅ Approved & QR Sent!" : "❌ Registration Rejected" });
     },
     onError: (error: Error, _, context) => {
-      // Rollback on error
       if (context?.previousRegistrations) {
         queryClient.setQueryData(["event-registrations", selectedEvent], context.previousRegistrations);
       }
@@ -182,7 +173,7 @@ const OrganizerDashboard = () => {
     },
   });
 
-  // QR Check-in mutation with optimistic UI
+  // QR Check-in mutation
   const checkInMutation = useMutation({
     mutationFn: async (qrCode: string) => {
       const { data: ticket, error: fetchError } = await supabase
@@ -215,12 +206,6 @@ const OrganizerDashboard = () => {
 
   const selectedEventData = events?.find(e => e.id === selectedEvent);
 
-  useEffect(() => {
-    if (events && events.length > 0 && !selectedEvent) {
-      setSelectedEvent(events[0].id);
-    }
-  }, [events, selectedEvent]);
-
   if (!user) {
     return (
       <main className="flex-1 container mx-auto px-4 py-20 text-center">
@@ -231,11 +216,16 @@ const OrganizerDashboard = () => {
     );
   }
 
-  // Show skeleton while loading
   if (eventsLoading) {
     return (
       <div className="min-h-screen flex">
-        <OrganizerSidebar selectedEventId={selectedEvent} eventTitle={selectedEventData?.title} />
+        <OrganizerSidebar 
+          selectedEventId={selectedEvent} 
+          eventTitle={selectedEventData?.title}
+          events={events || []}
+          onEventSelect={setSelectedEvent}
+          onBackToOverview={() => setSelectedEvent(null)}
+        />
         <div className="flex-1">
           <OrganizerDashboardSkeleton />
         </div>
@@ -244,297 +234,346 @@ const OrganizerDashboard = () => {
     );
   }
 
+  // MODE A: Overview (no event selected)
+  const renderOverviewMode = () => (
+    <div className="container mx-auto px-4 py-6 pb-24 lg:pb-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div>
+          <h1 className="font-display text-2xl md:text-3xl font-bold">Organizer Dashboard</h1>
+          <p className="text-muted-foreground text-sm">Manage your events and registrations</p>
+        </div>
+        <Link to="/organizer/create-event">
+          <Button className="gap-2"><Plus className="w-4 h-4" /> Create Event</Button>
+        </Link>
+      </div>
+
+      {/* Stats Cards - Only in Overview */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <Card className="bg-gradient-to-br from-primary/10 to-primary/5">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                <Calendar className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{totalEvents}</p>
+                <p className="text-xs text-muted-foreground">Total Events</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-blue-500/10 to-blue-500/5">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                <Users className="w-5 h-5 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{totalRegistrations}</p>
+                <p className="text-xs text-muted-foreground">Total Registrations</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+                <TicketCheck className="w-5 h-5 text-green-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">
+                  {events?.filter(e => e.status === "published").length || 0}
+                </p>
+                <p className="text-xs text-muted-foreground">Published</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-orange-500/10 to-orange-500/5">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
+                <Clock className="w-5 h-5 text-orange-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">
+                  {events?.filter(e => e.status === "draft").length || 0}
+                </p>
+                <p className="text-xs text-muted-foreground">Drafts</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {events?.length === 0 ? (
+        <Card className="text-center py-20">
+          <CardContent>
+            <Calendar className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+            <h3 className="font-semibold text-lg mb-2">No Events Yet</h3>
+            <p className="text-muted-foreground mb-6">Create your first event to get started</p>
+            <Link to="/organizer/create-event"><Button>Create Event</Button></Link>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          <p className="text-sm font-medium text-muted-foreground">Select an event to manage</p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {events?.map(event => (
+              <Card 
+                key={event.id} 
+                className="cursor-pointer hover:shadow-lg hover:border-primary/50 transition-all"
+                onClick={() => setSelectedEvent(event.id)}
+              >
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <h4 className="font-semibold line-clamp-2">{event.title}</h4>
+                    <Badge variant={event.status === "published" ? "default" : "secondary"}>
+                      {event.status}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    {format(new Date(event.start_date), "EEEE, MMM d, yyyy")}
+                  </p>
+                  <div className="flex items-center gap-4 text-sm">
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <Users className="w-4 h-4" />
+                      <span>{event.registrations_count} registered</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  // MODE B: Single Event Management
+  const renderEventManagementMode = () => {
+    if (!selectedEventData) return null;
+
+    return (
+      <div className="container mx-auto px-4 py-6 pb-24 lg:pb-8">
+        {/* Action Bar - Single header, no duplication */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => setSelectedEvent(null)}
+              className="lg:hidden"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </Button>
+            <div>
+              <h1 className="font-display text-xl md:text-2xl font-bold line-clamp-1">
+                {selectedEventData.title}
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                {format(new Date(selectedEventData.start_date), "MMM d, yyyy")} • {registrations?.length || 0} registrations
+              </p>
+            </div>
+          </div>
+          
+          {/* Action buttons */}
+          <div className="flex flex-wrap gap-2">
+            <Link to={`/organizer/check-in/${selectedEventData.id}`}>
+              <Button size="sm" className="gap-1.5">
+                <ScanLine className="w-4 h-4" /> Check-in
+              </Button>
+            </Link>
+            <Link to={`/organizer/edit-event/${selectedEventData.id}`}>
+              <Button variant="outline" size="sm" className="gap-1.5">
+                <Pencil className="w-4 h-4" /> Edit
+              </Button>
+            </Link>
+            <Link to={`/events/${selectedEventData.id}`}>
+              <Button variant="outline" size="sm" className="gap-1.5">
+                <Eye className="w-4 h-4" /> View
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Tabs for event content */}
+        <Card>
+          <CardContent className="p-4 sm:p-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="mb-4 flex-wrap h-auto gap-1">
+                <TabsTrigger value="registrations" className="gap-1.5">
+                  <Users className="w-4 h-4" /> 
+                  <span className="hidden sm:inline">Registrations</span>
+                  <span className="sm:hidden">Reg</span>
+                  {pendingCount > 0 && (
+                    <Badge variant="destructive" className="ml-1 h-5 px-1.5 text-xs">{pendingCount}</Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="analytics" className="gap-1.5">
+                  <BarChart3 className="w-4 h-4" /> 
+                  <span className="hidden sm:inline">Analytics</span>
+                </TabsTrigger>
+                <TabsTrigger value="volunteers" className="gap-1.5">
+                  <UserPlus className="w-4 h-4" /> 
+                  <span className="hidden sm:inline">Volunteers</span>
+                </TabsTrigger>
+                <TabsTrigger value="clubs" className="gap-1.5">
+                  <Shield className="w-4 h-4" /> 
+                  <span className="hidden sm:inline">Club Members</span>
+                </TabsTrigger>
+                <TabsTrigger value="sheets" className="gap-1.5">
+                  <FileSpreadsheet className="w-4 h-4" /> 
+                  <span className="hidden sm:inline">Export</span>
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="registrations">
+                <Tabs defaultValue="pending">
+                  <TabsList className="mb-4">
+                    <TabsTrigger value="pending" className="gap-1">
+                      Pending 
+                      {pendingCount > 0 && <Badge variant="destructive" className="ml-1 h-5 px-1.5">{pendingCount}</Badge>}
+                    </TabsTrigger>
+                    <TabsTrigger value="approved">Approved ({approvedCount})</TabsTrigger>
+                    <TabsTrigger value="rejected">Rejected</TabsTrigger>
+                  </TabsList>
+
+                  {registrationsLoading ? (
+                    <RegistrationListSkeleton />
+                  ) : (
+                    ["pending", "approved", "rejected"].map(status => (
+                      <TabsContent key={status} value={status} className="space-y-3 mt-0">
+                        {registrations?.filter(r => r.payment_status === status).length === 0 ? (
+                          <p className="text-center py-8 text-muted-foreground text-sm">No {status} registrations</p>
+                        ) : (
+                          registrations?.filter(r => r.payment_status === status).map(reg => (
+                            <Card key={reg.registration_id} className="border">
+                              <CardContent className="p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                <div className="flex items-center gap-3">
+                                  <Avatar className="h-9 w-9">
+                                    <AvatarImage src={reg.profile_photo_url || undefined} />
+                                    <AvatarFallback className="text-xs">
+                                      {reg.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <p className="font-medium text-sm">{reg.full_name || 'Unknown User'}</p>
+                                    <p className="text-xs text-muted-foreground">{reg.email || 'No email'}</p>
+                                    {reg.mobile_number && (
+                                      <p className="text-xs text-muted-foreground">{reg.mobile_number}</p>
+                                    )}
+                                    <p className="text-xs text-muted-foreground/70">{format(new Date(reg.created_at), "MMM d, h:mm a")}</p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2 w-full sm:w-auto">
+                                  {reg.payment_screenshot_url && (
+                                    <a href={reg.payment_screenshot_url} target="_blank" rel="noopener noreferrer">
+                                      <Button variant="outline" size="sm" className="text-xs">Screenshot</Button>
+                                    </a>
+                                  )}
+                                  {status === "pending" && (
+                                    <>
+                                      <Button 
+                                        size="sm" 
+                                        className="flex-1 sm:flex-none text-xs" 
+                                        onClick={() => updateStatusMutation.mutate({ id: reg.registration_id, status: "approved", userId: reg.user_id })}
+                                        disabled={updateStatusMutation.isPending}
+                                      >
+                                        <CheckCircle className="w-3 h-3 mr-1" /> Approve
+                                      </Button>
+                                      <Button 
+                                        size="sm" 
+                                        variant="destructive" 
+                                        className="flex-1 sm:flex-none text-xs" 
+                                        onClick={() => updateStatusMutation.mutate({ id: reg.registration_id, status: "rejected", userId: reg.user_id })}
+                                        disabled={updateStatusMutation.isPending}
+                                      >
+                                        <XCircle className="w-3 h-3 mr-1" /> Reject
+                                      </Button>
+                                    </>
+                                  )}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))
+                        )}
+                      </TabsContent>
+                    ))
+                  )}
+                </Tabs>
+              </TabsContent>
+
+              <TabsContent value="analytics">
+                <EventAnalytics eventId={selectedEvent!} />
+              </TabsContent>
+
+              <TabsContent value="volunteers">
+                <VolunteerManager 
+                  eventId={selectedEvent!} 
+                  eventTitle={selectedEventData.title}
+                  organizerId={user.id} 
+                />
+              </TabsContent>
+
+              <TabsContent value="clubs">
+                <ClubMembershipManager 
+                  eventId={selectedEvent!} 
+                  organizerId={user.id} 
+                />
+              </TabsContent>
+
+              <TabsContent value="sheets">
+                {isMobile ? (
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Export registrations to CSV or sync with Google Sheets
+                    </p>
+                    <MobileExportSheet 
+                      eventId={selectedEvent!} 
+                      eventTitle={selectedEventData.title}
+                      trigger={
+                        <Button className="w-full gap-2">
+                          <FileSpreadsheet className="w-4 h-4" />
+                          Open Export Options
+                        </Button>
+                      }
+                    />
+                  </div>
+                ) : (
+                  <GoogleSheetsSync 
+                    eventId={selectedEvent!} 
+                    eventTitle={selectedEventData.title} 
+                  />
+                )}
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen flex bg-background">
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
       
       {/* Desktop Sidebar */}
-      <OrganizerSidebar selectedEventId={selectedEvent} eventTitle={selectedEventData?.title} />
+      <OrganizerSidebar 
+        selectedEventId={selectedEvent} 
+        eventTitle={selectedEventData?.title}
+        events={events || []}
+        onEventSelect={setSelectedEvent}
+        onBackToOverview={() => setSelectedEvent(null)}
+      />
 
       <main className="flex-1 min-h-screen overflow-auto">
-        <div className="container mx-auto px-4 py-6 pb-24 lg:pb-8">
-          {/* Breadcrumb - Mobile */}
-          <div className="lg:hidden mb-4">
-            <OrganizerBreadcrumb 
-              items={selectedEventData ? [{ label: selectedEventData.title }] : []} 
-            />
-          </div>
-
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-            <div>
-              <h1 className="font-display text-2xl md:text-3xl font-bold">Organizer Dashboard</h1>
-              <p className="text-muted-foreground text-sm">Manage your events and registrations</p>
-            </div>
-            <Link to="/organizer/create-event">
-              <Button className="gap-2"><Plus className="w-4 h-4" /> Create Event</Button>
-            </Link>
-          </div>
-
-          {/* Stats Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-            <Card className="bg-gradient-to-br from-primary/10 to-primary/5">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                    <Calendar className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">{totalEvents}</p>
-                    <p className="text-xs text-muted-foreground">Total Events</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-blue-500/10 to-blue-500/5">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                    <Users className="w-5 h-5 text-blue-500" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">{totalRegistrations}</p>
-                    <p className="text-xs text-muted-foreground">Registrations</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
-                    <TicketCheck className="w-5 h-5 text-green-500" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">{checkInStats?.checkedIn || 0}</p>
-                    <p className="text-xs text-muted-foreground">Checked In</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-orange-500/10 to-orange-500/5">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
-                    <Clock className="w-5 h-5 text-orange-500" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">{pendingCount}</p>
-                    <p className="text-xs text-muted-foreground">Pending</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {events?.length === 0 ? (
-            <Card className="text-center py-20">
-              <CardContent>
-                <Calendar className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="font-semibold text-lg mb-2">No Events Yet</h3>
-                <p className="text-muted-foreground mb-6">Create your first event to get started</p>
-                <Link to="/organizer/create-event"><Button>Create Event</Button></Link>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid lg:grid-cols-4 gap-6">
-              {/* Events List */}
-              <div className="lg:col-span-1 space-y-2">
-                <p className="text-sm font-medium text-muted-foreground mb-3">Your Events</p>
-                {events?.map(event => (
-                  <Card 
-                    key={event.id} 
-                    className={`cursor-pointer transition-all ${selectedEvent === event.id ? "ring-2 ring-primary bg-primary/5" : "hover:shadow-md"}`}
-                    onClick={() => setSelectedEvent(event.id)}
-                  >
-                    <CardContent className="p-4">
-                      <h4 className="font-semibold line-clamp-1 text-sm">{event.title}</h4>
-                      <p className="text-xs text-muted-foreground mt-1">{format(new Date(event.start_date), "MMM d, yyyy")}</p>
-                      <div className="flex gap-2 mt-2">
-                        <Badge variant="outline" className="text-xs">{event.registrations_count} reg</Badge>
-                        <Badge variant={event.status === "published" ? "default" : "secondary"} className="text-xs">{event.status}</Badge>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-
-              {/* Event Details */}
-              <div className="lg:col-span-3">
-                {selectedEventData && (
-                  <Card>
-                    <CardHeader className="pb-4">
-                      <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
-                        <div>
-                          <CardTitle className="text-lg">{selectedEventData.title}</CardTitle>
-                          <CardDescription className="text-sm">{format(new Date(selectedEventData.start_date), "EEEE, MMMM d, yyyy 'at' h:mm a")}</CardDescription>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          <Link to={`/events/${selectedEventData.id}`}>
-                            <Button variant="outline" size="sm"><Eye className="w-4 h-4 mr-1" /> View</Button>
-                          </Link>
-                          <Link to={`/organizer/edit-event/${selectedEventData.id}`}>
-                            <Button variant="outline" size="sm"><Pencil className="w-4 h-4 mr-1" /> Edit</Button>
-                          </Link>
-                          <Link to={`/organizer/check-in/${selectedEventData.id}`}>
-                            <Button size="sm" className="gap-1">
-                              <ScanLine className="w-4 h-4" /> Check-in
-                            </Button>
-                          </Link>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <Tabs value={activeTab} onValueChange={setActiveTab}>
-                        <TabsList className="mb-4 flex-wrap h-auto gap-1">
-                          <TabsTrigger value="registrations" className="gap-1">
-                            <Users className="w-4 h-4" /> Registrations
-                          </TabsTrigger>
-                          <TabsTrigger value="analytics" className="gap-1">
-                            <BarChart3 className="w-4 h-4" /> Analytics
-                          </TabsTrigger>
-                          <TabsTrigger value="volunteers" className="gap-1">
-                            <UserPlus className="w-4 h-4" /> Volunteers
-                          </TabsTrigger>
-                          <TabsTrigger value="clubs" className="gap-1">
-                            <Shield className="w-4 h-4" /> Club Members
-                          </TabsTrigger>
-                          <TabsTrigger value="sheets" className="gap-1">
-                            <FileSpreadsheet className="w-4 h-4" /> Export
-                          </TabsTrigger>
-                        </TabsList>
-
-                        <TabsContent value="registrations">
-                          <Tabs defaultValue="pending">
-                            <TabsList className="mb-4">
-                              <TabsTrigger value="pending" className="gap-1">
-                                Pending 
-                                {pendingCount > 0 && <Badge variant="destructive" className="ml-1 h-5 px-1.5">{pendingCount}</Badge>}
-                              </TabsTrigger>
-                              <TabsTrigger value="approved">Approved ({approvedCount})</TabsTrigger>
-                              <TabsTrigger value="rejected">Rejected</TabsTrigger>
-                            </TabsList>
-
-                            {registrationsLoading ? (
-                              <RegistrationListSkeleton />
-                            ) : (
-                              ["pending", "approved", "rejected"].map(status => (
-                                <TabsContent key={status} value={status} className="space-y-3 mt-0">
-                                  {registrations?.filter(r => r.payment_status === status).length === 0 ? (
-                                    <p className="text-center py-8 text-muted-foreground text-sm">No {status} registrations</p>
-                                  ) : (
-                                    registrations?.filter(r => r.payment_status === status).map(reg => (
-                                      <Card key={reg.registration_id} className="border">
-                                        <CardContent className="p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                                          <div className="flex items-center gap-3">
-                                            <Avatar className="h-9 w-9">
-                                              <AvatarImage src={reg.profile_photo_url || undefined} />
-                                              <AvatarFallback className="text-xs">
-                                                {reg.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
-                                              </AvatarFallback>
-                                            </Avatar>
-                                            <div>
-                                              <p className="font-medium text-sm">{reg.full_name || 'Unknown User'}</p>
-                                              <p className="text-xs text-muted-foreground">{reg.email || 'No email'}</p>
-                                              {reg.mobile_number && (
-                                                <p className="text-xs text-muted-foreground">{reg.mobile_number}</p>
-                                              )}
-                                              <p className="text-xs text-muted-foreground/70">{format(new Date(reg.created_at), "MMM d, h:mm a")}</p>
-                                            </div>
-                                          </div>
-                                          <div className="flex items-center gap-2 w-full sm:w-auto">
-                                            {reg.payment_screenshot_url && (
-                                              <a href={reg.payment_screenshot_url} target="_blank" rel="noopener noreferrer">
-                                                <Button variant="outline" size="sm" className="text-xs">Screenshot</Button>
-                                              </a>
-                                            )}
-                                            {status === "pending" && (
-                                              <>
-                                                <Button 
-                                                  size="sm" 
-                                                  className="flex-1 sm:flex-none text-xs" 
-                                                  onClick={() => updateStatusMutation.mutate({ id: reg.registration_id, status: "approved", userId: reg.user_id })}
-                                                  disabled={updateStatusMutation.isPending}
-                                                >
-                                                  <CheckCircle className="w-3 h-3 mr-1" /> Approve
-                                                </Button>
-                                                <Button 
-                                                  size="sm" 
-                                                  variant="destructive" 
-                                                  className="flex-1 sm:flex-none text-xs" 
-                                                  onClick={() => updateStatusMutation.mutate({ id: reg.registration_id, status: "rejected", userId: reg.user_id })}
-                                                  disabled={updateStatusMutation.isPending}
-                                                >
-                                                  <XCircle className="w-3 h-3 mr-1" /> Reject
-                                                </Button>
-                                              </>
-                                            )}
-                                          </div>
-                                        </CardContent>
-                                      </Card>
-                                    ))
-                                  )}
-                                </TabsContent>
-                              ))
-                            )}
-                          </Tabs>
-                        </TabsContent>
-
-                        <TabsContent value="analytics">
-                          <EventAnalytics eventId={selectedEvent!} />
-                        </TabsContent>
-
-                        <TabsContent value="volunteers">
-                          <VolunteerManager 
-                            eventId={selectedEvent!} 
-                            eventTitle={events?.find(e => e.id === selectedEvent)?.title || "Event"}
-                            organizerId={user.id} 
-                          />
-                        </TabsContent>
-
-                        <TabsContent value="clubs">
-                          <ClubMembershipManager 
-                            eventId={selectedEvent!} 
-                            organizerId={user.id} 
-                          />
-                        </TabsContent>
-
-                        <TabsContent value="sheets">
-                          {/* Use mobile-friendly export sheet on mobile, full component on desktop */}
-                          {isMobile ? (
-                            <div className="space-y-4">
-                              <p className="text-sm text-muted-foreground">
-                                Export registrations to CSV or sync with Google Sheets
-                              </p>
-                              <MobileExportSheet 
-                                eventId={selectedEvent!} 
-                                eventTitle={selectedEventData.title}
-                                trigger={
-                                  <Button className="w-full gap-2">
-                                    <FileSpreadsheet className="w-4 h-4" />
-                                    Open Export Options
-                                  </Button>
-                                }
-                              />
-                            </div>
-                          ) : (
-                            <GoogleSheetsSync 
-                              eventId={selectedEvent!} 
-                              eventTitle={selectedEventData.title} 
-                            />
-                          )}
-                        </TabsContent>
-                      </Tabs>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
+        {selectedEvent && selectedEventData ? renderEventManagementMode() : renderOverviewMode()}
       </main>
 
       {/* Mobile Bottom Nav */}
@@ -597,7 +636,6 @@ const OrganizerDashboard = () => {
             </TabsContent>
           </Tabs>
 
-          {/* Check-in Stats */}
           {checkInStats && (
             <div className="flex items-center justify-center gap-4 pt-4 border-t mt-4">
               <div className="text-center">
