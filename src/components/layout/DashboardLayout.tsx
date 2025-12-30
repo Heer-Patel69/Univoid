@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { Link } from "react-router-dom";
 import { Menu } from "lucide-react";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
+import ProfileCompletionBanner from "@/components/common/ProfileCompletionBanner";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
@@ -18,7 +19,9 @@ const DashboardLayout = () => {
       <DashboardSidebar />
 
       {/* Main Content */}
-      <main className="flex-1 min-h-screen overflow-auto relative z-10">
+      <main className="flex-1 min-h-screen overflow-auto relative z-10 flex flex-col">
+        {/* Profile completion banner for Flow A users */}
+        <ProfileCompletionBanner />
         {/* Mobile Header (persistent) */}
         <header className="lg:hidden flex items-center justify-between p-4 border-b border-border bg-card sticky top-0 z-40">
           <Sheet>

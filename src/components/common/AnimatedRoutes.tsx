@@ -58,6 +58,7 @@ const CreateTask = lazy(() => import("@/pages/CreateTask"));
 const EventCheckIn = lazy(() => import("@/pages/EventCheckIn"));
 const Settings = lazy(() => import("@/pages/Settings"));
 const MyBooks = lazy(() => import("@/pages/MyBooks"));
+const FastRegister = lazy(() => import("@/pages/FastRegister"));
 
 // Preload critical pages after initial render
 const preloadCriticalPages = () => {
@@ -255,6 +256,11 @@ export const AnimatedRoutes = () => {
         <ProtectedRoute skipOnboarding>
           <Suspense fallback={<TextSkeleton />}><Onboarding /></Suspense>
         </ProtectedRoute>
+      } />
+
+      {/* Fast Registration - Flow A */}
+      <Route path="/register/:eventId" element={
+        <Suspense fallback={<TextSkeleton />}><FastRegister /></Suspense>
       } />
 
       {/* Check-in redirect */}
