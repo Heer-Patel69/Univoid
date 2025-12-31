@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,9 +16,10 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, GraduationCap, X, Plus, Phone, RefreshCw } from "lucide-react";
+import { Loader2, GraduationCap, X, Plus, Phone, RefreshCw, AlertCircle } from "lucide-react";
 import { SearchableSelect } from "@/components/common/SearchableSelect";
 import { useOnboardingDraft } from "@/hooks/useOnboardingDraft";
+import { useMobileValidation } from "@/hooks/useMobileValidation";
 
 const DEGREE_OPTIONS = [
   "B.Tech",
@@ -84,6 +85,15 @@ const Onboarding = () => {
   const [customInterest, setCustomInterest] = useState("");
   const submissionLockRef = useRef(false); // Prevent double submission
 
+  // Mobile validation hook
+  const { 
+    isChecking: isCheckingMobile, 
+    isDuplicate: isMobileDuplicate, 
+    isValidFormat: isValidMobileFormat,
+    checkMobileExists,
+    normalizeMobile
+  } = useMobileValidation({ excludeUserId: user?.id });
+
   // Use the draft hook for form state persistence
   const {
     formData,
@@ -95,6 +105,17 @@ const Onboarding = () => {
     clearDraft,
     hasRestoredDraft,
   } = useOnboardingDraft(profile, user);
+
+  // Check mobile number when it changes (debounced)
+  useEffect(() => {
+    const normalized = normalizeMobile(formData.mobile_number);
+    if (normalized.length === 10) {
+      const timer = setTimeout(() => {
+        checkMobileExists(formData.mobile_number);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [formData.mobile_number, checkMobileExists, normalizeMobile]);
 
   const progress = calculateProgress();
 
@@ -129,19 +150,14 @@ const Onboarding = () => {
     return formData.degree;
   };
 
-  const isValidMobileNumber = (number: string) => {
-    // Indian mobile number validation: 10 digits starting with 6-9
-    const mobileRegex = /^[6-9]\d{9}$/;
-    return mobileRegex.test(number.replace(/\s/g, ''));
-  };
-
   const isFormValid = () => {
     const degreeValid = formData.degree !== "" && 
       (formData.degree !== "Other" || (formData.customDegree?.trim() || "") !== "");
+    const mobileValid = isValidMobileFormat(formData.mobile_number) && !isMobileDuplicate;
     return (
       formData.full_name.trim() !== "" &&
       formData.mobile_number.trim() !== "" &&
-      isValidMobileNumber(formData.mobile_number) &&
+      mobileValid &&
       formData.college_name.trim() !== "" &&
       degreeValid &&
       formData.branch.trim() !== "" &&
@@ -301,9 +317,21 @@ const Onboarding = () => {
                     required
                   />
                 </div>
-                {formData.mobile_number && !isValidMobileNumber(formData.mobile_number) && (
+                {formData.mobile_number && !isValidMobileFormat(formData.mobile_number) && (
                   <p className="text-xs text-destructive">
                     Please enter a valid 10-digit Indian mobile number
+                  </p>
+                )}
+                {formData.mobile_number && isValidMobileFormat(formData.mobile_number) && isMobileDuplicate && (
+                  <p className="text-xs text-destructive flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    This mobile number is already in use. Please enter a different number.
+                  </p>
+                )}
+                {isCheckingMobile && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    Checking availability...
                   </p>
                 )}
               </div>
