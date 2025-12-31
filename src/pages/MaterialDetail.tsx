@@ -129,20 +129,22 @@ const MaterialDetail = () => {
   const handleShare = useCallback(async () => {
     if (!material) return;
     
+    const url = `${window.location.origin}/materials/${material.id}`;
+    
     try {
-      const { shareContent } = await import("@/lib/shareUtils");
-      const success = await shareContent({
-        type: 'materials',
-        id: material.id,
-        title: material.title,
-        description: [material.subject, material.course, material.branch].filter(Boolean).join(' • ')
-      });
-      
-      if (success) {
-        toast.success('Link copied for sharing');
-        supabase.rpc('increment_material_shares', { material_id: material.id });
-        setMaterial(prev => prev ? { ...prev, shares_count: (prev.shares_count || 0) + 1 } : prev);
+      if (navigator.share) {
+        await navigator.share({
+          title: material.title,
+          text: `Check out this study material: ${material.title}`,
+          url,
+        });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast.success('Link copied to clipboard');
       }
+      
+      supabase.rpc('increment_material_shares', { material_id: material.id });
+      setMaterial(prev => prev ? { ...prev, shares_count: (prev.shares_count || 0) + 1 } : prev);
     } catch (error) {
       // User cancelled share
     }
