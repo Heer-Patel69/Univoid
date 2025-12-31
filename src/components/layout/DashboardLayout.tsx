@@ -6,6 +6,7 @@ import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { FloatingDoodles } from "@/components/common/FloatingDoodles";
 
 /**
  * DashboardLayout - Persistent layout shell for dashboard/internal pages
@@ -22,12 +23,15 @@ const DashboardLayout = () => {
   }, []);
 
   return (
-    <div className="h-dvh flex bg-background paper-texture overflow-hidden">
+    <div className="h-dvh flex bg-background paper-texture overflow-hidden relative">
+      {/* Global floating doodles background */}
+      <FloatingDoodles density="global" className="fixed inset-0" />
+      
       {/* Sidebar - Desktop (persistent, fixed height) */}
       <DashboardSidebar />
 
       {/* Main Content - Fixed height container */}
-      <main className="flex-1 flex flex-col min-w-0 h-dvh overflow-hidden">
+      <main className="flex-1 flex flex-col min-w-0 h-dvh overflow-hidden relative z-10">
         {/* Mobile Header (persistent, sticky) */}
         <header className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-border bg-card shrink-0 z-40">
           <Sheet>

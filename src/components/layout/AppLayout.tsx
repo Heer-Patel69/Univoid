@@ -4,6 +4,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { useState, useCallback } from "react";
 import AuthModal from "@/components/auth/AuthModal";
+import { FloatingDoodles } from "@/components/common/FloatingDoodles";
 
 /**
  * AppLayout - Persistent layout shell for public pages
@@ -21,11 +22,14 @@ const AppLayout = () => {
   }, []);
 
   return (
-    <div className="min-h-dvh flex flex-col bg-background paper-texture w-full max-w-full overflow-x-hidden">
+    <div className="min-h-dvh flex flex-col bg-background paper-texture w-full max-w-full overflow-x-hidden relative">
+      {/* Global floating doodles background */}
+      <FloatingDoodles density="global" className="fixed inset-0" />
+      
       <Header onAuthClick={handleAuthClick} />
       
       {/* Main content with proper spacing for sticky header */}
-      <main className="flex-1 w-full max-w-full">
+      <main className="flex-1 w-full max-w-full relative z-10">
         <Suspense fallback={null}>
           <Outlet context={{ onAuthClick: handleAuthClick }} />
         </Suspense>
