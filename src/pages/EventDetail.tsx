@@ -103,11 +103,18 @@ const EventDetail = () => {
   }, [user, event, selectedClubId, membershipId, selectedPrice, register, paymentScreenshot]);
 
   const handleShare = async () => {
-    try {
-      await navigator.share({ title: event?.title, url: window.location.href });
-    } catch {
-      navigator.clipboard.writeText(window.location.href);
-      toast({ title: "Link copied!" });
+    if (!event || !eventId) return;
+    
+    const { shareContent } = await import("@/lib/shareUtils");
+    const success = await shareContent({
+      type: 'events',
+      id: eventId,
+      title: event.title,
+      description: `${format(new Date(event.start_date), 'MMM d, yyyy')} • ${event.venue_name || 'Online'}`
+    });
+    
+    if (success) {
+      toast({ title: "Link copied for sharing!" });
     }
   };
 
