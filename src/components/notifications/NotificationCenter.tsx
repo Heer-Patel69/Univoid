@@ -55,7 +55,7 @@ const NotificationItem = memo(({
   onDelete, 
   onClose,
   getIcon,
-  isAdmin,
+  isAdminOrAssistant,
   isOrganizer
 }: { 
   notification: Notification; 
@@ -63,15 +63,15 @@ const NotificationItem = memo(({
   onDelete: (id: string) => void;
   onClose: () => void;
   getIcon: (type: string) => React.ReactNode;
-  isAdmin: boolean;
+  isAdminOrAssistant: boolean;
   isOrganizer: boolean;
 }) => {
   // Sanitize notification link - prevent non-admins/non-organizers from accessing protected routes
   const getSafeLink = (link: string | null): string => {
     if (!link) return '/dashboard';
     
-    // Check admin routes
-    if (ADMIN_ROUTES.some(route => link.startsWith(route)) && !isAdmin) {
+    // Check admin routes - allow both admins and admin assistants
+    if (ADMIN_ROUTES.some(route => link.startsWith(route)) && !isAdminOrAssistant) {
       return '/dashboard';
     }
     
@@ -233,9 +233,7 @@ const NotificationSettings = memo(({
 NotificationSettings.displayName = 'NotificationSettings';
 
 export const NotificationCenter = () => {
-  const { user, isAdmin, isAdminOrAssistant, isOrganizer } = useAuth();
-  const isUserAdmin = isAdmin || isAdminOrAssistant;
-  const isUserOrganizer = isOrganizer;
+  const { user, isAdminOrAssistant, isOrganizer } = useAuth();
   const isMobile = useIsMobile();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -502,8 +500,8 @@ export const NotificationCenter = () => {
                 onDelete={deleteNotification}
                 onClose={handleClose}
                 getIcon={getIcon}
-                isAdmin={isUserAdmin}
-                isOrganizer={isUserOrganizer}
+                isAdminOrAssistant={isAdminOrAssistant}
+                isOrganizer={isOrganizer}
               />
             ))}
             {hasMore && activeCategory === 'all' && (
