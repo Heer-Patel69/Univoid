@@ -8,10 +8,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchUserTickets, type TicketWithDetails } from "@/services/ticketService";
 import { supabase } from "@/integrations/supabase/client";
+import { useRealtimeRegistrations } from "@/hooks/useRealtimeRegistrations";
 import AuthModal from "@/components/auth/AuthModal";
 import { 
   Ticket, Calendar, MapPin, CheckCircle, XCircle, 
-  AlertTriangle, Copy, Shield, Clock, Hourglass, Bell
+  AlertTriangle, Copy, Shield, Clock, Hourglass, Bell, RefreshCw
 } from "lucide-react";
 import { format, isPast } from "date-fns";
 import QRCode from "qrcode";
@@ -19,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 
 interface PendingRegistration {
   id: string;
+  event_id: string;
   payment_status: string;
   created_at: string;
   event: {
@@ -36,33 +38,36 @@ const MyTickets = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [qrImages, setQrImages] = useState<Record<string, string>>({});
 
+  // Real-time updates for registrations and tickets
+  useRealtimeRegistrations({ userId: user?.id, enabled: !!user });
+
   // Fetch approved tickets
-  const { data: tickets, isLoading, error } = useQuery({
+  const { data: tickets, isLoading, error, refetch: refetchTickets } = useQuery({
     queryKey: ["my-tickets", user?.id],
     queryFn: () => fetchUserTickets(user!.id),
     enabled: !!user,
-    staleTime: 30000,
+    staleTime: 10000, // Reduced for faster updates
   });
 
-  // Fetch pending registrations (waiting for approval)
-  const { data: pendingRegistrations } = useQuery({
+  // Fetch pending and rejected registrations
+  const { data: pendingRegistrations, refetch: refetchPending } = useQuery({
     queryKey: ["my-pending-registrations", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("event_registrations")
         .select(`
-          id, payment_status, created_at,
+          id, event_id, payment_status, created_at,
           event:events(id, title, start_date, venue_name, flyer_url)
         `)
         .eq("user_id", user!.id)
-        .eq("payment_status", "pending")
+        .in("payment_status", ["pending", "rejected"])
         .order("created_at", { ascending: false });
       
       if (error) throw error;
       return data as unknown as PendingRegistration[];
     },
     enabled: !!user,
-    staleTime: 30000,
+    staleTime: 10000,
   });
 
   // Generate QR codes on-demand (never store actual tokens)
@@ -317,7 +322,14 @@ const MyTickets = () => {
                 <p className="text-center py-8 text-muted-foreground">No pending registrations</p>
               ) : (
                 pendingRegistrations.map(reg => (
-                  <Card key={reg.id} className="overflow-hidden border-dashed border-2 border-primary/30">
+                  <Card 
+                    key={reg.id} 
+                    className={`overflow-hidden border-2 ${
+                      reg.payment_status === 'rejected' 
+                        ? 'border-destructive/30 bg-destructive/5' 
+                        : 'border-dashed border-primary/30'
+                    }`}
+                  >
                     <CardContent className="p-0">
                       <div className="flex flex-col sm:flex-row">
                         {/* Event Info */}
@@ -340,27 +352,49 @@ const MyTickets = () => {
                                 </div>
                               )}
                             </div>
-                            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
-                              <Hourglass className="w-3 h-3 mr-1" /> Pending
-                            </Badge>
+                            {reg.payment_status === 'rejected' ? (
+                              <Badge variant="destructive" className="gap-1">
+                                <XCircle className="w-3 h-3" /> Rejected
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
+                                <Hourglass className="w-3 h-3 mr-1" /> Pending
+                              </Badge>
+                            )}
                           </div>
 
-                          {/* Waiting Message */}
-                          <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mt-4">
-                            <div className="flex items-start gap-3">
-                              <Hourglass className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                              <div>
-                                <h4 className="font-semibold text-foreground">⏳ Waiting for Approval</h4>
-                                <p className="text-sm text-muted-foreground mt-1">
-                                  Your registration has been received. Please wait for the organizer to approve your entry. You will be notified once approved.
-                                </p>
-                                <Button variant="outline" size="sm" className="mt-3 gap-2">
-                                  <Bell className="w-4 h-4" />
-                                  Enable Notifications
-                                </Button>
+                          {/* Status-specific message */}
+                          {reg.payment_status === 'rejected' ? (
+                            <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4 mt-4">
+                              <div className="flex items-start gap-3">
+                                <XCircle className="w-5 h-5 text-destructive mt-0.5 flex-shrink-0" />
+                                <div>
+                                  <h4 className="font-semibold text-foreground">Registration Rejected</h4>
+                                  <p className="text-sm text-muted-foreground mt-1">
+                                    Your registration was not approved. You can try registering again.
+                                  </p>
+                                  <Link to={`/events/${reg.event.id}`}>
+                                    <Button variant="outline" size="sm" className="mt-3 gap-2">
+                                      <RefreshCw className="w-4 h-4" />
+                                      Try Again
+                                    </Button>
+                                  </Link>
+                                </div>
                               </div>
                             </div>
-                          </div>
+                          ) : (
+                            <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mt-4">
+                              <div className="flex items-start gap-3">
+                                <Hourglass className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                                <div>
+                                  <h4 className="font-semibold text-foreground">⏳ Waiting for Confirmation</h4>
+                                  <p className="text-sm text-muted-foreground mt-1">
+                                    Your registration has been received. You will be notified once approved.
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
 
                           <p className="text-xs text-muted-foreground">
                             Submitted on {format(new Date(reg.created_at), "MMM d, yyyy 'at' h:mm a")}
@@ -370,10 +404,14 @@ const MyTickets = () => {
                         {/* Placeholder for QR */}
                         <div className="border-t sm:border-t-0 sm:border-l border-dashed p-4 flex flex-col items-center justify-center min-w-[160px] bg-muted/30">
                           <div className="w-32 h-32 rounded-lg bg-muted flex items-center justify-center border-2 border-dashed border-muted-foreground/30">
-                            <Hourglass className="w-12 h-12 text-muted-foreground/50" />
+                            {reg.payment_status === 'rejected' ? (
+                              <XCircle className="w-12 h-12 text-destructive/50" />
+                            ) : (
+                              <Hourglass className="w-12 h-12 text-muted-foreground/50" />
+                            )}
                           </div>
                           <p className="text-xs text-muted-foreground mt-2 text-center">
-                            QR will appear after approval
+                            {reg.payment_status === 'rejected' ? 'Registration failed' : 'QR will appear after approval'}
                           </p>
                         </div>
                       </div>

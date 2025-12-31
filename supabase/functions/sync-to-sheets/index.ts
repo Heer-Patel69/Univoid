@@ -103,10 +103,10 @@ serve(async (req) => {
 
     console.log(`Found ${formFields?.length || 0} custom form fields`);
 
-    // Fetch registrations (without join - no FK relationship to profiles)
+    // Fetch registrations with amount columns
     const { data: registrations, error: regError } = await supabase
       .from("event_registrations")
-      .select("id, created_at, payment_status, custom_data, user_id")
+      .select("id, created_at, payment_status, custom_data, user_id, base_amount, addons_amount, total_amount, group_size")
       .eq("event_id", eventId)
       .order("created_at", { ascending: true });
 
@@ -221,13 +221,16 @@ function buildDynamicHeaders(
     "Payment Status",
   ];
 
-  // Add payment amount column if event is paid
+  // Add payment amount columns if event is paid
   if (event.is_paid) {
-    fixedHeaders.push("Amount Paid");
+    fixedHeaders.push("Base Amount", "Add-ons Amount", "Total Amount", "Group Size");
   }
 
   // Add club membership columns
   fixedHeaders.push("Club Member", "Club Name", "Club ID");
+
+  // Add add-ons column
+  fixedHeaders.push("Selected Add-ons");
 
   // Add dynamic form field columns (in order)
   const dynamicHeaders = formFields.map(field => field.label);

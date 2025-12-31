@@ -529,38 +529,50 @@ export type Database = {
       }
       event_registrations: {
         Row: {
+          addons_amount: number | null
+          base_amount: number | null
           created_at: string
           custom_data: Json | null
           event_id: string
+          group_size: number | null
           id: string
           payment_screenshot_url: string | null
           payment_status: Database["public"]["Enums"]["ticket_status"]
           reviewed_at: string | null
           team_id: string | null
+          total_amount: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          addons_amount?: number | null
+          base_amount?: number | null
           created_at?: string
           custom_data?: Json | null
           event_id: string
+          group_size?: number | null
           id?: string
           payment_screenshot_url?: string | null
           payment_status?: Database["public"]["Enums"]["ticket_status"]
           reviewed_at?: string | null
           team_id?: string | null
+          total_amount?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          addons_amount?: number | null
+          base_amount?: number | null
           created_at?: string
           custom_data?: Json | null
           event_id?: string
+          group_size?: number | null
           id?: string
           payment_screenshot_url?: string | null
           payment_status?: Database["public"]["Enums"]["ticket_status"]
           reviewed_at?: string | null
           team_id?: string | null
+          total_amount?: number | null
           updated_at?: string
           user_id?: string
         }
@@ -680,6 +692,103 @@ export type Database = {
             columns: ["registration_id"]
             isOneToOne: true
             referencedRelation: "event_registrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_upsell_settings: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          show_addons: boolean
+          show_group_offers: boolean
+          updated_at: string
+          upsell_enabled: boolean
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          show_addons?: boolean
+          show_group_offers?: boolean
+          updated_at?: string
+          upsell_enabled?: boolean
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          show_addons?: boolean
+          show_group_offers?: boolean
+          updated_at?: string
+          upsell_enabled?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_upsell_settings_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_upsells: {
+        Row: {
+          created_at: string
+          description: string | null
+          discount_amount: number | null
+          display_order: number
+          event_id: string
+          group_size: number | null
+          id: string
+          is_active: boolean
+          max_quantity: number | null
+          min_quantity: number | null
+          name: string
+          price: number
+          updated_at: string
+          upsell_type: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          discount_amount?: number | null
+          display_order?: number
+          event_id: string
+          group_size?: number | null
+          id?: string
+          is_active?: boolean
+          max_quantity?: number | null
+          min_quantity?: number | null
+          name: string
+          price?: number
+          updated_at?: string
+          upsell_type: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          discount_amount?: number | null
+          display_order?: number
+          event_id?: string
+          group_size?: number | null
+          id?: string
+          is_active?: boolean
+          max_quantity?: number | null
+          min_quantity?: number | null
+          name?: string
+          price?: number
+          updated_at?: string
+          upsell_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_upsells_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
         ]
@@ -1486,6 +1595,51 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      registration_addons: {
+        Row: {
+          created_at: string
+          id: string
+          quantity: number
+          registration_id: string
+          total_price: number
+          unit_price: number
+          upsell_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          quantity?: number
+          registration_id: string
+          total_price: number
+          unit_price: number
+          upsell_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          quantity?: number
+          registration_id?: string
+          total_price?: number
+          unit_price?: number
+          upsell_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registration_addons_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "event_registrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registration_addons_upsell_id_fkey"
+            columns: ["upsell_id"]
+            isOneToOne: false
+            referencedRelation: "event_upsells"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reports: {
         Row: {
