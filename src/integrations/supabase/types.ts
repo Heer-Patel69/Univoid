@@ -536,6 +536,7 @@ export type Database = {
           event_id: string
           group_size: number | null
           id: string
+          is_group_booking: boolean | null
           payment_screenshot_url: string | null
           payment_status: Database["public"]["Enums"]["ticket_status"]
           reviewed_at: string | null
@@ -552,6 +553,7 @@ export type Database = {
           event_id: string
           group_size?: number | null
           id?: string
+          is_group_booking?: boolean | null
           payment_screenshot_url?: string | null
           payment_status?: Database["public"]["Enums"]["ticket_status"]
           reviewed_at?: string | null
@@ -568,6 +570,7 @@ export type Database = {
           event_id?: string
           group_size?: number | null
           id?: string
+          is_group_booking?: boolean | null
           payment_screenshot_url?: string | null
           payment_status?: Database["public"]["Enums"]["ticket_status"]
           reviewed_at?: string | null
@@ -633,7 +636,10 @@ export type Database = {
           created_at: string
           device_fingerprint: string | null
           event_id: string
+          group_entry_acknowledged: boolean | null
+          group_size: number | null
           id: string
+          is_group_booking: boolean | null
           is_used: boolean
           last_scan_attempt: string | null
           qr_code: string
@@ -650,7 +656,10 @@ export type Database = {
           created_at?: string
           device_fingerprint?: string | null
           event_id: string
+          group_entry_acknowledged?: boolean | null
+          group_size?: number | null
           id?: string
+          is_group_booking?: boolean | null
           is_used?: boolean
           last_scan_attempt?: string | null
           qr_code: string
@@ -667,7 +676,10 @@ export type Database = {
           created_at?: string
           device_fingerprint?: string | null
           event_id?: string
+          group_entry_acknowledged?: boolean | null
+          group_size?: number | null
           id?: string
+          is_group_booking?: boolean | null
           is_used?: boolean
           last_scan_attempt?: string | null
           qr_code?: string
@@ -736,7 +748,11 @@ export type Database = {
       }
       event_upsells: {
         Row: {
+          allow_custom_input: boolean | null
           created_at: string
+          custom_input_label: string | null
+          custom_input_max_length: number | null
+          custom_input_placeholder: string | null
           description: string | null
           discount_amount: number | null
           display_order: number
@@ -752,7 +768,11 @@ export type Database = {
           upsell_type: string
         }
         Insert: {
+          allow_custom_input?: boolean | null
           created_at?: string
+          custom_input_label?: string | null
+          custom_input_max_length?: number | null
+          custom_input_placeholder?: string | null
           description?: string | null
           discount_amount?: number | null
           display_order?: number
@@ -768,7 +788,11 @@ export type Database = {
           upsell_type: string
         }
         Update: {
+          allow_custom_input?: boolean | null
           created_at?: string
+          custom_input_label?: string | null
+          custom_input_max_length?: number | null
+          custom_input_placeholder?: string | null
           description?: string | null
           discount_amount?: number | null
           display_order?: number
@@ -1599,6 +1623,7 @@ export type Database = {
       registration_addons: {
         Row: {
           created_at: string
+          custom_input_value: string | null
           id: string
           quantity: number
           registration_id: string
@@ -1608,6 +1633,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          custom_input_value?: string | null
           id?: string
           quantity?: number
           registration_id: string
@@ -1617,6 +1643,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          custom_input_value?: string | null
           id?: string
           quantity?: number
           registration_id?: string

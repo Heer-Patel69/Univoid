@@ -14,9 +14,11 @@ import { supabase } from "@/integrations/supabase/client";
 import AuthModal from "@/components/auth/AuthModal";
 import { FormBuilder, type FormBuilderField } from "@/components/events/FormBuilder";
 import ClubPricingSection, { type EventClubConfig } from "@/components/events/ClubPricingSection";
+import { UpsellConfigSection, type DraftUpsell } from "@/components/events/UpsellConfigSection";
 import { createFormFields } from "@/services/eventFormService";
 import { addClubToEvent } from "@/services/clubService";
-import { ArrowLeft, ArrowRight, Check, Calendar, FileText, Ticket, CreditCard, Image, ClipboardList, Loader2 } from "lucide-react";
+import { createEventUpsellsBulk, updateUpsellSettings } from "@/services/upsellService";
+import { ArrowLeft, ArrowRight, Check, Calendar, FileText, Ticket, CreditCard, Image, ClipboardList, Loader2, Sparkles } from "lucide-react";
 import { useUpiScanner } from "@/hooks/useUpiScanner";
 
 const STEPS = [
@@ -24,7 +26,8 @@ const STEPS = [
   { id: 2, title: "Description", icon: FileText },
   { id: 3, title: "Custom Form", icon: ClipboardList },
   { id: 4, title: "Ticketing", icon: Ticket },
-  { id: 5, title: "Payment", icon: CreditCard },
+  { id: 5, title: "Upsells", icon: Sparkles },
+  { id: 6, title: "Payment", icon: CreditCard },
 ];
 
 const CATEGORIES = ["Tech", "Cultural", "Sports", "Academic", "Workshop", "Seminar"];
@@ -64,6 +67,10 @@ const CreateEvent = () => {
 
   // Club pricing configs
   const [clubConfigs, setClubConfigs] = useState<EventClubConfig[]>([]);
+
+  // Upsell configs
+  const [draftUpsells, setDraftUpsells] = useState<DraftUpsell[]>([]);
+  const [upsellEnabled, setUpsellEnabled] = useState(false);
 
   const [flyerFile, setFlyerFile] = useState<File | null>(null);
   const [flyerError, setFlyerError] = useState<string | null>(null);
@@ -215,6 +222,12 @@ const CreateEvent = () => {
         }
       }
 
+      // Save upsells if any (only for paid events)
+      if (formData.is_paid && draftUpsells.length > 0) {
+        await createEventUpsellsBulk(data.id, draftUpsells);
+        await updateUpsellSettings(data.id, { upsell_enabled: upsellEnabled });
+      }
+
       setUploading(false);
       return data;
     },
@@ -234,7 +247,8 @@ const CreateEvent = () => {
       case 2: return formData.description.length >= 50 && formData.terms_conditions.length >= 10;
       case 3: return true; // Custom form is optional
       case 4: return true;
-      case 5: return !formData.is_paid || (formData.upi_vpa || qrFile);
+      case 5: return true; // Upsells are optional
+      case 6: return !formData.is_paid || (formData.upi_vpa || qrFile);
       default: return true;
     }
   };
@@ -251,7 +265,7 @@ const CreateEvent = () => {
     return null;
   };
 
-  const nextStep = () => currentStep < 5 && setCurrentStep(currentStep + 1);
+  const nextStep = () => currentStep < 6 && setCurrentStep(currentStep + 1);
   const prevStep = () => currentStep > 1 && setCurrentStep(currentStep - 1);
 
   if (!user) {
@@ -303,7 +317,8 @@ const CreateEvent = () => {
               {currentStep === 2 && "Add a description and any terms"}
               {currentStep === 3 && "Create custom registration form fields"}
               {currentStep === 4 && "Configure ticketing options"}
-              {currentStep === 5 && "Set up payment collection"}
+              {currentStep === 5 && "Set up group offers and add-ons"}
+              {currentStep === 6 && "Set up payment collection"}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -463,8 +478,19 @@ const CreateEvent = () => {
               </>
             )}
 
-            {/* Step 5: Payment */}
+            {/* Step 5: Upsells */}
             {currentStep === 5 && (
+              <UpsellConfigSection
+                upsells={draftUpsells}
+                onChange={setDraftUpsells}
+                upsellEnabled={upsellEnabled}
+                onUpsellEnabledChange={setUpsellEnabled}
+                isPaidEvent={formData.is_paid}
+              />
+            )}
+
+            {/* Step 6: Payment */}
+            {currentStep === 6 && (
               <>
                 {!formData.is_paid ? (
                   <div className="text-center py-8">
@@ -509,7 +535,7 @@ const CreateEvent = () => {
             {/* Navigation */}
             <div className="flex justify-between pt-4">
               <Button variant="outline" onClick={prevStep} disabled={currentStep === 1}><ArrowLeft className="w-4 h-4 mr-2" /> Previous</Button>
-              {currentStep < 5 ? (
+              {currentStep < 6 ? (
                 <Button onClick={nextStep} disabled={!canProceed()}>Next <ArrowRight className="w-4 h-4 ml-2" /></Button>
               ) : (
                 <Button onClick={() => createEventMutation.mutate()} disabled={!canProceed() || createEventMutation.isPending || uploading}>

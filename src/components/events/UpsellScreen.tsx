@@ -84,6 +84,16 @@ const UpsellScreen = ({
 
   return (
     <div className="space-y-6">
+      {/* Group Entry Warning */}
+      {groupSize > 1 && (
+        <div className="bg-amber-100 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-200 p-4 rounded-lg">
+          <p className="font-semibold text-sm">⚠️ Important: Group Entry Rule</p>
+          <p className="text-sm mt-1">
+            Group entry is allowed only when the full group arrives together. Partial entry will not be permitted.
+          </p>
+        </div>
+      )}
+
       {/* Header */}
       <div className="text-center space-y-2">
         <div className="flex items-center justify-center gap-2">
