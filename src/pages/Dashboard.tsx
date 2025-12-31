@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useLeaderboard } from "@/hooks/useLeaderboard";
 import ProfileSnapshot from "@/components/dashboard/ProfileSnapshot";
+import ProfileCompletionBanner from "@/components/common/ProfileCompletionBanner";
 import QuickStatsGrid from "@/components/dashboard/QuickStatsGrid";
 import RecommendationsSection from "@/components/dashboard/RecommendationsSection";
 import UserContentManager from "@/components/dashboard/UserContentManager";
@@ -67,6 +68,9 @@ const Dashboard = () => {
           Here's what's happening with your account today.
         </p>
       </div>
+
+      {/* Profile Completion Card - Only for quick users */}
+      <ProfileCompletionBanner />
 
       {/* Profile Snapshot */}
       <ProfileSnapshot profile={profile} />
