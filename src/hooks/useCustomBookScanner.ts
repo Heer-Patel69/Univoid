@@ -23,9 +23,9 @@ interface UseCustomBookScannerOptions {
 }
 
 /**
- * Custom hook for scanning book covers using your external FastAPI service.
- * This does NOT use Lovable AI - it calls YOUR custom OCR/ML API.
- * 
+ * Custom hook for scanning book covers using external FastAPI service.
+ * Calls custom OCR/ML API for book cover recognition.
+ *
  * @example
  * ```tsx
  * const { scanBookImage, scanning, result, error } = useCustomBookScanner({

@@ -102,7 +102,7 @@ serve(async (req) => {
           `}
           
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://univoid.lovable.app/dashboard" style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block;">
+            <a href="https://univoid.tech/dashboard" style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block;">
               View Dashboard
             </a>
           </div>
