@@ -21,6 +21,7 @@ import {
 // Lazy load pages for better code splitting
 const Index = lazy(() => import("@/pages/Index"));
 const Materials = lazy(() => import("@/pages/Materials"));
+const MaterialDetail = lazy(() => import("@/pages/MaterialDetail"));
 const News = lazy(() => import("@/pages/News"));
 const Books = lazy(() => import("@/pages/Books"));
 const BookDetail = lazy(() => import("@/pages/BookDetail"));
@@ -109,6 +110,9 @@ export const AnimatedRoutes = () => {
       <Route element={<AppLayout />}>
         <Route path="/materials" element={
           <Suspense fallback={<MaterialsSkeleton />}><Materials /></Suspense>
+        } />
+        <Route path="/materials/:materialId" element={
+          <Suspense fallback={<DetailSkeleton />}><MaterialDetail /></Suspense>
         } />
         <Route path="/news" element={
           <Suspense fallback={<ListingPageSkeleton />}><News /></Suspense>

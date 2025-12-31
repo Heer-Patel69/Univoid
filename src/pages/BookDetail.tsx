@@ -12,6 +12,7 @@ import { getBookById, getSellerContact } from "@/services/booksService";
 import { Book } from "@/types/database";
 import { toast } from "sonner";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb";
+import SEOHead from "@/components/common/SEOHead";
 import { openWhatsAppContact, getListingType } from "@/lib/whatsappContact";
 import { getDisplayCategory } from "@/lib/bookCategorizer";
 
@@ -151,8 +152,37 @@ const BookDetail = () => {
 
   const isAvailable = !book.is_sold && (book as any).book_status !== 'sold' && (book as any).book_status !== 'rented';
 
+  // SEO structured data for the book
+  const bookStructuredData = {
+    "@type": "Product",
+    name: book.title,
+    description: book.description || `${book.title} - ${listingLabel} on UniVoid`,
+    image: book.image_urls?.[0] || "https://univoid.tech/images/univoid-og.jpg",
+    offers: {
+      "@type": "Offer",
+      price: book.price || 0,
+      priceCurrency: "INR",
+      availability: isAvailable ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      itemCondition: book.condition === "New" ? "https://schema.org/NewCondition" : "https://schema.org/UsedCondition",
+    },
+    category: getDisplayCategory(book.category),
+  };
+
+  const seoDescription = book.description 
+    ? book.description.substring(0, 155) 
+    : `${book.title} - ${listingLabel}. ${book.condition} condition. ${book.price ? `₹${book.price}` : "Free"}. Buy or exchange books on UniVoid.`;
+
   return (
     <div className="py-8">
+      <SEOHead
+        title={`${book.title} - ${listingLabel}`}
+        description={seoDescription}
+        image={book.image_urls?.[0]}
+        url={`/books/${bookId}`}
+        type="product"
+        structuredData={bookStructuredData}
+        keywords={["buy books", "sell books", "used books", "college books", getDisplayCategory(book.category) || "textbooks"]}
+      />
       <div className="container-wide max-w-4xl">
         <PageBreadcrumb 
           items={[

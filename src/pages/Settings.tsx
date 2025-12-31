@@ -89,20 +89,29 @@ const Settings = () => {
   const handleDeleteAccount = async () => {
     setIsDeleting(true);
     try {
-      // Mark profile as disabled instead of actual deletion
-      const { error } = await supabase
-        .from('profiles')
-        .update({ is_disabled: true })
-        .eq('id', user.id);
+      // Call the edge function to permanently delete all user data
+      const { data: sessionData } = await supabase.auth.getSession();
+      
+      if (!sessionData.session) {
+        throw new Error("No active session");
+      }
 
-      if (error) throw error;
+      const response = await supabase.functions.invoke('delete-account', {
+        headers: {
+          Authorization: `Bearer ${sessionData.session.access_token}`,
+        },
+      });
 
-      toast.success("Account disabled. Contact support to restore.");
+      if (response.error) {
+        throw new Error(response.error.message || "Failed to delete account");
+      }
+
+      toast.success("Account permanently deleted. All your data has been removed.");
       await signOut();
       navigate("/");
     } catch (error: any) {
       console.error("Delete account error:", error);
-      toast.error("Failed to delete account");
+      toast.error(error.message || "Failed to delete account");
     } finally {
       setIsDeleting(false);
     }
@@ -333,9 +342,9 @@ const Settings = () => {
               <CardContent>
                 <div className="flex items-center justify-between gap-4 p-4 rounded-lg border border-destructive/30 bg-destructive/5">
                   <div>
-                    <p className="font-medium text-destructive">Delete Account</p>
+                    <p className="font-medium text-destructive">Delete Account Permanently</p>
                     <p className="text-sm text-muted-foreground">
-                      Permanently disable your account and remove your data
+                      This action is permanent. All your data will be deleted and cannot be recovered.
                     </p>
                   </div>
                   <AlertDialog>
@@ -347,10 +356,19 @@ const Settings = () => {
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This action cannot be undone. Your account will be permanently disabled
-                          and you will lose access to all your data, materials, and event registrations.
+                        <AlertDialogTitle className="text-destructive">Permanently Delete Account?</AlertDialogTitle>
+                        <AlertDialogDescription className="space-y-2">
+                          <p className="font-medium text-foreground">This action is irreversible.</p>
+                          <p>All your data will be permanently deleted including:</p>
+                          <ul className="list-disc list-inside text-sm space-y-1 mt-2">
+                            <li>Your profile and XP history</li>
+                            <li>All events you created</li>
+                            <li>All event registrations</li>
+                            <li>Materials you shared</li>
+                            <li>Books you listed</li>
+                            <li>Projects and tasks</li>
+                          </ul>
+                          <p className="font-medium text-destructive mt-3">This cannot be undone.</p>
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
