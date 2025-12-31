@@ -155,7 +155,7 @@ export const MobileNavDrawer = ({ onAuthClick }: MobileNavDrawerProps) => {
       </SheetTrigger>
       <SheetContent 
         side="left" 
-        className="w-[300px] p-0 flex flex-col bg-background border-r border-border"
+        className="w-[300px] p-0 flex flex-col bg-background border-r border-border overflow-hidden"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -202,8 +202,8 @@ export const MobileNavDrawer = ({ onAuthClick }: MobileNavDrawerProps) => {
           </div>
         )}
 
-        {/* Navigation */}
-        <div className="flex-1 overflow-y-auto py-4">
+        {/* Navigation - scrollable */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden py-4 scrollbar-thin overscroll-contain">
           {/* Browse Section */}
           <div className="px-4 mb-4">
             <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">

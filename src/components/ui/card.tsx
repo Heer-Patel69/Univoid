@@ -7,13 +7,26 @@ const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElemen
     ref={ref} 
     className={cn(
       "rounded-xl border border-border bg-card text-card-foreground shadow-sketch transition-all duration-150",
-      "hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-sketch-lg",
       className
     )} 
     {...props} 
   />
 ));
 Card.displayName = "Card";
+
+// Separate interactive card component for hover effects
+const CardInteractive = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({ className, ...props }, ref) => (
+  <div 
+    ref={ref} 
+    className={cn(
+      "rounded-xl border border-border bg-card text-card-foreground shadow-sketch transition-all duration-150",
+      "hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-sketch-lg cursor-pointer",
+      className
+    )} 
+    {...props} 
+  />
+));
+CardInteractive.displayName = "CardInteractive";
 
 const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
@@ -48,4 +61,4 @@ const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
 );
 CardFooter.displayName = "CardFooter";
 
-export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent };
+export { Card, CardInteractive, CardHeader, CardFooter, CardTitle, CardDescription, CardContent };

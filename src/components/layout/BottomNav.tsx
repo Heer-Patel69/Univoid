@@ -31,47 +31,49 @@ export function BottomNav() {
   }
 
   return (
-    <nav className="fixed bottom-3 left-3 right-3 z-50 md:hidden">
-      <div className="bg-card/95 backdrop-blur-xl rounded-2xl border border-border-strong/10 shadow-lg flex items-center justify-around py-2 px-1">
-        {navItems.map((item) => {
-          const isActive = location.pathname === item.href || 
-            (item.href !== "/" && location.pathname.startsWith(item.href));
-          const Icon = item.icon;
+    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden safe-bottom">
+      <div className="mx-3 mb-3">
+        <div className="bg-card/95 backdrop-blur-xl rounded-2xl border border-border shadow-lg flex items-center justify-around py-2 px-1">
+          {navItems.map((item) => {
+            const isActive = location.pathname === item.href || 
+              (item.href !== "/" && location.pathname.startsWith(item.href));
+            const Icon = item.icon;
 
-          // Generate tour ID based on href
-          const tourId = `mobile-nav-${item.href.replace('/', '')}`;
-          
-          return (
-            <PrefetchLink
-              key={item.href}
-              id={tourId}
-              to={item.href}
-              className={cn(
-                "flex flex-col items-center justify-center gap-0.5 flex-1 py-2 transition-all duration-200 active:scale-95",
-                isActive 
-                  ? "text-foreground" 
-                  : "text-muted-foreground"
-              )}
-            >
-              <div className="relative">
-                <div
-                  className={cn(
-                    "w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-200",
-                    item.highlight && !isActive && "bg-pastel-purple",
-                    item.highlight && isActive && "bg-foreground text-background shadow-md",
-                    isActive && !item.highlight && "bg-foreground text-background shadow-md"
-                  )}
-                >
-                  <Icon className="w-5 h-5" strokeWidth={2.5} />
+            // Generate tour ID based on href
+            const tourId = `mobile-nav-${item.href.replace('/', '')}`;
+            
+            return (
+              <PrefetchLink
+                key={item.href}
+                id={tourId}
+                to={item.href}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-0.5 flex-1 py-2 transition-all duration-200 active:scale-95 no-tap-highlight",
+                  isActive 
+                    ? "text-foreground" 
+                    : "text-muted-foreground"
+                )}
+              >
+                <div className="relative">
+                  <div
+                    className={cn(
+                      "w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200",
+                      item.highlight && !isActive && "bg-pastel-purple",
+                      item.highlight && isActive && "bg-foreground text-background shadow-md",
+                      isActive && !item.highlight && "bg-foreground text-background shadow-md"
+                    )}
+                  >
+                    <Icon className="w-5 h-5" strokeWidth={2.5} />
+                  </div>
                 </div>
-              </div>
-              <span className={cn(
-                "text-[10px] font-semibold transition-all",
-                isActive && "font-bold"
-              )}>{item.label}</span>
-            </PrefetchLink>
-          );
-        })}
+                <span className={cn(
+                  "text-[10px] font-semibold transition-all truncate max-w-[56px]",
+                  isActive && "font-bold"
+                )}>{item.label}</span>
+              </PrefetchLink>
+            );
+          })}
+        </div>
       </div>
     </nav>
   );
