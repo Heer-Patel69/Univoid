@@ -12,12 +12,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Loader2, Save, Camera, User, X, Plus } from "lucide-react";
+import { ArrowLeft, Loader2, Save, Camera, User, X, Plus, AlertCircle, Phone } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { NotificationPreferences } from "@/components/dashboard/NotificationPreferences";
 import { SearchableSelect } from "@/components/common/SearchableSelect";
+import { useMobileValidation } from "@/hooks/useMobileValidation";
 
 const DEGREE_OPTIONS = [
   "B.Tech", "B.E", "B.Sc", "B.Com", "B.A", "BBA", "BCA", "B.Pharm", "MBBS", "LLB",
@@ -49,6 +50,15 @@ const EditProfile = () => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [customDegree, setCustomDegree] = useState("");
   const [customInterest, setCustomInterest] = useState("");
+  
+  // Mobile validation
+  const { 
+    isChecking: isCheckingMobile, 
+    isDuplicate: isMobileDuplicate, 
+    isValidFormat: isValidMobileFormat,
+    checkMobileExists,
+    normalizeMobile
+  } = useMobileValidation({ excludeUserId: user?.id });
   
   const [form, setForm] = useState({
     full_name: "",
@@ -164,9 +174,19 @@ const EditProfile = () => {
       return;
     }
 
+    // Check for duplicate mobile before saving
+    if (form.mobile_number && isValidMobileFormat(form.mobile_number)) {
+      const exists = await checkMobileExists(form.mobile_number);
+      if (exists) {
+        toast.error("This mobile number is already in use");
+        return;
+      }
+    }
+
     setIsSaving(true);
     try {
       const finalDegree = form.degree === "Other" ? customDegree.trim() : form.degree;
+      const cleanMobile = normalizeMobile(form.mobile_number);
       
       const { error } = await supabase
         .from("profiles")
@@ -178,12 +198,19 @@ const EditProfile = () => {
           course_stream: form.branch.trim() || null,
           current_year: form.current_year ? parseInt(form.current_year) : null,
           year_semester: form.current_year ? `Year ${form.current_year}` : null,
-          mobile_number: form.mobile_number.trim() || null,
+          mobile_number: cleanMobile || null,
           interests: form.interests.length > 0 ? form.interests : null,
         })
         .eq("id", user?.id);
 
-      if (error) throw error;
+      if (error) {
+        // Handle unique constraint violation
+        if (error.code === '23505' || error.message?.includes('unique') || error.message?.includes('duplicate')) {
+          toast.error("This mobile number is already in use");
+          return;
+        }
+        throw error;
+      }
 
       await refreshProfile();
       toast.success("Profile updated successfully!");
@@ -352,15 +379,46 @@ const EditProfile = () => {
                 </div>
 
                 {/* Mobile */}
-                <div>
+                <div className="space-y-2">
                   <Label htmlFor="mobile_number">Mobile Number</Label>
-                  <Input
-                    id="mobile_number"
-                    value={form.mobile_number}
-                    onChange={(e) => setForm(prev => ({ ...prev, mobile_number: e.target.value }))}
-                    placeholder="e.g. +91 9876543210"
-                    className="mt-1"
-                  />
+                  <div className="flex gap-2">
+                    <div className="flex items-center px-3 bg-muted rounded-l-md border border-r-0 border-input">
+                      <Phone className="w-4 h-4 text-muted-foreground mr-1" />
+                      <span className="text-sm text-muted-foreground">+91</span>
+                    </div>
+                    <Input
+                      id="mobile_number"
+                      type="tel"
+                      value={form.mobile_number}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                        setForm(prev => ({ ...prev, mobile_number: value }));
+                        if (value.length === 10) {
+                          checkMobileExists(value);
+                        }
+                      }}
+                      placeholder="10-digit number"
+                      className="rounded-l-none"
+                      maxLength={10}
+                    />
+                  </div>
+                  {form.mobile_number && !isValidMobileFormat(form.mobile_number) && form.mobile_number.length > 0 && (
+                    <p className="text-xs text-destructive">
+                      Please enter a valid 10-digit Indian mobile number
+                    </p>
+                  )}
+                  {form.mobile_number && isValidMobileFormat(form.mobile_number) && isMobileDuplicate && (
+                    <p className="text-xs text-destructive flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      This mobile number is already in use
+                    </p>
+                  )}
+                  {isCheckingMobile && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      Checking availability...
+                    </p>
+                  )}
                 </div>
 
                 {/* Interests */}
@@ -436,7 +494,7 @@ const EditProfile = () => {
                   >
                     Cancel
                   </Button>
-                  <Button type="submit" className="flex-1" disabled={isSaving}>
+                  <Button type="submit" className="flex-1" disabled={isSaving || isMobileDuplicate || isCheckingMobile}>
                     {isSaving ? (
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     ) : (

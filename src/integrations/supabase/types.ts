@@ -1952,6 +1952,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      check_mobile_exists: {
+        Args: { p_exclude_user_id?: string; p_mobile: string }
+        Returns: boolean
+      }
       cleanup_expired_otps: { Args: never; Returns: undefined }
       create_secure_ticket: {
         Args: {
@@ -2137,6 +2141,7 @@ export type Database = {
       }
       is_admin_or_assistant: { Args: { _user_id: string }; Returns: boolean }
       is_email_blocked: { Args: { p_email: string }; Returns: boolean }
+      normalize_mobile_number: { Args: { mobile: string }; Returns: string }
       permanently_delete_user: {
         Args: { target_user_id: string }
         Returns: boolean

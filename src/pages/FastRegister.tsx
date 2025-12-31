@@ -14,6 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchEventById, checkUserRegistration } from "@/services/eventsService";
 import { uploadPaymentScreenshot } from "@/services/registrationService";
+import { useMobileValidation } from "@/hooks/useMobileValidation";
 import { 
   Zap, 
   Calendar, 
@@ -26,7 +27,8 @@ import {
   Upload,
   CreditCard,
   Clock,
-  IndianRupee
+  IndianRupee,
+  AlertCircle
 } from "lucide-react";
 
 type Step = 'auth' | 'phone' | 'payment' | 'register' | 'complete';
@@ -56,6 +58,24 @@ const FastRegister = () => {
   // Payment state for paid events
   const [paymentScreenshot, setPaymentScreenshot] = useState<File | null>(null);
   const [isUploadingPayment, setIsUploadingPayment] = useState(false);
+  
+  // Mobile validation
+  const { 
+    isChecking: isCheckingMobile, 
+    isDuplicate: isMobileDuplicate, 
+    isValidFormat: isValidMobileFormat,
+    checkMobileExists 
+  } = useMobileValidation({ excludeUserId: user?.id });
+
+  // Check mobile when it changes
+  useEffect(() => {
+    if (mobileNumber.length === 10) {
+      const timer = setTimeout(() => {
+        checkMobileExists(mobileNumber);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [mobileNumber, checkMobileExists]);
 
   // Fetch event data
   const { data: event, isLoading: eventLoading } = useQuery({
@@ -145,15 +165,22 @@ const FastRegister = () => {
     }
   };
 
-  const isValidMobileNumber = (number: string) => {
-    return /^\d{10}$/.test(number.replace(/\s/g, ''));
-  };
-
   const handleSavePhone = async () => {
-    if (!isValidMobileNumber(mobileNumber)) {
+    if (!isValidMobileFormat(mobileNumber)) {
       toast({
         title: "Invalid number",
         description: "Please enter a valid 10-digit mobile number",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check for duplicate before saving
+    const exists = await checkMobileExists(mobileNumber);
+    if (exists) {
+      toast({
+        title: "Number already in use",
+        description: "This mobile number is already registered. Please use a different number.",
         variant: "destructive",
       });
       return;
@@ -171,7 +198,18 @@ const FastRegister = () => {
         })
         .eq('id', user!.id);
 
-      if (error) throw error;
+      if (error) {
+        // Handle unique constraint violation
+        if (error.code === '23505' || error.message?.includes('unique') || error.message?.includes('duplicate')) {
+          toast({
+            title: "Number already in use",
+            description: "This mobile number is already registered. Please use a different number.",
+            variant: "destructive",
+          });
+          return;
+        }
+        throw error;
+      }
 
       toast({
         title: "Phone saved!",
@@ -449,15 +487,27 @@ const FastRegister = () => {
                       maxLength={10}
                     />
                   </div>
-                  {mobileNumber && !isValidMobileNumber(mobileNumber) && (
+                  {mobileNumber && !isValidMobileFormat(mobileNumber) && (
                     <p className="text-xs text-destructive">Enter exactly 10 digits</p>
+                  )}
+                  {mobileNumber && isValidMobileFormat(mobileNumber) && isMobileDuplicate && (
+                    <p className="text-xs text-destructive flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      This mobile number is already in use
+                    </p>
+                  )}
+                  {isCheckingMobile && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      Checking...
+                    </p>
                   )}
                 </div>
 
                 <Button
                   className="w-full"
                   onClick={handleSavePhone}
-                  disabled={!isValidMobileNumber(mobileNumber) || isSavingPhone}
+                  disabled={!isValidMobileFormat(mobileNumber) || isMobileDuplicate || isCheckingMobile || isSavingPhone}
                 >
                   {isSavingPhone ? (
                     <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</>
