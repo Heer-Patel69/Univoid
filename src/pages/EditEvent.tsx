@@ -14,7 +14,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchEventById } from "@/services/eventsService";
 import AuthModal from "@/components/auth/AuthModal";
 import { UpsellManager } from "@/components/organizer/UpsellManager";
-import { ArrowLeft, Save, Image, Loader2, Sparkles } from "lucide-react";
+import { DeleteEventDialog } from "@/components/organizer/DeleteEventDialog";
+import { ArrowLeft, Save, Image, Loader2, Sparkles, Clock } from "lucide-react";
 import { useUpiScanner } from "@/hooks/useUpiScanner";
 
 const CATEGORIES = ["Tech", "Cultural", "Sports", "Academic", "Workshop", "Seminar"];
@@ -41,6 +42,7 @@ const EditEvent = () => {
     maps_link: "",
     start_date: "",
     end_date: "",
+    registration_end_date: "",
     description: "",
     terms_conditions: "",
     is_paid: false,
@@ -81,6 +83,7 @@ const EditEvent = () => {
         maps_link: event.maps_link || "",
         start_date: event.start_date ? new Date(event.start_date).toISOString().slice(0, 16) : "",
         end_date: event.end_date ? new Date(event.end_date).toISOString().slice(0, 16) : "",
+        registration_end_date: (event as any).registration_end_date ? new Date((event as any).registration_end_date).toISOString().slice(0, 16) : "",
         description: event.description || "",
         terms_conditions: event.terms_conditions || "",
         is_paid: event.is_paid || false,
@@ -136,6 +139,7 @@ const EditEvent = () => {
           maps_link: formData.is_location_decided ? formData.maps_link : null,
           start_date: formData.start_date,
           end_date: formData.end_date || null,
+          registration_end_date: formData.registration_end_date || null,
           description: formData.description || null,
           terms_conditions: formData.terms_conditions || null,
           is_paid: formData.is_paid,
@@ -270,6 +274,32 @@ const EditEvent = () => {
                   <Label>End Date & Time</Label>
                   <Input type="datetime-local" value={formData.end_date} onChange={(e) => updateForm("end_date", e.target.value)} />
                 </div>
+              </div>
+
+              {/* Registration End Date */}
+              <div className="border rounded-lg p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-muted-foreground" />
+                  <Label className="font-medium">Registration Deadline (Optional)</Label>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  If set, registrations will automatically close after this date. Leave empty to keep registration open until event starts.
+                </p>
+                <Input 
+                  type="datetime-local" 
+                  value={formData.registration_end_date} 
+                  onChange={(e) => updateForm("registration_end_date", e.target.value)}
+                />
+                {formData.registration_end_date && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => updateForm("registration_end_date", "")}
+                    className="text-muted-foreground"
+                  >
+                    Clear deadline
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -406,6 +436,21 @@ const EditEvent = () => {
               </CardContent>
             </Card>
           )}
+
+          {/* Danger Zone */}
+          <Card className="border-destructive/50">
+            <CardHeader>
+              <CardTitle className="text-destructive">Danger Zone</CardTitle>
+              <CardDescription>Irreversible actions for this event</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <DeleteEventDialog 
+                eventId={eventId!} 
+                eventTitle={event.title} 
+                registrationsCount={event.registrations_count}
+              />
+            </CardContent>
+          </Card>
 
           {/* Save Button */}
           <div className="flex justify-end gap-4">

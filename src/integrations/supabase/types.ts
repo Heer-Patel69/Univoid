@@ -403,6 +403,39 @@ export type Database = {
           },
         ]
       }
+      event_delete_log: {
+        Row: {
+          deleted_at: string
+          deleted_by: string
+          event_id: string
+          event_title: string
+          id: string
+          metadata: Json | null
+          organizer_id: string
+          registrations_count: number | null
+        }
+        Insert: {
+          deleted_at?: string
+          deleted_by: string
+          event_id: string
+          event_title: string
+          id?: string
+          metadata?: Json | null
+          organizer_id: string
+          registrations_count?: number | null
+        }
+        Update: {
+          deleted_at?: string
+          deleted_by?: string
+          event_id?: string
+          event_title?: string
+          id?: string
+          metadata?: Json | null
+          organizer_id?: string
+          registrations_count?: number | null
+        }
+        Relationships: []
+      }
       event_form_fields: {
         Row: {
           conditional_logic: Json | null
@@ -877,6 +910,7 @@ export type Database = {
           max_capacity: number | null
           organizer_id: string
           price: number | null
+          registration_end_date: string | null
           registrations_count: number
           start_date: string
           status: Database["public"]["Enums"]["event_status"]
@@ -904,6 +938,7 @@ export type Database = {
           max_capacity?: number | null
           organizer_id: string
           price?: number | null
+          registration_end_date?: string | null
           registrations_count?: number
           start_date: string
           status?: Database["public"]["Enums"]["event_status"]
@@ -931,6 +966,7 @@ export type Database = {
           max_capacity?: number | null
           organizer_id?: string
           price?: number | null
+          registration_end_date?: string | null
           registrations_count?: number
           start_date?: string
           status?: Database["public"]["Enums"]["event_status"]
@@ -2323,6 +2359,7 @@ export type Database = {
       is_admin_or_assistant: { Args: { _user_id: string }; Returns: boolean }
       is_email_blocked: { Args: { p_email: string }; Returns: boolean }
       normalize_mobile_number: { Args: { mobile: string }; Returns: string }
+      permanently_delete_event: { Args: { p_event_id: string }; Returns: Json }
       permanently_delete_user: {
         Args: { target_user_id: string }
         Returns: boolean
@@ -2331,15 +2368,27 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: boolean
       }
-      register_for_event_atomic: {
-        Args: {
-          p_custom_data?: Json
-          p_event_id: string
-          p_payment_screenshot_url?: string
-          p_user_id: string
-        }
-        Returns: Json
-      }
+      register_for_event_atomic:
+        | {
+            Args: {
+              p_custom_data?: Json
+              p_event_id: string
+              p_payment_screenshot_url?: string
+              p_user_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_custom_data?: Json
+              p_event_id: string
+              p_group_size?: number
+              p_is_group_booking?: boolean
+              p_payment_screenshot_url?: string
+              p_user_id: string
+            }
+            Returns: Json
+          }
       secure_check_in: {
         Args: {
           p_device_fingerprint?: string
