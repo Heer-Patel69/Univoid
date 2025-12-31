@@ -13,7 +13,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchEventById } from "@/services/eventsService";
 import AuthModal from "@/components/auth/AuthModal";
-import { ArrowLeft, Save, Image, Loader2 } from "lucide-react";
+import { UpsellManager } from "@/components/organizer/UpsellManager";
+import { ArrowLeft, Save, Image, Loader2, Sparkles } from "lucide-react";
 import { useUpiScanner } from "@/hooks/useUpiScanner";
 
 const CATEGORIES = ["Tech", "Cultural", "Sports", "Academic", "Workshop", "Seminar"];
@@ -389,6 +390,22 @@ const EditEvent = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Upsells Section */}
+          {event.is_paid && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                  Upsells & Offers
+                </CardTitle>
+                <CardDescription>Configure group discounts and add-ons</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <UpsellManager eventId={eventId!} isPaidEvent={true} />
+              </CardContent>
+            </Card>
+          )}
 
           {/* Save Button */}
           <div className="flex justify-end gap-4">

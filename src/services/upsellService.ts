@@ -13,6 +13,10 @@ export interface EventUpsell {
   group_size: number | null;
   is_active: boolean;
   display_order: number;
+  allow_custom_input?: boolean;
+  custom_input_label?: string | null;
+  custom_input_placeholder?: string | null;
+  custom_input_max_length?: number;
 }
 
 export interface UpsellSettings {
@@ -27,6 +31,7 @@ export interface SelectedUpsell {
   upsell: EventUpsell;
   quantity: number;
   totalPrice: number;
+  customInputValue?: string;
 }
 
 export interface RegistrationAddon {
@@ -36,6 +41,7 @@ export interface RegistrationAddon {
   quantity: number;
   unit_price: number;
   total_price: number;
+  custom_input_value?: string | null;
 }
 
 // Fetch upsell settings for an event
@@ -84,6 +90,7 @@ export async function saveRegistrationAddons(
     quantity: item.quantity,
     unit_price: item.upsell.price,
     total_price: item.totalPrice,
+    custom_input_value: item.customInputValue || null,
   }));
 
   const { error } = await supabase
@@ -158,6 +165,10 @@ export async function createEventUpsell(
       max_quantity: upsell.max_quantity || 10,
       group_size: upsell.group_size,
       display_order: upsell.display_order || 0,
+      allow_custom_input: upsell.allow_custom_input || false,
+      custom_input_label: upsell.custom_input_label,
+      custom_input_placeholder: upsell.custom_input_placeholder,
+      custom_input_max_length: upsell.custom_input_max_length || 200,
     })
     .select()
     .single();
@@ -168,6 +179,42 @@ export async function createEventUpsell(
   }
 
   return data as EventUpsell;
+}
+
+// Bulk create upsells for a new event
+export async function createEventUpsellsBulk(
+  eventId: string,
+  upsells: Partial<EventUpsell>[]
+): Promise<boolean> {
+  if (upsells.length === 0) return true;
+
+  const upsellsData = upsells.map((upsell, index) => ({
+    event_id: eventId,
+    upsell_type: upsell.upsell_type || 'addon',
+    name: upsell.name || '',
+    description: upsell.description,
+    price: upsell.price || 0,
+    discount_amount: upsell.discount_amount || 0,
+    min_quantity: upsell.min_quantity || 1,
+    max_quantity: upsell.max_quantity || 10,
+    group_size: upsell.group_size,
+    display_order: upsell.display_order ?? index,
+    allow_custom_input: upsell.allow_custom_input || false,
+    custom_input_label: upsell.custom_input_label,
+    custom_input_placeholder: upsell.custom_input_placeholder,
+    custom_input_max_length: upsell.custom_input_max_length || 200,
+  }));
+
+  const { error } = await supabase
+    .from("event_upsells")
+    .insert(upsellsData);
+
+  if (error) {
+    console.error("Error creating upsells in bulk:", error);
+    return false;
+  }
+
+  return true;
 }
 
 export async function updateEventUpsell(
