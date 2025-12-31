@@ -4,7 +4,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   LayoutDashboard,
   User,
-  FileText,
   BookOpen,
   Calendar,
   Folder,
@@ -16,7 +15,6 @@ import {
   Newspaper,
   Repeat2,
   Ticket,
-  Plus,
   Home,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -54,13 +52,6 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
     { label: "Leaderboard", icon: Trophy, href: "/leaderboard" },
   ];
 
-  // Contribute Items
-  const contributeItems = [
-    { label: "Upload Material", icon: FileText, href: "/upload-material" },
-    { label: "Sell Book", icon: Repeat2, href: "/sell-book" },
-    { label: "Create Project", icon: Folder, href: "/projects/create" },
-    { label: "Post Task", icon: Briefcase, href: "/tasks/create" },
-  ];
 
   const renderNavItem = (item: { label: string; icon: React.ElementType; href: string }) => {
     return (
@@ -154,12 +145,6 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
           </p>
           {browseItems.map(renderNavItem)}
 
-          {/* Contribute Section */}
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mt-6 mb-2 flex items-center gap-1">
-            <Plus className="w-3 h-3" />
-            Contribute
-          </p>
-          {contributeItems.map(renderNavItem)}
 
           {/* Organizer Section */}
           {(isOrganizer || isAdmin) && (
