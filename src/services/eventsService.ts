@@ -16,6 +16,7 @@ export interface Event {
   maps_link: string | null;
   start_date: string;
   end_date: string | null;
+  registration_end_date: string | null;
   is_paid: boolean;
   price: number;
   upi_qr_url: string | null;
@@ -28,6 +29,20 @@ export interface Event {
   views_count: number;
   created_at: string;
   updated_at: string;
+}
+
+// Check if registration is open for an event
+export function isRegistrationOpen(event: Event): boolean {
+  // If event is not published, registration is closed
+  if (event.status !== 'published') return false;
+  
+  // If registration_end_date is set, check if current time is before it
+  if (event.registration_end_date) {
+    return new Date() < new Date(event.registration_end_date);
+  }
+  
+  // If no registration_end_date, registration is open until event starts
+  return new Date() < new Date(event.start_date);
 }
 
 export interface EventRegistration {
