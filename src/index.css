@@ -134,11 +134,17 @@
     @apply border-border;
   }
 
+  html {
+    overflow-x: hidden;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Outfit', system-ui, sans-serif;
     font-feature-settings: "cv11", "ss01";
     position: relative;
+    overflow-x: hidden;
+    max-width: 100%;
   }
 
   /* Global subtle paper texture overlay - applied to body */

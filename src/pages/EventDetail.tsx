@@ -118,14 +118,16 @@ const EventDetail = () => {
 
   if (eventLoading) {
     return (
-      <div className="container mx-auto px-4 py-6">
-        <Skeleton className="h-8 w-32 mb-6" />
-        <div className="grid lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-6">
-            <Skeleton className="aspect-video rounded-3xl" />
-            <Skeleton className="h-10 w-3/4" />
+      <div className="w-full max-w-full px-4 py-6">
+        <div className="container mx-auto">
+          <Skeleton className="h-8 w-32 mb-6" />
+          <div className="grid lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-6">
+              <Skeleton className="aspect-video rounded-3xl" />
+              <Skeleton className="h-10 w-3/4" />
+            </div>
+            <Skeleton className="h-48 rounded-3xl" />
           </div>
-          <Skeleton className="h-48 rounded-3xl" />
         </div>
       </div>
     );
@@ -133,9 +135,11 @@ const EventDetail = () => {
 
   if (!event) {
     return (
-      <div className="container mx-auto px-4 py-20 text-center">
-        <h1 className="text-2xl font-bold mb-4">Event not found</h1>
-        <Link to="/events"><Button>Back to Events</Button></Link>
+      <div className="w-full max-w-full px-4 py-20 text-center">
+        <div className="container mx-auto">
+          <h1 className="text-2xl font-bold mb-4">Event not found</h1>
+          <Link to="/events"><Button>Back to Events</Button></Link>
+        </div>
       </div>
     );
   }
@@ -185,7 +189,8 @@ const EventDetail = () => {
   ) : null;
 
   return (
-    <div className="container mx-auto px-4 py-6 pb-24 md:pb-8">
+    <div className="w-full max-w-full overflow-x-hidden">
+      <div className="container mx-auto px-4 py-6 pb-24 md:pb-8">
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
 
       <PageBreadcrumb 
@@ -363,6 +368,7 @@ const EventDetail = () => {
             </CardContent>
           </Card>
         </div>
+      </div>
       </div>
     </div>
   );
