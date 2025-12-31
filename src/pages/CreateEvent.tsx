@@ -66,6 +66,7 @@ const CreateEvent = () => {
   const [clubConfigs, setClubConfigs] = useState<EventClubConfig[]>([]);
 
   const [flyerFile, setFlyerFile] = useState<File | null>(null);
+  const [flyerError, setFlyerError] = useState<string | null>(null);
   const [qrFile, setQrFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -77,6 +78,61 @@ const CreateEvent = () => {
         updateForm("upi_vpa", upiId);
       }
     }
+  };
+
+  // Validate flyer aspect ratio (4:5)
+  const validateFlyerAspectRatio = (file: File): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const aspectRatio = img.width / img.height;
+        const targetRatio = 4 / 5; // 0.8
+        const tolerance = 0.1; // Allow 10% tolerance
+        const isValid = Math.abs(aspectRatio - targetRatio) <= tolerance;
+        URL.revokeObjectURL(img.src);
+        resolve(isValid);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(img.src);
+        resolve(false);
+      };
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  const handleFlyerChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      setFlyerFile(null);
+      setFlyerError(null);
+      return;
+    }
+
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      setFlyerError('Please upload an image file');
+      setFlyerFile(null);
+      return;
+    }
+
+    // Check file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setFlyerError('Image must be smaller than 10MB');
+      setFlyerFile(null);
+      return;
+    }
+
+    // Validate aspect ratio
+    const isValidRatio = await validateFlyerAspectRatio(file);
+    if (!isValidRatio) {
+      setFlyerError('Image should be 4:5 aspect ratio (e.g., 800x1000, 1080x1350)');
+      // Still allow the file but show warning
+      setFlyerFile(file);
+      return;
+    }
+
+    setFlyerError(null);
+    setFlyerFile(file);
   };
 
   const updateForm = (field: string, value: unknown) => {
@@ -270,13 +326,17 @@ const CreateEvent = () => {
 
                 <div className="space-y-2">
                   <Label>Event Flyer</Label>
-                  <div className="border-2 border-dashed rounded-xl p-4 text-center">
-                    <Input type="file" accept="image/*" onChange={(e) => setFlyerFile(e.target.files?.[0] || null)} className="hidden" id="flyer" />
+                  <p className="text-xs text-muted-foreground">Recommended: 4:5 aspect ratio (e.g., 1080x1350)</p>
+                  <div className={`border-2 border-dashed rounded-xl p-4 text-center ${flyerError ? 'border-yellow-500' : ''}`}>
+                    <Input type="file" accept="image/*" onChange={handleFlyerChange} className="hidden" id="flyer" />
                     <label htmlFor="flyer" className="cursor-pointer flex flex-col items-center gap-2">
                       <Image className="w-8 h-8 text-muted-foreground" />
                       <span className="text-sm text-muted-foreground">{flyerFile ? flyerFile.name : "Upload flyer image"}</span>
                     </label>
                   </div>
+                  {flyerError && (
+                    <p className="text-xs text-yellow-600 dark:text-yellow-400">{flyerError}</p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

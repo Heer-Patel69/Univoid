@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchEventById, checkUserRegistration } from "@/services/eventsService";
+import { uploadPaymentScreenshot } from "@/services/registrationService";
 import { 
   Zap, 
   Calendar, 
@@ -21,10 +22,14 @@ import {
   Phone, 
   CheckCircle, 
   ArrowRight,
-  Ticket
+  Ticket,
+  Upload,
+  CreditCard,
+  Clock,
+  IndianRupee
 } from "lucide-react";
 
-type Step = 'auth' | 'phone' | 'register' | 'complete';
+type Step = 'auth' | 'phone' | 'payment' | 'register' | 'complete';
 
 const GoogleIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -47,6 +52,10 @@ const FastRegister = () => {
   const [isSavingPhone, setIsSavingPhone] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [ticketId, setTicketId] = useState<string | null>(null);
+  
+  // Payment state for paid events
+  const [paymentScreenshot, setPaymentScreenshot] = useState<File | null>(null);
+  const [isUploadingPayment, setIsUploadingPayment] = useState(false);
 
   // Fetch event data
   const { data: event, isLoading: eventLoading } = useQuery({
@@ -71,15 +80,17 @@ const FastRegister = () => {
     if (!user) {
       setStep('auth');
     } else if (!profile?.mobile_number) {
-      // MVP: Only check if phone exists, not verified
       setStep('phone');
     } else if (existingRegistration) {
       setStep('complete');
       fetchTicketId();
+    } else if (event?.is_paid) {
+      // For paid events, go to payment step
+      setStep('payment');
     } else {
       setStep('register');
     }
-  }, [user, profile, authLoading, existingRegistration]);
+  }, [user, profile, authLoading, existingRegistration, event]);
 
   const fetchTicketId = async () => {
     if (!user || !eventId) return;
@@ -92,9 +103,14 @@ const FastRegister = () => {
     if (data) setTicketId(data.id);
   };
 
-  // Progress: 3 steps in MVP (auth, phone, register/complete)
-  const progress = step === 'auth' ? 33 : step === 'phone' ? 66 : 100;
-  const stepNumber = step === 'auth' ? 1 : step === 'phone' ? 2 : 3;
+  // Progress calculation - 4 steps for paid events, 3 for free
+  const isPaidEvent = event?.is_paid;
+  const totalSteps = isPaidEvent ? 4 : 3;
+  const stepNumber = step === 'auth' ? 1 
+    : step === 'phone' ? 2 
+    : step === 'payment' ? 3 
+    : isPaidEvent ? 4 : 3;
+  const progress = (stepNumber / totalSteps) * 100;
 
   const handleGoogleSignIn = async () => {
     if (!eventId) return;
@@ -130,7 +146,6 @@ const FastRegister = () => {
   };
 
   const isValidMobileNumber = (number: string) => {
-    // MVP: 10 digits, numbers only
     return /^\d{10}$/.test(number.replace(/\s/g, ''));
   };
 
@@ -146,14 +161,13 @@ const FastRegister = () => {
 
     setIsSavingPhone(true);
     try {
-      // MVP: Save phone number and mark as quick registration profile
       const { error } = await supabase
         .from('profiles')
         .update({ 
           mobile_number: mobileNumber.replace(/\s/g, ''),
-          phone_verified: false, // Mark for future OTP integration
-          profile_type: 'quick', // Mark as quick registration user
-          onboarding_status: 'partial', // Partial profile - event registration only
+          phone_verified: false,
+          profile_type: 'quick',
+          onboarding_status: 'partial',
         })
         .eq('id', user!.id);
 
@@ -165,7 +179,13 @@ const FastRegister = () => {
       });
       
       if (refreshProfile) await refreshProfile();
-      setStep('register');
+      
+      // Go to payment step for paid events, register for free
+      if (event?.is_paid) {
+        setStep('payment');
+      } else {
+        setStep('register');
+      }
     } catch (error: any) {
       toast({
         title: "Error",
@@ -177,16 +197,73 @@ const FastRegister = () => {
     }
   };
 
+  const handlePaymentFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file",
+          description: "Please upload an image file",
+          variant: "destructive",
+        });
+        return;
+      }
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please upload an image smaller than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      setPaymentScreenshot(file);
+    }
+  };
+
+  const handleProceedToRegister = () => {
+    if (!paymentScreenshot && event?.is_paid) {
+      toast({
+        title: "Payment screenshot required",
+        description: "Please upload your payment screenshot to proceed",
+        variant: "destructive",
+      });
+      return;
+    }
+    setStep('register');
+  };
+
   const handleQuickRegister = async () => {
     if (!user || !eventId || !event) return;
 
     setIsRegistering(true);
     try {
+      let screenshotUrl: string | null = null;
+
+      // Upload payment screenshot for paid events
+      if (event.is_paid && paymentScreenshot) {
+        setIsUploadingPayment(true);
+        try {
+          screenshotUrl = await uploadPaymentScreenshot(paymentScreenshot, user.id, eventId);
+        } catch (uploadError: any) {
+          toast({
+            title: "Upload failed",
+            description: "Failed to upload payment screenshot. Please try again.",
+            variant: "destructive",
+          });
+          setIsUploadingPayment(false);
+          setIsRegistering(false);
+          return;
+        }
+        setIsUploadingPayment(false);
+      }
+
       const { data, error } = await supabase.rpc('register_for_event_atomic', {
         p_event_id: eventId,
         p_user_id: user.id,
         p_custom_data: {},
-        p_payment_screenshot_url: null
+        p_payment_screenshot_url: screenshotUrl
       });
 
       if (error) throw error;
@@ -194,11 +271,19 @@ const FastRegister = () => {
       const result = data as { success: boolean; registration_id?: string; ticket_id?: string; error?: string };
       
       if (result.success) {
-        toast({
-          title: "Registration Complete! 🎉",
-          description: "Your ticket has been generated",
-        });
-        setTicketId(result.ticket_id || null);
+        // Different toast messages for paid vs free events
+        if (event.is_paid) {
+          toast({
+            title: "Registration Submitted! ⏳",
+            description: "Awaiting organizer approval. You'll get a ticket once approved.",
+          });
+        } else {
+          toast({
+            title: "Registration Complete! 🎉",
+            description: "Your ticket has been generated",
+          });
+          setTicketId(result.ticket_id || null);
+        }
         await refetchRegistration();
         setStep('complete');
       } else {
@@ -247,13 +332,24 @@ const FastRegister = () => {
     );
   }
 
+  // Check if registration is pending payment approval for paid events
+  const isPendingApproval = existingRegistration && 
+    event.is_paid && 
+    existingRegistration.payment_status === 'pending';
+
+  const isApproved = existingRegistration && 
+    existingRegistration.payment_status === 'approved';
+
+  const isRejected = existingRegistration && 
+    existingRegistration.payment_status === 'rejected';
+
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
       {/* Progress */}
       <div className="w-full max-w-md mb-4">
         <Progress value={progress} className="h-2" />
         <p className="text-xs text-muted-foreground text-center mt-2">
-          Step {stepNumber} of 3
+          Step {stepNumber} of {totalSteps}
         </p>
       </div>
 
@@ -277,6 +373,17 @@ const FastRegister = () => {
               </div>
             )}
           </div>
+          {/* Price badge */}
+          <div className="mt-3">
+            <Badge variant={event.is_paid ? "secondary" : "outline"} className="text-primary-foreground border-primary-foreground/30">
+              {event.is_paid ? (
+                <span className="flex items-center gap-1">
+                  <IndianRupee className="w-3 h-3" />
+                  {event.price}
+                </span>
+              ) : "Free"}
+            </Badge>
+          </div>
         </div>
 
         <CardContent className="p-6">
@@ -286,7 +393,7 @@ const FastRegister = () => {
               <div className="text-center">
                 <h2 className="text-lg font-semibold mb-2">Sign in to Register</h2>
                 <p className="text-sm text-muted-foreground">
-                  Quick registration in 10 seconds — no password needed
+                  Quick registration in seconds — no password needed
                 </p>
               </div>
 
@@ -313,7 +420,7 @@ const FastRegister = () => {
             </div>
           )}
 
-          {/* Step: Phone Number (MVP - No OTP) */}
+          {/* Step: Phone Number */}
           {step === 'phone' && (
             <div className="space-y-6">
               <div className="text-center">
@@ -362,6 +469,92 @@ const FastRegister = () => {
             </div>
           )}
 
+          {/* Step: Payment (for paid events only) */}
+          {step === 'payment' && event.is_paid && (
+            <div className="space-y-6">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <CreditCard className="w-6 h-6 text-primary" />
+                </div>
+                <h2 className="text-lg font-semibold mb-2">Complete Payment</h2>
+                <p className="text-sm text-muted-foreground">
+                  Pay ₹{event.price} and upload screenshot for verification
+                </p>
+              </div>
+
+              {/* Payment Instructions */}
+              <div className="bg-muted rounded-xl p-4 space-y-4">
+                <p className="text-sm font-medium text-center">Scan QR or use UPI ID to pay</p>
+                
+                {/* UPI QR Code */}
+                {event.upi_qr_url && (
+                  <div className="bg-white p-4 rounded-xl w-fit mx-auto">
+                    <img 
+                      src={event.upi_qr_url} 
+                      alt="UPI QR Code" 
+                      className="w-48 h-48 object-contain"
+                    />
+                  </div>
+                )}
+                
+                {/* UPI ID */}
+                {event.upi_vpa && (
+                  <div className="text-center">
+                    <p className="text-xs text-muted-foreground mb-1">UPI ID</p>
+                    <code className="bg-background px-3 py-1.5 rounded text-sm font-mono">
+                      {event.upi_vpa}
+                    </code>
+                  </div>
+                )}
+
+                {/* Amount */}
+                <div className="flex items-center justify-center gap-2 text-lg font-bold">
+                  <IndianRupee className="w-5 h-5" />
+                  <span>{event.price}</span>
+                </div>
+              </div>
+
+              {/* Upload Screenshot */}
+              <div className="space-y-2">
+                <Label>Upload Payment Screenshot *</Label>
+                <div className="border-2 border-dashed rounded-xl p-6 text-center">
+                  <Input 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={handlePaymentFileChange} 
+                    className="hidden" 
+                    id="payment-screenshot" 
+                  />
+                  <label htmlFor="payment-screenshot" className="cursor-pointer flex flex-col items-center gap-3">
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                      paymentScreenshot ? 'bg-green-100 dark:bg-green-900/30' : 'bg-muted'
+                    }`}>
+                      {paymentScreenshot ? (
+                        <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
+                      ) : (
+                        <Upload className="w-6 h-6 text-muted-foreground" />
+                      )}
+                    </div>
+                    <span className="text-sm text-muted-foreground">
+                      {paymentScreenshot ? paymentScreenshot.name : "Click to upload screenshot"}
+                    </span>
+                  </label>
+                </div>
+                <p className="text-xs text-muted-foreground text-center">
+                  Max 5MB. Supports JPG, PNG, WEBP
+                </p>
+              </div>
+
+              <Button
+                className="w-full"
+                onClick={handleProceedToRegister}
+                disabled={!paymentScreenshot}
+              >
+                Continue <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          )}
+
           {/* Step: Confirm Registration */}
           {step === 'register' && (
             <div className="space-y-6">
@@ -369,9 +562,14 @@ const FastRegister = () => {
                 <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
                   <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
                 </div>
-                <h2 className="text-lg font-semibold mb-2">Ready to Register!</h2>
+                <h2 className="text-lg font-semibold mb-2">
+                  {event.is_paid ? "Submit Registration" : "Ready to Register!"}
+                </h2>
                 <p className="text-sm text-muted-foreground">
-                  Confirm your registration for this event
+                  {event.is_paid 
+                    ? "Review details and submit for approval" 
+                    : "Confirm your registration for this event"
+                  }
                 </p>
               </div>
 
@@ -407,17 +605,39 @@ const FastRegister = () => {
                     {event.is_paid ? `₹${event.price}` : "Free"}
                   </Badge>
                 </div>
+                {event.is_paid && paymentScreenshot && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Payment</span>
+                    <span className="text-green-600 dark:text-green-400 flex items-center gap-1 text-xs">
+                      <CheckCircle className="w-3 h-3" /> Screenshot uploaded
+                    </span>
+                  </div>
+                )}
               </div>
+
+              {event.is_paid && (
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-3">
+                  <p className="text-xs text-yellow-700 dark:text-yellow-300 flex items-start gap-2">
+                    <Clock className="w-4 h-4 mt-0.5 shrink-0" />
+                    <span>
+                      Your ticket will be generated after the organizer approves your payment. 
+                      You'll receive a notification once approved.
+                    </span>
+                  </p>
+                </div>
+              )}
 
               <Button
                 className="w-full h-12"
                 onClick={handleQuickRegister}
-                disabled={isRegistering}
+                disabled={isRegistering || isUploadingPayment}
               >
-                {isRegistering ? (
+                {isUploadingPayment ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Uploading...</>
+                ) : isRegistering ? (
                   <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Registering...</>
                 ) : (
-                  <>Confirm Registration <ArrowRight className="w-4 h-4 ml-2" /></>
+                  <>{event.is_paid ? "Submit for Approval" : "Confirm Registration"} <ArrowRight className="w-4 h-4 ml-2" /></>
                 )}
               </Button>
             </div>
@@ -427,17 +647,44 @@ const FastRegister = () => {
           {step === 'complete' && (
             <div className="space-y-6">
               <div className="text-center">
-                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Ticket className="w-8 h-8 text-green-600 dark:text-green-400" />
-                </div>
-                <h2 className="text-xl font-bold mb-2">You're Registered! 🎉</h2>
-                <p className="text-sm text-muted-foreground">
-                  Your ticket has been generated
-                </p>
+                {isPendingApproval ? (
+                  <>
+                    <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Clock className="w-8 h-8 text-yellow-600 dark:text-yellow-400" />
+                    </div>
+                    <h2 className="text-xl font-bold mb-2">Payment Pending ⏳</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Awaiting organizer approval. You'll get a notification and ticket once approved.
+                    </p>
+                  </>
+                ) : isRejected ? (
+                  <>
+                    <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Clock className="w-8 h-8 text-red-600 dark:text-red-400" />
+                    </div>
+                    <h2 className="text-xl font-bold mb-2">Payment Rejected</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Your payment was not approved. Please contact the organizer for more details.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Ticket className="w-8 h-8 text-green-600 dark:text-green-400" />
+                    </div>
+                    <h2 className="text-xl font-bold mb-2">You're Registered! 🎉</h2>
+                    <p className="text-sm text-muted-foreground">
+                      {isApproved || !event.is_paid 
+                        ? "Your ticket has been generated" 
+                        : "Your registration is confirmed"
+                      }
+                    </p>
+                  </>
+                )}
               </div>
 
               <div className="space-y-3">
-                {ticketId && (
+                {(isApproved || !event.is_paid) && ticketId && (
                   <Link to={`/my-tickets`} className="block">
                     <Button className="w-full" size="lg">
                       View My Ticket

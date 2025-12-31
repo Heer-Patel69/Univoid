@@ -2,14 +2,41 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { X, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+const DISMISSED_KEY = 'profile_completion_banner_dismissed';
 
 const ProfileCompletionBanner = () => {
   const { profile } = useAuth();
   const [dismissed, setDismissed] = useState(false);
 
-  // Don't show if profile is complete or banner was dismissed
-  if (!profile || profile.profile_complete || dismissed) {
+  // Check localStorage on mount
+  useEffect(() => {
+    const wasDismissed = localStorage.getItem(DISMISSED_KEY);
+    if (wasDismissed) {
+      setDismissed(true);
+    }
+  }, []);
+
+  const handleDismiss = () => {
+    setDismissed(true);
+    localStorage.setItem(DISMISSED_KEY, 'true');
+  };
+
+  // Don't show if:
+  // - No profile
+  // - Banner was dismissed
+  // - Profile is complete (onboarding_status = 'complete')
+  // - User is not a quick registration user (profile_type !== 'quick')
+  if (!profile || dismissed) {
+    return null;
+  }
+
+  // Only show for quick registration users who haven't completed onboarding
+  const isQuickUser = profile.profile_type === 'quick';
+  const isIncomplete = profile.onboarding_status !== 'complete';
+  
+  if (!isQuickUser || !isIncomplete) {
     return null;
   }
 
@@ -39,7 +66,7 @@ const ProfileCompletionBanner = () => {
             size="icon"
             variant="ghost"
             className="h-8 w-8"
-            onClick={() => setDismissed(true)}
+            onClick={handleDismiss}
           >
             <X className="w-4 h-4" />
           </Button>
