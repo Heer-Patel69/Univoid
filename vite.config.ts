@@ -9,10 +9,19 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
-  plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+  plugins: [
+    react(),
+    // Component tagger ONLY in development - never in production
+    mode === "development" && componentTagger(),
+  ].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+  },
+  define: {
+    // Build-time flag to completely exclude editor code in production
+    __ENABLE_EDITOR__: mode !== "production",
+    __IS_PRODUCTION__: mode === "production",
   },
 }));
