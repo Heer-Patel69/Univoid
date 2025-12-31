@@ -63,42 +63,51 @@ export async function getReports(status?: ReportStatus): Promise<Report[]> {
 
   const { data, error } = await query;
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error fetching reports:', error);
+    return []; // Return empty array instead of throwing
+  }
 
   const reports = data || [];
 
   // Fetch additional info for each report
   for (const report of reports) {
-    // Get reporter name
-    const { data: reporterData } = await supabase.rpc('get_contributor_name', {
-      user_id: report.reporter_id,
-    });
-    (report as Report).reporter_name = reporterData || 'Anonymous';
+    try {
+      // Get reporter name
+      const { data: reporterData } = await supabase.rpc('get_contributor_name', {
+        user_id: report.reporter_id,
+      });
+      (report as Report).reporter_name = reporterData || 'Anonymous';
 
-    // Get reported user name
-    const { data: reportedData } = await supabase.rpc('get_contributor_name', {
-      user_id: report.reported_user_id,
-    });
-    (report as Report).reported_user_name = reportedData || 'Anonymous';
+      // Get reported user name
+      const { data: reportedData } = await supabase.rpc('get_contributor_name', {
+        user_id: report.reported_user_id,
+      });
+      (report as Report).reported_user_name = reportedData || 'Anonymous';
 
-    // Get content title based on type
-    if (report.content_type !== 'profiles') {
-      let contentTitle = 'Unknown';
-      
-      if (report.content_type === 'materials') {
-        const { data } = await supabase.from('materials').select('title').eq('id', report.content_id).maybeSingle();
-        contentTitle = data?.title || 'Unknown';
-      } else if (report.content_type === 'news') {
-        const { data } = await supabase.from('news').select('title').eq('id', report.content_id).maybeSingle();
-        contentTitle = data?.title || 'Unknown';
-      } else if (report.content_type === 'books') {
-        const { data } = await supabase.from('books').select('title').eq('id', report.content_id).maybeSingle();
-        contentTitle = data?.title || 'Unknown';
+      // Get content title based on type
+      if (report.content_type !== 'profiles') {
+        let contentTitle = 'Unknown';
+        
+        if (report.content_type === 'materials') {
+          const { data } = await supabase.from('materials').select('title').eq('id', report.content_id).maybeSingle();
+          contentTitle = data?.title || 'Unknown';
+        } else if (report.content_type === 'news') {
+          const { data } = await supabase.from('news').select('title').eq('id', report.content_id).maybeSingle();
+          contentTitle = data?.title || 'Unknown';
+        } else if (report.content_type === 'books') {
+          const { data } = await supabase.from('books').select('title').eq('id', report.content_id).maybeSingle();
+          contentTitle = data?.title || 'Unknown';
+        }
+        
+        (report as Report).content_title = contentTitle;
+      } else {
+        (report as Report).content_title = (report as Report).reported_user_name;
       }
-      
-      (report as Report).content_title = contentTitle;
-    } else {
-      (report as Report).content_title = (report as Report).reported_user_name;
+    } catch {
+      (report as Report).reporter_name = 'Anonymous';
+      (report as Report).reported_user_name = 'Anonymous';
+      (report as Report).content_title = 'Unknown';
     }
   }
 

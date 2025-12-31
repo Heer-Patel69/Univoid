@@ -15,7 +15,10 @@ export async function getContactMessages(): Promise<ContactMessage[]> {
     .select('*')
     .order('created_at', { ascending: false });
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error fetching contact messages:', error);
+    return []; // Return empty array instead of throwing
+  }
   return data || [];
 }
 

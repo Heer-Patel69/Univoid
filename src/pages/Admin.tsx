@@ -128,20 +128,8 @@ const Admin = () => {
   const fetchAllData = useCallback(async () => {
     setLoadError(null);
     try {
-      const [
-        materialsData,
-        newsData,
-        booksData,
-        usersData,
-        reportsData,
-        messagesData,
-        contentCounts,
-        pendingCountsData,
-        unreadCount,
-        organizerAppsData,
-        eventsData,
-        registrationsData,
-      ] = await Promise.all([
+      // Use Promise.allSettled to prevent one failure from crashing all requests
+      const results = await Promise.allSettled([
         getAllContent('materials'),
         getAllContent('news'),
         getAllContent('books'),
@@ -156,21 +144,41 @@ const Admin = () => {
         supabase.from('event_registrations').select('*, event:events(title)').order('created_at', { ascending: false }).limit(100),
       ]);
       
+      // Extract values safely, using empty defaults for rejected promises
+      const materialsData = results[0].status === 'fulfilled' ? results[0].value : [];
+      const newsData = results[1].status === 'fulfilled' ? results[1].value : [];
+      const booksData = results[2].status === 'fulfilled' ? results[2].value : [];
+      const usersData = results[3].status === 'fulfilled' ? results[3].value : [];
+      const reportsData = results[4].status === 'fulfilled' ? results[4].value : [];
+      const messagesData = results[5].status === 'fulfilled' ? results[5].value : [];
+      const contentCounts = results[6].status === 'fulfilled' ? results[6].value : { materials: 0, news: 0, books: 0, users: 0 };
+      const pendingCountsData = results[7].status === 'fulfilled' ? results[7].value : { materials: 0, news: 0, books: 0 };
+      const unreadCount = results[8].status === 'fulfilled' ? results[8].value : 0;
+      const organizerAppsResult = results[9].status === 'fulfilled' ? results[9].value : { data: [] };
+      const eventsResult = results[10].status === 'fulfilled' ? results[10].value : { data: [] };
+      const registrationsResult = results[11].status === 'fulfilled' ? results[11].value : { data: [] };
+      
       setAllMaterials(materialsData as ContentItem[]);
       setAllNews(newsData as ContentItem[]);
       setAllBooks(booksData as ContentItem[]);
       setAllUsers(usersData as UserItem[]);
       setReports(reportsData);
       setContactMessages(messagesData);
-      setCounts({ ...contentCounts, events: eventsData.data?.length || 0 });
+      setCounts({ ...contentCounts, events: eventsResult.data?.length || 0 });
       setPendingCounts(pendingCountsData);
       setReportCount(reportsData.length);
       setUnreadMessagesCount(unreadCount);
-      setOrganizerApps(organizerAppsData.data || []);
-      setOrganizerAppsCount((organizerAppsData.data || []).length);
-      setAllEvents(eventsData.data || []);
-      setAllRegistrations(registrationsData.data || []);
-      setEventsCount(eventsData.data?.length || 0);
+      setOrganizerApps(organizerAppsResult.data || []);
+      setOrganizerAppsCount((organizerAppsResult.data || []).length);
+      setAllEvents(eventsResult.data || []);
+      setAllRegistrations(registrationsResult.data || []);
+      setEventsCount(eventsResult.data?.length || 0);
+      
+      // Log any failures for debugging
+      const failures = results.filter(r => r.status === 'rejected');
+      if (failures.length > 0) {
+        console.warn('Some admin data fetches failed:', failures);
+      }
     } catch (error) {
       console.error('Error fetching admin data:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
