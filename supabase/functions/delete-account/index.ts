@@ -13,7 +13,15 @@ Deno.serve(async (req) => {
   const logs: string[] = [];
   const log = (message: string) => {
     console.log(message);
-    logs.push(message);
+    logs.push(`${new Date().toISOString()}: ${message}`);
+  };
+
+  // ALWAYS return 200, use success flag in response
+  const respond = (success: boolean, message: string, extra: Record<string, unknown> = {}) => {
+    return new Response(
+      JSON.stringify({ success, message, logs, ...extra }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   };
 
   try {
@@ -22,18 +30,20 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       log("ERROR: Missing authorization header");
-      return new Response(
-        JSON.stringify({ error: "Missing authorization header", logs }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return respond(false, "Missing authorization header");
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
 
-    // Create client with user's token to get their ID
-    log("Verifying user token");
+    if (!supabaseUrl || !supabaseServiceKey || !supabaseAnonKey) {
+      log("ERROR: Missing environment variables");
+      return respond(false, "Server configuration error");
+    }
+
+    // Step 1: Verify user token using anon key
+    log("Step 1: Verifying user token");
     const userClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -42,84 +52,112 @@ Deno.serve(async (req) => {
     
     if (userError || !user) {
       log(`ERROR: Invalid token - ${userError?.message || 'No user found'}`);
-      return new Response(
-        JSON.stringify({ error: "Invalid or expired token", logs }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return respond(false, "Invalid or expired token");
     }
 
-    log(`User verified: ${user.id} (${user.email})`);
+    const userId = user.id;
+    const userEmail = user.email;
+    log(`User verified: ${userId} (${userEmail})`);
 
-    // Use service role client for deletion operations
-    const adminClient = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Step 1: Delete all user data using the database function
-    log("Step 1: Deleting user data via permanently_delete_user function");
-    const { data: deleteResult, error: deleteDataError } = await adminClient.rpc("permanently_delete_user", {
-      target_user_id: user.id,
+    // Create admin client with service role for all operations
+    const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
     });
 
+    // Step 2: Check if user profile exists (idempotency check)
+    log("Step 2: Checking if user exists");
+    const { data: profile, error: profileError } = await adminClient
+      .from("profiles")
+      .select("id")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (profileError) {
+      log(`Warning: Could not check profile - ${profileError.message}`);
+    }
+
+    if (!profile) {
+      log("User profile not found - may already be deleted, checking auth");
+      
+      // Try to delete from auth anyway (idempotent)
+      try {
+        const { error: authCheckError } = await adminClient.auth.admin.deleteUser(userId);
+        if (authCheckError && !authCheckError.message.includes("not found")) {
+          log(`Auth deletion returned: ${authCheckError.message}`);
+        }
+      } catch (e) {
+        log(`Auth check exception: ${e}`);
+      }
+      
+      return respond(true, "Account already deleted or not found");
+    }
+
+    // Step 3: Delete all user data using the admin function
+    log("Step 3: Deleting all user data via permanently_delete_user_admin");
+    const { data: deleteResult, error: deleteDataError } = await adminClient.rpc(
+      "permanently_delete_user_admin",
+      { target_user_id: userId }
+    );
+
     if (deleteDataError) {
-      log(`ERROR in permanently_delete_user: ${deleteDataError.message}`);
-      log(`Error details: ${JSON.stringify(deleteDataError)}`);
-      return new Response(
-        JSON.stringify({ 
-          error: "Failed to delete user data", 
-          details: deleteDataError.message,
-          logs 
-        }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      log(`ERROR in data deletion: ${deleteDataError.message}`);
+      log(`Error code: ${deleteDataError.code || 'N/A'}`);
+      return respond(false, "Failed to delete user data", { 
+        error_code: deleteDataError.code,
+        error_detail: deleteDataError.message 
+      });
     }
 
-    log(`User data deletion result: ${JSON.stringify(deleteResult)}`);
+    if (deleteResult === false) {
+      log("WARNING: Delete function returned false, but continuing");
+    } else {
+      log("User data deleted successfully");
+    }
 
-    // Step 2: Sign out all sessions for this user
-    log("Step 2: Signing out all user sessions");
+    // Step 4: Sign out all sessions
+    log("Step 4: Signing out all user sessions");
     try {
-      await adminClient.auth.admin.signOut(user.id, 'global');
-      log("All sessions signed out successfully");
-    } catch (signOutError: any) {
-      // This is non-critical, continue with deletion
-      log(`Warning: Could not sign out sessions - ${signOutError?.message || 'Unknown error'}`);
+      await adminClient.auth.admin.signOut(userId, 'global');
+      log("All sessions signed out");
+    } catch (signOutError: unknown) {
+      const errMsg = signOutError instanceof Error ? signOutError.message : 'Unknown';
+      log(`Warning: Session signout issue - ${errMsg} (non-critical)`);
     }
 
-    // Step 3: Delete the auth user using admin API
-    log("Step 3: Deleting auth user record");
-    const { error: authDeleteError } = await adminClient.auth.admin.deleteUser(user.id);
+    // Step 5: Delete the auth user
+    log("Step 5: Deleting auth user record");
+    const { error: authDeleteError } = await adminClient.auth.admin.deleteUser(userId);
 
     if (authDeleteError) {
-      log(`ERROR deleting auth user: ${authDeleteError.message}`);
-      return new Response(
-        JSON.stringify({ 
-          error: "Failed to delete authentication record", 
-          details: authDeleteError.message,
-          logs 
-        }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      // Check if already deleted
+      if (authDeleteError.message.includes("not found") || authDeleteError.message.includes("User not found")) {
+        log("Auth user already deleted");
+      } else {
+        log(`ERROR deleting auth user: ${authDeleteError.message}`);
+        return respond(false, "Failed to delete authentication record", {
+          error_detail: authDeleteError.message
+        });
+      }
+    } else {
+      log("Auth user deleted successfully");
     }
 
-    log("Auth user deleted successfully");
-    log("Account deletion completed successfully");
+    log("=== ACCOUNT DELETION COMPLETED SUCCESSFULLY ===");
+    return respond(true, "Account permanently deleted");
 
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: "Account permanently deleted",
-        logs 
-      }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errMsg = error instanceof Error ? error.message : 'Unknown error';
+    const errStack = error instanceof Error ? error.stack : undefined;
     console.error("Delete account error:", error);
-    return new Response(
-      JSON.stringify({ 
-        error: "Internal server error", 
-        details: error?.message || 'Unknown error',
-        logs 
-      }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    log(`FATAL ERROR: ${errMsg}`);
+    if (errStack) {
+      log(`Stack: ${errStack.substring(0, 500)}`);
+    }
+    
+    // Still return 200, but with success=false
+    return respond(false, "Internal server error", { error_detail: errMsg });
   }
 });

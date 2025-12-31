@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
-import { useNavigate, Link, useOutletContext } from "react-router-dom";
+import { useNavigate, Link, useOutletContext, useSearchParams } from "react-router-dom";
 import { BottomNav } from "@/components/layout/BottomNav";
 import ReportButton from "@/components/reports/ReportButton";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { getDisplayCategory } from "@/lib/bookCategorizer";
 import { getListingType } from "@/lib/whatsappContact";
 import { supabase } from "@/integrations/supabase/client";
+import SEOHead from "@/components/common/SEOHead";
 
 const LISTING_LABELS: Record<string, string> = {
   sell: 'For Sale',
@@ -210,6 +211,12 @@ const Books = () => {
 
   return (
     <div className="pb-20 md:pb-0">
+      <SEOHead
+        title="Book Exchange - Buy, Sell, Rent Textbooks | UniVoid"
+        description="Buy, sell, rent, or exchange textbooks with fellow students. Find affordable academic books, competitive exam guides, and more."
+        url="/books"
+        keywords={['textbooks', 'buy books', 'sell books', 'book exchange', 'student books', 'UniVoid']}
+      />
       <main className="py-10 md:py-14">
         <div className="container-wide">
           {/* Header */}

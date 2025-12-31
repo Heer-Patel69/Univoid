@@ -2146,6 +2146,10 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: boolean
       }
+      permanently_delete_user_admin: {
+        Args: { target_user_id: string }
+        Returns: boolean
+      }
       register_for_event_atomic: {
         Args: {
           p_custom_data?: Json

@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, memo, useEffect } from "react";
-import { useNavigate, useOutletContext } from "react-router-dom";
+import { useNavigate, useOutletContext, useSearchParams } from "react-router-dom";
 import { BottomNav } from "@/components/layout/BottomNav";
 import EnhancedMaterialPreview from "@/components/materials/EnhancedMaterialPreview";
 import MaterialCard from "@/components/materials/MaterialCard";
@@ -20,6 +20,7 @@ import { Material } from "@/types/database";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import SEOHead from "@/components/common/SEOHead";
 
 interface LayoutContext {
   onAuthClick?: () => void;
@@ -69,8 +70,43 @@ const Materials = () => {
   const { canDownload } = useVerification();
   const { isLowEnd } = useDeviceCapability();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const context = useOutletContext<LayoutContext>();
-  const [filters, setFilters] = useState<MaterialFiltersState>(initialFilters);
+  
+  // Get filter values from URL for SEO
+  const urlSubject = searchParams.get('subject');
+  const urlCourse = searchParams.get('course');
+  const urlBranch = searchParams.get('branch');
+  
+  const [filters, setFilters] = useState<MaterialFiltersState>(() => ({
+    ...initialFilters,
+    subject: urlSubject || '',
+    course: urlCourse || '',
+    branch: urlBranch || '',
+  }));
+  
+  // Generate dynamic SEO meta data
+  const seoData = useMemo(() => {
+    const parts: string[] = [];
+    if (urlSubject) parts.push(urlSubject);
+    if (urlCourse) parts.push(urlCourse);
+    if (urlBranch) parts.push(urlBranch);
+    
+    if (parts.length > 0) {
+      const filterText = parts.join(' - ');
+      return {
+        title: `${filterText} Study Materials | UniVoid`,
+        description: `Download free ${filterText} notes, previous year papers, and study guides. Shared by students for students.`,
+        keywords: [...parts, 'notes', 'pdf', 'study material', 'free download', 'UniVoid'],
+      };
+    }
+    
+    return {
+      title: 'Study Materials - Notes, Papers & Resources | UniVoid',
+      description: 'Access thousands of free study materials, notes, previous year papers, and resources shared by students. Download PDF notes for BTech, BCA, MBA, and more.',
+      keywords: ['study materials', 'notes pdf', 'previous year papers', 'free download', 'BTech notes', 'UniVoid'],
+    };
+  }, [urlSubject, urlCourse, urlBranch]);
   const [previewMaterial, setPreviewMaterial] = useState<Material | null>(null);
   const [page, setPage] = useState(0);
   // SessionStorage cache key and TTL (5 minutes)
@@ -420,6 +456,28 @@ const Materials = () => {
 
   return (
     <div className="pb-20 md:pb-0">
+      <SEOHead
+        title={seoData.title}
+        description={seoData.description}
+        url="/materials"
+        keywords={seoData.keywords}
+        structuredData={{
+          "@type": "CollectionPage",
+          "name": seoData.title,
+          "description": seoData.description,
+          "url": "https://univoid.tech/materials",
+          "mainEntity": {
+            "@type": "ItemList",
+            "numberOfItems": allMaterials.length,
+            "itemListElement": allMaterials.slice(0, 10).map((m, i) => ({
+              "@type": "ListItem",
+              "position": i + 1,
+              "url": `https://univoid.tech/materials/${m.id}`,
+              "name": m.title,
+            })),
+          },
+        }}
+      />
       <main className="py-10 md:py-14">
         <div className="container-wide">
           {/* Header - Memoized */}
