@@ -65,3 +65,6 @@ verify_jwt = true
 
 [functions.sitemap]
 verify_jwt = false
+
+[functions.prerender]
+verify_jwt = false
