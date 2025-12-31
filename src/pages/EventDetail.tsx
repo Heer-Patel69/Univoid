@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format, isPast } from "date-fns";
@@ -23,6 +23,15 @@ import SEOHead from "@/components/common/SEOHead";
 import DynamicRegistrationForm from "@/components/events/DynamicRegistrationForm";
 import ClubMembershipCheck from "@/components/events/ClubMembershipCheck";
 import QuickRegisterButton from "@/components/events/QuickRegisterButton";
+import UpsellScreen from "@/components/events/UpsellScreen";
+import { 
+  fetchEventUpsells, 
+  fetchUpsellSettings,
+  type EventUpsell,
+  type SelectedUpsell,
+  calculateTotalWithUpsells,
+  saveRegistrationAddons
+} from "@/services/upsellService";
 import { Calendar, MapPin, Users, IndianRupee, ExternalLink, Clock, Share2, CheckCircle, AlertCircle, Upload, Eye, Loader2 } from "lucide-react";
 
 const EventDetail = () => {
@@ -34,6 +43,12 @@ const EventDetail = () => {
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [paymentScreenshot, setPaymentScreenshot] = useState<File | null>(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  
+  // Upsell flow state
+  const [bookingStep, setBookingStep] = useState<"form" | "upsells" | "payment">("form");
+  const [groupSize, setGroupSize] = useState(1);
+  const [selectedUpsells, setSelectedUpsells] = useState<SelectedUpsell[]>([]);
+  const [hasSeenUpsells, setHasSeenUpsells] = useState(false);
   
   // Club membership state
   const [selectedPrice, setSelectedPrice] = useState<number | null>(null);
@@ -68,6 +83,30 @@ const EventDetail = () => {
     spotsRemaining 
   } = useRealtimeCapacity(eventId);
 
+  // Fetch upsell settings and upsells
+  const { data: upsellSettings } = useQuery({
+    queryKey: ["upsell-settings", eventId],
+    queryFn: () => fetchUpsellSettings(eventId!),
+    enabled: !!eventId && !!event?.is_paid,
+  });
+
+  const { data: upsells = [] } = useQuery({
+    queryKey: ["event-upsells", eventId],
+    queryFn: () => fetchEventUpsells(eventId!),
+    enabled: !!eventId && !!event?.is_paid && !!upsellSettings?.upsell_enabled,
+  });
+
+  // Calculate final price with upsells
+  const groupOffers = useMemo(() => 
+    upsells.filter(u => u.upsell_type === "group_offer"),
+    [upsells]
+  );
+
+  const priceCalculation = useMemo(() => {
+    const basePrice = selectedPrice !== null ? selectedPrice : (event?.price || 0);
+    return calculateTotalWithUpsells(basePrice, groupSize, selectedUpsells, groupOffers);
+  }, [selectedPrice, event?.price, groupSize, selectedUpsells, groupOffers]);
+
   // Robust registration with debouncing and error handling
   const { 
     register, 
@@ -82,13 +121,24 @@ const EventDetail = () => {
       setIsRegisterOpen(false);
       setPaymentScreenshot(null);
       setAgreedToTerms(false);
+      setBookingStep("form");
+      setSelectedUpsells([]);
+      setGroupSize(1);
+      setHasSeenUpsells(false);
     },
   });
 
   const handleRegister = useCallback(async (customData: Record<string, unknown>) => {
     if (!user || !event) return;
 
-    // Include club membership info in custom_data
+    // If upsells enabled and not yet seen, show upsell screen
+    if (event.is_paid && upsellSettings?.upsell_enabled && upsells.length > 0 && !hasSeenUpsells) {
+      setBookingStep("upsells");
+      setHasSeenUpsells(true);
+      return;
+    }
+
+    // Include club membership + upsell info in custom_data
     const enhancedCustomData = {
       ...customData,
       ...(selectedClubId && {
@@ -97,10 +147,29 @@ const EventDetail = () => {
         _membership_id: membershipId,
         _applied_price: selectedPrice,
       }),
+      _group_size: groupSize,
+      _base_amount: priceCalculation.baseTotal,
+      _addons_amount: priceCalculation.addonsTotal,
+      _total_amount: priceCalculation.finalTotal,
+      _selected_addons: selectedUpsells.map(u => ({
+        name: u.upsell.name,
+        quantity: u.quantity,
+        price: u.totalPrice,
+      })),
     };
 
     await register(enhancedCustomData, paymentScreenshot);
-  }, [user, event, selectedClubId, membershipId, selectedPrice, register, paymentScreenshot]);
+  }, [user, event, selectedClubId, membershipId, selectedPrice, register, paymentScreenshot, upsellSettings, upsells, hasSeenUpsells, groupSize, priceCalculation, selectedUpsells]);
+
+  const handleUpsellContinue = () => {
+    setBookingStep("payment");
+  };
+
+  const handleUpsellSkip = () => {
+    setSelectedUpsells([]);
+    setGroupSize(1);
+    setBookingStep("payment");
+  };
 
   const handleShare = async () => {
     try {
@@ -376,7 +445,13 @@ const EventDetail = () => {
                   )}
 
                   {/* Secondary CTA: Login/Register via dialog */}
-                  <Dialog open={isRegisterOpen} onOpenChange={setIsRegisterOpen}>
+                  <Dialog open={isRegisterOpen} onOpenChange={(open) => {
+                    setIsRegisterOpen(open);
+                    if (!open) {
+                      // Reset booking flow when closing
+                      setBookingStep("form");
+                    }
+                  }}>
                     <DialogTrigger asChild>
                       <Button 
                         variant="outline" 
@@ -389,26 +464,103 @@ const EventDetail = () => {
                     </DialogTrigger>
                     <DialogContent className="max-w-md max-h-[90vh]">
                       <DialogHeader>
-                        <DialogTitle>Register for {event.title}</DialogTitle>
+                        <DialogTitle>
+                          {bookingStep === "upsells" ? "Enhance Your Experience" : `Register for ${event.title}`}
+                        </DialogTitle>
                         <DialogDescription>
-                          {event.is_paid ? `Pay ₹${displayPrice} and complete the form` : "Complete your registration"}
+                          {bookingStep === "upsells" 
+                            ? "Add extras to your booking" 
+                            : bookingStep === "payment"
+                            ? `Total: ₹${priceCalculation.finalTotal}`
+                            : event.is_paid 
+                            ? `Pay ₹${displayPrice} and complete the form` 
+                            : "Complete your registration"}
                         </DialogDescription>
                       </DialogHeader>
                       <ScrollArea className="max-h-[60vh] pr-4">
                         <div className="py-4 space-y-4">
-                          {/* Club membership selection for paid events */}
-                          {clubSection}
-                          
-                          <DynamicRegistrationForm
-                            eventId={eventId!}
-                            onSubmit={handleRegister}
-                            isSubmitting={isSubmitting || isUploading}
-                            isPaidEvent={event.is_paid}
-                            paymentSection={paymentSection}
-                            termsSection={termsSection}
-                            submitDisabled={(event.is_paid && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms)}
-                            submitLabel={isSubmitting ? "Registering..." : (event.is_paid ? "Submit Registration" : "Confirm Registration")}
-                          />
+                          {/* Step 1: Form */}
+                          {bookingStep === "form" && (
+                            <>
+                              {/* Club membership selection for paid events */}
+                              {clubSection}
+                              
+                              <DynamicRegistrationForm
+                                eventId={eventId!}
+                                onSubmit={handleRegister}
+                                isSubmitting={isSubmitting || isUploading}
+                                isPaidEvent={event.is_paid}
+                                paymentSection={!upsellSettings?.upsell_enabled ? paymentSection : undefined}
+                                termsSection={!upsellSettings?.upsell_enabled ? termsSection : undefined}
+                                submitDisabled={!upsellSettings?.upsell_enabled && ((event.is_paid && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms))}
+                                submitLabel={
+                                  isSubmitting 
+                                    ? "Processing..." 
+                                    : upsellSettings?.upsell_enabled && upsells.length > 0
+                                    ? "Continue"
+                                    : event.is_paid 
+                                    ? "Submit Registration" 
+                                    : "Confirm Registration"
+                                }
+                              />
+                            </>
+                          )}
+
+                          {/* Step 2: Upsells */}
+                          {bookingStep === "upsells" && (
+                            <UpsellScreen
+                              upsells={upsells}
+                              basePrice={selectedPrice !== null ? selectedPrice : (event.price || 0)}
+                              groupSize={groupSize}
+                              onGroupSizeChange={setGroupSize}
+                              selectedUpsells={selectedUpsells}
+                              onUpsellsChange={setSelectedUpsells}
+                              onContinue={handleUpsellContinue}
+                              onSkip={handleUpsellSkip}
+                            />
+                          )}
+
+                          {/* Step 3: Payment (after upsells) */}
+                          {bookingStep === "payment" && (
+                            <>
+                              {/* Price summary */}
+                              <Card className="bg-muted/50">
+                                <CardContent className="py-4 space-y-2">
+                                  <div className="flex justify-between text-sm">
+                                    <span>Tickets ({groupSize} × ₹{selectedPrice !== null ? selectedPrice : event.price})</span>
+                                    <span>₹{priceCalculation.baseTotal}</span>
+                                  </div>
+                                  {priceCalculation.discounts > 0 && (
+                                    <div className="flex justify-between text-sm text-green-600">
+                                      <span>Group Discount</span>
+                                      <span>-₹{priceCalculation.discounts}</span>
+                                    </div>
+                                  )}
+                                  {priceCalculation.addonsTotal > 0 && (
+                                    <div className="flex justify-between text-sm">
+                                      <span>Add-ons</span>
+                                      <span>+₹{priceCalculation.addonsTotal}</span>
+                                    </div>
+                                  )}
+                                  <div className="flex justify-between font-bold text-lg pt-2 border-t">
+                                    <span>Total</span>
+                                    <span>₹{priceCalculation.finalTotal}</span>
+                                  </div>
+                                </CardContent>
+                              </Card>
+
+                              {paymentSection}
+                              {termsSection}
+
+                              <Button
+                                onClick={() => handleRegister({})}
+                                disabled={isSubmitting || isUploading || (event.is_paid && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms)}
+                                className="w-full"
+                              >
+                                {isSubmitting ? "Submitting..." : "Complete Registration"}
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </ScrollArea>
                     </DialogContent>

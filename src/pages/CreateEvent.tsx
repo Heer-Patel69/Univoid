@@ -231,12 +231,24 @@ const CreateEvent = () => {
   const canProceed = () => {
     switch (currentStep) {
       case 1: return formData.title && formData.category && formData.event_type && formData.start_date;
-      case 2: return true;
+      case 2: return formData.description.length >= 50 && formData.terms_conditions.length >= 10;
       case 3: return true; // Custom form is optional
       case 4: return true;
       case 5: return !formData.is_paid || (formData.upi_vpa || qrFile);
       default: return true;
     }
+  };
+
+  const getStepError = () => {
+    if (currentStep === 2) {
+      if (formData.description.length < 50) {
+        return `Description must be at least 50 characters (${formData.description.length}/50)`;
+      }
+      if (formData.terms_conditions.length < 10) {
+        return "Terms & Conditions are required";
+      }
+    }
+    return null;
   };
 
   const nextStep = () => currentStep < 5 && setCurrentStep(currentStep + 1);
@@ -378,12 +390,30 @@ const CreateEvent = () => {
             {currentStep === 2 && (
               <>
                 <div className="space-y-2">
-                  <Label>Description</Label>
-                  <Textarea value={formData.description} onChange={(e) => updateForm("description", e.target.value)} placeholder="Describe your event..." rows={8} />
+                  <Label>Description * <span className="text-muted-foreground text-xs">(min 50 characters)</span></Label>
+                  <Textarea 
+                    value={formData.description} 
+                    onChange={(e) => updateForm("description", e.target.value)} 
+                    placeholder="Describe your event in detail..." 
+                    rows={8}
+                    className={formData.description.length > 0 && formData.description.length < 50 ? "border-destructive" : ""}
+                  />
+                  <p className={`text-xs ${formData.description.length < 50 ? "text-destructive" : "text-muted-foreground"}`}>
+                    {formData.description.length}/50 characters
+                  </p>
                 </div>
                 <div className="space-y-2">
-                  <Label>Terms & Conditions</Label>
-                  <Textarea value={formData.terms_conditions} onChange={(e) => updateForm("terms_conditions", e.target.value)} placeholder="Any rules or terms..." rows={4} />
+                  <Label>Terms & Conditions *</Label>
+                  <Textarea 
+                    value={formData.terms_conditions} 
+                    onChange={(e) => updateForm("terms_conditions", e.target.value)} 
+                    placeholder="Event rules, refund policy, code of conduct..." 
+                    rows={4}
+                    className={formData.terms_conditions.length === 0 ? "border-destructive" : ""}
+                  />
+                  {formData.terms_conditions.length === 0 && (
+                    <p className="text-xs text-destructive">Terms & Conditions are required</p>
+                  )}
                 </div>
               </>
             )}

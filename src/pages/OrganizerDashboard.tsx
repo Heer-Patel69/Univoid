@@ -18,13 +18,14 @@ import { MobileExportSheet } from "@/components/organizer/MobileExportSheet";
 import { ClubMembershipManager } from "@/components/organizer/ClubMembershipManager";
 import { VolunteerManager } from "@/components/organizer/VolunteerManager";
 import { EventAnalytics } from "@/components/organizer/EventAnalytics";
+import { UpsellManager } from "@/components/organizer/UpsellManager";
 import { OrganizerSidebar } from "@/components/organizer/OrganizerSidebar";
 import { OrganizerBottomNav } from "@/components/organizer/OrganizerBottomNav";
 import { OrganizerDashboardSkeleton, RegistrationListSkeleton } from "@/components/organizer/OrganizerSkeleton";
 import { 
   Plus, Calendar, Users, CheckCircle, XCircle, Eye, 
   ScanLine, Pencil, TicketCheck, Clock, FileSpreadsheet, 
-  UserPlus, BarChart3, Shield, ChevronLeft
+  UserPlus, BarChart3, Shield, ChevronLeft, Gift
 } from "lucide-react";
 import { format } from "date-fns";
 import type { Event } from "@/services/eventsService";
@@ -435,6 +436,10 @@ const OrganizerDashboard = () => {
                   <Shield className="w-4 h-4" /> 
                   <span className="hidden sm:inline">Club Members</span>
                 </TabsTrigger>
+                <TabsTrigger value="upsells" className="gap-1.5">
+                  <Gift className="w-4 h-4" /> 
+                  <span className="hidden sm:inline">Upsells</span>
+                </TabsTrigger>
                 <TabsTrigger value="sheets" className="gap-1.5">
                   <FileSpreadsheet className="w-4 h-4" /> 
                   <span className="hidden sm:inline">Export</span>
@@ -529,6 +534,12 @@ const OrganizerDashboard = () => {
                 />
               </TabsContent>
 
+              <TabsContent value="upsells">
+                <UpsellManager 
+                  eventId={selectedEvent!} 
+                  isPaidEvent={selectedEventData?.is_paid || false}
+                />
+              </TabsContent>
               <TabsContent value="clubs">
                 <ClubMembershipManager 
                   eventId={selectedEvent!} 
