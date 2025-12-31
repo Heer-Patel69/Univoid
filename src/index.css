@@ -132,10 +132,20 @@
 @layer base {
   * {
     @apply border-border;
+    box-sizing: border-box;
   }
 
   html {
     overflow-x: hidden;
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* Prevent body scroll on dashboard layouts - applied via class */
+  html.dashboard-scroll-lock,
+  html.dashboard-scroll-lock body {
+    overflow: hidden;
+    height: 100%;
   }
 
   body {
@@ -145,6 +155,9 @@
     position: relative;
     overflow-x: hidden;
     max-width: 100%;
+    min-height: 100dvh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   /* Global subtle paper texture overlay - applied to body */
@@ -730,6 +743,30 @@
     display: none;
   }
 
+  /* Custom styled scrollbar */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground));
+  }
+
   /* Hover scale */
   .hover-scale {
     @apply transition-transform duration-200 hover:scale-105;
@@ -756,6 +793,59 @@
     .bento-grid {
       grid-template-columns: 2fr 1fr;
     }
+  }
+
+  /* Dashboard layout utilities */
+  .dashboard-main {
+    @apply flex-1 h-screen overflow-hidden flex flex-col;
+  }
+
+  .dashboard-content {
+    @apply flex-1 overflow-y-auto overflow-x-hidden;
+  }
+
+  /* Safe area insets for mobile */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0);
+  }
+
+  /* Prevent text overflow */
+  .text-truncate {
+    @apply truncate;
+  }
+
+  .text-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .text-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Prevent layout shift on hover */
+  .no-shift-hover {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+
+  /* Mobile tap highlight removal */
+  .no-tap-highlight {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Overscroll behavior */
+  .overscroll-contain {
+    overscroll-behavior: contain;
   }
 }
 

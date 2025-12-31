@@ -82,48 +82,52 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
 
   return (
     <aside className={cn(
-      "flex flex-col bg-card border-r border-border",
+      "flex flex-col bg-card border-r border-border shrink-0",
       isMobile 
-        ? "w-full h-full overflow-y-auto" 
-        : "hidden lg:flex w-64 h-screen sticky top-0 overflow-y-auto"
+        ? "w-full h-full" 
+        : "hidden lg:flex w-64 h-dvh sticky top-0"
     )}>
-      <div className="p-4 flex flex-col flex-1">
+      <div className="flex flex-col flex-1 overflow-hidden">
         {/* Logo - Always routes to HOME */}
-        <PrefetchLink to="/" className="flex items-center gap-2 px-3 py-4 mb-4">
-          <div className="w-10 h-10 bg-primary border border-border rounded-xl flex items-center justify-center shadow-sketch-sm">
-            <span className="text-primary-foreground font-bold text-lg">U</span>
-          </div>
-          <span className="font-bold text-xl text-foreground">UniVoid</span>
-        </PrefetchLink>
+        <div className="p-4 shrink-0">
+          <PrefetchLink to="/" className="flex items-center gap-2 px-3 py-4">
+            <div className="w-10 h-10 bg-primary border border-border rounded-xl flex items-center justify-center shadow-sketch-sm shrink-0">
+              <span className="text-primary-foreground font-bold text-lg">U</span>
+            </div>
+            <span className="font-bold text-xl text-foreground">UniVoid</span>
+          </PrefetchLink>
+        </div>
 
-        {/* User Card */}
-        <PrefetchLink to="/profile" className="bg-card border border-border rounded-xl p-4 mb-6 shadow-sketch-sm hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-sketch transition-all">
-          <div className="flex items-center gap-3">
-            {profile?.profile_photo_url ? (
-              <img
-                src={profile.profile_photo_url}
-                alt={profile.full_name}
-                className="w-10 h-10 rounded-full object-cover"
-              />
-            ) : (
-              <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                <User className="w-5 h-5 text-primary" />
-              </div>
-            )}
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-foreground text-sm truncate">
-                {profile?.full_name || "User"}
-              </p>
-              <div className="flex items-center gap-1">
-                <Trophy className="w-3 h-3 text-primary" />
-                <span className="text-xs text-primary font-semibold">{profile?.total_xp || 0} XP</span>
+        {/* User Card - shrinkable */}
+        <div className="px-4 shrink-0">
+          <PrefetchLink to="/profile" className="block bg-card border border-border rounded-xl p-4 mb-4 shadow-sketch-sm hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-sketch transition-all">
+            <div className="flex items-center gap-3">
+              {profile?.profile_photo_url ? (
+                <img
+                  src={profile.profile_photo_url}
+                  alt={profile.full_name}
+                  className="w-10 h-10 rounded-full object-cover shrink-0"
+                />
+              ) : (
+                <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center shrink-0">
+                  <User className="w-5 h-5 text-primary" />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-foreground text-sm truncate">
+                  {profile?.full_name || "User"}
+                </p>
+                <div className="flex items-center gap-1">
+                  <Trophy className="w-3 h-3 text-primary shrink-0" />
+                  <span className="text-xs text-primary font-semibold">{profile?.total_xp || 0} XP</span>
+                </div>
               </div>
             </div>
-          </div>
-        </PrefetchLink>
+          </PrefetchLink>
+        </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 space-y-1">
+        {/* Navigation - scrollable */}
+        <nav className="flex-1 overflow-y-auto overflow-x-hidden px-4 scrollbar-thin space-y-1">
           {/* Home Link */}
           <PrefetchLink
             to="/"
@@ -200,8 +204,8 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
           )}
         </nav>
 
-        {/* Bottom Actions */}
-        <div className="border-t border-border pt-4 mt-4 space-y-1">
+        {/* Bottom Actions - fixed at bottom */}
+        <div className="shrink-0 px-4 pb-4 pt-2 border-t border-border space-y-1">
           <PrefetchLink
             to="/settings"
             className={cn(
