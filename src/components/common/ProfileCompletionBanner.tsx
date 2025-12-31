@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { X, Sparkles } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { X, Sparkles, ArrowRight } from "lucide-react";
 import { useState, useEffect } from "react";
 
 const DISMISSED_KEY = 'profile_completion_banner_dismissed';
@@ -41,38 +42,37 @@ const ProfileCompletionBanner = () => {
   }
 
   return (
-    <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 border-b border-primary/20 px-4 py-3">
-      <div className="container mx-auto flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-            <Sparkles className="w-4 h-4 text-primary" />
+    <Card className="relative overflow-hidden border-primary/20 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5">
+      <CardContent className="p-4 sm:p-5">
+        <div className="flex items-start gap-4">
+          <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+            <Sparkles className="w-5 h-5 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium">
-              Complete your profile to unlock all UniVoid features
+            <h3 className="text-sm font-semibold text-foreground">
+              Complete your profile
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Add your college details and interests to unlock all UniVoid features
             </p>
-            <p className="text-xs text-muted-foreground hidden sm:block">
-              Add your college details, interests, and more
-            </p>
+            <Link to="/onboarding" className="inline-block mt-3">
+              <Button size="sm" className="gap-1.5">
+                Complete Profile
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Button>
+            </Link>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link to="/onboarding">
-            <Button size="sm" variant="default">
-              Complete Profile
-            </Button>
-          </Link>
           <Button
             size="icon"
             variant="ghost"
-            className="h-8 w-8"
+            className="h-7 w-7 flex-shrink-0 -mt-1 -mr-1"
             onClick={handleDismiss}
           >
             <X className="w-4 h-4" />
           </Button>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
