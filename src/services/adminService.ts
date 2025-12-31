@@ -12,14 +12,21 @@ export async function getPendingContent(type: ContentType) {
     .eq('status', 'pending')
     .order('created_at', { ascending: false });
 
-  if (error) throw error;
+  if (error) {
+    console.error(`Error fetching pending ${type}:`, error);
+    return []; // Return empty array instead of throwing
+  }
 
   const items = data || [];
   for (const item of items) {
-    const { data: nameData } = await supabase.rpc('get_contributor_name', {
-      user_id: item.created_by,
-    });
-    (item as any).contributor_name = nameData || 'Anonymous';
+    try {
+      const { data: nameData } = await supabase.rpc('get_contributor_name', {
+        user_id: item.created_by,
+      });
+      (item as any).contributor_name = nameData || 'Anonymous';
+    } catch {
+      (item as any).contributor_name = 'Anonymous';
+    }
   }
 
   return items;
@@ -151,14 +158,38 @@ export async function getAllContent(type: ContentType) {
     .select('*')
     .order('created_at', { ascending: false });
 
-  if (error) throw error;
+  if (error) {
+    console.error(`Error fetching ${type}:`, error);
+    return []; // Return empty array instead of throwing
+  }
 
   const items = data || [];
-  for (const item of items) {
-    const { data: nameData } = await supabase.rpc('get_contributor_name', {
-      user_id: item.created_by,
-    });
-    (item as any).contributor_name = nameData || 'Anonymous';
+  
+  // Batch fetch contributor names for efficiency
+  const userIds = [...new Set(items.map(item => item.created_by))];
+  if (userIds.length > 0) {
+    try {
+      const { data: namesData } = await supabase.rpc('get_contributor_names', {
+        user_ids: userIds,
+      });
+      
+      const nameMap = new Map((namesData || []).map((n: any) => [n.user_id, n.full_name]));
+      for (const item of items) {
+        (item as any).contributor_name = nameMap.get(item.created_by) || 'Anonymous';
+      }
+    } catch {
+      // Fallback: fetch individually if batch fails
+      for (const item of items) {
+        try {
+          const { data: nameData } = await supabase.rpc('get_contributor_name', {
+            user_id: item.created_by,
+          });
+          (item as any).contributor_name = nameData || 'Anonymous';
+        } catch {
+          (item as any).contributor_name = 'Anonymous';
+        }
+      }
+    }
   }
 
   return items;
@@ -170,7 +201,10 @@ export async function getAllUsers() {
     .select('*')
     .order('created_at', { ascending: false });
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error fetching users:', error);
+    return []; // Return empty array instead of throwing
+  }
   return data || [];
 }
 
