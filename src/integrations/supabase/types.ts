@@ -1234,9 +1234,11 @@ export type Database = {
           interests: string[] | null
           is_disabled: boolean
           mobile_number: string | null
+          onboarding_status: string | null
           phone_verified: boolean | null
           profile_complete: boolean | null
           profile_photo_url: string | null
+          profile_type: string | null
           state: string | null
           total_xp: number
           updated_at: string
@@ -1257,9 +1259,11 @@ export type Database = {
           interests?: string[] | null
           is_disabled?: boolean
           mobile_number?: string | null
+          onboarding_status?: string | null
           phone_verified?: boolean | null
           profile_complete?: boolean | null
           profile_photo_url?: string | null
+          profile_type?: string | null
           state?: string | null
           total_xp?: number
           updated_at?: string
@@ -1280,9 +1284,11 @@ export type Database = {
           interests?: string[] | null
           is_disabled?: boolean
           mobile_number?: string | null
+          onboarding_status?: string | null
           phone_verified?: boolean | null
           profile_complete?: boolean | null
           profile_photo_url?: string | null
+          profile_type?: string | null
           state?: string | null
           total_xp?: number
           updated_at?: string

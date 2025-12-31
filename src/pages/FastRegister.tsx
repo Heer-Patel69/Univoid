@@ -146,12 +146,14 @@ const FastRegister = () => {
 
     setIsSavingPhone(true);
     try {
-      // MVP: Save phone number without OTP verification
+      // MVP: Save phone number and mark as quick registration profile
       const { error } = await supabase
         .from('profiles')
         .update({ 
           mobile_number: mobileNumber.replace(/\s/g, ''),
-          phone_verified: false // Mark for future OTP integration
+          phone_verified: false, // Mark for future OTP integration
+          profile_type: 'quick', // Mark as quick registration user
+          onboarding_status: 'partial', // Partial profile - event registration only
         })
         .eq('id', user!.id);
 

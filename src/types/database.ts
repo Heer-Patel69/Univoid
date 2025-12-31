@@ -2,6 +2,8 @@
 
 export type ContentStatus = 'pending' | 'approved' | 'rejected';
 export type AppRole = 'admin' | 'student' | 'organizer' | 'admin_assistant';
+export type ProfileType = 'quick' | 'full';
+export type OnboardingStatus = 'none' | 'partial' | 'complete';
 
 export interface Profile {
   id: string;
@@ -21,6 +23,8 @@ export interface Profile {
   is_disabled?: boolean;
   // Onboarding fields
   profile_complete?: boolean;
+  profile_type?: ProfileType;
+  onboarding_status?: OnboardingStatus;
   degree?: string | null;
   branch?: string | null;
   current_year?: number | null;
