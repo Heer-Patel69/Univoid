@@ -45,15 +45,18 @@ const categoryConfig: Record<NotificationCategory, { label: string; icon: React.
 };
 
 // List of admin-only routes that should redirect to dashboard for non-admins
-const ADMIN_ROUTES = ['/admin', '/admin/'];
+const ADMIN_ROUTES = ['/admin'];
 
+// List of organizer-only routes that should redirect to dashboard for non-organizers
+const ORGANIZER_ROUTES = ['/organizer'];
 const NotificationItem = memo(({ 
   notification, 
   onMarkAsRead, 
   onDelete, 
   onClose,
   getIcon,
-  isAdmin
+  isAdmin,
+  isOrganizer
 }: { 
   notification: Notification; 
   onMarkAsRead: (id: string) => void; 
@@ -61,13 +64,19 @@ const NotificationItem = memo(({
   onClose: () => void;
   getIcon: (type: string) => React.ReactNode;
   isAdmin: boolean;
+  isOrganizer: boolean;
 }) => {
-  // Sanitize notification link - prevent non-admins from accessing admin routes
+  // Sanitize notification link - prevent non-admins/non-organizers from accessing protected routes
   const getSafeLink = (link: string | null): string => {
     if (!link) return '/dashboard';
     
-    // If link points to admin route and user is not admin, redirect to dashboard
+    // Check admin routes
     if (ADMIN_ROUTES.some(route => link.startsWith(route)) && !isAdmin) {
+      return '/dashboard';
+    }
+    
+    // Check organizer routes
+    if (ORGANIZER_ROUTES.some(route => link.startsWith(route)) && !isOrganizer) {
       return '/dashboard';
     }
     
@@ -224,8 +233,9 @@ const NotificationSettings = memo(({
 NotificationSettings.displayName = 'NotificationSettings';
 
 export const NotificationCenter = () => {
-  const { user, isAdmin, isAdminOrAssistant } = useAuth();
+  const { user, isAdmin, isAdminOrAssistant, isOrganizer } = useAuth();
   const isUserAdmin = isAdmin || isAdminOrAssistant;
+  const isUserOrganizer = isOrganizer;
   const isMobile = useIsMobile();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -471,7 +481,7 @@ export const NotificationCenter = () => {
         categoryCounts={categoryCounts}
       />
 
-      <ScrollArea className={cn("flex-1", isMobile ? "h-[calc(100vh-220px)]" : "h-72")}>
+      <ScrollArea className={cn("flex-1 min-h-0", isMobile ? "h-[calc(100dvh-220px)]" : "max-h-80")}>
         {filteredNotifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full py-12 text-muted-foreground">
             <Bell className="h-12 w-12 mb-4 opacity-30" />
@@ -493,6 +503,7 @@ export const NotificationCenter = () => {
                 onClose={handleClose}
                 getIcon={getIcon}
                 isAdmin={isUserAdmin}
+                isOrganizer={isUserOrganizer}
               />
             ))}
             {hasMore && activeCategory === 'all' && (
@@ -611,8 +622,10 @@ export const NotificationCenter = () => {
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-96 p-0 rounded-2xl border border-border-strong/10 shadow-soft-lg flex flex-col"
+        className="w-96 p-0 rounded-2xl border border-border-strong/10 shadow-soft-lg flex flex-col max-h-[80vh] overflow-hidden"
         align="end"
+        sideOffset={8}
+        onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <h3 className="font-bold text-sm">Notifications</h3>

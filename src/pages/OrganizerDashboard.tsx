@@ -216,9 +216,17 @@ const OrganizerDashboard = () => {
     );
   }
 
+  // Apply scroll lock on mount
+  useEffect(() => {
+    document.documentElement.classList.add('dashboard-scroll-lock');
+    return () => {
+      document.documentElement.classList.remove('dashboard-scroll-lock');
+    };
+  }, []);
+
   if (eventsLoading) {
     return (
-      <div className="min-h-screen flex">
+      <div className="h-dvh flex overflow-hidden">
         <OrganizerSidebar 
           selectedEventId={selectedEvent} 
           eventTitle={selectedEventData?.title}
@@ -226,7 +234,7 @@ const OrganizerDashboard = () => {
           onEventSelect={setSelectedEvent}
           onBackToOverview={() => setSelectedEvent(null)}
         />
-        <div className="flex-1">
+        <div className="flex-1 overflow-y-auto">
           <OrganizerDashboardSkeleton />
         </div>
         <OrganizerBottomNav selectedEventId={selectedEvent || undefined} />
@@ -560,7 +568,7 @@ const OrganizerDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen flex bg-background">
+    <div className="h-dvh flex bg-background overflow-hidden">
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
       
       {/* Desktop Sidebar */}
@@ -572,7 +580,7 @@ const OrganizerDashboard = () => {
         onBackToOverview={() => setSelectedEvent(null)}
       />
 
-      <main className="flex-1 min-h-screen overflow-auto">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden">
         {selectedEvent && selectedEventData ? renderEventManagementMode() : renderOverviewMode()}
       </main>
 
