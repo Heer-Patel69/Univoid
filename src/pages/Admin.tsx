@@ -1086,9 +1086,17 @@ const Admin = () => {
 
   const totalPending = pendingCounts.materials + pendingCounts.news + pendingCounts.books;
 
+  // Apply scroll lock on mount
+  useEffect(() => {
+    document.documentElement.classList.add('dashboard-scroll-lock');
+    return () => {
+      document.documentElement.classList.remove('dashboard-scroll-lock');
+    };
+  }, []);
+
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <main className="flex-1 py-8">
+    <div className="h-dvh flex flex-col bg-background overflow-hidden">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden py-8">
         <div className="container-wide">
           {/* Header */}
           <div className="mb-8 flex items-center gap-3">

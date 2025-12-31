@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { Suspense, lazy, useEffect, memo } from "react";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import AdminRoute from "@/components/auth/AdminRoute";
+import OrganizerRoute from "@/components/auth/OrganizerRoute";
 import CheckInRedirect from "@/components/common/CheckInRedirect";
 import AppLayout from "@/components/layout/AppLayout";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -230,14 +231,14 @@ export const AnimatedRoutes = () => {
 
       {/* Organizer Dashboard - standalone layout (has its own sidebar) */}
       <Route path="/organizer" element={
-        <ProtectedRoute>
+        <OrganizerRoute>
           <Suspense fallback={<DashboardSkeleton />}><OrganizerDashboard /></Suspense>
-        </ProtectedRoute>
+        </OrganizerRoute>
       } />
       <Route path="/organizer/dashboard" element={<Navigate to="/organizer" replace />} />
 
-      {/* Other organizer pages with DashboardLayout */}
-      <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+      {/* Other organizer pages with DashboardLayout - PROTECTED with OrganizerRoute */}
+      <Route element={<OrganizerRoute><DashboardLayout /></OrganizerRoute>}>
         <Route path="/organizer/create-event" element={
           <Suspense fallback={<TextSkeleton />}><CreateEvent /></Suspense>
         } />

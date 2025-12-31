@@ -49,7 +49,7 @@ export function OrganizerSidebar({
   };
 
   return (
-    <aside className="hidden lg:flex flex-col w-64 border-r border-border bg-card h-screen sticky top-0">
+    <aside className="hidden lg:flex flex-col w-64 border-r border-border bg-card h-dvh sticky top-0 shrink-0 overflow-hidden">
       {/* Header */}
       <div className="p-4 border-b border-border">
         <Link to="/" className="flex items-center gap-2 group">
