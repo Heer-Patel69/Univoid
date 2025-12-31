@@ -93,7 +93,7 @@ const doodleComponents = [
 
 interface FloatingDoodlesProps {
   className?: string;
-  density?: "low" | "medium" | "high";
+  density?: "low" | "medium" | "high" | "global";
   section?: "hero" | "content" | "full";
 }
 
@@ -110,6 +110,7 @@ export const FloatingDoodles = ({
     low: 8,
     medium: 15,
     high: 24,
+    global: 32, // Increased density for global background
   };
 
   useEffect(() => {
@@ -175,7 +176,11 @@ export const FloatingDoodles = ({
         return (
           <div
             key={doodle.id}
-            className="absolute text-sketch-border/15 animate-float-doodle"
+            className={`absolute animate-float-doodle ${
+              density === 'global' 
+                ? 'text-sketch-border/20' 
+                : 'text-sketch-border/15'
+            }`}
             style={{
               left: `${doodle.x}%`,
               top: `${doodle.y}%`,
