@@ -107,10 +107,10 @@ export const FloatingDoodles = ({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const densityCount = {
-    low: 8,
-    medium: 15,
-    high: 24,
-    global: 32, // Increased density for global background
+    low: 12,
+    medium: 20,
+    high: 32,
+    global: 45, // Increased density for global background
   };
 
   useEffect(() => {
