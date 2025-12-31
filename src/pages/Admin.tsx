@@ -263,6 +263,14 @@ const Admin = () => {
     }
   }, [user, isAdminOrAssistant, fetchAllData]);
 
+  // Apply scroll lock on mount - MUST be before all early returns
+  useEffect(() => {
+    document.documentElement.classList.add('dashboard-scroll-lock');
+    return () => {
+      document.documentElement.classList.remove('dashboard-scroll-lock');
+    };
+  }, []);
+
   // Check auth loading first
   if (authLoading) {
     return (
@@ -1093,14 +1101,6 @@ const Admin = () => {
   };
 
   const totalPending = pendingCounts.materials + pendingCounts.news + pendingCounts.books;
-
-  // Apply scroll lock on mount
-  useEffect(() => {
-    document.documentElement.classList.add('dashboard-scroll-lock');
-    return () => {
-      document.documentElement.classList.remove('dashboard-scroll-lock');
-    };
-  }, []);
 
   return (
     <div className="h-dvh flex flex-col bg-background overflow-hidden">
