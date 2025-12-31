@@ -31,7 +31,7 @@ const BookScanner = ({ onBookScanned, onImageCaptured }: BookScannerProps) => {
   const streamRef = useRef<MediaStream | null>(null);
   const scannerContainerId = "book-scanner-container";
 
-  // Use custom book scanner hook (calls YOUR external API, not Lovable AI)
+  // Use custom book scanner hook (calls external OCR API)
   const { scanBookImageBase64, scanning: customScanning, error: scanError, isConfigured } = useCustomBookScanner();
 
   const stopScanner = async () => {
@@ -90,8 +90,7 @@ const BookScanner = ({ onBookScanned, onImageCaptured }: BookScannerProps) => {
   };
 
   /**
-   * Extract book info from cover using custom external API.
-   * This does NOT use Lovable AI - it calls YOUR custom OCR/ML service.
+   * Extract book info from cover using custom external OCR API.
    */
   const extractBookInfoFromCover = async (imageBase64: string): Promise<{ title: string; author?: string } | null> => {
     try {

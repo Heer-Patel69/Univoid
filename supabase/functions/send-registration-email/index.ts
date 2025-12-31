@@ -100,7 +100,7 @@ const handler = async (req: Request): Promise<Response> => {
             `}
             
             <div style="text-align: center; margin-top: 32px;">
-              <a href="https://univoid.lovable.app/my-tickets" 
+              <a href="https://univoid.tech/my-tickets" 
                  style="display: inline-block; background-color: #1a1a1a; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 50px; font-weight: 600; font-size: 16px;">
                 View My Tickets
               </a>

@@ -76,7 +76,7 @@ serve(async (req) => {
 
     const contentTypeLabel = contentType === 'material' ? 'Study Material' : 
                              contentType === 'news' ? 'News Article' : 'Book Listing';
-    const reviewUrl = "https://univoid.lovable.app/admin";
+    const reviewUrl = "https://univoid.tech/admin";
 
     const emailHtml = `
       <!DOCTYPE html>

@@ -93,7 +93,7 @@ serve(async (req) => {
       .single();
 
     const inviterName = inviterProfile?.full_name || "An admin";
-    const loginUrl = "https://univoid.lovable.app";
+    const loginUrl = "https://univoid.tech";
 
     // Send invite email if RESEND_API_KEY exists
     if (!RESEND_API_KEY) {
