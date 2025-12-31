@@ -12,19 +12,10 @@ import {
   User,
   LogOut,
   Shield,
-  BookOpen,
-  Repeat2,
   Trophy,
-  Calendar,
   LayoutDashboard,
-  Folder,
-  Briefcase,
   Settings,
-  GraduationCap,
-  Newspaper,
   Ticket,
-  FileText,
-  Plus,
 } from "lucide-react";
 import { useState, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -96,32 +87,12 @@ export const MobileNavDrawer = ({ onAuthClick }: MobileNavDrawerProps) => {
     return location.pathname === href || location.pathname.startsWith(href + '/');
   };
 
-  // Browse items - public exploration
-  const browseItems: NavItem[] = [
-    { href: "/materials", label: "Materials", icon: BookOpen },
-    { href: "/scholarships", label: "Scholarships", icon: GraduationCap },
-    { href: "/events", label: "Events", icon: Calendar },
-    { href: "/projects", label: "Projects", icon: Folder },
-    { href: "/tasks", label: "Task Plaza", icon: Briefcase },
-    { href: "/books", label: "Books", icon: Repeat2 },
-    { href: "/news", label: "Campus News", icon: Newspaper },
-    { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
-  ];
-
-  // Account items - user-specific
+  // Account items - user-specific (ONLY these show in mobile drawer)
   const accountItems: NavItem[] = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, requiresAuth: true },
     { href: "/profile", label: "My Profile", icon: User, requiresAuth: true },
     { href: "/my-events", label: "My Tickets", icon: Ticket, requiresAuth: true },
     { href: "/settings", label: "Settings", icon: Settings, requiresAuth: true },
-  ];
-
-  // Contribute items - actions
-  const contributeItems: NavItem[] = [
-    { href: "/upload-material", label: "Upload Material", icon: FileText, requiresAuth: true },
-    { href: "/sell-book", label: "Sell Book", icon: Repeat2, requiresAuth: true },
-    { href: "/projects/create", label: "Create Project", icon: Folder, requiresAuth: true },
-    { href: "/tasks/create", label: "Post Task", icon: Briefcase, requiresAuth: true },
   ];
 
   // Admin/Organizer items
@@ -140,7 +111,6 @@ export const MobileNavDrawer = ({ onAuthClick }: MobileNavDrawerProps) => {
   };
 
   const filteredAccountItems = filterItems(accountItems);
-  const filteredContributeItems = filterItems(contributeItems);
   const filteredAdminItems = filterItems(adminItems);
 
   return (
@@ -204,35 +174,6 @@ export const MobileNavDrawer = ({ onAuthClick }: MobileNavDrawerProps) => {
 
         {/* Navigation - scrollable */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden py-4 scrollbar-thin overscroll-contain">
-          {/* Browse Section */}
-          <div className="px-4 mb-4">
-            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
-              Browse
-            </p>
-            <div className="space-y-1">
-              {browseItems.map((item) => {
-                const ItemIcon = item.icon;
-                const isActive = isActiveLink(item.href);
-                return (
-                  <Link
-                    key={item.href}
-                    to={item.href}
-                    onClick={handleLinkClick}
-                    className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
-                      isActive
-                        ? "bg-primary text-primary-foreground shadow-soft"
-                        : "text-foreground hover:bg-secondary active:scale-[0.98]"
-                    )}
-                  >
-                    <ItemIcon className="w-4 h-4" strokeWidth={2.5} />
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-
           {/* My Account Section - only if logged in */}
           {filteredAccountItems.length > 0 && (
             <div className="px-4 mb-4">
@@ -241,38 +182,6 @@ export const MobileNavDrawer = ({ onAuthClick }: MobileNavDrawerProps) => {
               </p>
               <div className="space-y-1">
                 {filteredAccountItems.map((item) => {
-                  const ItemIcon = item.icon;
-                  const isActive = isActiveLink(item.href);
-                  return (
-                    <Link
-                      key={item.href}
-                      to={item.href}
-                      onClick={handleLinkClick}
-                      className={cn(
-                        "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
-                        isActive
-                          ? "bg-primary text-primary-foreground shadow-soft"
-                          : "text-foreground hover:bg-secondary active:scale-[0.98]"
-                      )}
-                    >
-                      <ItemIcon className="w-4 h-4" strokeWidth={2.5} />
-                      {item.label}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Contribute Section - only if logged in */}
-          {filteredContributeItems.length > 0 && (
-            <div className="px-4 mb-4">
-              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1">
-                <Plus className="w-3 h-3" />
-                Contribute
-              </p>
-              <div className="space-y-1">
-                {filteredContributeItems.map((item) => {
                   const ItemIcon = item.icon;
                   const isActive = isActiveLink(item.href);
                   return (

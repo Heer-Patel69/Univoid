@@ -7,14 +7,28 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchUserTickets, type TicketWithDetails } from "@/services/ticketService";
+import { supabase } from "@/integrations/supabase/client";
 import AuthModal from "@/components/auth/AuthModal";
 import { 
   Ticket, Calendar, MapPin, CheckCircle, XCircle, 
-  AlertTriangle, Copy, Shield, Clock
+  AlertTriangle, Copy, Shield, Clock, Hourglass, Bell
 } from "lucide-react";
 import { format, isPast } from "date-fns";
 import QRCode from "qrcode";
 import { useToast } from "@/hooks/use-toast";
+
+interface PendingRegistration {
+  id: string;
+  payment_status: string;
+  created_at: string;
+  event: {
+    id: string;
+    title: string;
+    start_date: string;
+    venue_name: string | null;
+    flyer_url: string | null;
+  };
+}
 
 const MyTickets = () => {
   const { user } = useAuth();
@@ -22,9 +36,31 @@ const MyTickets = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [qrImages, setQrImages] = useState<Record<string, string>>({});
 
+  // Fetch approved tickets
   const { data: tickets, isLoading, error } = useQuery({
     queryKey: ["my-tickets", user?.id],
     queryFn: () => fetchUserTickets(user!.id),
+    enabled: !!user,
+    staleTime: 30000,
+  });
+
+  // Fetch pending registrations (waiting for approval)
+  const { data: pendingRegistrations } = useQuery({
+    queryKey: ["my-pending-registrations", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("event_registrations")
+        .select(`
+          id, payment_status, created_at,
+          event:events(id, title, start_date, venue_name, flyer_url)
+        `)
+        .eq("user_id", user!.id)
+        .eq("payment_status", "pending")
+        .order("created_at", { ascending: false });
+      
+      if (error) throw error;
+      return data as unknown as PendingRegistration[];
+    },
     enabled: !!user,
     staleTime: 30000,
   });
@@ -234,11 +270,17 @@ const MyTickets = () => {
           </Card>
         ) : (
           <Tabs defaultValue="upcoming">
-            <TabsList className="mb-6">
+            <TabsList className="mb-6 flex-wrap">
               <TabsTrigger value="upcoming" className="gap-2">
                 Upcoming 
                 {upcomingTickets.length > 0 && (
                   <Badge variant="secondary" className="ml-1">{upcomingTickets.length}</Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="pending" className="gap-2">
+                Pending
+                {(pendingRegistrations?.length || 0) > 0 && (
+                  <Badge variant="secondary" className="ml-1">{pendingRegistrations?.length}</Badge>
                 )}
               </TabsTrigger>
               <TabsTrigger value="used">
@@ -267,6 +309,77 @@ const MyTickets = () => {
                 </Card>
               ) : (
                 upcomingTickets.map(ticket => <TicketCard key={ticket.id} ticket={ticket} />)
+              )}
+            </TabsContent>
+
+            <TabsContent value="pending" className="space-y-4">
+              {(!pendingRegistrations || pendingRegistrations.length === 0) ? (
+                <p className="text-center py-8 text-muted-foreground">No pending registrations</p>
+              ) : (
+                pendingRegistrations.map(reg => (
+                  <Card key={reg.id} className="overflow-hidden border-dashed border-2 border-primary/30">
+                    <CardContent className="p-0">
+                      <div className="flex flex-col sm:flex-row">
+                        {/* Event Info */}
+                        <div className="flex-1 p-4 sm:p-6 space-y-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <Link to={`/events/${reg.event.id}`}>
+                                <h3 className="font-display font-bold text-lg hover:text-primary transition-colors truncate">
+                                  {reg.event.title}
+                                </h3>
+                              </Link>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                                <Calendar className="w-4 h-4 flex-shrink-0" />
+                                {format(new Date(reg.event.start_date), "EEE, MMM d 'at' h:mm a")}
+                              </div>
+                              {reg.event.venue_name && (
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                  <MapPin className="w-4 h-4 flex-shrink-0" />
+                                  <span className="truncate">{reg.event.venue_name}</span>
+                                </div>
+                              )}
+                            </div>
+                            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
+                              <Hourglass className="w-3 h-3 mr-1" /> Pending
+                            </Badge>
+                          </div>
+
+                          {/* Waiting Message */}
+                          <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mt-4">
+                            <div className="flex items-start gap-3">
+                              <Hourglass className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                              <div>
+                                <h4 className="font-semibold text-foreground">⏳ Waiting for Approval</h4>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  Your registration has been received. Please wait for the organizer to approve your entry. You will be notified once approved.
+                                </p>
+                                <Button variant="outline" size="sm" className="mt-3 gap-2">
+                                  <Bell className="w-4 h-4" />
+                                  Enable Notifications
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+
+                          <p className="text-xs text-muted-foreground">
+                            Submitted on {format(new Date(reg.created_at), "MMM d, yyyy 'at' h:mm a")}
+                          </p>
+                        </div>
+
+                        {/* Placeholder for QR */}
+                        <div className="border-t sm:border-t-0 sm:border-l border-dashed p-4 flex flex-col items-center justify-center min-w-[160px] bg-muted/30">
+                          <div className="w-32 h-32 rounded-lg bg-muted flex items-center justify-center border-2 border-dashed border-muted-foreground/30">
+                            <Hourglass className="w-12 h-12 text-muted-foreground/50" />
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-2 text-center">
+                            QR will appear after approval
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
               )}
             </TabsContent>
 
