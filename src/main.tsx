@@ -2,6 +2,10 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 import { setupGlobalErrorHandler } from "@/services/errorLoggingService";
+import { initSecurityLockdown } from "@/security/lockdown";
+
+// Initialize production security lockdown (blocks editor/badge injection)
+initSecurityLockdown();
 
 // Set up global error handler for uncaught errors
 setupGlobalErrorHandler();
