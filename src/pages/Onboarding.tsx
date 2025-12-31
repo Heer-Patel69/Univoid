@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,8 +16,9 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, GraduationCap, X, Plus, Phone } from "lucide-react";
+import { Loader2, GraduationCap, X, Plus, Phone, RefreshCw } from "lucide-react";
 import { SearchableSelect } from "@/components/common/SearchableSelect";
+import { useOnboardingDraft } from "@/hooks/useOnboardingDraft";
 
 const DEGREE_OPTIONS = [
   "B.Tech",
@@ -80,23 +81,20 @@ const Onboarding = () => {
   const { toast } = useToast();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [customDegree, setCustomDegree] = useState("");
   const [customInterest, setCustomInterest] = useState("");
-  const [formData, setFormData] = useState({
-    full_name: profile?.full_name || user?.user_metadata?.full_name || user?.user_metadata?.name || "",
-    mobile_number: profile?.mobile_number || "",
-    college_name: profile?.college_name || "",
-    college_id: "",
-    degree: "",
-    branch: profile?.course_stream || "",
-    branch_id: "",
-    current_year: "",
-    city: "",
-    city_id: "",
-    state: "",
-    state_id: "",
-    interests: [] as string[],
-  });
+  const submissionLockRef = useRef(false); // Prevent double submission
+
+  // Use the draft hook for form state persistence
+  const {
+    formData,
+    updateField,
+    updateFields,
+    toggleInterest,
+    addInterest,
+    removeInterest,
+    clearDraft,
+    hasRestoredDraft,
+  } = useOnboardingDraft(profile, user);
 
   const progress = calculateProgress();
 
@@ -116,36 +114,17 @@ const Onboarding = () => {
     return ((filledFields + interestFilled) / 9) * 100;
   }
 
-  const toggleInterest = (interest: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      interests: prev.interests.includes(interest)
-        ? prev.interests.filter((i) => i !== interest)
-        : [...prev.interests, interest],
-    }));
-  };
-
-  const addCustomInterest = () => {
+  const handleAddCustomInterest = () => {
     const trimmed = customInterest.trim();
-    if (trimmed && !formData.interests.includes(trimmed)) {
-      setFormData((prev) => ({
-        ...prev,
-        interests: [...prev.interests, trimmed],
-      }));
+    if (trimmed) {
+      addInterest(trimmed);
       setCustomInterest("");
     }
   };
 
-  const removeInterest = (interest: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      interests: prev.interests.filter((i) => i !== interest),
-    }));
-  };
-
   const getDegreeValue = () => {
-    if (formData.degree === "Other" && customDegree) {
-      return customDegree;
+    if (formData.degree === "Other" && formData.customDegree) {
+      return formData.customDegree;
     }
     return formData.degree;
   };
@@ -158,7 +137,7 @@ const Onboarding = () => {
 
   const isFormValid = () => {
     const degreeValid = formData.degree !== "" && 
-      (formData.degree !== "Other" || customDegree.trim() !== "");
+      (formData.degree !== "Other" || (formData.customDegree?.trim() || "") !== "");
     return (
       formData.full_name.trim() !== "" &&
       formData.mobile_number.trim() !== "" &&
@@ -176,6 +155,11 @@ const Onboarding = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Idempotent submission check - prevent double submission
+    if (submissionLockRef.current || isSubmitting) {
+      return;
+    }
+
     if (!isFormValid()) {
       toast({
         title: "Incomplete Form",
@@ -187,11 +171,18 @@ const Onboarding = () => {
 
     if (!user) return;
 
+    // Lock submission
+    submissionLockRef.current = true;
     setIsSubmitting(true);
 
     try {
-      const finalDegree = formData.degree === "Other" ? customDegree.trim() : formData.degree;
+      const finalDegree = formData.degree === "Other" ? (formData.customDegree?.trim() || "") : formData.degree;
       const cleanMobile = formData.mobile_number.replace(/\s/g, '');
+      
+      // Determine profile type upgrade
+      // If user was quick registration, upgrade to full
+      const currentProfileType = profile?.profile_type || 'full';
+      const isUpgrade = currentProfileType === 'quick';
       
       const { error } = await supabase
         .from("profiles")
@@ -208,14 +199,21 @@ const Onboarding = () => {
           state: formData.state,
           interests: formData.interests,
           profile_complete: true,
+          profile_type: 'full', // Upgrade to full profile
+          onboarding_status: 'complete', // Mark onboarding complete
         })
         .eq("id", user.id);
 
       if (error) throw error;
 
+      // Clear the draft after successful submission
+      clearDraft();
+
       toast({
-        title: "Welcome to UniVoid! 🎉",
-        description: "Your profile is all set. Let's explore!",
+        title: isUpgrade ? "Profile Upgraded! 🎉" : "Welcome to UniVoid! 🎉",
+        description: isUpgrade 
+          ? "Your profile is now complete. Enjoy all platform features!"
+          : "Your profile is all set. Let's explore!",
       });
 
       // Refresh profile in context
@@ -232,6 +230,7 @@ const Onboarding = () => {
       });
     } finally {
       setIsSubmitting(false);
+      submissionLockRef.current = false;
     }
   };
 
@@ -241,9 +240,17 @@ const Onboarding = () => {
         {/* Progress Bar */}
         <div className="px-6 pt-6">
           <Progress value={progress} className="h-2" />
-          <p className="text-xs text-muted-foreground mt-2 text-center">
-            {Math.round(progress)}% Complete
-          </p>
+          <div className="flex items-center justify-between mt-2">
+            <p className="text-xs text-muted-foreground">
+              {Math.round(progress)}% Complete
+            </p>
+            {hasRestoredDraft && (
+              <div className="flex items-center gap-1 text-xs text-primary">
+                <RefreshCw className="w-3 h-3" />
+                <span>Draft restored</span>
+              </div>
+            )}
+          </div>
         </div>
 
         <CardHeader className="text-center pb-4">
@@ -266,9 +273,7 @@ const Onboarding = () => {
                 <Input
                   id="full_name"
                   value={formData.full_name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, full_name: e.target.value })
-                  }
+                  onChange={(e) => updateField('full_name', e.target.value)}
                   placeholder="Your full name"
                   required
                 />
@@ -288,7 +293,7 @@ const Onboarding = () => {
                     onChange={(e) => {
                       // Only allow digits
                       const value = e.target.value.replace(/\D/g, '').slice(0, 10);
-                      setFormData({ ...formData, mobile_number: value });
+                      updateField('mobile_number', value);
                     }}
                     placeholder="10-digit mobile number"
                     className="rounded-l-none"
@@ -317,8 +322,7 @@ const Onboarding = () => {
                 dependencyColumn={formData.state_id ? "state_id" : undefined}
                 dependencyValue={formData.state_id || undefined}
                 onSelect={(item) =>
-                  setFormData({
-                    ...formData,
+                  updateFields({
                     college_id: item.id,
                     college_name: item.name,
                   })
@@ -332,8 +336,8 @@ const Onboarding = () => {
                   <Select
                     value={formData.degree}
                     onValueChange={(value) => {
-                      setFormData({ ...formData, degree: value });
-                      if (value !== "Other") setCustomDegree("");
+                      updateField('degree', value);
+                      if (value !== "Other") updateField('customDegree', '');
                     }}
                   >
                     <SelectTrigger>
@@ -349,8 +353,8 @@ const Onboarding = () => {
                   </Select>
                   {formData.degree === "Other" && (
                     <Input
-                      value={customDegree}
-                      onChange={(e) => setCustomDegree(e.target.value)}
+                      value={formData.customDegree || ''}
+                      onChange={(e) => updateField('customDegree', e.target.value)}
                       placeholder="Enter your degree..."
                       className="mt-2"
                     />
@@ -361,9 +365,7 @@ const Onboarding = () => {
                   <Label>Current Year *</Label>
                   <Select
                     value={formData.current_year}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, current_year: value })
-                    }
+                    onValueChange={(value) => updateField('current_year', value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select year" />
@@ -386,8 +388,7 @@ const Onboarding = () => {
                 value={formData.branch_id}
                 displayValue={formData.branch}
                 onSelect={(item) =>
-                  setFormData({
-                    ...formData,
+                  updateFields({
                     branch_id: item.id,
                     branch: item.name,
                   })
@@ -407,8 +408,7 @@ const Onboarding = () => {
                   value={formData.state_id}
                   displayValue={formData.state}
                   onSelect={(item) =>
-                    setFormData({
-                      ...formData,
+                    updateFields({
                       state_id: item.id,
                       state: item.name,
                       city_id: "", // Reset city when state changes
@@ -426,8 +426,7 @@ const Onboarding = () => {
                   dependencyColumn="state_id"
                   dependencyValue={formData.state_id || null}
                   onSelect={(item) =>
-                    setFormData({
-                      ...formData,
+                    updateFields({
                       city_id: item.id,
                       city: item.name,
                     })
@@ -492,7 +491,7 @@ const Onboarding = () => {
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       e.preventDefault();
-                      addCustomInterest();
+                      handleAddCustomInterest();
                     }
                   }}
                   className="flex-1"
@@ -501,7 +500,7 @@ const Onboarding = () => {
                   type="button"
                   variant="outline"
                   size="icon"
-                  onClick={addCustomInterest}
+                  onClick={handleAddCustomInterest}
                   disabled={!customInterest.trim()}
                 >
                   <Plus className="w-4 h-4" />
