@@ -19,6 +19,7 @@ import { useRegistration } from "@/hooks/useRegistration";
 import { useRealtimeCapacity } from "@/hooks/useRealtimeCapacity";
 import AuthModal from "@/components/auth/AuthModal";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb";
+import SEOHead from "@/components/common/SEOHead";
 import DynamicRegistrationForm from "@/components/events/DynamicRegistrationForm";
 import ClubMembershipCheck from "@/components/events/ClubMembershipCheck";
 import QuickRegisterButton from "@/components/events/QuickRegisterButton";
@@ -188,8 +189,57 @@ const EventDetail = () => {
     </div>
   ) : null;
 
+  // SEO structured data for the event
+  const eventStructuredData = {
+    "@type": "Event",
+    name: event.title,
+    description: event.description ? DOMPurify.sanitize(event.description, { ALLOWED_TAGS: [] }).substring(0, 300) : `Join ${event.title} - ${event.category} event`,
+    startDate: event.start_date,
+    endDate: event.end_date || event.start_date,
+    eventStatus: "https://schema.org/EventScheduled",
+    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+    location: event.is_location_decided ? {
+      "@type": "Place",
+      name: event.venue_name || "Venue TBA",
+      address: event.venue_address || "",
+    } : {
+      "@type": "VirtualLocation",
+      name: "Location to be announced",
+    },
+    image: event.flyer_url || "https://univoid.tech/images/univoid-og.jpg",
+    organizer: {
+      "@type": "Organization",
+      name: "UniVoid",
+      url: "https://univoid.tech",
+    },
+    offers: event.is_paid ? {
+      "@type": "Offer",
+      price: event.price,
+      priceCurrency: "INR",
+      availability: isFullNow ? "https://schema.org/SoldOut" : "https://schema.org/InStock",
+    } : {
+      "@type": "Offer",
+      price: 0,
+      priceCurrency: "INR",
+      availability: isFullNow ? "https://schema.org/SoldOut" : "https://schema.org/InStock",
+    },
+  };
+
+  const seoDescription = event.description 
+    ? DOMPurify.sanitize(event.description, { ALLOWED_TAGS: [] }).substring(0, 155) 
+    : `${event.title} - ${event.category} event on ${format(new Date(event.start_date), "MMMM d, yyyy")}. ${event.is_paid ? `Entry: ₹${event.price}` : "Free entry"}.`;
+
   return (
     <div className="w-full max-w-full overflow-x-hidden">
+      <SEOHead
+        title={event.title}
+        description={seoDescription}
+        image={event.flyer_url}
+        url={`/events/${eventId}`}
+        type="event"
+        structuredData={eventStructuredData}
+        keywords={[event.category, event.event_type, "college event", "campus event", "student event"]}
+      />
       <div className="container mx-auto px-4 py-6 pb-24 md:pb-8">
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
 

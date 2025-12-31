@@ -2137,6 +2137,10 @@ export type Database = {
       }
       is_admin_or_assistant: { Args: { _user_id: string }; Returns: boolean }
       is_email_blocked: { Args: { p_email: string }; Returns: boolean }
+      permanently_delete_user: {
+        Args: { target_user_id: string }
+        Returns: boolean
+      }
       register_for_event_atomic: {
         Args: {
           p_custom_data?: Json
