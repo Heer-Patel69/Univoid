@@ -48,7 +48,7 @@ import {
   ProjectRequest,
 } from "@/services/projectsService";
 import { toast } from "sonner";
-import { Helmet } from "react-helmet";
+import SEOHead from "@/components/common/SEOHead";
 import AuthModal from "@/components/auth/AuthModal";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb";
 import { format } from "date-fns";
@@ -279,9 +279,13 @@ const ProjectDetail = () => {
 
   return (
     <>
-      <Helmet>
-        <title>{project.title} | UniVoid Projects</title>
-      </Helmet>
+      <SEOHead
+        title={project.title}
+        description={`${project.is_open ? '🟢 Open for collaboration' : '🔴 Closed'} • Team of ${project.max_members || 'unlimited'} • Skills: ${project.skills_required?.slice(0, 3).join(', ') || 'Various'}${project.description ? ' — ' + project.description.substring(0, 100) : ''}`}
+        url={`/projects/${projectId}`}
+        type="website"
+        keywords={['project', 'collaboration', 'team', ...(project.skills_required || [])]}
+      />
 
         <main className="flex-1 py-8">
           <div className="container-wide max-w-4xl">
