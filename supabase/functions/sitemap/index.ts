@@ -8,6 +8,16 @@ const corsHeaders = {
 
 const SITE_URL = "https://univoid.tech";
 
+// Helper to create URL-safe slugs
+const slugify = (text: string): string => {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -18,13 +28,13 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch all approved content
+    // Fetch all approved content with categories/subjects for programmatic SEO
     const [materialsRes, eventsRes, projectsRes, tasksRes, booksRes, profilesRes] = await Promise.all([
-      supabase.from("materials").select("id, updated_at").eq("status", "approved"),
-      supabase.from("events").select("id, updated_at").eq("status", "published"),
-      supabase.from("projects").select("id, updated_at"),
-      supabase.from("task_requests").select("id, updated_at"),
-      supabase.from("books").select("id, updated_at").eq("status", "approved"),
+      supabase.from("materials").select("id, updated_at, subject, course, branch").eq("status", "approved"),
+      supabase.from("events").select("id, updated_at, category, venue_name").eq("status", "published"),
+      supabase.from("projects").select("id, updated_at, skills_required"),
+      supabase.from("task_requests").select("id, updated_at, subject, task_type"),
+      supabase.from("books").select("id, updated_at, category").eq("status", "approved"),
       supabase.rpc("get_public_leaderboard", { limit_count: 100 }),
     ]);
 
@@ -36,6 +46,32 @@ Deno.serve(async (req) => {
     const profiles = profilesRes.data || [];
 
     const today = new Date().toISOString().split("T")[0];
+
+    // Extract unique subjects/courses/categories for programmatic SEO pages
+    const materialSubjects = new Set<string>();
+    const materialCourses = new Set<string>();
+    const materialBranches = new Set<string>();
+    const eventCategories = new Set<string>();
+    const bookCategories = new Set<string>();
+    const taskTypes = new Set<string>();
+
+    materials.forEach((m) => {
+      if (m.subject) materialSubjects.add(m.subject);
+      if (m.course) materialCourses.add(m.course);
+      if (m.branch) materialBranches.add(m.branch);
+    });
+
+    events.forEach((e) => {
+      if (e.category) eventCategories.add(e.category);
+    });
+
+    books.forEach((b) => {
+      if (b.category) bookCategories.add(b.category);
+    });
+
+    tasks.forEach((t) => {
+      if (t.task_type) taskTypes.add(t.task_type);
+    });
 
     // Static pages
     const staticPages = [
@@ -71,7 +107,91 @@ Deno.serve(async (req) => {
   </url>`;
     }
 
-    // Add materials
+    // Add programmatic SEO pages for material subjects
+    for (const subject of materialSubjects) {
+      const slug = slugify(subject);
+      if (slug) {
+        xml += `
+  <url>
+    <loc>${SITE_URL}/materials?subject=${encodeURIComponent(subject)}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>`;
+      }
+    }
+
+    // Add programmatic SEO pages for material courses
+    for (const course of materialCourses) {
+      const slug = slugify(course);
+      if (slug) {
+        xml += `
+  <url>
+    <loc>${SITE_URL}/materials?course=${encodeURIComponent(course)}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>`;
+      }
+    }
+
+    // Add programmatic SEO pages for material branches
+    for (const branch of materialBranches) {
+      const slug = slugify(branch);
+      if (slug) {
+        xml += `
+  <url>
+    <loc>${SITE_URL}/materials?branch=${encodeURIComponent(branch)}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>`;
+      }
+    }
+
+    // Add programmatic SEO pages for event categories
+    for (const category of eventCategories) {
+      const slug = slugify(category);
+      if (slug) {
+        xml += `
+  <url>
+    <loc>${SITE_URL}/events?category=${encodeURIComponent(category)}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>`;
+      }
+    }
+
+    // Add programmatic SEO pages for book categories
+    for (const category of bookCategories) {
+      const slug = slugify(category);
+      if (slug) {
+        xml += `
+  <url>
+    <loc>${SITE_URL}/books?category=${encodeURIComponent(category)}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>`;
+      }
+    }
+
+    // Add programmatic SEO pages for task types
+    for (const taskType of taskTypes) {
+      const slug = slugify(taskType);
+      if (slug) {
+        xml += `
+  <url>
+    <loc>${SITE_URL}/tasks?type=${encodeURIComponent(taskType)}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>`;
+      }
+    }
+
+    // Add individual materials
     for (const item of materials) {
       const lastmod = item.updated_at ? item.updated_at.split("T")[0] : today;
       xml += `
@@ -83,7 +203,7 @@ Deno.serve(async (req) => {
   </url>`;
     }
 
-    // Add events
+    // Add individual events
     for (const item of events) {
       const lastmod = item.updated_at ? item.updated_at.split("T")[0] : today;
       xml += `
@@ -95,7 +215,7 @@ Deno.serve(async (req) => {
   </url>`;
     }
 
-    // Add projects
+    // Add individual projects
     for (const item of projects) {
       const lastmod = item.updated_at ? item.updated_at.split("T")[0] : today;
       xml += `
@@ -107,7 +227,7 @@ Deno.serve(async (req) => {
   </url>`;
     }
 
-    // Add tasks
+    // Add individual tasks
     for (const item of tasks) {
       const lastmod = item.updated_at ? item.updated_at.split("T")[0] : today;
       xml += `
@@ -119,7 +239,7 @@ Deno.serve(async (req) => {
   </url>`;
     }
 
-    // Add books
+    // Add individual books
     for (const item of books) {
       const lastmod = item.updated_at ? item.updated_at.split("T")[0] : today;
       xml += `
@@ -144,6 +264,9 @@ Deno.serve(async (req) => {
 
     xml += `
 </urlset>`;
+
+    console.log(`Generated sitemap with ${materials.length} materials, ${events.length} events, ${projects.length} projects, ${tasks.length} tasks, ${books.length} books, ${profiles.length} profiles`);
+    console.log(`Programmatic pages: ${materialSubjects.size} subjects, ${materialCourses.size} courses, ${eventCategories.size} event categories, ${bookCategories.size} book categories`);
 
     return new Response(xml, { headers: corsHeaders });
   } catch (error) {

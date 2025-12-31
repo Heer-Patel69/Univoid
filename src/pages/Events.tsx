@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { Link, useOutletContext } from "react-router-dom";
+import { Link, useOutletContext, useSearchParams } from "react-router-dom";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { EventCard } from "@/components/events/EventCard";
 import { EventCardSkeleton } from "@/components/events/EventCardSkeleton";
@@ -10,6 +10,7 @@ import { fetchEvents, Event } from "@/services/eventsService";
 import { useAuth } from "@/contexts/AuthContext";
 import { Plus, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import SEOHead from "@/components/common/SEOHead";
 
 interface LayoutContext {
   onAuthClick?: () => void;
@@ -18,11 +19,30 @@ interface LayoutContext {
 const Events = () => {
   const { user } = useAuth();
   const context = useOutletContext<LayoutContext>();
+  const [searchParams] = useSearchParams();
+  const urlCategory = searchParams.get('category');
+  
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("all");
+  const [category, setCategory] = useState(urlCategory || "all");
   const [priceFilter, setPriceFilter] = useState("all");
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Dynamic SEO based on category filter
+  const seoData = useMemo(() => {
+    if (urlCategory && urlCategory !== 'all') {
+      return {
+        title: `${urlCategory} Events for Students | UniVoid`,
+        description: `Discover ${urlCategory.toLowerCase()} events, workshops, and hackathons for students. Register now and participate in exciting opportunities.`,
+        keywords: [urlCategory, 'student events', 'hackathons', 'workshops', 'college events', 'UniVoid'],
+      };
+    }
+    return {
+      title: 'Student Events - Hackathons, Workshops & Fests | UniVoid',
+      description: 'Discover hackathons, workshops, cultural fests, and student events. Register for tech events, coding competitions, and more.',
+      keywords: ['student events', 'hackathons', 'workshops', 'college fests', 'tech events', 'UniVoid'],
+    };
+  }, [urlCategory]);
 
   // Fetch events with filters
   const loadEvents = async () => {
@@ -113,6 +133,12 @@ const Events = () => {
 
   return (
     <div className="pb-24 md:pb-8">
+      <SEOHead
+        title={seoData.title}
+        description={seoData.description}
+        url="/events"
+        keywords={seoData.keywords}
+      />
       <main className="container mx-auto px-4 py-6">
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">

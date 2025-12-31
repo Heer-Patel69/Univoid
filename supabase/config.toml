@@ -59,3 +59,9 @@ verify_jwt = true
 
 [functions.scan-upi]
 verify_jwt = true
+
+[functions.delete-account]
+verify_jwt = true
+
+[functions.sitemap]
+verify_jwt = false
