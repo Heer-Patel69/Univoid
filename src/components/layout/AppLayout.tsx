@@ -21,10 +21,11 @@ const AppLayout = () => {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col bg-background paper-texture">
+    <div className="min-h-dvh flex flex-col bg-background paper-texture w-full max-w-full overflow-x-hidden">
       <Header onAuthClick={handleAuthClick} />
       
-      <main className="flex-1">
+      {/* Main content with proper spacing for sticky header */}
+      <main className="flex-1 w-full max-w-full">
         <Suspense fallback={null}>
           <Outlet context={{ onAuthClick: handleAuthClick }} />
         </Suspense>

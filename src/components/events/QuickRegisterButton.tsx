@@ -27,7 +27,7 @@ const QuickRegisterButton = ({
           size="lg"
         >
           <Zap className="w-5 h-5 mr-2" />
-          Quick Register – No signup required
+          Quick Register
         </Button>
       </Link>
     );
