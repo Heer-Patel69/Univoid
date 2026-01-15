@@ -1,11 +1,19 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { CreditCard, Mail, AlertCircle, CheckCircle2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import SEOHead from "@/components/common/SEOHead";
 
 const RefundPolicy = () => {
   return (
-    <main className="flex-1 py-10 md:py-14">
-      <div className="container-wide max-w-4xl">
+    <>
+      <SEOHead
+        title="Refund Policy"
+        description="Learn about UniVoid's refund policy. Understand how payments and refunds are handled for events, books, tasks, and other services on our platform."
+        url="/refund-policy"
+        keywords={['refund policy', 'UniVoid refunds', 'payment policy', 'event refunds']}
+      />
+      <main className="flex-1 py-10 md:py-14">
+        <div className="container-wide max-w-4xl">
           {/* Header */}
           <div className="mb-10 text-center">
             <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -24,8 +32,8 @@ const RefundPolicy = () => {
               {/* Introduction */}
               <section>
                 <p className="text-muted-foreground leading-relaxed">
-                  This Refund Policy explains how payments and refunds are handled on the UniVoid platform. 
-                  Please read this policy carefully to understand your rights and our limitations regarding 
+                  This Refund Policy explains how payments and refunds are handled on the UniVoid platform.
+                  Please read this policy carefully to understand your rights and our limitations regarding
                   financial transactions.
                 </p>
               </section>
@@ -37,9 +45,9 @@ const RefundPolicy = () => {
                   <div>
                     <h2 className="text-lg font-semibold text-foreground mb-2">Important Notice</h2>
                     <p className="text-muted-foreground leading-relaxed">
-                      <strong>UniVoid is a free platform</strong> that does not charge users for accessing study 
-                      materials, listing books, creating projects, or posting tasks. UniVoid does not process 
-                      payments for any of these services. All financial transactions between users are conducted 
+                      <strong>UniVoid is a free platform</strong> that does not charge users for accessing study
+                      materials, listing books, creating projects, or posting tasks. UniVoid does not process
+                      payments for any of these services. All financial transactions between users are conducted
                       independently and outside of the UniVoid platform.
                     </p>
                   </div>
@@ -53,8 +61,8 @@ const RefundPolicy = () => {
                   <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="text-muted-foreground">
-                      <strong className="text-foreground">Free Access:</strong> All study materials on UniVoid 
-                      are available free of charge. There are no payments involved, and therefore no refunds 
+                      <strong className="text-foreground">Free Access:</strong> All study materials on UniVoid
+                      are available free of charge. There are no payments involved, and therefore no refunds
                       are applicable for study materials.
                     </p>
                   </div>
@@ -87,7 +95,7 @@ const RefundPolicy = () => {
                     </li>
                   </ul>
                   <p className="text-sm text-muted-foreground mt-4 p-3 bg-background rounded-lg border border-border">
-                    Any payment arrangements, refunds, or disputes must be resolved directly between the buyer 
+                    Any payment arrangements, refunds, or disputes must be resolved directly between the buyer
                     and seller. We recommend using secure payment methods and meeting in safe locations for exchanges.
                   </p>
                 </div>
@@ -156,7 +164,7 @@ const RefundPolicy = () => {
                 <h2 className="text-lg font-semibold text-foreground mb-4">Events</h2>
                 <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg mb-4">
                   <p className="text-muted-foreground text-sm">
-                    <strong className="text-foreground">Critical Notice:</strong> UniVoid is NOT an event organizer. 
+                    <strong className="text-foreground">Critical Notice:</strong> UniVoid is NOT an event organizer.
                     All events are organized by independent third parties who choose to list their events on our platform.
                   </p>
                 </div>
@@ -203,8 +211,8 @@ const RefundPolicy = () => {
               <section>
                 <h2 className="text-lg font-semibold text-foreground mb-4">Premium Services (If Applicable)</h2>
                 <p className="text-muted-foreground leading-relaxed">
-                  Currently, UniVoid does not offer any paid premium services. If we introduce premium features 
-                  in the future, a separate refund policy specific to those services will be published and made 
+                  Currently, UniVoid does not offer any paid premium services. If we introduce premium features
+                  in the future, a separate refund policy specific to those services will be published and made
                   available to users before any payment is required.
                 </p>
               </section>
@@ -230,7 +238,7 @@ const RefundPolicy = () => {
                   </li>
                 </ul>
                 <p className="text-sm text-muted-foreground mt-4">
-                  While UniVoid cannot mediate financial disputes, you may report users who engage in fraudulent 
+                  While UniVoid cannot mediate financial disputes, you may report users who engage in fraudulent
                   behavior using our{" "}
                   <Link to="/contact" className="text-primary hover:underline">report feature</Link>.
                 </p>
@@ -240,8 +248,8 @@ const RefundPolicy = () => {
               <section>
                 <h2 className="text-lg font-semibold text-foreground mb-4">Changes to This Policy</h2>
                 <p className="text-muted-foreground leading-relaxed">
-                  UniVoid reserves the right to update this Refund Policy at any time. Changes will be posted 
-                  on this page with an updated effective date. Continued use of the platform after changes 
+                  UniVoid reserves the right to update this Refund Policy at any time. Changes will be posted
+                  on this page with an updated effective date. Continued use of the platform after changes
                   constitutes acceptance of the modified policy.
                 </p>
               </section>
@@ -267,7 +275,8 @@ const RefundPolicy = () => {
           </Card>
         </div>
       </main>
-    );
-  };
+    </>
+  );
+};
 
 export default RefundPolicy;

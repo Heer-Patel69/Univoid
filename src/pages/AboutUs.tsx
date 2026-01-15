@@ -1,17 +1,21 @@
-import { Helmet } from "react-helmet";
 import { Card, CardContent } from "@/components/ui/card";
+import SEOHead from "@/components/common/SEOHead";
 
 const AboutUs = () => {
   return (
     <>
-      <Helmet>
-        <title>About UniVoid | Unified Student Ecosystem for Learning, Projects & Growth</title>
-        <meta 
-          name="description" 
-          content="UniVoid is a unified student ecosystem for study materials, project collaboration, book reselling, tasks, and campus events—built to turn student effort into real growth." 
-        />
-        <link rel="canonical" href="https://univoid.tech/about-us" />
-      </Helmet>
+      <SEOHead
+        title="About UniVoid | Unified Student Ecosystem for Learning, Projects & Growth"
+        description="UniVoid is a unified student ecosystem for study materials, project collaboration, book reselling, tasks, and campus events—built to turn student effort into real growth."
+        url="/about"
+        keywords={['about UniVoid', 'student platform', 'study materials', 'project collaboration', 'student ecosystem']}
+        structuredData={{
+          "@type": "AboutPage",
+          "name": "About UniVoid",
+          "description": "UniVoid is a unified student ecosystem for study materials, project collaboration, book reselling, tasks, and campus events.",
+          "url": "https://univoid.tech/about"
+        }}
+      />
 
       <div className="py-10 md:py-14">
         <div className="container-wide max-w-4xl">

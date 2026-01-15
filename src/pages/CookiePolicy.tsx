@@ -1,11 +1,19 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Cookie, Mail, Settings, BarChart3, Megaphone, Shield, ToggleRight, Globe } from "lucide-react";
 import { Link } from "react-router-dom";
+import SEOHead from "@/components/common/SEOHead";
 
 const CookiePolicy = () => {
   return (
-    <main className="flex-1 py-10 md:py-14">
-      <div className="container-wide max-w-4xl">
+    <>
+      <SEOHead
+        title="Cookie Policy"
+        description="Learn about how UniVoid uses cookies and similar tracking technologies. Understand what data is collected and how to manage your cookie preferences."
+        url="/cookie-policy"
+        keywords={['cookie policy', 'cookies', 'tracking', 'privacy', 'UniVoid cookies']}
+      />
+      <main className="flex-1 py-10 md:py-14">
+        <div className="container-wide max-w-4xl">
           {/* Header */}
           <div className="mb-10 text-center">
             <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -24,8 +32,8 @@ const CookiePolicy = () => {
               {/* Introduction */}
               <section>
                 <p className="text-muted-foreground leading-relaxed">
-                  This Cookie Policy explains how UniVoid uses cookies and similar tracking technologies when you 
-                  visit our platform. We believe in transparency and want you to understand what data is collected, 
+                  This Cookie Policy explains how UniVoid uses cookies and similar tracking technologies when you
+                  visit our platform. We believe in transparency and want you to understand what data is collected,
                   why it's collected, and how you can control it.
                 </p>
               </section>
@@ -34,8 +42,8 @@ const CookiePolicy = () => {
               <section>
                 <h2 className="text-lg font-semibold text-foreground mb-4">What Are Cookies?</h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  Cookies are small text files that are placed on your device (computer, smartphone, or tablet) 
-                  when you visit a website. They are widely used to make websites work more efficiently, provide 
+                  Cookies are small text files that are placed on your device (computer, smartphone, or tablet)
+                  when you visit a website. They are widely used to make websites work more efficiently, provide
                   a better user experience, and give website owners useful information about how their sites are used.
                 </p>
                 <div className="p-4 bg-muted/30 rounded-lg">
@@ -76,8 +84,8 @@ const CookiePolicy = () => {
                     </div>
                   </div>
                   <p className="text-sm text-muted-foreground mb-3">
-                    These cookies are essential for the website to function properly. They enable core functionality 
-                    such as security, authentication, and accessibility. Without these cookies, the website cannot 
+                    These cookies are essential for the website to function properly. They enable core functionality
+                    such as security, authentication, and accessibility. Without these cookies, the website cannot
                     operate correctly. These cookies do not store any personally identifiable information.
                   </p>
                   <div className="overflow-x-auto">
@@ -127,8 +135,8 @@ const CookiePolicy = () => {
                     </div>
                   </div>
                   <p className="text-sm text-muted-foreground mb-3">
-                    These cookies allow the website to remember choices you make and provide enhanced, more 
-                    personalized features. They may also be used to remember changes you have made to text size, 
+                    These cookies allow the website to remember choices you make and provide enhanced, more
+                    personalized features. They may also be used to remember changes you have made to text size,
                     fonts, and other customizable parts of web pages.
                   </p>
                   <div className="overflow-x-auto">
@@ -173,8 +181,8 @@ const CookiePolicy = () => {
                     </div>
                   </div>
                   <p className="text-sm text-muted-foreground mb-3">
-                    These cookies help us understand how visitors interact with our website by collecting and 
-                    reporting information anonymously. This helps us improve the website's structure, navigation, 
+                    These cookies help us understand how visitors interact with our website by collecting and
+                    reporting information anonymously. This helps us improve the website's structure, navigation,
                     and content based on user behavior.
                   </p>
                   <div className="overflow-x-auto">
@@ -211,7 +219,7 @@ const CookiePolicy = () => {
                     </table>
                   </div>
                   <p className="text-xs text-muted-foreground mt-3">
-                    Data collected: Page views, session duration, bounce rate, geographic location (country/city level), 
+                    Data collected: Page views, session duration, bounce rate, geographic location (country/city level),
                     device type, browser type, referral source.
                   </p>
                 </div>
@@ -228,8 +236,8 @@ const CookiePolicy = () => {
                     </div>
                   </div>
                   <p className="text-sm text-muted-foreground mb-3">
-                    These cookies are used to deliver advertisements that are more relevant to you and your interests. 
-                    They are also used to limit the number of times you see an advertisement and help measure the 
+                    These cookies are used to deliver advertisements that are more relevant to you and your interests.
+                    They are also used to limit the number of times you see an advertisement and help measure the
                     effectiveness of advertising campaigns. We use Google AdSense to display advertisements.
                   </p>
                   <div className="overflow-x-auto">
@@ -289,13 +297,13 @@ const CookiePolicy = () => {
                   <div className="p-4 bg-muted/30 rounded-lg">
                     <h3 className="font-medium text-foreground text-sm mb-2">Google Analytics</h3>
                     <p className="text-xs text-muted-foreground mb-2">
-                      We use Google Analytics to understand how visitors use our site. Google Analytics collects 
-                      data such as how often users visit, what pages they visit, and what other sites they visited 
+                      We use Google Analytics to understand how visitors use our site. Google Analytics collects
+                      data such as how often users visit, what pages they visit, and what other sites they visited
                       prior to coming to our site.
                     </p>
-                    <a 
-                      href="https://policies.google.com/privacy" 
-                      target="_blank" 
+                    <a
+                      href="https://policies.google.com/privacy"
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="text-xs text-primary hover:underline"
                     >
@@ -305,13 +313,13 @@ const CookiePolicy = () => {
                   <div className="p-4 bg-muted/30 rounded-lg">
                     <h3 className="font-medium text-foreground text-sm mb-2">Google AdSense</h3>
                     <p className="text-xs text-muted-foreground mb-2">
-                      We display advertisements through Google AdSense. Google uses cookies to serve ads based on 
-                      your visits to our website and other websites on the internet. This helps support our free 
+                      We display advertisements through Google AdSense. Google uses cookies to serve ads based on
+                      your visits to our website and other websites on the internet. This helps support our free
                       platform while showing you relevant content.
                     </p>
-                    <a 
-                      href="https://policies.google.com/technologies/ads" 
-                      target="_blank" 
+                    <a
+                      href="https://policies.google.com/technologies/ads"
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="text-xs text-primary hover:underline"
                     >
@@ -335,8 +343,8 @@ const CookiePolicy = () => {
                   <div className="p-4 border border-border rounded-lg">
                     <h3 className="font-medium text-foreground text-sm mb-2">1. Through Our Cookie Banner</h3>
                     <p className="text-xs text-muted-foreground">
-                      When you first visit UniVoid, you'll see a cookie consent banner. You can choose to accept 
-                      all cookies or only necessary cookies. You can change your preferences at any time by clearing 
+                      When you first visit UniVoid, you'll see a cookie consent banner. You can choose to accept
+                      all cookies or only necessary cookies. You can change your preferences at any time by clearing
                       your browser's cookies and revisiting the site.
                     </p>
                   </div>
@@ -344,7 +352,7 @@ const CookiePolicy = () => {
                   <div className="p-4 border border-border rounded-lg">
                     <h3 className="font-medium text-foreground text-sm mb-2">2. Through Your Browser Settings</h3>
                     <p className="text-xs text-muted-foreground mb-3">
-                      Most browsers allow you to control cookies through their settings. Here's how to access 
+                      Most browsers allow you to control cookies through their settings. Here's how to access
                       cookie settings in popular browsers:
                     </p>
                     <ul className="space-y-1 text-xs text-muted-foreground">
@@ -362,9 +370,9 @@ const CookiePolicy = () => {
                     </p>
                     <ul className="space-y-1 text-xs">
                       <li>
-                        <a 
-                          href="https://adssettings.google.com" 
-                          target="_blank" 
+                        <a
+                          href="https://adssettings.google.com"
+                          target="_blank"
                           rel="noopener noreferrer"
                           className="text-primary hover:underline"
                         >
@@ -373,9 +381,9 @@ const CookiePolicy = () => {
                         {" "}- Control Google's ad personalization
                       </li>
                       <li>
-                        <a 
-                          href="https://optout.aboutads.info" 
-                          target="_blank" 
+                        <a
+                          href="https://optout.aboutads.info"
+                          target="_blank"
                           rel="noopener noreferrer"
                           className="text-primary hover:underline"
                         >
@@ -384,9 +392,9 @@ const CookiePolicy = () => {
                         {" "}- Opt out of interest-based advertising
                       </li>
                       <li>
-                        <a 
-                          href="https://optout.networkadvertising.org" 
-                          target="_blank" 
+                        <a
+                          href="https://optout.networkadvertising.org"
+                          target="_blank"
                           rel="noopener noreferrer"
                           className="text-primary hover:underline"
                         >
@@ -400,9 +408,9 @@ const CookiePolicy = () => {
                   <div className="p-4 border border-border rounded-lg">
                     <h3 className="font-medium text-foreground text-sm mb-2">4. Do Not Track Signals</h3>
                     <p className="text-xs text-muted-foreground">
-                      Some browsers have a "Do Not Track" feature that signals websites not to track you. 
-                      Currently, there is no standard for how websites should respond to these signals, and 
-                      we do not currently respond to DNT signals. However, you can use the cookie management 
+                      Some browsers have a "Do Not Track" feature that signals websites not to track you.
+                      Currently, there is no standard for how websites should respond to these signals, and
+                      we do not currently respond to DNT signals. However, you can use the cookie management
                       options described above to control tracking.
                     </p>
                   </div>
@@ -410,7 +418,7 @@ const CookiePolicy = () => {
 
                 <div className="mt-4 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
                   <p className="text-sm text-muted-foreground">
-                    <strong className="text-foreground">Note:</strong> Disabling certain cookies may affect the 
+                    <strong className="text-foreground">Note:</strong> Disabling certain cookies may affect the
                     functionality of our website. Some features may not work properly if you block all cookies.
                   </p>
                 </div>
@@ -471,7 +479,7 @@ const CookiePolicy = () => {
                   </li>
                 </ul>
                 <p className="text-sm text-muted-foreground mt-4">
-                  You can withdraw your consent at any time by clearing your cookies and making a new choice 
+                  You can withdraw your consent at any time by clearing your cookies and making a new choice
                   when the cookie banner appears.
                 </p>
               </section>
@@ -480,9 +488,9 @@ const CookiePolicy = () => {
               <section>
                 <h2 className="text-lg font-semibold text-foreground mb-4">Changes to This Cookie Policy</h2>
                 <p className="text-muted-foreground leading-relaxed">
-                  We may update this Cookie Policy from time to time to reflect changes in our practices or for 
-                  other operational, legal, or regulatory reasons. When we make changes, we will update the 
-                  "Effective Date" at the top of this page. We encourage you to review this policy periodically 
+                  We may update this Cookie Policy from time to time to reflect changes in our practices or for
+                  other operational, legal, or regulatory reasons. When we make changes, we will update the
+                  "Effective Date" at the top of this page. We encourage you to review this policy periodically
                   to stay informed about how we use cookies.
                 </p>
               </section>
@@ -527,9 +535,10 @@ const CookiePolicy = () => {
                 </p>
               </section>
             </CardContent>
-        </Card>
-      </div>
-    </main>
+          </Card>
+        </div>
+      </main>
+    </>
   );
 };
 

@@ -1,11 +1,19 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Scale, Mail, AlertTriangle, ExternalLink, Shield, Globe } from "lucide-react";
 import { Link } from "react-router-dom";
+import SEOHead from "@/components/common/SEOHead";
 
 const LegalDisclaimer = () => {
   return (
-    <main className="flex-1 py-10 md:py-14">
-      <div className="container-wide max-w-4xl">
+    <>
+      <SEOHead
+        title="Legal Disclaimer"
+        description="Read the legal disclaimer for UniVoid. Understand our limitations of liability as an intermediary platform and important legal notices."
+        url="/legal-disclaimer"
+        keywords={['legal disclaimer', 'terms', 'liability', 'UniVoid legal', 'platform disclaimer']}
+      />
+      <main className="flex-1 py-10 md:py-14">
+        <div className="container-wide max-w-4xl">
           {/* Header */}
           <div className="mb-10 text-center">
             <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -24,8 +32,8 @@ const LegalDisclaimer = () => {
               {/* Introduction */}
               <section>
                 <p className="text-muted-foreground leading-relaxed">
-                  This Legal Disclaimer outlines the limitations of liability and important legal notices 
-                  regarding the use of UniVoid. By accessing and using this platform, you acknowledge and 
+                  This Legal Disclaimer outlines the limitations of liability and important legal notices
+                  regarding the use of UniVoid. By accessing and using this platform, you acknowledge and
                   accept these terms.
                 </p>
               </section>
@@ -37,11 +45,11 @@ const LegalDisclaimer = () => {
                   <div>
                     <h2 className="text-lg font-semibold text-foreground mb-2">Intermediary Platform Status</h2>
                     <p className="text-muted-foreground leading-relaxed">
-                      <strong>UniVoid operates solely as an intermediary platform</strong> as defined under the 
-                      Information Technology Act, 2000 and the Information Technology (Intermediary Guidelines 
-                      and Digital Media Ethics Code) Rules, 2021. All content on this platform—including study 
-                      materials, books, events, tasks, projects, news, and other posts—is created, uploaded, 
-                      and managed entirely by users. UniVoid does not create, modify, select, verify, or 
+                      <strong>UniVoid operates solely as an intermediary platform</strong> as defined under the
+                      Information Technology Act, 2000 and the Information Technology (Intermediary Guidelines
+                      and Digital Media Ethics Code) Rules, 2021. All content on this platform—including study
+                      materials, books, events, tasks, projects, news, and other posts—is created, uploaded,
+                      and managed entirely by users. UniVoid does not create, modify, select, verify, or
                       endorse any user-generated content.
                     </p>
                   </div>
@@ -102,7 +110,7 @@ const LegalDisclaimer = () => {
                 </div>
                 <div className="p-4 bg-muted/30 rounded-lg">
                   <p className="text-muted-foreground leading-relaxed mb-4">
-                    THE UNIVOID PLATFORM IS PROVIDED ON AN "AS IS" AND "AS AVAILABLE" BASIS. TO THE FULLEST 
+                    THE UNIVOID PLATFORM IS PROVIDED ON AN "AS IS" AND "AS AVAILABLE" BASIS. TO THE FULLEST
                     EXTENT PERMITTED BY APPLICABLE LAW, UNIVOID DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING:
                   </p>
                   <ul className="space-y-2 text-muted-foreground">
@@ -135,7 +143,7 @@ const LegalDisclaimer = () => {
                 <h2 className="text-lg font-semibold text-foreground mb-4">Limitation of Liability</h2>
                 <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg mb-4">
                   <p className="text-muted-foreground leading-relaxed">
-                    TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, UNIVOID AND ITS OPERATORS, AFFILIATES, 
+                    TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, UNIVOID AND ITS OPERATORS, AFFILIATES,
                     OFFICERS, DIRECTORS, EMPLOYEES, AND AGENTS SHALL NOT BE LIABLE FOR:
                   </p>
                 </div>
@@ -204,7 +212,7 @@ const LegalDisclaimer = () => {
                   <h2 className="text-lg font-semibold text-foreground">Third-Party Links and Services</h2>
                 </div>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  UniVoid may contain links to third-party websites, services, or resources. These links are 
+                  UniVoid may contain links to third-party websites, services, or resources. These links are
                   provided for convenience only. UniVoid:
                 </p>
                 <ul className="space-y-2 text-muted-foreground">
@@ -231,10 +239,10 @@ const LegalDisclaimer = () => {
               <section>
                 <h2 className="text-lg font-semibold text-foreground mb-4">Not Professional Advice</h2>
                 <p className="text-muted-foreground leading-relaxed">
-                  Content available on UniVoid is for general informational and educational purposes only. 
-                  Nothing on this platform constitutes professional advice—whether legal, financial, medical, 
-                  academic, or otherwise. Users should consult qualified professionals for specific advice 
-                  relevant to their circumstances. UniVoid does not guarantee that materials or information 
+                  Content available on UniVoid is for general informational and educational purposes only.
+                  Nothing on this platform constitutes professional advice—whether legal, financial, medical,
+                  academic, or otherwise. Users should consult qualified professionals for specific advice
+                  relevant to their circumstances. UniVoid does not guarantee that materials or information
                   will be suitable for any specific academic, professional, or personal purpose.
                 </p>
               </section>
@@ -271,8 +279,8 @@ const LegalDisclaimer = () => {
                   </li>
                 </ul>
                 <p className="text-muted-foreground leading-relaxed">
-                  Users are responsible for ensuring their use of the platform complies with all applicable 
-                  laws in their jurisdiction. UniVoid will cooperate with law enforcement and legal authorities 
+                  Users are responsible for ensuring their use of the platform complies with all applicable
+                  laws in their jurisdiction. UniVoid will cooperate with law enforcement and legal authorities
                   as required by law.
                 </p>
               </section>
@@ -281,7 +289,7 @@ const LegalDisclaimer = () => {
               <section>
                 <h2 className="text-lg font-semibold text-foreground mb-4">Content Reporting and Removal</h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  As an intermediary platform, UniVoid maintains a grievance redressal mechanism. If you 
+                  As an intermediary platform, UniVoid maintains a grievance redressal mechanism. If you
                   believe any content on the platform violates your rights or applicable laws, you may:
                 </p>
                 <ul className="space-y-2 text-muted-foreground">
@@ -299,7 +307,7 @@ const LegalDisclaimer = () => {
                   </li>
                 </ul>
                 <p className="text-sm text-muted-foreground mt-4">
-                  We will review valid complaints and take appropriate action in accordance with applicable laws 
+                  We will review valid complaints and take appropriate action in accordance with applicable laws
                   and our policies.
                 </p>
               </section>
@@ -308,10 +316,10 @@ const LegalDisclaimer = () => {
               <section>
                 <h2 className="text-lg font-semibold text-foreground mb-4">Indemnification</h2>
                 <p className="text-muted-foreground leading-relaxed">
-                  You agree to indemnify, defend, and hold harmless UniVoid, its operators, affiliates, and their 
-                  respective officers, directors, employees, agents, licensors, and suppliers from and against all 
-                  losses, expenses, damages, and costs, including reasonable legal fees, resulting from: (a) any 
-                  violation of these terms; (b) any activity related to your account; (c) your content or any 
+                  You agree to indemnify, defend, and hold harmless UniVoid, its operators, affiliates, and their
+                  respective officers, directors, employees, agents, licensors, and suppliers from and against all
+                  losses, expenses, damages, and costs, including reasonable legal fees, resulting from: (a) any
+                  violation of these terms; (b) any activity related to your account; (c) your content or any
                   content you upload; and (d) your violation of any law or third-party rights.
                 </p>
               </section>
@@ -320,10 +328,10 @@ const LegalDisclaimer = () => {
               <section>
                 <h2 className="text-lg font-semibold text-foreground mb-4">Right to Update Policies</h2>
                 <p className="text-muted-foreground leading-relaxed">
-                  UniVoid reserves the right to modify, update, or change this Legal Disclaimer, our Privacy Policy, 
-                  Terms and Conditions, and any other policies at any time without prior notice. Changes will be 
-                  effective immediately upon posting on the platform. Your continued use of UniVoid after any 
-                  changes constitutes your acceptance of the modified policies. We encourage you to review our 
+                  UniVoid reserves the right to modify, update, or change this Legal Disclaimer, our Privacy Policy,
+                  Terms and Conditions, and any other policies at any time without prior notice. Changes will be
+                  effective immediately upon posting on the platform. Your continued use of UniVoid after any
+                  changes constitutes your acceptance of the modified policies. We encourage you to review our
                   policies periodically.
                 </p>
               </section>
@@ -332,8 +340,8 @@ const LegalDisclaimer = () => {
               <section>
                 <h2 className="text-lg font-semibold text-foreground mb-4">Severability</h2>
                 <p className="text-muted-foreground leading-relaxed">
-                  If any provision of this Legal Disclaimer is found to be invalid, illegal, or unenforceable by 
-                  a court of competent jurisdiction, such finding shall not affect the validity of the remaining 
+                  If any provision of this Legal Disclaimer is found to be invalid, illegal, or unenforceable by
+                  a court of competent jurisdiction, such finding shall not affect the validity of the remaining
                   provisions, which shall continue in full force and effect.
                 </p>
               </section>
@@ -345,8 +353,8 @@ const LegalDisclaimer = () => {
                   This Legal Disclaimer, together with our{" "}
                   <Link to="/terms" className="text-primary hover:underline">Terms and Conditions</Link>,{" "}
                   <Link to="/privacy-policy" className="text-primary hover:underline">Privacy Policy</Link>, and{" "}
-                  <Link to="/refund-policy" className="text-primary hover:underline">Refund Policy</Link>, 
-                  constitutes the entire agreement between you and UniVoid regarding the use of the platform, 
+                  <Link to="/refund-policy" className="text-primary hover:underline">Refund Policy</Link>,
+                  constitutes the entire agreement between you and UniVoid regarding the use of the platform,
                   superseding any prior agreements or understandings.
                 </p>
               </section>
@@ -372,7 +380,8 @@ const LegalDisclaimer = () => {
           </Card>
         </div>
       </main>
-    );
-  };
+    </>
+  );
+};
 
 export default LegalDisclaimer;

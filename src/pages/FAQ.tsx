@@ -2,6 +2,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { HelpCircle, User, BookOpen, ShoppingBag, ListTodo, Users, Calendar, Shield } from "lucide-react";
+import SEOHead from "@/components/common/SEOHead";
 
 interface FAQItem {
   question: string;
@@ -266,71 +267,95 @@ const faqSections: FAQSection[] = [
 ];
 
 const FAQ = () => {
+  // Generate FAQ structured data for rich snippets
+  const faqStructuredData = {
+    "@type": "FAQPage",
+    "mainEntity": faqSections.flatMap(section =>
+      section.items.map(item => ({
+        "@type": "Question",
+        "name": item.question,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": item.answer
+        }
+      }))
+    )
+  };
+
   return (
-    <main className="flex-grow container mx-auto px-4 py-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-10">
-          <Badge variant="secondary" className="mb-4">Help Center</Badge>
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
-            Frequently Asked Questions
-          </h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Find answers to common questions about UniVoid features and how to use the platform.
-          </p>
-        </div>
-
-        <div className="space-y-6">
-          {faqSections.map((section, sectionIndex) => (
-            <Card key={sectionIndex} className="border-border">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-3 text-lg">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                    {section.icon}
-                  </div>
-                  {section.title}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <Accordion type="single" collapsible className="w-full">
-                  {section.items.map((item, itemIndex) => (
-                    <AccordionItem 
-                      key={itemIndex} 
-                      value={`${sectionIndex}-${itemIndex}`}
-                      className="border-muted"
-                    >
-                      <AccordionTrigger className="text-left hover:no-underline py-4">
-                        <span className="text-sm font-medium pr-4">{item.question}</span>
-                      </AccordionTrigger>
-                      <AccordionContent className="text-sm text-muted-foreground pb-4 leading-relaxed">
-                        {item.answer}
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
-                </Accordion>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Still need help section */}
-        <Card className="mt-10 bg-primary/5 border-primary/20">
-          <CardContent className="p-6 text-center">
-            <h3 className="text-lg font-semibold text-foreground mb-2">
-              Still have questions?
-            </h3>
-            <p className="text-muted-foreground mb-4">
-              Can't find what you're looking for? Reach out to us directly.
+    <>
+      <SEOHead
+        title="FAQ - Frequently Asked Questions"
+        description="Find answers to common questions about UniVoid features including study materials, book exchange, events, projects, tasks, and more."
+        url="/faq"
+        keywords={['FAQ', 'help', 'questions', 'UniVoid help', 'student platform FAQ', 'how to use UniVoid']}
+        structuredData={faqStructuredData}
+      />
+      <main className="flex-grow container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-10">
+            <Badge variant="secondary" className="mb-4">Help Center</Badge>
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
+              Frequently Asked Questions
+            </h1>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Find answers to common questions about UniVoid features and how to use the platform.
             </p>
-            <a 
-              href="mailto:univoid35@gmail.com" 
-              className="inline-flex items-center gap-2 text-primary hover:underline font-medium"
-            >
-              Contact Support → univoid35@gmail.com
-            </a>
-          </CardContent>
-        </Card>
-      </div>
-    </main>
+          </div>
+
+          <div className="space-y-6">
+            {faqSections.map((section, sectionIndex) => (
+              <Card key={sectionIndex} className="border-border">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-3 text-lg">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                      {section.icon}
+                    </div>
+                    {section.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <Accordion type="single" collapsible className="w-full">
+                    {section.items.map((item, itemIndex) => (
+                      <AccordionItem
+                        key={itemIndex}
+                        value={`${sectionIndex}-${itemIndex}`}
+                        className="border-muted"
+                      >
+                        <AccordionTrigger className="text-left hover:no-underline py-4">
+                          <span className="text-sm font-medium pr-4">{item.question}</span>
+                        </AccordionTrigger>
+                        <AccordionContent className="text-sm text-muted-foreground pb-4 leading-relaxed">
+                          {item.answer}
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Still need help section */}
+          <Card className="mt-10 bg-primary/5 border-primary/20">
+            <CardContent className="p-6 text-center">
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                Still have questions?
+              </h3>
+              <p className="text-muted-foreground mb-4">
+                Can't find what you're looking for? Reach out to us directly.
+              </p>
+              <a
+                href="mailto:univoid35@gmail.com"
+                className="inline-flex items-center gap-2 text-primary hover:underline font-medium"
+              >
+                Contact Support → univoid35@gmail.com
+              </a>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+    </>
   );
 };
 

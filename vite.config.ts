@@ -24,4 +24,24 @@ export default defineConfig(({ mode }) => ({
     __ENABLE_EDITOR__: mode !== "production",
     __IS_PRODUCTION__: mode === "production",
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-ui': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-tooltip'],
+          'vendor-query': ['@tanstack/react-query'],
+          'vendor-supabase': ['@supabase/supabase-js'],
+        },
+      },
+    },
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
+    },
+  },
 }));
+
