@@ -15,7 +15,7 @@ interface DoodleConfig {
 // Individual doodle SVG components
 const DoodleSmallStar = () => (
   <svg viewBox="0 0 24 24" fill="none" className="w-full h-full">
-    <path d="M12 2 L14 9 L21 10 L15 14 L17 22 L12 17 L7 22 L9 14 L3 10 L10 9 Z" 
+    <path d="M12 2 L14 9 L21 10 L15 14 L17 22 L12 17 L7 22 L9 14 L3 10 L10 9 Z"
       stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeDasharray="2 1" />
   </svg>
 );
@@ -60,7 +60,7 @@ const DoodlePaperPlane = () => (
 
 const DoodleMiniLightbulb = () => (
   <svg viewBox="0 0 24 32" fill="none" className="w-full h-full">
-    <path d="M12 3 Q 20 3, 20 12 Q 20 18, 15 21 L15 25 L9 25 L9 21 Q 4 18, 4 12 Q 4 3, 12 3" 
+    <path d="M12 3 Q 20 3, 20 12 Q 20 18, 15 21 L15 25 L9 25 L9 21 Q 4 18, 4 12 Q 4 3, 12 3"
       stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
     <path d="M10 28 L14 28" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
   </svg>
@@ -68,7 +68,7 @@ const DoodleMiniLightbulb = () => (
 
 const DoodleSpiral = () => (
   <svg viewBox="0 0 32 32" fill="none" className="w-full h-full">
-    <path d="M16 16 Q 18 14, 20 16 Q 22 18, 20 20 Q 16 24, 12 20 Q 8 16, 12 12 Q 18 6, 24 12" 
+    <path d="M16 16 Q 18 14, 20 16 Q 22 18, 20 20 Q 16 24, 12 20 Q 8 16, 12 12 Q 18 6, 24 12"
       stroke="currentColor" strokeWidth="1" strokeLinecap="round" fill="none" />
   </svg>
 );
@@ -98,34 +98,40 @@ interface FloatingDoodlesProps {
   section?: "hero" | "content" | "full";
 }
 
-export const FloatingDoodles = ({ 
-  className, 
+export const FloatingDoodles = ({
+  className,
   density = "medium",
-  section = "full" 
+  section = "full"
 }: FloatingDoodlesProps) => {
   const [doodles, setDoodles] = useState<DoodleConfig[]>([]);
   const isMobile = useIsMobile();
 
-  // Significantly reduce density on mobile for zero-lag performance
+  // PERFORMANCE: Completely skip doodles on mobile for faster FCP/LCP
+  if (isMobile) {
+    return null;
+  }
+
+  // Desktop-only: generate doodles
   const densityCount = {
-    low: isMobile ? 6 : 20,
-    medium: isMobile ? 8 : 32,
-    high: isMobile ? 12 : 50,
-    global: isMobile ? 15 : 70,
+    low: 20,
+    medium: 32,
+    high: 50,
+    global: 70,
   };
 
   // Generate doodles only once on mount to prevent re-renders
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     const count = densityCount[density];
     const newDoodles: DoodleConfig[] = [];
 
     for (let i = 0; i < count; i++) {
       const DoodleComponent = doodleComponents[Math.floor(Math.random() * doodleComponents.length)];
-      
+
       // Distribute based on section
       let xRange = { min: 0, max: 100 };
       let yRange = { min: 0, max: 100 };
-      
+
       if (section === "hero") {
         const isLeftSide = Math.random() > 0.5;
         xRange = isLeftSide ? { min: 0, max: 20 } : { min: 80, max: 100 };
@@ -143,24 +149,18 @@ export const FloatingDoodles = ({
     }
 
     setDoodles(newDoodles);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [density, section]);
 
   return (
     <div
       className={cn(
         "pointer-events-none overflow-hidden z-0 absolute inset-0",
-        // Mobile: use CSS containment for paint isolation
-        isMobile && "mobile-doodle-container",
         className
       )}
       style={{
-        // Critical: contain property isolates paint operations
-        contain: isMobile ? "strict" : "none",
-        // GPU layer promotion
         transform: "translateZ(0)",
         backfaceVisibility: "hidden",
-        WebkitBackfaceVisibility: "hidden",
       }}
       aria-hidden="true"
     >
@@ -168,27 +168,18 @@ export const FloatingDoodles = ({
         <div
           key={doodle.id}
           className={cn(
-            "absolute",
-            density === 'global' 
-              ? 'text-sketch-border/20' 
+            "absolute animate-float-doodle",
+            density === 'global'
+              ? 'text-sketch-border/20'
               : 'text-sketch-border/15',
-            // Only animate on desktop
-            !isMobile && "animate-float-doodle"
           )}
           style={{
             left: `${doodle.x}%`,
             top: `${doodle.y}%`,
             width: `${doodle.size}px`,
             height: `${doodle.size}px`,
-            // Animation timing (CSS handles the actual animation)
-            animationDelay: isMobile ? undefined : `${doodle.animationDelay}s`,
-            animationDuration: isMobile ? undefined : `${doodle.animationDuration}s`,
-            // Mobile: GPU layer for scroll performance
-            ...(isMobile && {
-              transform: "translate3d(0,0,0)",
-              willChange: "auto",
-              contain: "layout style paint",
-            }),
+            animationDelay: `${doodle.animationDelay}s`,
+            animationDuration: `${doodle.animationDuration}s`,
           }}
         >
           {doodle.component}
