@@ -1,0 +1,70 @@
+project_id = "rtvrdbbojqsrbkngnjgq"
+
+[functions.send-contact-email]
+verify_jwt = false
+
+[functions.fetch-auto-news]
+verify_jwt = false
+
+[functions.phone-verification]
+verify_jwt = true
+
+[functions.send-scholarship-alerts]
+verify_jwt = false
+
+[functions.send-registration-status-email]
+verify_jwt = false
+
+[functions.send-admin-invite]
+verify_jwt = true
+
+[functions.notify-pending-review]
+verify_jwt = true
+
+[functions.send-material-status-email]
+verify_jwt = true
+
+[functions.validate-ticket]
+verify_jwt = true
+
+[functions.notify-matching-events]
+verify_jwt = false
+
+[functions.send-personalized-notification]
+verify_jwt = false
+
+[functions.compress-pdf]
+verify_jwt = true
+
+[functions.send-web-push]
+verify_jwt = false
+
+[functions.send-scholarship-reminders]
+verify_jwt = false
+
+[functions.fetch-india-scholarships]
+verify_jwt = false
+
+[functions.send-deadline-reminders]
+verify_jwt = false
+
+[functions.send-registration-email]
+verify_jwt = false
+
+[functions.sync-to-sheets]
+verify_jwt = true
+
+[functions.send-volunteer-notification]
+verify_jwt = true
+
+[functions.scan-upi]
+verify_jwt = true
+
+[functions.delete-account]
+verify_jwt = true
+
+[functions.sitemap]
+verify_jwt = false
+
+[functions.prerender]
+verify_jwt = false

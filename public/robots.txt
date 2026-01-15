@@ -1,0 +1,57 @@
+# UniVoid - Student Learning Platform
+# https://univoid.tech
+
+User-agent: Googlebot
+Allow: /
+Disallow: /dashboard
+Disallow: /organizer
+Disallow: /admin
+Disallow: /settings
+Disallow: /edit-profile
+Disallow: /my-tickets
+Disallow: /my-books
+
+User-agent: Bingbot
+Allow: /
+Disallow: /dashboard
+Disallow: /organizer
+Disallow: /admin
+Disallow: /settings
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+User-agent: Slackbot
+Allow: /
+
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /organizer
+Disallow: /admin
+Disallow: /settings
+Disallow: /edit-profile
+Disallow: /my-tickets
+Disallow: /my-books
+Disallow: /onboarding
+Disallow: /check-in
+
+# Dynamic sitemap generated from database
+Sitemap: https://rtvrdbbojqsrbkngnjgq.supabase.co/functions/v1/sitemap
+
+# Static sitemap fallback
+Sitemap: https://univoid.tech/sitemap.xml
+
+# Allow crawling of all static assets
+Allow: /*.js$
+Allow: /*.css$
+Allow: /*.png$
+Allow: /*.jpg$
+Allow: /*.svg$
+Allow: /*.webp$
