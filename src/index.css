@@ -969,3 +969,41 @@
     will-change: auto;
   }
 }
+
+/* ===== Performance Optimizations ===== */
+
+/* Reduce animations for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  /* Disable paper texture for reduced motion preference */
+  body::before,
+  .paper-texture::before {
+    display: none;
+  }
+}
+
+/* Content visibility optimization for below-the-fold content */
+.content-visibility-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 500px;
+}
+
+/* Optimize rendering for static elements */
+.render-static {
+  contain: layout style paint;
+}
+
+/* Lazy render sections - only paint when visible */
+.lazy-section {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 300px;
+}
+

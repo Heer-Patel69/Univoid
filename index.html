@@ -6,12 +6,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" href="/favicon.jpg" type="image/jpeg" />
   <link rel="canonical" href="https://univoid.tech/" />
+
+  <!-- Resource Hints for faster connections -->
   <link rel="dns-prefetch" href="https://rtvrdbbojqsrbkngnjgq.supabase.co" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com" />
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+
+  <!-- Preconnect to critical third-party origins -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+  <!-- Preload critical font (Outfit 600 weight - used in headings) -->
+  <link rel="preload" href="https://fonts.gstatic.com/s/outfit/v11/QGYyz_MVcBeNP4NjuGObq.woff2" as="font"
+    type="font/woff2" crossorigin />
+
+  <!-- Load fonts with display=swap for non-blocking -->
   <link
     href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap"
-    rel="stylesheet">
+    rel="stylesheet" media="print" onload="this.media='all'" />
+  <noscript>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet" />
+  </noscript>
+
   <meta name="google-adsense-account" content="ca-pub-1169163493596327">
   <meta name="google-site-verification" content="WO3fcwYwVqz133pBn41D3bbA9AoLgEMzHdha8jd9pY0" />
   <title>UniVoid - Everything a College Student Needs in One Place</title>
@@ -34,10 +52,6 @@
   <meta name="twitter:description"
     content="Study materials, events, projects, tasks, and book exchange — personalized for Indian college students." />
   <meta name="twitter:image" content="/images/univoid-og.jpg" />
-
-  <!-- Google AdSense -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1169163493596327"
-    crossorigin="anonymous"></script>
 
   <!-- Structured Data (JSON-LD) -->
   <script type="application/ld+json">
@@ -97,6 +111,10 @@
 <body>
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
+
+  <!-- Google AdSense - Deferred to not block rendering -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1169163493596327"
+    crossorigin="anonymous"></script>
 </body>
 
 </html>
