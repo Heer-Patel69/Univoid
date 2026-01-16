@@ -165,7 +165,7 @@ export const FloatingDoodles = ({
   }
 
   // Doodle opacity
-  const opacity = 0.6;
+  const opacity = 0.7;
 
   return (
     <div
