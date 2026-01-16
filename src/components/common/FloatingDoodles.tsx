@@ -111,21 +111,13 @@ export const FloatingDoodles = ({
   section = "full"
 }: FloatingDoodlesProps) => {
   const [doodles, setDoodles] = useState<DoodleConfig[]>([]);
-  const [isReady, setIsReady] = useState(false);
   const isMobile = useIsMobile();
 
   // Generate doodles only once on mount (desktop only)
-  // IMPORTANT: useEffect must be called unconditionally (before any early returns)
   useEffect(() => {
-    // Wait for isMobile to be determined (not undefined)
-    if (isMobile === undefined) {
-      return;
-    }
-
     // Skip doodle generation on mobile for performance
     if (isMobile) {
       setDoodles([]);
-      setIsReady(true);
       return;
     }
 
@@ -156,13 +148,15 @@ export const FloatingDoodles = ({
     }
 
     setDoodles(newDoodles);
-    setIsReady(true);
   }, [density, section, isMobile]);
 
-  // PERFORMANCE: Don't render anything on mobile or while loading
-  if (!isReady || isMobile || doodles.length === 0) {
+  // PERFORMANCE: Don't render anything on mobile
+  if (isMobile || doodles.length === 0) {
     return null;
   }
+
+  // Determine opacity based on density
+  const opacity = density === 'global' ? 0.25 : 0.2;
 
   return (
     <div
@@ -179,12 +173,7 @@ export const FloatingDoodles = ({
       {doodles.map((doodle) => (
         <div
           key={doodle.id}
-          className={cn(
-            "absolute animate-float-doodle",
-            density === 'global'
-              ? 'text-sketch-border/20'
-              : 'text-sketch-border/15',
-          )}
+          className="absolute animate-float-doodle"
           style={{
             left: `${doodle.x}%`,
             top: `${doodle.y}%`,
@@ -192,6 +181,7 @@ export const FloatingDoodles = ({
             height: `${doodle.size}px`,
             animationDelay: `${doodle.animationDelay}s`,
             animationDuration: `${doodle.animationDuration}s`,
+            color: `hsl(var(--foreground) / ${opacity})`,
           }}
         >
           {doodle.component}
