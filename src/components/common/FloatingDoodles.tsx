@@ -106,12 +106,7 @@ export const FloatingDoodles = ({
   const [doodles, setDoodles] = useState<DoodleConfig[]>([]);
   const isMobile = useIsMobile();
 
-  // PERFORMANCE: Completely skip doodles on mobile for faster FCP/LCP
-  if (isMobile) {
-    return null;
-  }
-
-  // Desktop-only: generate doodles
+  // Desktop-only density counts
   const densityCount = {
     low: 20,
     medium: 32,
@@ -119,9 +114,14 @@ export const FloatingDoodles = ({
     global: 70,
   };
 
-  // Generate doodles only once on mount to prevent re-renders
-  // eslint-disable-next-line react-hooks/rules-of-hooks
+  // Generate doodles only once on mount (desktop only)
   useEffect(() => {
+    // PERFORMANCE: Skip doodles on mobile for faster FCP/LCP
+    if (isMobile) {
+      setDoodles([]);
+      return;
+    }
+
     const count = densityCount[density];
     const newDoodles: DoodleConfig[] = [];
 
@@ -149,8 +149,12 @@ export const FloatingDoodles = ({
     }
 
     setDoodles(newDoodles);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [density, section]);
+  }, [density, section, isMobile]);
+
+  // PERFORMANCE: Render nothing on mobile (after hooks are called)
+  if (isMobile || doodles.length === 0) {
+    return null;
+  }
 
   return (
     <div
