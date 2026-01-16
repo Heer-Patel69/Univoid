@@ -55,3 +55,6 @@ Allow: /*.png$
 Allow: /*.jpg$
 Allow: /*.svg$
 Allow: /*.webp$
+
+# Crawl-delay for polite crawling
+Crawl-delay: 1

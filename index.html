@@ -34,67 +34,92 @@
   <meta name="google-site-verification" content="WO3fcwYwVqz133pBn41D3bbA9AoLgEMzHdha8jd9pY0" />
   <title>UniVoid - Everything a College Student Needs in One Place</title>
   <meta name="description"
-    content="UniVoid is a student-first platform for Indian college students. Access study materials, campus events, projects, tasks, book exchange, and news — all personalized for you." />
+    content="UniVoid is India's largest student-first platform for college students. Access free study materials, campus events, hackathons, projects, task plaza, book exchange, and campus news — all personalized for you." />
   <meta name="author" content="UniVoid" />
   <meta name="keywords"
-    content="student resources, study materials, college events, projects, task plaza, book exchange, campus news, Indian students, university, educational platform" />
+    content="UniVoid, student resources, study materials, college events, hackathons, workshops, projects, task plaza, book exchange, campus news, Indian students, university, educational platform, free notes PDF, BTech notes, college study material" />
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
 
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://univoid.tech/" />
   <meta property="og:title" content="UniVoid - Everything a College Student Needs in One Place" />
   <meta property="og:description"
-    content="Study materials, events, projects, tasks, and book exchange — personalized for Indian college students." />
-  <meta property="og:type" content="website" />
-  <meta property="og:image" content="/images/univoid-og.jpg" />
+    content="Study materials, events, projects, tasks, and book exchange — personalized for Indian college students. India's #1 student platform." />
+  <meta property="og:image" content="https://univoid.tech/images/univoid-og.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
   <meta property="og:site_name" content="UniVoid" />
+  <meta property="og:locale" content="en_IN" />
 
+  <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:site" content="@UniVoid" />
+  <meta name="twitter:creator" content="@UniVoid" />
   <meta name="twitter:title" content="UniVoid - Everything a College Student Needs in One Place" />
   <meta name="twitter:description"
     content="Study materials, events, projects, tasks, and book exchange — personalized for Indian college students." />
-  <meta name="twitter:image" content="/images/univoid-og.jpg" />
+  <meta name="twitter:image" content="https://univoid.tech/images/univoid-og.jpg" />
 
-  <!-- Structured Data (JSON-LD) -->
+  <!-- Additional SEO Meta -->
+  <meta name="theme-color" content="#FFD54F" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="UniVoid" />
+
+  <!-- Structured Data (JSON-LD) - Organization -->
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "Organization",
       "name": "UniVoid",
-      "url": "https://univoid.in",
-      "logo": "https://univoid.in/favicon.jpg",
-      "description": "UniVoid is a student-first platform for Indian college students. Access study materials, campus events, projects, tasks, book exchange, and news.",
+      "alternateName": "UniVoid Tech",
+      "url": "https://univoid.tech",
+      "logo": "https://univoid.tech/favicon.jpg",
+      "description": "UniVoid is India's largest student-first platform for college students. Access study materials, campus events, projects, tasks, book exchange, and news.",
+      "foundingDate": "2024",
       "sameAs": [
-        "https://twitter.com/UniVoid"
+        "https://twitter.com/UniVoid",
+        "https://instagram.com/univoid.tech"
       ],
       "contactPoint": {
         "@type": "ContactPoint",
         "contactType": "customer support",
-        "url": "https://univoid.in/contact"
+        "url": "https://univoid.tech/contact",
+        "availableLanguage": ["English", "Hindi"]
       }
     }
-    </script>
+  </script>
+  
+  <!-- Structured Data - WebSite with Search Action -->
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "WebSite",
       "name": "UniVoid",
-      "url": "https://univoid.in",
+      "url": "https://univoid.tech",
       "description": "Everything a College Student Needs in One Place",
+      "inLanguage": "en-IN",
       "potentialAction": {
         "@type": "SearchAction",
         "target": {
           "@type": "EntryPoint",
-          "urlTemplate": "https://univoid.in/materials?search={search_term_string}"
+          "urlTemplate": "https://univoid.tech/materials?search={search_term_string}"
         },
         "query-input": "required name=search_term_string"
       }
     }
-    </script>
+  </script>
+  
+  <!-- Structured Data - Educational Organization -->
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "EducationalOrganization",
       "name": "UniVoid",
-      "url": "https://univoid.in",
+      "url": "https://univoid.tech",
       "description": "A student-first platform providing study materials, events, projects, and resources for Indian college students.",
       "areaServed": {
         "@type": "Country",
@@ -103,9 +128,35 @@
       "audience": {
         "@type": "EducationalAudience",
         "educationalRole": "student"
-      }
+      },
+      "offers": [
+        {
+          "@type": "Offer",
+          "name": "Study Materials",
+          "description": "Free PDF notes, previous year papers, and study guides",
+          "url": "https://univoid.tech/materials"
+        },
+        {
+          "@type": "Offer",
+          "name": "Events",
+          "description": "Hackathons, workshops, cultural fests, and tech events",
+          "url": "https://univoid.tech/events"
+        },
+        {
+          "@type": "Offer",
+          "name": "Project Partner",
+          "description": "Find teammates for hackathons and projects",
+          "url": "https://univoid.tech/projects"
+        },
+        {
+          "@type": "Offer",
+          "name": "Book Exchange",
+          "description": "Buy, sell, rent, or exchange textbooks",
+          "url": "https://univoid.tech/books"
+        }
+      ]
     }
-    </script>
+  </script>
 </head>
 
 <body>
