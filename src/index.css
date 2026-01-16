@@ -1030,7 +1030,7 @@
   .animate-float-doodle-2,
   .animate-float-doodle-3,
   .animate-float-doodle {
-    animation-timing-function: linear;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
   }
 }
 
