@@ -15,11 +15,29 @@ interface ErrorLogData {
 // Queue for batching errors (prevents flooding the database)
 let errorQueue: ErrorLogData[] = [];
 let flushTimeout: ReturnType<typeof setTimeout> | null = null;
-const FLUSH_INTERVAL = 2000; // 2 seconds
+const FLUSH_INTERVAL = 3000; // 3 seconds
 const MAX_QUEUE_SIZE = 10;
+const REQUEST_TIMEOUT = 5000; // 5 second timeout for requests
 
 /**
- * Flush the error queue to the database
+ * Safely get user ID without throwing - returns null on any error
+ */
+const safeGetUserId = async (): Promise<string | null> => {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+    
+    const { data } = await supabase.auth.getUser();
+    clearTimeout(timeoutId);
+    return data?.user?.id || null;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Flush the error queue to the database with full error protection
+ * NEVER throws - all errors are caught and ignored
  */
 const flushErrorQueue = async (): Promise<void> => {
   if (errorQueue.length === 0) return;
@@ -29,15 +47,14 @@ const flushErrorQueue = async (): Promise<void> => {
   flushTimeout = null;
   
   try {
-    const { data: userData } = await supabase.auth.getUser();
-    const userId = userData?.user?.id || null;
+    const userId = await safeGetUserId();
     const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : null;
     const pageRoute = typeof window !== 'undefined' ? window.location.pathname : null;
     
     const records = errorsToLog.map(data => ({
       user_id: userId,
       error_type: data.errorType,
-      error_message: data.errorMessage.substring(0, 2000), // Limit message length
+      error_message: data.errorMessage?.substring(0, 2000) || 'Unknown error', // Limit message length
       error_stack: data.errorStack?.substring(0, 5000) || null,
       page_route: data.pageRoute || pageRoute,
       component_name: data.componentName || null,
@@ -45,9 +62,20 @@ const flushErrorQueue = async (): Promise<void> => {
       user_agent: userAgent,
     }));
     
-    await supabase.from('error_logs').insert(records);
+    // Use Promise.race with timeout to prevent hanging
+    const insertPromise = supabase.from('error_logs').insert(records);
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('timeout')), REQUEST_TIMEOUT)
+    );
+    
+    await Promise.race([insertPromise, timeoutPromise]);
   } catch {
-    // Silently fail - don't cause additional errors while logging
+    // Silently fail - NEVER throw during error logging
+    // This handles:
+    // - 401 Unauthorized (RLS blocking)
+    // - Network errors
+    // - Timeouts
+    // - Any other failures
   }
 };
 
@@ -58,39 +86,55 @@ const scheduleFlush = (): void => {
   if (flushTimeout) return;
   
   if (errorQueue.length >= MAX_QUEUE_SIZE) {
-    flushErrorQueue();
+    // Fire and forget - don't await
+    flushErrorQueue().catch(() => {});
   } else {
-    flushTimeout = setTimeout(flushErrorQueue, FLUSH_INTERVAL);
+    flushTimeout = setTimeout(() => {
+      flushErrorQueue().catch(() => {});
+    }, FLUSH_INTERVAL);
   }
 };
 
 /**
  * Log an error to the database (batched)
+ * SAFE: Never throws, never blocks UI
  */
 export const logError = async (data: ErrorLogData): Promise<void> => {
-  errorQueue.push(data);
-  scheduleFlush();
+  try {
+    errorQueue.push(data);
+    scheduleFlush();
+  } catch {
+    // Completely silent - error logging must never crash the app
+  }
 };
 
 /**
  * Immediately log an error (bypasses queue for critical errors)
+ * SAFE: Never throws, has timeout protection
  */
 export const logErrorImmediate = async (data: ErrorLogData): Promise<void> => {
   try {
-    const { data: userData } = await supabase.auth.getUser();
+    const userId = await safeGetUserId();
     
-    await supabase.from('error_logs').insert([{
-      user_id: userData?.user?.id || null,
+    const insertPromise = supabase.from('error_logs').insert([{
+      user_id: userId,
       error_type: data.errorType,
-      error_message: data.errorMessage.substring(0, 2000),
+      error_message: data.errorMessage?.substring(0, 2000) || 'Unknown error',
       error_stack: data.errorStack?.substring(0, 5000) || null,
       page_route: data.pageRoute || (typeof window !== 'undefined' ? window.location.pathname : null),
       component_name: data.componentName || null,
       metadata: (data.metadata as Json) || null,
       user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
     }]);
+    
+    // Timeout protection
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('timeout')), REQUEST_TIMEOUT)
+    );
+    
+    await Promise.race([insertPromise, timeoutPromise]);
   } catch {
-    // Silently fail
+    // Silently fail - handles 401, network errors, timeouts, etc.
   }
 };
 
@@ -99,18 +143,23 @@ export const logErrorImmediate = async (data: ErrorLogData): Promise<void> => {
  */
 export const createLogger = (componentName: string) => {
   const log = (level: ErrorLevel, message: string, error?: Error | unknown, metadata?: Record<string, unknown>) => {
-    const errorObj = error instanceof Error ? error : null;
-    
-    logError({
-      errorType: `${componentName}_${level}`,
-      errorMessage: message,
-      errorStack: errorObj?.stack,
-      componentName,
-      metadata: {
-        ...metadata,
-        originalError: errorObj ? undefined : String(error),
-      },
-    });
+    try {
+      const errorObj = error instanceof Error ? error : null;
+      
+      // Fire and forget - don't await, don't block
+      logError({
+        errorType: `${componentName}_${level}`,
+        errorMessage: message,
+        errorStack: errorObj?.stack,
+        componentName,
+        metadata: {
+          ...metadata,
+          originalError: errorObj ? undefined : String(error),
+        },
+      }).catch(() => {});
+    } catch {
+      // Silent fail
+    }
   };
   
   return {
@@ -138,52 +187,77 @@ export const logAdminError = async (
   error?: Error,
   metadata?: Record<string, unknown>
 ): Promise<void> => {
-  await logErrorImmediate({
-    errorType: 'admin_page_error',
-    errorMessage,
-    errorStack: error?.stack,
-    pageRoute: '/admin',
-    componentName: 'Admin',
-    metadata,
-  });
+  try {
+    await logErrorImmediate({
+      errorType: 'admin_page_error',
+      errorMessage,
+      errorStack: error?.stack,
+      pageRoute: '/admin',
+      componentName: 'Admin',
+      metadata,
+    });
+  } catch {
+    // Silent fail
+  }
 };
 
 /**
  * Global error handler for uncaught errors
+ * SAFE: All handlers are wrapped in try-catch
  */
 export const setupGlobalErrorHandler = (): void => {
   if (typeof window === 'undefined') return;
   
-  window.addEventListener('error', (event) => {
-    logError({
-      errorType: 'uncaught_error',
-      errorMessage: event.message,
-      errorStack: event.error?.stack,
-      metadata: {
-        filename: event.filename,
-        lineno: event.lineno,
-        colno: event.colno,
-      },
+  try {
+    window.addEventListener('error', (event) => {
+      try {
+        logError({
+          errorType: 'uncaught_error',
+          errorMessage: event.message || 'Unknown error',
+          errorStack: event.error?.stack,
+          metadata: {
+            filename: event.filename,
+            lineno: event.lineno,
+            colno: event.colno,
+          },
+        }).catch(() => {});
+      } catch {
+        // Silent fail
+      }
     });
-  });
-  
-  window.addEventListener('unhandledrejection', (event) => {
-    const error = event.reason;
-    logError({
-      errorType: 'unhandled_promise_rejection',
-      errorMessage: error?.message || String(error),
-      errorStack: error?.stack,
+    
+    window.addEventListener('unhandledrejection', (event) => {
+      try {
+        const error = event.reason;
+        logError({
+          errorType: 'unhandled_promise_rejection',
+          errorMessage: error?.message || String(error) || 'Unknown rejection',
+          errorStack: error?.stack,
+        }).catch(() => {});
+      } catch {
+        // Silent fail
+      }
     });
-  });
+  } catch {
+    // Silent fail - global handler setup must never crash
+  }
 };
 
 // Flush any remaining errors before page unload
 if (typeof window !== 'undefined') {
-  window.addEventListener('beforeunload', () => {
-    if (errorQueue.length > 0) {
-      // Use sendBeacon for reliability during page unload
-      const payload = JSON.stringify(errorQueue);
-      navigator.sendBeacon?.('/api/log-errors', payload);
-    }
-  });
+  try {
+    window.addEventListener('beforeunload', () => {
+      try {
+        if (errorQueue.length > 0) {
+          // Use sendBeacon for reliability during page unload
+          const payload = JSON.stringify(errorQueue);
+          navigator.sendBeacon?.('/api/log-errors', payload);
+        }
+      } catch {
+        // Silent fail
+      }
+    });
+  } catch {
+    // Silent fail
+  }
 }
