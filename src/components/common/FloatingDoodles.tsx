@@ -106,12 +106,12 @@ const densityCount = {
   global: 70,
 };
 
-// Mobile density counts (reduced for performance)
+// Mobile density counts (increased for visibility)
 const mobileDensityCount = {
-  low: 8,
-  medium: 12,
-  high: 18,
-  global: 25,
+  low: 15,
+  medium: 25,
+  high: 35,
+  global: 50,
 };
 
 export const FloatingDoodles = ({
