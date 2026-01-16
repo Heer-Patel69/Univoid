@@ -111,14 +111,21 @@ export const FloatingDoodles = ({
   section = "full"
 }: FloatingDoodlesProps) => {
   const [doodles, setDoodles] = useState<DoodleConfig[]>([]);
+  const [isReady, setIsReady] = useState(false);
   const isMobile = useIsMobile();
 
   // Generate doodles only once on mount (desktop only)
   // IMPORTANT: useEffect must be called unconditionally (before any early returns)
   useEffect(() => {
+    // Wait for isMobile to be determined (not undefined)
+    if (isMobile === undefined) {
+      return;
+    }
+
     // Skip doodle generation on mobile for performance
     if (isMobile) {
       setDoodles([]);
+      setIsReady(true);
       return;
     }
 
@@ -149,10 +156,11 @@ export const FloatingDoodles = ({
     }
 
     setDoodles(newDoodles);
+    setIsReady(true);
   }, [density, section, isMobile]);
 
-  // PERFORMANCE: Don't render anything on mobile
-  if (isMobile || doodles.length === 0) {
+  // PERFORMANCE: Don't render anything on mobile or while loading
+  if (!isReady || isMobile || doodles.length === 0) {
     return null;
   }
 
