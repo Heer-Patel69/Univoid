@@ -164,8 +164,8 @@ export const FloatingDoodles = ({
     return null;
   }
 
-  // Determine opacity based on density
-  const opacity = density === 'global' ? 0.25 : 0.2;
+  // Doodle opacity
+  const opacity = 0.6;
 
   return (
     <div
