@@ -98,11 +98,20 @@ interface FloatingDoodlesProps {
   section?: "hero" | "content" | "full";
 }
 
+// Desktop density counts
 const densityCount = {
   low: 20,
   medium: 32,
   high: 50,
   global: 70,
+};
+
+// Mobile density counts (reduced for performance)
+const mobileDensityCount = {
+  low: 8,
+  medium: 12,
+  high: 18,
+  global: 25,
 };
 
 export const FloatingDoodles = ({
@@ -113,15 +122,10 @@ export const FloatingDoodles = ({
   const [doodles, setDoodles] = useState<DoodleConfig[]>([]);
   const isMobile = useIsMobile();
 
-  // Generate doodles only once on mount (desktop only)
+  // Generate doodles on mount
   useEffect(() => {
-    // Skip doodle generation on mobile for performance
-    if (isMobile) {
-      setDoodles([]);
-      return;
-    }
-
-    const count = densityCount[density];
+    // Use reduced count on mobile for performance
+    const count = isMobile ? mobileDensityCount[density] : densityCount[density];
     const newDoodles: DoodleConfig[] = [];
 
     for (let i = 0; i < count; i++) {
@@ -136,12 +140,17 @@ export const FloatingDoodles = ({
         xRange = isLeftSide ? { min: 0, max: 20 } : { min: 80, max: 100 };
       }
 
+      // Slightly larger doodles on mobile for visibility
+      const sizeRange = isMobile 
+        ? { min: 14, max: 24 } 
+        : { min: 12, max: 28 };
+
       newDoodles.push({
         id: i,
         component: <DoodleComponent />,
         x: Math.random() * (xRange.max - xRange.min) + xRange.min,
         y: Math.random() * (yRange.max - yRange.min) + yRange.min,
-        size: Math.random() * 16 + 12,
+        size: Math.random() * (sizeRange.max - sizeRange.min) + sizeRange.min,
         animationDelay: Math.random() * 5,
         animationDuration: Math.random() * 3 + 4,
       });
@@ -150,8 +159,8 @@ export const FloatingDoodles = ({
     setDoodles(newDoodles);
   }, [density, section, isMobile]);
 
-  // PERFORMANCE: Don't render anything on mobile
-  if (isMobile || doodles.length === 0) {
+  // Don't render if no doodles generated
+  if (doodles.length === 0) {
     return null;
   }
 
