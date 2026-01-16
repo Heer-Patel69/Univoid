@@ -501,24 +501,80 @@
     box-shadow: 6px 6px 0px hsl(var(--sketch-border));
   }
 
-  /* ===== Floating Doodle Animation ===== */
-  @keyframes float-doodle {
+  /* ===== Floating Doodle Animations - GPU Accelerated ===== */
+  /* Multiple animation variants for visual variety and smoother motion */
+  @keyframes float-doodle-1 {
     0%, 100% {
-      transform: translateY(0px) rotate(0deg);
+      transform: translate3d(0, 0, 0) rotate(0deg);
     }
     25% {
-      transform: translateY(-8px) rotate(2deg);
+      transform: translate3d(2px, -8px, 0) rotate(2deg);
     }
     50% {
-      transform: translateY(-4px) rotate(-1deg);
+      transform: translate3d(-1px, -4px, 0) rotate(-1deg);
     }
     75% {
-      transform: translateY(-10px) rotate(1deg);
+      transform: translate3d(1px, -10px, 0) rotate(1deg);
     }
   }
 
+  @keyframes float-doodle-2 {
+    0%, 100% {
+      transform: translate3d(0, 0, 0) rotate(0deg);
+    }
+    20% {
+      transform: translate3d(-3px, -6px, 0) rotate(-2deg);
+    }
+    40% {
+      transform: translate3d(2px, -12px, 0) rotate(1deg);
+    }
+    60% {
+      transform: translate3d(-1px, -8px, 0) rotate(-1deg);
+    }
+    80% {
+      transform: translate3d(1px, -5px, 0) rotate(2deg);
+    }
+  }
+
+  @keyframes float-doodle-3 {
+    0%, 100% {
+      transform: translate3d(0, 0, 0) rotate(0deg);
+    }
+    33% {
+      transform: translate3d(3px, -7px, 0) rotate(1.5deg);
+    }
+    66% {
+      transform: translate3d(-2px, -11px, 0) rotate(-1.5deg);
+    }
+  }
+
+  .animate-float-doodle-1 {
+    animation: float-doodle-1 6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+
+  .animate-float-doodle-2 {
+    animation: float-doodle-2 7s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+
+  .animate-float-doodle-3 {
+    animation: float-doodle-3 5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+
+  /* Legacy class for backward compatibility */
   .animate-float-doodle {
-    animation: float-doodle 6s ease-in-out infinite;
+    animation: float-doodle-1 6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
 
   /* ===== Card Sketch Hover Animation ===== */
@@ -967,6 +1023,14 @@
     contain: layout style paint;
     transform: translateZ(0);
     will-change: auto;
+  }
+
+  /* Reduce animation complexity on mobile for smoother performance */
+  .animate-float-doodle-1,
+  .animate-float-doodle-2,
+  .animate-float-doodle-3,
+  .animate-float-doodle {
+    animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
   }
 }
 

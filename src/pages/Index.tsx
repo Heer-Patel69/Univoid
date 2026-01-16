@@ -238,8 +238,8 @@ const Index = () => {
         <FloatingDoodles density="low" />
 
         {/* Doodle decorations */}
-        <DoodleLightbulb className="absolute top-10 left-8 w-16 h-20 opacity-60 hidden md:block animate-float-doodle" />
-        <DoodleBook className="absolute bottom-10 right-12 w-14 h-14 opacity-60 hidden md:block animate-float-doodle" />
+        <DoodleLightbulb className="absolute top-10 left-8 w-16 h-20 opacity-60 hidden md:block animate-float-doodle-1" />
+        <DoodleBook className="absolute bottom-10 right-12 w-14 h-14 opacity-60 hidden md:block animate-float-doodle-2" />
 
         <div className="container-wide relative z-10">
           <AnimatedSection className="max-w-3xl mx-auto text-center">
@@ -260,9 +260,9 @@ const Index = () => {
         <FloatingDoodles density="medium" />
 
         {/* Doodle decorations */}
-        <DoodleStar className="absolute top-16 right-10 w-12 h-12 opacity-50 hidden lg:block animate-float-doodle" />
-        <DoodleRocket className="absolute bottom-20 left-8 w-14 h-16 opacity-50 hidden lg:block animate-float-doodle" />
-        <DoodlePencil className="absolute top-1/2 right-4 w-10 h-10 opacity-40 hidden xl:block animate-float-doodle" />
+        <DoodleStar className="absolute top-16 right-10 w-12 h-12 opacity-50 hidden lg:block animate-float-doodle-1" />
+        <DoodleRocket className="absolute bottom-20 left-8 w-14 h-16 opacity-50 hidden lg:block animate-float-doodle-2" />
+        <DoodlePencil className="absolute top-1/2 right-4 w-10 h-10 opacity-40 hidden xl:block animate-float-doodle-3" />
 
         <div className="container-wide relative z-10">
           <AnimatedSection className="text-center mb-12">

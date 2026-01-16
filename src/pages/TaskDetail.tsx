@@ -23,7 +23,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import AuthModal from "@/components/auth/AuthModal";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb";
-import { Helmet } from "react-helmet";
+import SEOHead from "@/components/common/SEOHead";
 import { toast } from "sonner";
 import { format, formatDistanceToNow } from "date-fns";
 import {
@@ -172,9 +172,13 @@ const TaskDetail = () => {
 
   return (
     <>
-      <Helmet>
-        <title>{task.title} - Task Plaza | UniVoid</title>
-      </Helmet>
+      <SEOHead
+        title={`${task.title} - Task Plaza`}
+        description={task.description || `Task: ${task.title} - ${TASK_TYPE_LABELS[task.task_type] || 'General task'}. Budget: ₹${task.budget || 'Negotiable'}. Get help from students on UniVoid Task Plaza.`}
+        url={`/tasks/${taskId}`}
+        keywords={['task plaza', 'student help', task.task_type, task.subject || 'assignment'].filter(Boolean) as string[]}
+        noIndex={task.status !== 'open'} // Don't index completed/assigned tasks
+      />
 
       <div className="min-h-screen flex flex-col bg-background">
         <main className="flex-1 py-8">

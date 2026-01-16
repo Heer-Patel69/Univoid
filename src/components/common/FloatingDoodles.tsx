@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -10,6 +10,7 @@ interface DoodleConfig {
   size: number;
   animationDelay: number;
   animationDuration: number;
+  animationType: 'float-1' | 'float-2' | 'float-3';
 }
 
 // Individual doodle SVG components
@@ -103,34 +104,29 @@ export const FloatingDoodles = ({
   density = "medium",
   section = "full"
 }: FloatingDoodlesProps) => {
-  const [doodles, setDoodles] = useState<DoodleConfig[]>([]);
   const isMobile = useIsMobile();
 
-  // PERFORMANCE: Completely skip doodles on mobile for faster FCP/LCP
-  if (isMobile) {
-    return null;
-  }
-
-  // Desktop-only: generate doodles
-  const densityCount = {
-    low: 20,
-    medium: 32,
-    high: 50,
-    global: 70,
-  };
+  // Density counts - reduce for mobile to improve performance
+  const densityCount = useMemo(() => ({
+    low: isMobile ? 8 : 20,
+    medium: isMobile ? 12 : 32,
+    high: isMobile ? 16 : 50,
+    global: isMobile ? 20 : 70,
+  }), [isMobile]);
 
   // Generate doodles only once on mount to prevent re-renders
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  useEffect(() => {
+  const doodles = useMemo(() => {
     const count = densityCount[density];
     const newDoodles: DoodleConfig[] = [];
+    // Animation types for variety
+    const animationTypes: Array<'float-1' | 'float-2' | 'float-3'> = ['float-1', 'float-2', 'float-3'];
 
     for (let i = 0; i < count; i++) {
       const DoodleComponent = doodleComponents[Math.floor(Math.random() * doodleComponents.length)];
 
       // Distribute based on section
       let xRange = { min: 0, max: 100 };
-      let yRange = { min: 0, max: 100 };
+      const yRange = { min: 0, max: 100 };
 
       if (section === "hero") {
         const isLeftSide = Math.random() > 0.5;
@@ -142,25 +138,28 @@ export const FloatingDoodles = ({
         component: <DoodleComponent />,
         x: Math.random() * (xRange.max - xRange.min) + xRange.min,
         y: Math.random() * (yRange.max - yRange.min) + yRange.min,
-        size: Math.random() * 16 + 12,
+        size: isMobile ? Math.random() * 12 + 10 : Math.random() * 16 + 12,
         animationDelay: Math.random() * 5,
-        animationDuration: Math.random() * 3 + 4,
+        animationDuration: Math.random() * 4 + 5, // Slower for smoother feel
+        animationType: animationTypes[i % 3], // Distribute animation types evenly
       });
     }
 
-    setDoodles(newDoodles);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [density, section]);
+    return newDoodles;
+  }, [density, section, densityCount, isMobile]);
 
   return (
     <div
       className={cn(
         "pointer-events-none overflow-hidden z-0 absolute inset-0",
+        "will-change-auto contain-layout contain-paint",
         className
       )}
       style={{
         transform: "translateZ(0)",
         backfaceVisibility: "hidden",
+        WebkitBackfaceVisibility: "hidden",
+        isolation: "isolate",
       }}
       aria-hidden="true"
     >
@@ -168,7 +167,10 @@ export const FloatingDoodles = ({
         <div
           key={doodle.id}
           className={cn(
-            "absolute animate-float-doodle",
+            "absolute",
+            doodle.animationType === 'float-1' && 'animate-float-doodle-1',
+            doodle.animationType === 'float-2' && 'animate-float-doodle-2',
+            doodle.animationType === 'float-3' && 'animate-float-doodle-3',
             density === 'global'
               ? 'text-sketch-border/20'
               : 'text-sketch-border/15',
@@ -180,6 +182,8 @@ export const FloatingDoodles = ({
             height: `${doodle.size}px`,
             animationDelay: `${doodle.animationDelay}s`,
             animationDuration: `${doodle.animationDuration}s`,
+            transform: "translateZ(0)",
+            willChange: "transform",
           }}
         >
           {doodle.component}

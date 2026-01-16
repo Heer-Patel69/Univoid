@@ -1,87 +1,108 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <!-- Main Pages -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+        http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+  <!-- Main Pages - Highest Priority -->
   <url>
     <loc>https://univoid.tech/</loc>
+    <lastmod>2026-01-16</lastmod>
     <priority>1.0</priority>
     <changefreq>daily</changefreq>
   </url>
+  
+  <!-- Core Feature Pages - High Priority -->
   <url>
     <loc>https://univoid.tech/materials</loc>
-    <priority>0.9</priority>
+    <lastmod>2026-01-16</lastmod>
+    <priority>0.95</priority>
     <changefreq>daily</changefreq>
   </url>
   <url>
     <loc>https://univoid.tech/events</loc>
-    <priority>0.9</priority>
+    <lastmod>2026-01-16</lastmod>
+    <priority>0.95</priority>
     <changefreq>daily</changefreq>
   </url>
   <url>
     <loc>https://univoid.tech/books</loc>
-    <priority>0.8</priority>
+    <lastmod>2026-01-16</lastmod>
+    <priority>0.9</priority>
     <changefreq>daily</changefreq>
   </url>
   <url>
     <loc>https://univoid.tech/projects</loc>
-    <priority>0.8</priority>
+    <lastmod>2026-01-16</lastmod>
+    <priority>0.9</priority>
     <changefreq>daily</changefreq>
   </url>
   <url>
     <loc>https://univoid.tech/tasks</loc>
-    <priority>0.8</priority>
+    <lastmod>2026-01-16</lastmod>
+    <priority>0.9</priority>
     <changefreq>daily</changefreq>
   </url>
   <url>
     <loc>https://univoid.tech/news</loc>
-    <priority>0.7</priority>
+    <lastmod>2026-01-16</lastmod>
+    <priority>0.8</priority>
     <changefreq>daily</changefreq>
   </url>
   <url>
     <loc>https://univoid.tech/leaderboard</loc>
-    <priority>0.6</priority>
+    <lastmod>2026-01-16</lastmod>
+    <priority>0.7</priority>
     <changefreq>weekly</changefreq>
   </url>
   
-  <!-- Info Pages -->
+  <!-- Info Pages - Medium Priority -->
   <url>
     <loc>https://univoid.tech/about</loc>
+    <lastmod>2026-01-16</lastmod>
     <priority>0.6</priority>
     <changefreq>monthly</changefreq>
   </url>
   <url>
     <loc>https://univoid.tech/contact</loc>
+    <lastmod>2026-01-16</lastmod>
     <priority>0.5</priority>
     <changefreq>monthly</changefreq>
   </url>
   <url>
     <loc>https://univoid.tech/faq</loc>
-    <priority>0.5</priority>
+    <lastmod>2026-01-16</lastmod>
+    <priority>0.6</priority>
     <changefreq>monthly</changefreq>
   </url>
   
-  <!-- Legal Pages -->
+  <!-- Legal Pages - Lower Priority -->
   <url>
     <loc>https://univoid.tech/privacy-policy</loc>
+    <lastmod>2026-01-16</lastmod>
     <priority>0.3</priority>
     <changefreq>yearly</changefreq>
   </url>
   <url>
     <loc>https://univoid.tech/terms</loc>
+    <lastmod>2026-01-16</lastmod>
     <priority>0.3</priority>
     <changefreq>yearly</changefreq>
   </url>
   <url>
     <loc>https://univoid.tech/refund-policy</loc>
+    <lastmod>2026-01-16</lastmod>
     <priority>0.3</priority>
     <changefreq>yearly</changefreq>
   </url>
   <url>
     <loc>https://univoid.tech/cookie-policy</loc>
+    <lastmod>2026-01-16</lastmod>
     <priority>0.3</priority>
     <changefreq>yearly</changefreq>
   </url>
   <url>
     <loc>https://univoid.tech/legal-disclaimer</loc>
+    <lastmod>2026-01-16</lastmod>
     <priority>0.3</priority>
     <changefreq>yearly</changefreq>
   </url>
