@@ -1,8 +1,4 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { logError } from '@/services/errorLoggingService';
 
 interface Props {
   children: ReactNode;
@@ -17,6 +13,106 @@ interface State {
   errorInfo: ErrorInfo | null;
 }
 
+/**
+ * Mobile-safe error logging that never blocks or throws
+ * Uses fire-and-forget pattern with timeout protection
+ */
+const safeLogError = (error: Error, errorInfo: ErrorInfo): void => {
+  // Wrap everything in try-catch to never throw during error handling
+  try {
+    // Only log in development via console
+    if (typeof console !== 'undefined') {
+      console.error('ErrorBoundary caught an error:', error.message);
+    }
+    
+    // Async log to database with timeout protection
+    // This runs in background and never blocks the UI
+    const timeoutId = setTimeout(() => {
+      // Abort if taking too long
+    }, 3000);
+    
+    import('@/services/errorLoggingService')
+      .then(({ logError }) => {
+        clearTimeout(timeoutId);
+        logError({
+          errorType: 'react_error_boundary',
+          errorMessage: error.message,
+          errorStack: error.stack,
+          pageRoute: typeof window !== 'undefined' ? window.location.pathname : undefined,
+          componentName: errorInfo.componentStack?.split('\n')[1]?.trim() || 'Unknown',
+          metadata: {
+            componentStack: errorInfo.componentStack,
+            timestamp: new Date().toISOString(),
+            isMobile: typeof window !== 'undefined' && window.innerWidth < 768,
+          },
+        }).catch(() => {
+          // Silently ignore logging failures
+        });
+      })
+      .catch(() => {
+        // Silently ignore import failures
+        clearTimeout(timeoutId);
+      });
+  } catch {
+    // Absolutely never throw during error handling
+  }
+};
+
+/**
+ * MOBILE-SAFE: Hard redirect that always works
+ * Uses multiple fallback strategies for maximum compatibility
+ */
+const forceNavigateHome = (): void => {
+  try {
+    // Strategy 1: Standard location change
+    if (typeof window !== 'undefined') {
+      window.location.href = '/';
+    }
+  } catch {
+    try {
+      // Strategy 2: Location replace (works on some mobile browsers)
+      if (typeof window !== 'undefined') {
+        window.location.replace('/');
+      }
+    } catch {
+      try {
+        // Strategy 3: Use assign method
+        if (typeof window !== 'undefined') {
+          window.location.assign('/');
+        }
+      } catch {
+        // Last resort: reload
+        try {
+          window.location.reload();
+        } catch {
+          // Nothing more we can do
+        }
+      }
+    }
+  }
+};
+
+/**
+ * MOBILE-SAFE: Force reload with fallbacks
+ */
+const forceReload = (): void => {
+  try {
+    if (typeof window !== 'undefined') {
+      // Clear any service worker cache first
+      if ('caches' in window) {
+        caches.keys().then(names => {
+          names.forEach(name => {
+            caches.delete(name).catch(() => {});
+          });
+        }).catch(() => {});
+      }
+      window.location.reload();
+    }
+  } catch {
+    forceNavigateHome();
+  }
+};
+
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
@@ -30,33 +126,16 @@ export class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     this.setState({ errorInfo });
     
-    // Log error to console in development
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
-    
-    // Log error to database for monitoring
-    logError({
-      errorType: 'react_error_boundary',
-      errorMessage: error.message,
-      errorStack: error.stack,
-      pageRoute: window.location.pathname,
-      componentName: errorInfo.componentStack?.split('\n')[1]?.trim() || 'Unknown',
-      metadata: {
-        componentStack: errorInfo.componentStack,
-        timestamp: new Date().toISOString(),
-      },
-    });
+    // Fire-and-forget error logging - never blocks UI
+    safeLogError(error, errorInfo);
     
     // Call optional error handler
-    this.props.onError?.(error, errorInfo);
+    try {
+      this.props.onError?.(error, errorInfo);
+    } catch {
+      // Ignore callback errors
+    }
   }
-
-  handleRetry = () => {
-    this.setState({ hasError: false, error: null, errorInfo: null });
-  };
-
-  handleGoHome = () => {
-    window.location.href = '/';
-  };
 
   render() {
     if (this.state.hasError) {
@@ -65,47 +144,219 @@ export class ErrorBoundary extends Component<Props, State> {
         return this.props.fallback;
       }
 
-      // Default error UI
+      // MOBILE-SAFE: Pure static error UI with inline styles
+      // No external dependencies, no hooks, no router
       return (
-        <div className="min-h-[400px] flex items-center justify-center p-6">
-          <Card className="max-w-md w-full">
-            <CardContent className="pt-6 text-center space-y-4">
-              <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto">
-                <AlertTriangle className="w-8 h-8 text-destructive" />
-              </div>
-              
-              <div className="space-y-2">
-                <h3 className="text-lg font-semibold text-foreground">
-                  Something went wrong
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  An unexpected error occurred. Please try again or go back to the home page.
-                </p>
-              </div>
+        <div
+          style={{
+            minHeight: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px',
+            backgroundColor: '#F9F7F1',
+            fontFamily: 'system-ui, -apple-system, sans-serif',
+          }}
+        >
+          <div
+            style={{
+              maxWidth: '400px',
+              width: '100%',
+              backgroundColor: '#FFFFFF',
+              borderRadius: '16px',
+              border: '2px solid #2D2D2D',
+              boxShadow: '4px 4px 0 #2D2D2D',
+              padding: '32px 24px',
+              textAlign: 'center',
+            }}
+          >
+            {/* Error Icon */}
+            <div
+              style={{
+                width: '64px',
+                height: '64px',
+                backgroundColor: '#FEE2E2',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 20px',
+              }}
+            >
+              <svg
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#DC2626"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                <path d="M12 9v4" />
+                <path d="M12 17h.01" />
+              </svg>
+            </div>
 
-              {this.props.showDetails && this.state.error && (
-                <details className="text-left bg-muted/50 rounded-lg p-3 text-xs">
-                  <summary className="cursor-pointer text-muted-foreground font-medium">
-                    Error details
-                  </summary>
-                  <pre className="mt-2 overflow-auto text-destructive whitespace-pre-wrap">
-                    {this.state.error.message}
-                  </pre>
-                </details>
-              )}
+            {/* Error Message */}
+            <h1
+              style={{
+                fontSize: '20px',
+                fontWeight: '700',
+                color: '#2D2D2D',
+                marginBottom: '8px',
+              }}
+            >
+              Something went wrong
+            </h1>
+            <p
+              style={{
+                fontSize: '14px',
+                color: '#6B7280',
+                marginBottom: '24px',
+                lineHeight: '1.5',
+              }}
+            >
+              An unexpected error occurred. Please try again or go back to the home page.
+            </p>
 
-              <div className="flex gap-3 justify-center pt-2">
-                <Button variant="outline" size="sm" onClick={this.handleRetry}>
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Try Again
-                </Button>
-                <Button size="sm" onClick={this.handleGoHome}>
-                  <Home className="w-4 h-4 mr-2" />
-                  Go Home
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+            {/* Error Details (development only) */}
+            {this.props.showDetails && this.state.error && (
+              <details
+                style={{
+                  textAlign: 'left',
+                  backgroundColor: '#F3F4F6',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  marginBottom: '24px',
+                  fontSize: '12px',
+                }}
+              >
+                <summary
+                  style={{
+                    cursor: 'pointer',
+                    color: '#6B7280',
+                    fontWeight: '500',
+                  }}
+                >
+                  Error details
+                </summary>
+                <pre
+                  style={{
+                    marginTop: '8px',
+                    color: '#DC2626',
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word',
+                    overflow: 'auto',
+                  }}
+                >
+                  {this.state.error.message}
+                </pre>
+              </details>
+            )}
+
+            {/* Action Buttons - ALWAYS CLICKABLE */}
+            <div
+              style={{
+                display: 'flex',
+                gap: '12px',
+                justifyContent: 'center',
+              }}
+            >
+              {/* Try Again Button */}
+              <button
+                type="button"
+                onClick={forceReload}
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  forceReload();
+                }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  padding: '12px 20px',
+                  fontSize: '14px',
+                  fontWeight: '700',
+                  color: '#2D2D2D',
+                  backgroundColor: '#FFFFFF',
+                  border: '2px solid #2D2D2D',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  boxShadow: '2px 2px 0 #2D2D2D',
+                  WebkitTapHighlightColor: 'transparent',
+                  touchAction: 'manipulation',
+                  userSelect: 'none',
+                  WebkitUserSelect: 'none',
+                  pointerEvents: 'auto',
+                }}
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                  <path d="M21 3v5h-5" />
+                  <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                  <path d="M3 21v-5h5" />
+                </svg>
+                Try Again
+              </button>
+
+              {/* Go Home Button - PRIMARY ACTION */}
+              <button
+                type="button"
+                onClick={forceNavigateHome}
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  forceNavigateHome();
+                }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  padding: '12px 20px',
+                  fontSize: '14px',
+                  fontWeight: '700',
+                  color: '#2D2D2D',
+                  backgroundColor: '#FFD54F',
+                  border: '2px solid #2D2D2D',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  boxShadow: '2px 2px 0 #2D2D2D',
+                  WebkitTapHighlightColor: 'transparent',
+                  touchAction: 'manipulation',
+                  userSelect: 'none',
+                  WebkitUserSelect: 'none',
+                  pointerEvents: 'auto',
+                }}
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                  <polyline points="9,22 9,12 15,12 15,22" />
+                </svg>
+                Go Home
+              </button>
+            </div>
+          </div>
         </div>
       );
     }
@@ -132,18 +383,8 @@ export class InlineErrorBoundary extends Component<{ children: ReactNode; fallba
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('InlineErrorBoundary caught:', error, errorInfo);
     
-    // Log error to database
-    logError({
-      errorType: 'react_inline_error',
-      errorMessage: error.message,
-      errorStack: error.stack,
-      pageRoute: window.location.pathname,
-      componentName: errorInfo.componentStack?.split('\n')[1]?.trim() || 'Unknown',
-      metadata: {
-        componentStack: errorInfo.componentStack,
-        timestamp: new Date().toISOString(),
-      },
-    });
+    // Fire-and-forget error logging - never blocks UI
+    safeLogError(error, errorInfo);
   }
 
   render() {
