@@ -67,16 +67,10 @@ const AuthModal = ({ isOpen, onClose, onSuccess, message }: AuthModalProps) => {
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     try {
-      // Production: Always redirect to custom domain for consistent branding
-      const productionDomain = 'https://univoid.tech';
-      const redirectUrl = import.meta.env.PROD 
-        ? `${productionDomain}/dashboard`
-        : `${window.location.origin}/dashboard`;
-      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: redirectUrl,
+          redirectTo: `${window.location.origin}/dashboard`,
           queryParams: {
             access_type: 'offline',
             prompt: 'select_account',

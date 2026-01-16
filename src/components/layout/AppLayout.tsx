@@ -2,7 +2,6 @@ import { Outlet } from "react-router-dom";
 import { Suspense } from "react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import { BottomNav } from "@/components/layout/BottomNav";
 import { useState, useCallback } from "react";
 import AuthModal from "@/components/auth/AuthModal";
 import { FloatingDoodles } from "@/components/common/FloatingDoodles";
@@ -23,7 +22,7 @@ const AppLayout = () => {
   }, []);
 
   return (
-    <div className="min-h-dvh flex flex-col bg-background paper-texture w-full max-w-full overflow-x-hidden relative pb-20 md:pb-0">
+    <div className="min-h-dvh flex flex-col bg-background paper-texture w-full max-w-full overflow-x-hidden relative">
       {/* Global floating doodles background */}
       <FloatingDoodles density="global" className="fixed inset-0" />
       
@@ -37,9 +36,6 @@ const AppLayout = () => {
       </main>
 
       <Footer />
-      
-      {/* Mobile Bottom Navigation */}
-      <BottomNav />
       
       <AuthModal 
         isOpen={showAuthModal} 
