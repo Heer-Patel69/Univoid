@@ -5,6 +5,7 @@
  */
 
 
+
 const FORBIDDEN_DOMAINS = [
   'lovable.dev',
   'lovable.app',
@@ -14,196 +15,77 @@ export function initSecurityLockdown(): void {
   // Run only in production
   if (import.meta.env?.MODE !== 'production') return;
 
-  clearEditorStorage();
-  blockEditorQueryParams();
+  blockLovableAsideAtSource();
+  killLovableAsideOnInsert();
   injectKillCSS();
-  setupMutationObserver();
-  blockScriptInjection();
 
-  // Extra safety: periodic cleanup
-  removeLovableHard();
-  setInterval(removeLovableHard, 1000);
+  // Extra safety: periodic cleanup (optional, but good for "missed" elements)
+  setInterval(() => {
+    const badge = document.getElementById('lovable-badge');
+    if (badge) badge.remove();
+  }, 1000);
 }
 
 /* ---------------------------------- */
-/* Storage Cleanup */
+/* 1. Intercept appendChild (Creation Block) */
 /* ---------------------------------- */
-function clearEditorStorage(): void {
-  try {
-    const keys = [
-      'lovable',
-      'editor',
-      'lovable-editor',
-      'lovable_mode',
-      'lovableEditor',
-    ];
-
-    keys.forEach(key => {
-      localStorage.removeItem(key);
-      sessionStorage.removeItem(key);
-    });
-  } catch {
-    // ignore
-  }
-}
-
-/* ---------------------------------- */
-/* URL Query Param Cleanup */
-/* ---------------------------------- */
-function blockEditorQueryParams(): void {
-  try {
-    const url = new URL(window.location.href);
-    const params = ['editor', 'lovable', 'edit', 'lovable_mode'];
-
-    let changed = false;
-    params.forEach(p => {
-      if (url.searchParams.has(p)) {
-        url.searchParams.delete(p);
-        changed = true;
-      }
-    });
-
-    if (changed) {
-      window.history.replaceState({}, '', url.pathname + url.search);
-    }
-  } catch {
-    // ignore
-  }
-}
-
-/* ---------------------------------- */
-/* HARD DOM REMOVAL */
-/* ---------------------------------- */
-function removeLovableHard(): void {
-  // Remove by exact ID
-  const badge = document.getElementById('lovable-badge');
-  if (badge) badge.remove();
-
-  // Remove related elements
-  const extraIds = [
-    'lovable-badge-cta',
-    'lovable-badge-text',
-    'lovable-badge-divider',
-    'lovable-badge-close',
-  ];
-
-  extraIds.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.remove();
-  });
-
-  // Safety selectors
-  document
-    .querySelectorAll(
-      'aside[id*="lovable"], [class*="lovable-badge"], a[href*="lovable"]'
-    )
-    .forEach(el => el.remove());
-}
-
-/* ---------------------------------- */
-/* Mutation Observer (Re-Injection Block) */
-/* ---------------------------------- */
-function setupMutationObserver(): void {
-  const observer = new MutationObserver(mutations => {
-    mutations.forEach(mutation => {
-      mutation.addedNodes.forEach(node => {
-        if (!(node instanceof HTMLElement)) return;
-
-        // Specific check for Lovable badge or aside
-        if (node.id === 'lovable-badge' || node.tagName === 'ASIDE') {
-          if (node.id?.includes('lovable')) {
-            node.remove();
-            return;
-          }
-        }
-
-        const text = node.textContent?.toLowerCase() || '';
-        const cls = node.className?.toLowerCase() || '';
-        const id = node.id?.toLowerCase() || '';
-
-        // Inline regex check to avoid top-level keyword list
-        const isForbidden = /lovable|gptengineer|gpt-engineer|lovable-tagger|lovable-badge/i.test(text + cls + id);
-
-        const shouldRemove =
-          isForbidden ||
-          (node instanceof HTMLScriptElement &&
-            FORBIDDEN_DOMAINS.some(d => node.src?.includes(d))) ||
-          (node instanceof HTMLIFrameElement &&
-            FORBIDDEN_DOMAINS.some(d => node.src?.includes(d)));
-
-        if (shouldRemove) {
-          node.remove();
-          return;
-        }
-
-        // Shadow DOM check
-        const anyNode = node as any;
-        if (anyNode.shadowRoot) {
-          anyNode.shadowRoot.querySelectorAll('*').forEach((el: HTMLElement) => {
-            if (
-              el.textContent?.toLowerCase().includes('lovable') ||
-              el.getAttributeNames().some(a => a.includes('lovable'))
-            ) {
-              el.remove();
-            }
-          });
-        }
-
-        // iframe delayed src injection
-        if (node instanceof HTMLIFrameElement) {
-          setTimeout(() => {
-            if (
-              FORBIDDEN_DOMAINS.some(d =>
-                node.src?.toLowerCase().includes(d)
-              )
-            ) {
-              node.remove();
-            }
-          }, 100);
-        }
-      });
-    });
-  });
-
-  const start = () =>
-    observer.observe(document.body, { childList: true, subtree: true });
-
-  document.body ? start() : document.addEventListener('DOMContentLoaded', start);
-}
-
-/* ---------------------------------- */
-/* Script Injection Block */
-/* ---------------------------------- */
-function blockScriptInjection(): void {
-  const originalAppendChild = Element.prototype.appendChild;
+function blockLovableAsideAtSource() {
+  const originalAppend = Element.prototype.appendChild;
 
   Element.prototype.appendChild = function <T extends Node>(node: T): T {
-    if (node instanceof HTMLScriptElement) {
-      const src = node.src?.toLowerCase() || '';
-      if (FORBIDDEN_DOMAINS.some(d => src.includes(d))) {
-        console.warn('[Security] Blocked external script');
-        return node;
-      }
+    if (
+      node instanceof HTMLElement &&
+      node.tagName === 'ASIDE' &&
+      node.id === 'lovable-badge'
+    ) {
+      console.warn('[Security] Blocked Lovable aside at source');
+      return node; // silently block
     }
-    return originalAppendChild.call(this, node) as T;
+    return originalAppend.call(this, node) as T;
   };
 }
 
 /* ---------------------------------- */
-/* CSS Kill Switch (Fastest) */
+/* 2. MutationObserver (Re-injection Kill) */
+/* ---------------------------------- */
+function killLovableAsideOnInsert() {
+  const observer = new MutationObserver(mutations => {
+    for (const m of mutations) {
+      for (const node of Array.from(m.addedNodes)) {
+        if (
+          node instanceof HTMLElement &&
+          node.tagName === 'ASIDE' &&
+          node.id === 'lovable-badge'
+        ) {
+          node.remove();
+        }
+      }
+    }
+  });
+
+  observer.observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+  });
+}
+
+/* ---------------------------------- */
+/* 3. CSS Kill Switch (Visual Negation) */
 /* ---------------------------------- */
 function injectKillCSS(): void {
   const style = document.createElement('style');
   style.innerHTML = `
-    [class*="lovable"],
-    [id*="lovable"],
-    [data-lovable],
-    iframe[src*="lovable"],
-    a[href*="lovable"] {
+    #lovable-badge,
+    aside[id="lovable-badge"],
+    [data-lovable] {
       display: none !important;
       visibility: hidden !important;
       pointer-events: none !important;
+      width: 0 !important;
+      height: 0 !important;
+      opacity: 0 !important;
     }
   `;
   document.head.appendChild(style);
 }
+
