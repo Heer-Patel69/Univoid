@@ -1,9 +1,8 @@
 // Simple Token Bucket Rate Limiter
-// Note: In production with multiple instances, use Redis. For single instance/dev, this in-memory cache works.
+// Note: In production with multiple instances, use Redis. For single instance/dev, this in-memory Map works.
 
-import LRU from "https://deno.land/x/lru_cache@6.0.0/mod.ts";
-
-const cache = new LRU<string, { tokens: number; last: number }>(5000); // Max 5000 users
+const cache = new Map<string, { tokens: number; last: number }>();
+const MAX_CACHE_SIZE = 5000;
 
 export function allowRequest(
     key: string,

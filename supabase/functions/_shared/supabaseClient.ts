@@ -11,10 +11,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
     global: {
         headers: { Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
     },
-    // @ts-ignore: poolSize is a valid option for supabase-js in Deno environment but might typically be hidden in types
     db: {
         schema: 'public',
     },
-    // Configuring the custom fetch implementation or pool size if supported by the client version
-    poolSize: POOL_SIZE,
 });
