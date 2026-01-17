@@ -1,10 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders, isCorsPreflightRequest, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 interface SheetSyncRequest {
   action?: "sync" | "get-info";
@@ -64,9 +60,11 @@ interface EventUpsell {
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+  if (isCorsPreflightRequest(req)) {
+    return handleCorsPreflightRequest(req);
   }
+
+  const corsHeaders = getCorsHeaders(req);
 
   try {
     const serviceAccountKey = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_KEY");
@@ -82,7 +80,7 @@ serve(async (req) => {
       try {
         const credentials = JSON.parse(serviceAccountKey);
         return new Response(
-          JSON.stringify({ 
+          JSON.stringify({
             serviceAccountEmail: credentials.client_email,
             configured: true
           }),
@@ -156,7 +154,7 @@ serve(async (req) => {
     // Fetch profiles separately for all user_ids
     const userIds = (registrations || []).map(r => r.user_id).filter(Boolean);
     let profileMap = new Map<string, { full_name?: string; email?: string; mobile_number?: string; college_name?: string }>();
-    
+
     if (userIds.length > 0) {
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
@@ -173,7 +171,7 @@ serve(async (req) => {
     // Fetch registration addons with upsell details
     const regIds = (registrations || []).map(r => r.id);
     let addonsMap = new Map<string, RegistrationAddon[]>();
-    
+
     if (regIds.length > 0) {
       const { data: allAddons, error: addonsError } = await supabase
         .from("registration_addons")
@@ -216,7 +214,7 @@ serve(async (req) => {
     const validationResult = await validateSheetAccess(accessToken, spreadsheetId, credentials.client_email);
     if (!validationResult.accessible) {
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           error: validationResult.error,
           hint: validationResult.hint,
           serviceAccountEmail: credentials.client_email
@@ -227,7 +225,7 @@ serve(async (req) => {
 
     // Determine actual sheet name - use provided if it exists, otherwise use first sheet
     let actualSheetName = validationResult.firstSheetName || "Sheet1";
-    
+
     if (sheetName && sheetName.trim()) {
       // Check if the requested sheet exists
       const sheetExists = validationResult.allSheetNames?.includes(sheetName.trim());
@@ -237,14 +235,14 @@ serve(async (req) => {
         console.log(`Requested sheet "${sheetName}" not found, using first sheet "${actualSheetName}" instead`);
       }
     }
-    
+
     console.log(`Using sheet name: ${actualSheetName}`);
 
     // Build dynamic headers with upsells
     const headers = buildDynamicHeaders(formFields || [], event, eventUpsells || []);
-    
+
     // Build rows with dynamic column mapping
-    const rows = registrationsWithProfiles.map((reg) => 
+    const rows = registrationsWithProfiles.map((reg) =>
       buildDynamicRow(reg, formFields || [], event, eventUpsells || [])
     );
 
@@ -255,8 +253,8 @@ serve(async (req) => {
     await updateSheet(accessToken, spreadsheetId, actualSheetName, [headers, ...rows]);
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         message: `Synced ${rows.length} registrations to sheet "${actualSheetName}"`,
         rowCount: rows.length,
         columnCount: headers.length,
@@ -276,7 +274,7 @@ serve(async (req) => {
 
 // Build dynamic column headers based on form schema and upsells
 function buildDynamicHeaders(
-  formFields: FormField[], 
+  formFields: FormField[],
   event: { is_paid: boolean; title: string },
   eventUpsells: EventUpsell[]
 ): string[] {
@@ -379,11 +377,11 @@ function buildDynamicRow(
   // Add individual upsell values - EACH UPSELL IN ITS OWN COLUMN
   for (const upsell of eventUpsells) {
     const regAddon = addons.find(a => a.upsell_id === upsell.id);
-    
+
     if (upsell.upsell_type === 'addon' || upsell.upsell_type === 'custom_addon') {
       // Quantity purchased (0 if not selected)
       row.push(regAddon ? String(regAddon.quantity) : "0");
-      
+
       // If upsell allows custom input, add the input value
       if (upsell.allow_custom_input) {
         row.push(regAddon?.custom_input_value || "");
@@ -412,7 +410,7 @@ function getFieldValue(
   ];
 
   let value: unknown = undefined;
-  
+
   for (const key of possibleKeys) {
     if (key in customData) {
       value = customData[key];
@@ -503,18 +501,18 @@ async function getGoogleAccessToken(credentials: { client_email: string; private
   const encoder = new TextEncoder();
   const headerB64 = btoa(JSON.stringify(header)).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
   const payloadB64 = btoa(JSON.stringify(payload)).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
-  
+
   const signatureInput = `${headerB64}.${payloadB64}`;
-  
+
   // Import private key and sign
   const privateKey = credentials.private_key.replace(/\\n/g, "\n");
   const pemContents = privateKey
     .replace("-----BEGIN PRIVATE KEY-----", "")
     .replace("-----END PRIVATE KEY-----", "")
     .replace(/\s/g, "");
-  
+
   const binaryKey = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0));
-  
+
   const cryptoKey = await crypto.subtle.importKey(
     "pkcs8",
     binaryKey,
@@ -553,8 +551,8 @@ async function getGoogleAccessToken(credentials: { client_email: string; private
 
 // Validate that the sheet is accessible with proper permissions
 async function validateSheetAccess(
-  accessToken: string, 
-  spreadsheetId: string, 
+  accessToken: string,
+  spreadsheetId: string,
   serviceAccountEmail: string
 ): Promise<{ accessible: boolean; error?: string; hint?: string; firstSheetName?: string; allSheetNames?: string[] }> {
   try {
@@ -599,9 +597,9 @@ async function validateSheetAccess(
     const data = await response.json();
     const allSheetNames = data.sheets?.map((s: { properties: { title: string } }) => s.properties.title) || [];
     const firstSheetName = allSheetNames[0] || "Sheet1";
-    
+
     console.log(`Sheet access validated successfully. Available sheets: ${allSheetNames.join(", ")}`);
-    
+
     return { accessible: true, firstSheetName, allSheetNames };
   } catch (error) {
     console.error("Sheet validation error:", error);
@@ -642,7 +640,7 @@ async function clearSheet(accessToken: string, spreadsheetId: string, sheetName:
       headers: { Authorization: `Bearer ${accessToken}` },
     }
   );
-  
+
   // Ignore errors on clear - sheet might be empty
   if (!response.ok) {
     console.log(`Clear sheet warning (continuing anyway): ${response.status}`);

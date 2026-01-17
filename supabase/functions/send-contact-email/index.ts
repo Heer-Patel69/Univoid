@@ -1,12 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { getCorsHeaders, isCorsPreflightRequest, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 const ADMIN_EMAIL = "univoid35@gmail.com";
 const SENDER_EMAIL = "UniVoid <no-reply@univoid.in>";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
 
 interface ContactEmailPayload {
   name: string;
@@ -25,13 +21,15 @@ function sanitizeInput(input: string, maxLength: number = 500): string {
 
 serve(async (req) => {
   // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+  if (isCorsPreflightRequest(req)) {
+    return handleCorsPreflightRequest(req);
   }
+
+  const corsHeaders = getCorsHeaders(req);
 
   try {
     const payload: ContactEmailPayload = await req.json();
-    
+
     // Validate required fields
     if (!payload.name || !payload.email || !payload.message) {
       console.error("Missing required fields");

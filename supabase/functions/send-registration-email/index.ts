@@ -1,12 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { getCorsHeaders, isCorsPreflightRequest, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
 
 interface RegistrationEmailRequest {
   userEmail: string;
@@ -20,19 +15,21 @@ interface RegistrationEmailRequest {
 
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+  if (isCorsPreflightRequest(req)) {
+    return handleCorsPreflightRequest(req);
   }
 
+  const corsHeaders = getCorsHeaders(req);
+
   try {
-    const { 
-      userEmail, 
-      userName, 
-      eventTitle, 
-      eventDate, 
-      eventLocation, 
-      isPaid, 
-      ticketPrice 
+    const {
+      userEmail,
+      userName,
+      eventTitle,
+      eventDate,
+      eventLocation,
+      isPaid,
+      ticketPrice
     }: RegistrationEmailRequest = await req.json();
 
     const emailHtml = `
@@ -55,10 +52,10 @@ const handler = async (req: Request): Promise<Response> => {
             </p>
             
             <p style="color: #333333; font-size: 16px; line-height: 1.6;">
-              ${isPaid 
-                ? "Your registration has been submitted! We've received your payment screenshot and it's pending verification."
-                : "Great news! Your registration has been confirmed."
-              }
+              ${isPaid
+        ? "Your registration has been submitted! We've received your payment screenshot and it's pending verification."
+        : "Great news! Your registration has been confirmed."
+      }
             </p>
             
             <div style="background-color: #f8f8f8; border-radius: 12px; padding: 24px; margin: 24px 0;">
@@ -126,8 +123,8 @@ const handler = async (req: Request): Promise<Response> => {
       body: JSON.stringify({
         from: "UniVoid <onboarding@resend.dev>",
         to: [userEmail],
-        subject: isPaid 
-          ? `Registration Submitted: ${eventTitle}` 
+        subject: isPaid
+          ? `Registration Submitted: ${eventTitle}`
           : `You're Registered: ${eventTitle}`,
         html: emailHtml,
       }),

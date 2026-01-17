@@ -1,14 +1,12 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders, isCorsPreflightRequest, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+  if (isCorsPreflightRequest(req)) {
+    return handleCorsPreflightRequest(req);
   }
+
+  const corsHeaders = getCorsHeaders(req);
 
   const logs: string[] = [];
   const log = (message: string) => {
@@ -26,7 +24,7 @@ Deno.serve(async (req) => {
 
   try {
     log("Starting account deletion process");
-    
+
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       log("ERROR: Missing authorization header");
@@ -49,7 +47,7 @@ Deno.serve(async (req) => {
     });
 
     const { data: { user }, error: userError } = await userClient.auth.getUser();
-    
+
     if (userError || !user) {
       log(`ERROR: Invalid token - ${userError?.message || 'No user found'}`);
       return respond(false, "Invalid or expired token");
@@ -81,7 +79,7 @@ Deno.serve(async (req) => {
 
     if (!profile) {
       log("User profile not found - may already be deleted, checking auth");
-      
+
       // Try to delete from auth anyway (idempotent)
       try {
         const { error: authCheckError } = await adminClient.auth.admin.deleteUser(userId);
@@ -91,7 +89,7 @@ Deno.serve(async (req) => {
       } catch (e) {
         log(`Auth check exception: ${e}`);
       }
-      
+
       return respond(true, "Account already deleted or not found");
     }
 
@@ -105,9 +103,9 @@ Deno.serve(async (req) => {
     if (deleteDataError) {
       log(`ERROR in data deletion: ${deleteDataError.message}`);
       log(`Error code: ${deleteDataError.code || 'N/A'}`);
-      return respond(false, "Failed to delete user data", { 
+      return respond(false, "Failed to delete user data", {
         error_code: deleteDataError.code,
-        error_detail: deleteDataError.message 
+        error_detail: deleteDataError.message
       });
     }
 
@@ -156,7 +154,7 @@ Deno.serve(async (req) => {
     if (errStack) {
       log(`Stack: ${errStack.substring(0, 500)}`);
     }
-    
+
     // Still return 200, but with success=false
     return respond(false, "Internal server error", { error_detail: errMsg });
   }

@@ -1,21 +1,19 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { PDFDocument } from "https://esm.sh/pdf-lib@1.17.1";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { getCorsHeaders, isCorsPreflightRequest, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 serve(async (req) => {
   // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+  if (isCorsPreflightRequest(req)) {
+    return handleCorsPreflightRequest(req);
   }
+
+  const corsHeaders = getCorsHeaders(req);
 
   try {
     const { filePath, bucket = 'materials' } = await req.json();
-    
+
     if (!filePath) {
       throw new Error('filePath is required');
     }
@@ -41,9 +39,9 @@ serve(async (req) => {
 
     // Load and compress the PDF
     const arrayBuffer = await fileData.arrayBuffer();
-    const pdfDoc = await PDFDocument.load(arrayBuffer, { 
+    const pdfDoc = await PDFDocument.load(arrayBuffer, {
       ignoreEncryption: true,
-      updateMetadata: false 
+      updateMetadata: false
     });
 
     // Remove metadata to reduce size
@@ -63,7 +61,7 @@ serve(async (req) => {
 
     const compressedSize = compressedPdfBytes.length;
     const compressionRatio = ((1 - compressedSize / originalSize) * 100).toFixed(1);
-    
+
     console.log(`Compressed size: ${(compressedSize / 1024 / 1024).toFixed(2)} MB`);
     console.log(`Compression ratio: ${compressionRatio}%`);
 
@@ -117,7 +115,7 @@ serve(async (req) => {
       );
     } else {
       console.log('Compression not beneficial, keeping original file');
-      
+
       const { data: urlData } = supabase.storage
         .from(bucket)
         .getPublicUrl(filePath);
@@ -139,13 +137,13 @@ serve(async (req) => {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('PDF compression error:', errorMessage);
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: errorMessage 
+      JSON.stringify({
+        success: false,
+        error: errorMessage
       }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
   }

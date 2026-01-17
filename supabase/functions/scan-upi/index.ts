@@ -1,13 +1,9 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
+import { getCorsHeaders, isCorsPreflightRequest, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 type RequestBody = {
   bucket: string;
   path: string;
-};
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
@@ -48,15 +44,17 @@ function parseUpiIdFromContent(data: string): string | null {
 
 Deno.serve(async (req) => {
   // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+  if (isCorsPreflightRequest(req)) {
+    return handleCorsPreflightRequest(req);
   }
+
+  const corsHeaders = getCorsHeaders(req);
 
   try {
     const { bucket, path }: Partial<RequestBody> = await req.json();
-    
+
     console.log('scan-upi: Processing request', { bucket, path });
-    
+
     if (!bucket || !path) {
       return new Response(JSON.stringify({ success: false, error: 'bucket and path are required' }), {
         status: 400,
@@ -79,23 +77,23 @@ Deno.serve(async (req) => {
 
     // Use Google's ZXing-based QR decoder API (free, no API key needed)
     const zxingUrl = `https://api.qrserver.com/v1/read-qr-code/?fileurl=${encodeURIComponent(signedUrlData.signedUrl)}`;
-    
+
     console.log('scan-upi: Calling QR decode API');
-    
+
     const qrResponse = await fetch(zxingUrl);
     const qrResult = await qrResponse.json();
-    
+
     console.log('scan-upi: QR decode result', JSON.stringify(qrResult));
 
     // Extract QR data from response
     const qrData = qrResult?.[0]?.symbol?.[0]?.data;
-    
+
     if (!qrData) {
       const qrError = qrResult?.[0]?.symbol?.[0]?.error;
       console.log('scan-upi: QR decode failed', qrError);
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: qrError || 'QR decode failed - no QR code found in image' 
+      return new Response(JSON.stringify({
+        success: false,
+        error: qrError || 'QR decode failed - no QR code found in image'
       }), {
         status: 422,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -107,9 +105,9 @@ Deno.serve(async (req) => {
     const upiId = parseUpiIdFromContent(qrData);
     if (!upiId) {
       console.log('scan-upi: UPI ID not found in QR content');
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: 'UPI ID not found in QR - ensure this is a valid UPI payment QR' 
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'UPI ID not found in QR - ensure this is a valid UPI payment QR'
       }), {
         status: 422,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

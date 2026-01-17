@@ -16,11 +16,6 @@ const FORBIDDEN_DOMAINS = [
 ];
 
 export function initSecurityLockdown(): void {
-  // Only run in production
-  if (import.meta.env.MODE !== 'production') {
-    return;
-  }
-
   // Clear any forced editor flags from storage
   clearEditorStorage();
 
@@ -73,15 +68,15 @@ function setupMutationObserver(): void {
       mutation.addedNodes.forEach((node) => {
         if (node instanceof HTMLElement) {
           // Check for forbidden content
-          const shouldRemove = 
-            FORBIDDEN_KEYWORDS.some(keyword => 
+          const shouldRemove =
+            FORBIDDEN_KEYWORDS.some(keyword =>
               node.textContent?.toLowerCase().includes(keyword) ||
               node.className?.toLowerCase().includes(keyword) ||
               node.id?.toLowerCase().includes(keyword)
             ) ||
-            (node instanceof HTMLScriptElement && 
+            (node instanceof HTMLScriptElement &&
               FORBIDDEN_DOMAINS.some(domain => node.src?.includes(domain))) ||
-            (node instanceof HTMLIFrameElement && 
+            (node instanceof HTMLIFrameElement &&
               FORBIDDEN_DOMAINS.some(domain => node.src?.includes(domain)));
 
           if (shouldRemove) {
@@ -111,8 +106,8 @@ function setupMutationObserver(): void {
 function blockScriptInjection(): void {
   // Override appendChild to block forbidden scripts
   const originalAppendChild = Element.prototype.appendChild;
-  
-  Element.prototype.appendChild = function<T extends Node>(node: T): T {
+
+  Element.prototype.appendChild = function <T extends Node>(node: T): T {
     if (node instanceof HTMLScriptElement) {
       const src = node.src?.toLowerCase() || '';
       if (FORBIDDEN_DOMAINS.some(domain => src.includes(domain))) {

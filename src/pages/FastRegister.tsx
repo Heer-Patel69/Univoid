@@ -16,20 +16,20 @@ import { fetchEventById, checkUserRegistration } from "@/services/eventsService"
 import { uploadPaymentScreenshot } from "@/services/registrationService";
 import { useMobileValidation } from "@/hooks/useMobileValidation";
 import UpsellScreen from "@/components/events/UpsellScreen";
-import { 
-  fetchEventUpsells, 
+import {
+  fetchEventUpsells,
   fetchUpsellSettings,
   type EventUpsell,
   type SelectedUpsell,
   calculateTotalWithUpsells,
 } from "@/services/upsellService";
-import { 
-  Zap, 
-  Calendar, 
-  MapPin, 
-  Loader2, 
-  Phone, 
-  CheckCircle, 
+import {
+  Zap,
+  Calendar,
+  MapPin,
+  Loader2,
+  Phone,
+  CheckCircle,
   ArrowRight,
   Ticket,
   Upload,
@@ -63,22 +63,29 @@ const FastRegister = () => {
   const [isSavingPhone, setIsSavingPhone] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [ticketId, setTicketId] = useState<string | null>(null);
-  
+
   // Payment state for paid events
   const [paymentScreenshot, setPaymentScreenshot] = useState<File | null>(null);
   const [isUploadingPayment, setIsUploadingPayment] = useState(false);
-  
+
   // Upsell state
   const [groupSize, setGroupSize] = useState(1);
   const [selectedUpsells, setSelectedUpsells] = useState<SelectedUpsell[]>([]);
-  
+
   // Mobile validation
-  const { 
-    isChecking: isCheckingMobile, 
-    isDuplicate: isMobileDuplicate, 
+  const {
+    isChecking: isCheckingMobile,
+    isDuplicate: isMobileDuplicate,
     isValidFormat: isValidMobileFormat,
-    checkMobileExists 
+    checkMobileExists
   } = useMobileValidation({ excludeUserId: user?.id });
+
+  // Rate Limiter
+  const { checkLimit: checkAuthLimit } = useRateLimiter({
+    key: 'auth_google_fast_register',
+    limit: 5,
+    window: 60000,
+  });
 
   // Check mobile when it changes
   useEffect(() => {
@@ -120,7 +127,7 @@ const FastRegister = () => {
   });
 
   // Calculate price with upsells
-  const groupOffers = useMemo(() => 
+  const groupOffers = useMemo(() =>
     upsells.filter(u => u.upsell_type === 'group_offer'),
     [upsells]
   );
@@ -245,7 +252,7 @@ const FastRegister = () => {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ 
+        .update({
           mobile_number: mobileNumber.replace(/\s/g, ''),
           phone_verified: false,
           profile_type: 'quick',
@@ -270,9 +277,9 @@ const FastRegister = () => {
         title: "Phone saved!",
         description: "Proceeding to registration",
       });
-      
+
       if (refreshProfile) await refreshProfile();
-      
+
       // Go to upsells step for paid events with upsells, payment otherwise
       if (event?.is_paid) {
         if (hasUpsells) {
@@ -389,7 +396,7 @@ const FastRegister = () => {
       if (error) throw error;
 
       const result = data as { success: boolean; registration_id?: string; ticket_id?: string; error?: string };
-      
+
       if (result.success) {
         // Different toast messages for paid vs free events
         if (event.is_paid) {
@@ -472,14 +479,14 @@ const FastRegister = () => {
   }
 
   // Check if registration is pending payment approval for paid events
-  const isPendingApproval = existingRegistration && 
-    event.is_paid && 
+  const isPendingApproval = existingRegistration &&
+    event.is_paid &&
     existingRegistration.payment_status === 'pending';
 
-  const isApproved = existingRegistration && 
+  const isApproved = existingRegistration &&
     existingRegistration.payment_status === 'approved';
 
-  const isRejected = existingRegistration && 
+  const isRejected = existingRegistration &&
     existingRegistration.payment_status === 'rejected';
 
   // Calculate display price
@@ -626,9 +633,9 @@ const FastRegister = () => {
           {/* Step: Upsells (for paid events with upsells) */}
           {step === 'upsells' && event.is_paid && hasUpsells && (
             <div className="space-y-4">
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => setStep('phone')}
                 className="mb-2 -ml-2"
                 disabled={!!profile?.mobile_number}
@@ -651,15 +658,15 @@ const FastRegister = () => {
           {/* Step: Payment (for paid events only) */}
           {step === 'payment' && event.is_paid && (
             <div className="space-y-6">
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => hasUpsells ? setStep('upsells') : setStep('phone')}
                 className="mb-2 -ml-2"
               >
                 <ArrowLeft className="w-4 h-4 mr-1" /> Back
               </Button>
-              
+
               <div className="text-center">
                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
                   <CreditCard className="w-6 h-6 text-primary" />
@@ -699,18 +706,18 @@ const FastRegister = () => {
               {/* Payment Instructions */}
               <div className="bg-muted rounded-xl p-4 space-y-4">
                 <p className="text-sm font-medium text-center">Scan QR or use UPI ID to pay</p>
-                
+
                 {/* UPI QR Code */}
                 {event.upi_qr_url && (
                   <div className="bg-white p-4 rounded-xl w-fit mx-auto">
-                    <img 
-                      src={event.upi_qr_url} 
-                      alt="UPI QR Code" 
+                    <img
+                      src={event.upi_qr_url}
+                      alt="UPI QR Code"
                       className="w-48 h-48 object-contain max-w-full"
                     />
                   </div>
                 )}
-                
+
                 {/* UPI ID */}
                 {event.upi_vpa && (
                   <div className="text-center">
@@ -732,17 +739,16 @@ const FastRegister = () => {
               <div className="space-y-2">
                 <Label>Upload Payment Screenshot *</Label>
                 <div className="border-2 border-dashed rounded-xl p-6 text-center">
-                  <Input 
-                    type="file" 
-                    accept="image/*" 
-                    onChange={handlePaymentFileChange} 
-                    className="hidden" 
-                    id="payment-screenshot" 
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePaymentFileChange}
+                    className="hidden"
+                    id="payment-screenshot"
                   />
                   <label htmlFor="payment-screenshot" className="cursor-pointer flex flex-col items-center gap-3">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                      paymentScreenshot ? 'bg-green-100 dark:bg-green-900/30' : 'bg-muted'
-                    }`}>
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${paymentScreenshot ? 'bg-green-100 dark:bg-green-900/30' : 'bg-muted'
+                      }`}>
                       {paymentScreenshot ? (
                         <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
                       ) : (
@@ -780,8 +786,8 @@ const FastRegister = () => {
                   {event.is_paid ? "Submit Registration" : "Ready to Register!"}
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  {event.is_paid 
-                    ? "Review details and submit for approval" 
+                  {event.is_paid
+                    ? "Review details and submit for approval"
                     : "Confirm your registration for this event"
                   }
                 </p>
@@ -840,7 +846,7 @@ const FastRegister = () => {
                   <p className="text-xs text-yellow-700 dark:text-yellow-300 flex items-start gap-2">
                     <Clock className="w-4 h-4 mt-0.5 shrink-0" />
                     <span>
-                      Your ticket will be generated after the organizer approves your payment. 
+                      Your ticket will be generated after the organizer approves your payment.
                       You'll receive a notification once approved.
                     </span>
                   </p>
@@ -894,8 +900,8 @@ const FastRegister = () => {
                     </div>
                     <h2 className="text-xl font-bold mb-2">You're Registered! 🎉</h2>
                     <p className="text-sm text-muted-foreground">
-                      {isApproved || !event.is_paid 
-                        ? "Your ticket has been generated" 
+                      {isApproved || !event.is_paid
+                        ? "Your ticket has been generated"
                         : "Your registration is confirmed"
                       }
                     </p>

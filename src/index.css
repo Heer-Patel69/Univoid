@@ -19,7 +19,7 @@
 
     /* Sketch border color #2D2D2D - Used for all borders */
     --sketch-border: 0 0% 18%;
-    
+
     /* Mustard Yellow Primary #FFD54F */
     --primary: 45 100% 65%;
     --primary-foreground: 0 0% 18%;
@@ -52,7 +52,7 @@
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
-    
+
     /* Pastel accent colors */
     --pastel-blue: 210 80% 92%;
     --pastel-green: 152 50% 90%;
@@ -60,7 +60,7 @@
     --pastel-purple: 270 60% 92%;
     --pastel-yellow: 54 100% 88%;
     --pastel-pink: 340 60% 92%;
-    
+
     /* Category accent colors */
     --category-blue: 210 100% 55%;
     --category-green: 152 69% 45%;
@@ -110,7 +110,7 @@
     --border-strong: 48 20% 80%;
     --input: 20 10% 20%;
     --ring: 48 20% 95%;
-    
+
     --pastel-blue: 210 40% 20%;
     --pastel-green: 152 30% 18%;
     --pastel-peach: 20 40% 18%;
@@ -206,7 +206,12 @@
   }
 
   /* Friendly rounded typography */
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: 'Outfit', system-ui, sans-serif;
     @apply font-bold tracking-tight;
   }
@@ -225,6 +230,7 @@
 }
 
 @layer components {
+
   /* Sketch Card Style - Neo-brutalist with hard shadow */
   .card-sketch {
     @apply bg-card rounded-xl p-6;
@@ -306,40 +312,48 @@
 
   /* Ultra-fast skeleton shimmer - GPU accelerated with theme-aware colors */
   @keyframes skeleton-shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
+    0% {
+      background-position: -200% 0;
+    }
+
+    100% {
+      background-position: 200% 0;
+    }
   }
 
   .skeleton-optimized {
-    background: linear-gradient(
-      90deg,
-      hsl(40 15% 88%) 0%,
-      hsl(45 20% 94%) 25%,
-      hsl(50 25% 96%) 50%,
-      hsl(45 20% 94%) 75%,
-      hsl(40 15% 88%) 100%
-    );
+    background: linear-gradient(90deg,
+        hsl(40 15% 88%) 0%,
+        hsl(45 20% 94%) 25%,
+        hsl(50 25% 96%) 50%,
+        hsl(45 20% 94%) 75%,
+        hsl(40 15% 88%) 100%);
     background-size: 200% 100%;
     animation: skeleton-shimmer 1.5s ease-in-out infinite;
     will-change: background-position;
   }
 
   .dark .skeleton-optimized {
-    background: linear-gradient(
-      90deg,
-      hsl(20 10% 15%) 0%,
-      hsl(25 12% 20%) 25%,
-      hsl(30 15% 24%) 50%,
-      hsl(25 12% 20%) 75%,
-      hsl(20 10% 15%) 100%
-    );
+    background: linear-gradient(90deg,
+        hsl(20 10% 15%) 0%,
+        hsl(25 12% 20%) 25%,
+        hsl(30 15% 24%) 50%,
+        hsl(25 12% 20%) 75%,
+        hsl(20 10% 15%) 100%);
     background-size: 200% 100%;
   }
 
   /* Fast pulse alternative for simpler skeletons */
   @keyframes skeleton-pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
+
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.6;
+    }
   }
 
   .skeleton-pulse {
@@ -353,6 +367,7 @@
       opacity: 1;
       transform: scale(1);
     }
+
     to {
       opacity: 0;
       transform: scale(0.98);
@@ -369,6 +384,7 @@
       opacity: 0;
       transform: translateY(8px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -417,18 +433,65 @@
   }
 
   /* Stagger animation delays for lists */
-  .stagger-1 { transition-delay: 50ms; animation-delay: 50ms; }
-  .stagger-2 { transition-delay: 100ms; animation-delay: 100ms; }
-  .stagger-3 { transition-delay: 150ms; animation-delay: 150ms; }
-  .stagger-4 { transition-delay: 200ms; animation-delay: 200ms; }
-  .stagger-5 { transition-delay: 250ms; animation-delay: 250ms; }
-  .stagger-6 { transition-delay: 300ms; animation-delay: 300ms; }
-  .stagger-7 { transition-delay: 350ms; animation-delay: 350ms; }
-  .stagger-8 { transition-delay: 400ms; animation-delay: 400ms; }
-  .stagger-9 { transition-delay: 450ms; animation-delay: 450ms; }
-  .stagger-10 { transition-delay: 500ms; animation-delay: 500ms; }
-  .stagger-11 { transition-delay: 550ms; animation-delay: 550ms; }
-  .stagger-12 { transition-delay: 600ms; animation-delay: 600ms; }
+  .stagger-1 {
+    transition-delay: 50ms;
+    animation-delay: 50ms;
+  }
+
+  .stagger-2 {
+    transition-delay: 100ms;
+    animation-delay: 100ms;
+  }
+
+  .stagger-3 {
+    transition-delay: 150ms;
+    animation-delay: 150ms;
+  }
+
+  .stagger-4 {
+    transition-delay: 200ms;
+    animation-delay: 200ms;
+  }
+
+  .stagger-5 {
+    transition-delay: 250ms;
+    animation-delay: 250ms;
+  }
+
+  .stagger-6 {
+    transition-delay: 300ms;
+    animation-delay: 300ms;
+  }
+
+  .stagger-7 {
+    transition-delay: 350ms;
+    animation-delay: 350ms;
+  }
+
+  .stagger-8 {
+    transition-delay: 400ms;
+    animation-delay: 400ms;
+  }
+
+  .stagger-9 {
+    transition-delay: 450ms;
+    animation-delay: 450ms;
+  }
+
+  .stagger-10 {
+    transition-delay: 500ms;
+    animation-delay: 500ms;
+  }
+
+  .stagger-11 {
+    transition-delay: 550ms;
+    animation-delay: 550ms;
+  }
+
+  .stagger-12 {
+    transition-delay: 600ms;
+    animation-delay: 600ms;
+  }
 
   /* Grid item staggered fade-in animation */
   @keyframes grid-item-fade-in {
@@ -436,6 +499,7 @@
       opacity: 0;
       transform: translateY(16px) scale(0.96);
     }
+
     to {
       opacity: 1;
       transform: translateY(0) scale(1);
@@ -448,45 +512,113 @@
   }
 
   /* Staggered grid - applies animation delays automatically via CSS custom property */
-  .staggered-grid > * {
+  .staggered-grid>* {
     opacity: 0;
     animation: grid-item-fade-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
 
-  .staggered-grid > *:nth-child(1) { animation-delay: 0ms; }
-  .staggered-grid > *:nth-child(2) { animation-delay: 50ms; }
-  .staggered-grid > *:nth-child(3) { animation-delay: 100ms; }
-  .staggered-grid > *:nth-child(4) { animation-delay: 150ms; }
-  .staggered-grid > *:nth-child(5) { animation-delay: 200ms; }
-  .staggered-grid > *:nth-child(6) { animation-delay: 250ms; }
-  .staggered-grid > *:nth-child(7) { animation-delay: 300ms; }
-  .staggered-grid > *:nth-child(8) { animation-delay: 350ms; }
-  .staggered-grid > *:nth-child(9) { animation-delay: 400ms; }
-  .staggered-grid > *:nth-child(10) { animation-delay: 450ms; }
-  .staggered-grid > *:nth-child(11) { animation-delay: 500ms; }
-  .staggered-grid > *:nth-child(12) { animation-delay: 550ms; }
-  .staggered-grid > *:nth-child(n+13) { animation-delay: 600ms; }
+  .staggered-grid>*:nth-child(1) {
+    animation-delay: 0ms;
+  }
+
+  .staggered-grid>*:nth-child(2) {
+    animation-delay: 50ms;
+  }
+
+  .staggered-grid>*:nth-child(3) {
+    animation-delay: 100ms;
+  }
+
+  .staggered-grid>*:nth-child(4) {
+    animation-delay: 150ms;
+  }
+
+  .staggered-grid>*:nth-child(5) {
+    animation-delay: 200ms;
+  }
+
+  .staggered-grid>*:nth-child(6) {
+    animation-delay: 250ms;
+  }
+
+  .staggered-grid>*:nth-child(7) {
+    animation-delay: 300ms;
+  }
+
+  .staggered-grid>*:nth-child(8) {
+    animation-delay: 350ms;
+  }
+
+  .staggered-grid>*:nth-child(9) {
+    animation-delay: 400ms;
+  }
+
+  .staggered-grid>*:nth-child(10) {
+    animation-delay: 450ms;
+  }
+
+  .staggered-grid>*:nth-child(11) {
+    animation-delay: 500ms;
+  }
+
+  .staggered-grid>*:nth-child(12) {
+    animation-delay: 550ms;
+  }
+
+  .staggered-grid>*:nth-child(n+13) {
+    animation-delay: 600ms;
+  }
 
   /* Fast staggered grid - shorter delays for snappier feel */
-  .staggered-grid-fast > * {
+  .staggered-grid-fast>* {
     opacity: 0;
     animation: grid-item-fade-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
 
-  .staggered-grid-fast > *:nth-child(1) { animation-delay: 0ms; }
-  .staggered-grid-fast > *:nth-child(2) { animation-delay: 30ms; }
-  .staggered-grid-fast > *:nth-child(3) { animation-delay: 60ms; }
-  .staggered-grid-fast > *:nth-child(4) { animation-delay: 90ms; }
-  .staggered-grid-fast > *:nth-child(5) { animation-delay: 120ms; }
-  .staggered-grid-fast > *:nth-child(6) { animation-delay: 150ms; }
-  .staggered-grid-fast > *:nth-child(7) { animation-delay: 180ms; }
-  .staggered-grid-fast > *:nth-child(8) { animation-delay: 210ms; }
-  .staggered-grid-fast > *:nth-child(9) { animation-delay: 240ms; }
-  .staggered-grid-fast > *:nth-child(n+10) { animation-delay: 270ms; }
+  .staggered-grid-fast>*:nth-child(1) {
+    animation-delay: 0ms;
+  }
+
+  .staggered-grid-fast>*:nth-child(2) {
+    animation-delay: 30ms;
+  }
+
+  .staggered-grid-fast>*:nth-child(3) {
+    animation-delay: 60ms;
+  }
+
+  .staggered-grid-fast>*:nth-child(4) {
+    animation-delay: 90ms;
+  }
+
+  .staggered-grid-fast>*:nth-child(5) {
+    animation-delay: 120ms;
+  }
+
+  .staggered-grid-fast>*:nth-child(6) {
+    animation-delay: 150ms;
+  }
+
+  .staggered-grid-fast>*:nth-child(7) {
+    animation-delay: 180ms;
+  }
+
+  .staggered-grid-fast>*:nth-child(8) {
+    animation-delay: 210ms;
+  }
+
+  .staggered-grid-fast>*:nth-child(9) {
+    animation-delay: 240ms;
+  }
+
+  .staggered-grid-fast>*:nth-child(n+10) {
+    animation-delay: 270ms;
+  }
 
   .container-wide {
     @apply max-w-6xl mx-auto px-4 sm:px-6 lg:px-8;
   }
+
   .container-narrow {
     @apply max-w-3xl mx-auto px-4 sm:px-6;
   }
@@ -503,15 +635,20 @@
 
   /* ===== Floating Doodle Animation ===== */
   @keyframes float-doodle {
-    0%, 100% {
+
+    0%,
+    100% {
       transform: translateY(0px) rotate(0deg);
     }
+
     25% {
       transform: translateY(-8px) rotate(2deg);
     }
+
     50% {
       transform: translateY(-4px) rotate(-1deg);
     }
+
     75% {
       transform: translateY(-10px) rotate(1deg);
     }
@@ -554,18 +691,23 @@
   .bento-card.pastel-blue {
     background: linear-gradient(135deg, hsl(var(--pastel-blue)), hsl(var(--card)));
   }
+
   .bento-card.pastel-green {
     background: linear-gradient(135deg, hsl(var(--pastel-green)), hsl(var(--card)));
   }
+
   .bento-card.pastel-peach {
     background: linear-gradient(135deg, hsl(var(--pastel-peach)), hsl(var(--card)));
   }
+
   .bento-card.pastel-purple {
     background: linear-gradient(135deg, hsl(var(--pastel-purple)), hsl(var(--card)));
   }
+
   .bento-card.pastel-yellow {
     background: linear-gradient(135deg, hsl(var(--pastel-yellow)), hsl(var(--card)));
   }
+
   .bento-card.pastel-pink {
     background: linear-gradient(135deg, hsl(var(--pastel-pink)), hsl(var(--card)));
   }
@@ -602,9 +744,18 @@
   .task-pill .status-dot {
     @apply w-3 h-3 rounded-full flex-shrink-0;
   }
-  .task-pill .status-dot.urgent { @apply bg-destructive; }
-  .task-pill .status-dot.warning { @apply bg-warning; }
-  .task-pill .status-dot.normal { @apply bg-success; }
+
+  .task-pill .status-dot.urgent {
+    @apply bg-destructive;
+  }
+
+  .task-pill .status-dot.warning {
+    @apply bg-warning;
+  }
+
+  .task-pill .status-dot.normal {
+    @apply bg-success;
+  }
 
   /* Section Spacing */
   .section-spacing {
@@ -634,15 +785,19 @@
   .pill-category.blue {
     @apply bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300;
   }
+
   .pill-category.green {
     @apply bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300;
   }
+
   .pill-category.orange {
     @apply bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300;
   }
+
   .pill-category.purple {
     @apply bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300;
   }
+
   .pill-category.pink {
     @apply bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300;
   }
@@ -695,8 +850,8 @@
   .banner-motivation::before {
     content: '';
     @apply absolute inset-0 opacity-30;
-    background-image: radial-gradient(circle at 20% 80%, rgba(255,255,255,0.3) 0%, transparent 50%),
-                      radial-gradient(circle at 80% 20%, rgba(255,255,255,0.2) 0%, transparent 40%);
+    background-image: radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.3) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.2) 0%, transparent 40%);
   }
 
   /* Focus styles */
@@ -712,17 +867,41 @@
   }
 
   @keyframes wave {
-    0%, 100% { transform: rotate(0deg); }
-    10% { transform: rotate(14deg); }
-    20% { transform: rotate(-8deg); }
-    30% { transform: rotate(14deg); }
-    40% { transform: rotate(-4deg); }
-    50% { transform: rotate(10deg); }
-    60%, 100% { transform: rotate(0deg); }
+
+    0%,
+    100% {
+      transform: rotate(0deg);
+    }
+
+    10% {
+      transform: rotate(14deg);
+    }
+
+    20% {
+      transform: rotate(-8deg);
+    }
+
+    30% {
+      transform: rotate(14deg);
+    }
+
+    40% {
+      transform: rotate(-4deg);
+    }
+
+    50% {
+      transform: rotate(10deg);
+    }
+
+    60%,
+    100% {
+      transform: rotate(0deg);
+    }
   }
 }
 
 @layer utilities {
+
   /* Smooth transitions */
   .transition-smooth {
     @apply transition-all duration-200 ease-out;
@@ -738,7 +917,7 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  
+
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
@@ -961,8 +1140,8 @@
     /* Ensure doodles don't trigger repaints */
     isolation: isolate;
   }
-  
-  .mobile-doodle-container > * {
+
+  .mobile-doodle-container>* {
     /* Each doodle on its own GPU layer */
     contain: layout style paint;
     transform: translateZ(0);
@@ -974,6 +1153,7 @@
 
 /* Reduce animations for users who prefer reduced motion */
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
@@ -982,7 +1162,7 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-  
+
   /* Disable paper texture for reduced motion preference */
   body::before,
   .paper-texture::before {
@@ -1007,3 +1187,22 @@
   contain-intrinsic-size: 0 300px;
 }
 
+/* Hide external editor badges */
+[class*="lovable"],
+[class*="Lovable"],
+[id*="lovable"],
+[id*="Lovable"],
+[data-lovable],
+[class*="gptengineer"],
+[id*="gptengineer"],
+a[href*="lovable.dev"],
+a[href*="lovable.app"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}

@@ -10,6 +10,9 @@ const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
+    // Note: localStorage is used for session persistence.
+    // XSS risks are mitigated by the strict Content Security Policy (CSP) 
+    // and input sanitization (DOMPurify) implemented in the application.
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,

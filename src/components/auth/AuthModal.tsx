@@ -40,17 +40,27 @@ const GoogleIcon = () => (
   </svg>
 );
 
+import { useRateLimiter } from "@/hooks/useRateLimiter";
+
+// ... existing code ...
+
 const AuthModal = ({ isOpen, onClose, onSuccess, message }: AuthModalProps) => {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, userRoles, isAdmin, isAdminOrAssistant, isLoading } = useAuth();
 
+  const { checkLimit } = useRateLimiter({
+    key: 'auth_google_signin',
+    limit: 5,
+    window: 60000, // 5 attempts per minute
+  });
+
   // Auto-close and redirect when user logs in
   useEffect(() => {
     if (user && !isLoading && isOpen) {
       onClose();
-      
+
       // Determine redirect path based on role
       let redirectPath = '/dashboard';
       if (isAdmin || isAdminOrAssistant) {
@@ -58,13 +68,14 @@ const AuthModal = ({ isOpen, onClose, onSuccess, message }: AuthModalProps) => {
       } else if (userRoles.includes('organizer')) {
         redirectPath = '/organizer-dashboard';
       }
-      
+
       navigate(redirectPath, { replace: true });
       onSuccess?.();
     }
   }, [user, isLoading, isOpen, userRoles, isAdmin, isAdminOrAssistant, navigate, onClose, onSuccess]);
 
   const handleGoogleSignIn = async () => {
+    if (!checkLimit()) return;
     setIsGoogleLoading(true);
     try {
       const { error } = await supabase.auth.signInWithOAuth({

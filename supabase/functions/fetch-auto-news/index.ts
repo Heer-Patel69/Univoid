@@ -1,10 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders, isCorsPreflightRequest, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 const SYSTEM_USER_EMAIL = "system@univoid.local";
 const SYSTEM_USER_NAME = "UniVoid System";
@@ -94,13 +90,13 @@ function containsForeignKeywords(text: string): boolean {
 
 function extractStates(text: string): { states: string[]; isAllIndia: boolean } {
   const lowerText = text.toLowerCase();
-  
+
   // Check for All India
-  if (lowerText.includes("all india") || lowerText.includes("pan india") || 
-      lowerText.includes("national level") || lowerText.includes("nationwide")) {
+  if (lowerText.includes("all india") || lowerText.includes("pan india") ||
+    lowerText.includes("national level") || lowerText.includes("nationwide")) {
     return { states: [], isAllIndia: true };
   }
-  
+
   // Extract specific states
   const foundStates: string[] = [];
   for (const state of INDIAN_STATES) {
@@ -108,20 +104,20 @@ function extractStates(text: string): { states: string[]; isAllIndia: boolean } 
       foundStates.push(state);
     }
   }
-  
+
   return { states: foundStates, isAllIndia: foundStates.length === 0 };
 }
 
 function extractCourses(text: string): string[] {
   const lowerText = text.toLowerCase();
   const courses: string[] = [];
-  
+
   for (const [level, keywords] of Object.entries(COURSE_LEVELS)) {
     if (keywords.some(kw => lowerText.includes(kw))) {
       courses.push(level);
     }
   }
-  
+
   return courses.length > 0 ? courses : ["Any"];
 }
 
@@ -133,7 +129,7 @@ function extractDeadline(text: string): string | null {
     /apply by[:\s]+(\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4})/i,
     /(\d{1,2}(?:st|nd|rd|th)?\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+\d{4})/i,
   ];
-  
+
   for (const pattern of patterns) {
     const match = text.match(pattern);
     if (match) {
@@ -147,24 +143,24 @@ function extractDeadline(text: string): string | null {
       }
     }
   }
-  
+
   return null;
 }
 
 function isValidScholarship(article: NewsAPIArticle): boolean {
   const text = `${article.title} ${article.description}`.toLowerCase();
-  
+
   // MUST contain scholarship-related keywords
   const scholarshipKeywords = ["scholarship", "fellowship", "grant", "stipend", "financial aid", "bursary"];
   const hasScholarshipKeyword = scholarshipKeywords.some(kw => text.includes(kw));
   if (!hasScholarshipKeyword) return false;
-  
+
   // MUST NOT contain foreign keywords
   if (containsForeignKeywords(text)) {
     console.log(`Rejected (foreign): ${article.title.substring(0, 50)}...`);
     return false;
   }
-  
+
   // MUST contain India-related content
   const indiaKeywords = ["india", "indian", ...INDIAN_STATES.map(s => s.toLowerCase())];
   const hasIndiaKeyword = indiaKeywords.some(kw => text.includes(kw));
@@ -172,7 +168,7 @@ function isValidScholarship(article: NewsAPIArticle): boolean {
     console.log(`Rejected (no India): ${article.title.substring(0, 50)}...`);
     return false;
   }
-  
+
   return true;
 }
 
@@ -180,7 +176,7 @@ function processScholarship(article: NewsAPIArticle): ScholarshipItem {
   const text = `${article.title} ${article.description}`;
   const domain = extractDomain(article.url);
   const { states, isAllIndia } = extractStates(text);
-  
+
   return {
     title: article.title,
     description: article.description || "",
@@ -229,19 +225,19 @@ async function getOrCreateSystemUser(supabase: any): Promise<string> {
 async function fetchIndiaScholarships(apiKey: string): Promise<ScholarshipItem[]> {
   const scholarships: ScholarshipItem[] = [];
   const seenTitles = new Set<string>();
-  
+
   // Calculate date range (last 7 days)
   const fromDate = new Date();
   fromDate.setDate(fromDate.getDate() - 7);
   const fromDateStr = fromDate.toISOString().split('T')[0];
-  
+
   for (const query of INDIA_SEARCH_QUERIES.slice(0, 3)) {
     try {
       // INDIA-ONLY search parameters
       const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&language=en&from=${fromDateStr}&sortBy=publishedAt&pageSize=10`;
-      
+
       console.log(`Fetching: ${query}`);
-      
+
       const response = await fetch(url, {
         headers: { "X-Api-Key": apiKey },
       });
@@ -252,18 +248,18 @@ async function fetchIndiaScholarships(apiKey: string): Promise<ScholarshipItem[]
       }
 
       const data = await response.json();
-      
+
       if (data.articles && Array.isArray(data.articles)) {
         for (const article of data.articles as NewsAPIArticle[]) {
           if (!article.title || !article.description) continue;
-          
+
           // Skip duplicates
           const titleKey = article.title.toLowerCase().substring(0, 50);
           if (seenTitles.has(titleKey)) continue;
-          
+
           // Validate India-only
           if (!isValidScholarship(article)) continue;
-          
+
           seenTitles.add(titleKey);
           scholarships.push(processScholarship(article));
         }
@@ -278,9 +274,11 @@ async function fetchIndiaScholarships(apiKey: string): Promise<ScholarshipItem[]
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+  if (isCorsPreflightRequest(req)) {
+    return handleCorsPreflightRequest(req);
   }
+
+  const corsHeaders = getCorsHeaders(req);
 
   try {
     console.log("Starting India-only scholarship fetch...");
@@ -296,7 +294,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     const systemUserId = await getOrCreateSystemUser(supabase);
     const scholarships = await fetchIndiaScholarships(newsApiKey);
-    
+
     if (scholarships.length === 0) {
       return new Response(
         JSON.stringify({ success: true, message: "No new India scholarships found", total: 0, inserted: 0 }),
@@ -358,8 +356,8 @@ const handler = async (req: Request): Promise<Response> => {
     console.log(`Completed: ${insertedCount} inserted, ${needsReviewCount} need review`);
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         message: `Fetched ${insertedCount} India-only scholarships`,
         total: scholarships.length,
         inserted: insertedCount,

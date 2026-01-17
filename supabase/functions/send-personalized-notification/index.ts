@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { getCorsHeaders, isCorsPreflightRequest, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 interface ResendEmail {
   from: string;
@@ -20,11 +21,6 @@ async function sendResendEmail(apiKey: string, email: ResendEmail) {
   return response.json();
 }
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
 interface NotificationRequest {
   type: 'scholarship' | 'material' | 'event' | 'system';
   action: 'created' | 'approved' | 'updated' | 'deadline';
@@ -39,15 +35,17 @@ interface NotificationRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+  if (isCorsPreflightRequest(req)) {
+    return handleCorsPreflightRequest(req);
   }
+
+  const corsHeaders = getCorsHeaders(req);
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
-    
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const { type, action, data }: NotificationRequest = await req.json();
@@ -61,26 +59,26 @@ const handler = async (req: Request): Promise<Response> => {
 
     switch (type) {
       case "scholarship":
-        notificationTitle = action === "approved" 
-          ? "🎓 New Scholarship Available!" 
-          : action === "deadline" 
-            ? "⏰ Scholarship Deadline Alert" 
+        notificationTitle = action === "approved"
+          ? "🎓 New Scholarship Available!"
+          : action === "deadline"
+            ? "⏰ Scholarship Deadline Alert"
             : "📚 Scholarship Update";
         notificationMessage = data.title;
         notificationLink = "/scholarships";
         emailSubject = `New Scholarship: ${data.title}`;
         break;
       case "material":
-        notificationTitle = action === "approved" 
-          ? "📄 New Study Material!" 
+        notificationTitle = action === "approved"
+          ? "📄 New Study Material!"
           : "📄 Material Update";
         notificationMessage = data.title;
         notificationLink = "/materials";
         emailSubject = `New Material: ${data.title}`;
         break;
       case "event":
-        notificationTitle = action === "approved" 
-          ? "🎉 New Event Published!" 
+        notificationTitle = action === "approved"
+          ? "🎉 New Event Published!"
           : "📅 Event Update";
         notificationMessage = data.title;
         notificationLink = `/events/${data.id}`;
@@ -103,7 +101,7 @@ const handler = async (req: Request): Promise<Response> => {
         .select("id, email, full_name, state")
         .eq("is_disabled", false)
         .in("state", data.states);
-      
+
       if (!error && users) {
         eligibleUsers = users;
       }
@@ -114,7 +112,7 @@ const handler = async (req: Request): Promise<Response> => {
         .select("id, email, full_name, state")
         .eq("is_disabled", false)
         .limit(1000); // Max 1000 users per batch
-      
+
       if (!error && users) {
         eligibleUsers = users;
       }
@@ -147,7 +145,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Send Web Push notifications
     const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY");
     const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY");
-    
+
     if (vapidPublicKey && vapidPrivateKey) {
       // Get push subscriptions for eligible users
       const userIds = eligibleUsers.map(u => u.id);
@@ -155,10 +153,10 @@ const handler = async (req: Request): Promise<Response> => {
         .from("push_subscriptions")
         .select("user_id, endpoint, p256dh, auth")
         .in("user_id", userIds);
-      
+
       if (pushSubs && pushSubs.length > 0) {
         console.log(`Sending push notifications to ${pushSubs.length} subscribers`);
-        
+
         let pushSent = 0;
         for (const sub of pushSubs) {
           try {
@@ -176,7 +174,7 @@ const handler = async (req: Request): Promise<Response> => {
                 icon: '/favicon.jpg',
               }),
             });
-            
+
             if (response.ok || response.status === 201) {
               pushSent++;
             } else if (response.status === 410 || response.status === 404) {
@@ -197,7 +195,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Get users with email preferences enabled
     if (resendApiKey && (type === "scholarship" || type === "event")) {
       const preferenceColumn = type === "scholarship" ? "scholarship_alerts" : "event_alerts";
-      
+
       const { data: emailPrefs } = await supabase
         .from("email_preferences")
         .select("user_id")
@@ -210,7 +208,7 @@ const handler = async (req: Request): Promise<Response> => {
       let emailsSent = 0;
       for (let i = 0; i < emailUsers.length; i += 50) {
         const batch = emailUsers.slice(i, i + 50);
-        
+
         for (const user of batch) {
           try {
             await sendResendEmail(resendApiKey, {
@@ -245,26 +243,26 @@ const handler = async (req: Request): Promise<Response> => {
             console.error(`Failed to send email to ${user.email}:`, emailError);
           }
         }
-        
+
         // Small delay between batches
         if (i + 50 < emailUsers.length) {
           await new Promise(resolve => setTimeout(resolve, 1000));
         }
       }
-      
+
       console.log(`Sent ${emailsSent} emails`);
     }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         notificationsSent: notifications.length,
         type,
         action
       }),
-      { 
-        status: 200, 
-        headers: { "Content-Type": "application/json", ...corsHeaders } 
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders }
       }
     );
   } catch (error: any) {

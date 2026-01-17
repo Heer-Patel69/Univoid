@@ -1,10 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { getCorsHeaders, isCorsPreflightRequest, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 interface Event {
   id: string;
@@ -29,9 +25,11 @@ interface EmailPreference {
 
 serve(async (req) => {
   // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+  if (isCorsPreflightRequest(req)) {
+    return handleCorsPreflightRequest(req);
   }
+
+  const corsHeaders = getCorsHeaders(req);
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -143,7 +141,7 @@ serve(async (req) => {
         if (notifiedUsers.has(userEventKey)) continue;
 
         const userPrefs = prefsMap.get(profile.id);
-        
+
         // Default to true if no preferences set
         const wantsInterestAlerts = userPrefs?.interest_based_alerts ?? true;
         const wantsLocationAlerts = userPrefs?.location_based_alerts ?? true;
@@ -155,7 +153,7 @@ serve(async (req) => {
           for (const interest of profile.interests) {
             const matchingCategories = interestCategoryMap[interest] || [];
             if (matchingCategories.some(cat => eventCategory.includes(cat)) ||
-                eventCategory.includes(interest.toLowerCase())) {
+              eventCategory.includes(interest.toLowerCase())) {
               matchReason = `Matches your interest: ${interest}`;
               break;
             }

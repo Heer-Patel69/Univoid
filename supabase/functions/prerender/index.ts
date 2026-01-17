@@ -1,9 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders, isCorsPreflightRequest, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 const SITE_URL = "https://univoid.tech";
 const DEFAULT_OG_IMAGE = "https://univoid.tech/images/univoid-og.jpg";
@@ -154,7 +150,7 @@ function generateHTML(data: {
   structuredData?: Record<string, unknown>;
 }): string {
   const { title, description, image, url, type, content, structuredData } = data;
-  
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -288,8 +284,8 @@ async function handleEvent(supabase: any, id: string) {
     "startDate": event.start_date,
     ...(event.end_date && { "endDate": event.end_date }),
     "eventStatus": "https://schema.org/EventScheduled",
-    "eventAttendanceMode": event.venue_name 
-      ? "https://schema.org/OfflineEventAttendanceMode" 
+    "eventAttendanceMode": event.venue_name
+      ? "https://schema.org/OfflineEventAttendanceMode"
       : "https://schema.org/OnlineEventAttendanceMode",
     ...(event.venue_name && {
       "location": {
@@ -364,8 +360,8 @@ async function handleBook(supabase: any, id: string) {
       "@type": "Offer",
       "price": book.price || 0,
       "priceCurrency": "INR",
-      "availability": book.is_sold 
-        ? "https://schema.org/OutOfStock" 
+      "availability": book.is_sold
+        ? "https://schema.org/OutOfStock"
         : "https://schema.org/InStock",
       "seller": {
         "@type": "Organization",
@@ -542,9 +538,11 @@ async function handleProfile(supabase: any, id: string) {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+  if (isCorsPreflightRequest(req)) {
+    return handleCorsPreflightRequest(req);
   }
+
+  const corsHeaders = getCorsHeaders(req);
 
   try {
     const url = new URL(req.url);
@@ -620,9 +618,9 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error("Prerender error:", error);
-    return new Response('Internal Server Error', { 
-      status: 500, 
-      headers: corsHeaders 
+    return new Response('Internal Server Error', {
+      status: 500,
+      headers: corsHeaders
     });
   }
 });

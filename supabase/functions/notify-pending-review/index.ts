@@ -1,10 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders, isCorsPreflightRequest, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 interface NotifyRequest {
   materialId: string;
@@ -14,15 +10,17 @@ interface NotifyRequest {
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+  if (isCorsPreflightRequest(req)) {
+    return handleCorsPreflightRequest(req);
   }
+
+  const corsHeaders = getCorsHeaders(req);
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-    
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const { materialId, title, uploaderName, contentType = 'material' }: NotifyRequest = await req.json();
@@ -74,8 +72,8 @@ serve(async (req) => {
     const adminEmails = profiles.map((p: any) => p.email).filter(Boolean);
     console.log(`Sending notification to ${adminEmails.length} admins`);
 
-    const contentTypeLabel = contentType === 'material' ? 'Study Material' : 
-                             contentType === 'news' ? 'News Article' : 'Book Listing';
+    const contentTypeLabel = contentType === 'material' ? 'Study Material' :
+      contentType === 'news' ? 'News Article' : 'Book Listing';
     const reviewUrl = "https://univoid.tech/admin";
 
     const emailHtml = `

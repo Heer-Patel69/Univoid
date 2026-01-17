@@ -1,13 +1,9 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "https://esm.sh/resend@2.0.0";
+import { getCorsHeaders, isCorsPreflightRequest, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
 
 interface Scholarship {
   id: string;
@@ -32,8 +28,8 @@ interface UserProfile {
 
 function getUserCourseLevel(profile: UserProfile): string {
   const degree = (profile.degree || profile.course_stream || "").toLowerCase();
-  if (degree.includes("phd") || degree.includes("master") || degree.includes("m.tech") || 
-      degree.includes("mba") || degree.includes("msc") || degree.includes("pg")) {
+  if (degree.includes("phd") || degree.includes("master") || degree.includes("m.tech") ||
+    degree.includes("mba") || degree.includes("msc") || degree.includes("pg")) {
     return "PG";
   }
   if (degree.includes("diploma") || degree.includes("polytechnic") || degree.includes("iti")) {
@@ -43,35 +39,37 @@ function getUserCourseLevel(profile: UserProfile): string {
 }
 
 function isEligible(scholarship: Scholarship, profile: UserProfile): boolean {
-  const stateMatch = scholarship.is_all_india || 
-    (profile.state && scholarship.eligible_states.some(s => 
+  const stateMatch = scholarship.is_all_india ||
+    (profile.state && scholarship.eligible_states.some(s =>
       s.toLowerCase() === profile.state?.toLowerCase()
     ));
-  
+
   if (!stateMatch) return false;
-  
+
   if (scholarship.eligible_courses.length > 0 && !scholarship.eligible_courses.includes("Any")) {
     const userLevel = getUserCourseLevel(profile);
     if (!scholarship.eligible_courses.includes(userLevel)) {
       return false;
     }
   }
-  
+
   return true;
 }
 
 function formatDate(deadline: string): string {
-  return new Date(deadline).toLocaleDateString('en-IN', { 
-    day: 'numeric', 
-    month: 'long', 
-    year: 'numeric' 
+  return new Date(deadline).toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
   });
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+  if (isCorsPreflightRequest(req)) {
+    return handleCorsPreflightRequest(req);
   }
+
+  const corsHeaders = getCorsHeaders(req);
 
   try {
     console.log("Starting deadline reminder job...");
@@ -106,10 +104,10 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const scholarships3Days = (scholarships as Scholarship[]).filter(s => 
+    const scholarships3Days = (scholarships as Scholarship[]).filter(s =>
       s.deadline === format(in3Days)
     );
-    const scholarships7Days = (scholarships as Scholarship[]).filter(s => 
+    const scholarships7Days = (scholarships as Scholarship[]).filter(s =>
       s.deadline === format(in7Days)
     );
 
@@ -124,7 +122,7 @@ const handler = async (req: Request): Promise<Response> => {
     if (prefError) throw prefError;
 
     const userIds = preferences?.map(p => p.user_id) || [];
-    
+
     if (userIds.length === 0) {
       return new Response(
         JSON.stringify({ success: true, message: "No users subscribed", emailsSent: 0 }),
@@ -150,7 +148,7 @@ const handler = async (req: Request): Promise<Response> => {
       const eligible7Days = scholarships7Days.filter(s => isEligible(s, profile));
 
       const allEligible = [...eligible3Days, ...eligible7Days];
-      
+
       if (allEligible.length === 0) continue;
 
       // Create in-app notification for urgent ones (3 days)
@@ -228,7 +226,7 @@ const handler = async (req: Request): Promise<Response> => {
         `;
 
         const urgentCount = eligible3Days.length;
-        const subject = urgentCount > 0 
+        const subject = urgentCount > 0
           ? `🔥 ${urgentCount} Scholarship${urgentCount > 1 ? 's' : ''} Deadline in 3 DAYS!`
           : `⏳ ${eligible7Days.length} Scholarship Deadline in 7 Days`;
 
@@ -253,8 +251,8 @@ const handler = async (req: Request): Promise<Response> => {
     console.log(`Completed: ${emailsSent} emails, ${notificationsSent} notifications`);
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         scholarships3Days: scholarships3Days.length,
         scholarships7Days: scholarships7Days.length,
         emailsSent,

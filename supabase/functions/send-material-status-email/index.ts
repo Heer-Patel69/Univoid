@@ -1,10 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders, isCorsPreflightRequest, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 interface StatusEmailRequest {
   userId: string;
@@ -14,9 +10,11 @@ interface StatusEmailRequest {
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+  if (isCorsPreflightRequest(req)) {
+    return handleCorsPreflightRequest(req);
   }
+
+  const corsHeaders = getCorsHeaders(req);
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -127,8 +125,8 @@ serve(async (req) => {
     const emailPayload = {
       from: "UniVoid <onboarding@resend.dev>",
       to: [userEmail],
-      subject: isApproved 
-        ? `✅ Your ${contentTypeLabel} has been approved!` 
+      subject: isApproved
+        ? `✅ Your ${contentTypeLabel} has been approved!`
         : `Update on your ${contentTypeLabel} submission`,
       html: emailHtml,
     };
@@ -150,10 +148,10 @@ serve(async (req) => {
     if (!res.ok) {
       console.error("❌ RESEND API ERROR:", responseText);
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          message: "Status updated but email failed", 
-          emailError: responseText 
+        JSON.stringify({
+          success: false,
+          message: "Status updated but email failed",
+          emailError: responseText
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );

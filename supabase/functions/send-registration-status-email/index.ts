@@ -3,11 +3,7 @@ import { Resend } from "https://esm.sh/resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // Use qrcode-svg which works without canvas (Deno compatible)
 import QRCode from "https://esm.sh/qrcode-svg@1.1.0";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders, isCorsPreflightRequest, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 interface StatusEmailRequest {
   registrationId: string;
@@ -39,9 +35,11 @@ function generateQRCodeSVG(data: string): string {
 const handler = async (req: Request): Promise<Response> => {
   console.log("Registration status email function called");
 
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+  if (isCorsPreflightRequest(req)) {
+    return handleCorsPreflightRequest(req);
   }
+
+  const corsHeaders = getCorsHeaders(req);
 
   try {
     // CRITICAL: Check API key at runtime
@@ -106,11 +104,11 @@ const handler = async (req: Request): Promise<Response> => {
         console.log("Generating QR code SVG for payload:", qrCode.substring(0, 50) + "...");
         const qrSvg = generateQRCodeSVG(qrCode);
         console.log("QR code SVG generated successfully, length:", qrSvg.length);
-        
+
         // Convert SVG to base64 for email embedding
         const svgBase64 = btoa(qrSvg);
         const svgDataUrl = `data:image/svg+xml;base64,${svgBase64}`;
-        
+
         qrCodeImageHtml = `
           <div style="text-align: center; margin: 24px 0; padding: 20px; background: #f9fafb; border-radius: 12px;">
             <p style="color: #374151; font-weight: 600; margin-bottom: 16px;">🎫 Your Entry QR Code</p>
@@ -192,10 +190,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("✅ EMAIL SENT SUCCESSFULLY:", { emailId: data.id, to: profile.email });
 
-    return new Response(JSON.stringify({ 
-      success: true, 
+    return new Response(JSON.stringify({
+      success: true,
       emailId: data.id,
-      recipient: profile.email 
+      recipient: profile.email
     }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -204,7 +202,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.error("❌ ERROR in send-registration-status-email:", error.message);
     console.error("Full error:", error);
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         success: false,
         error: error.message,
         details: "Email could not be sent. Please check Resend dashboard for details."
