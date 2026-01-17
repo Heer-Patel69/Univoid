@@ -1206,3 +1206,11 @@ a[href*="lovable.app"] {
   height: 0 !important;
   overflow: hidden !important;
 }
+
+/* 🔒 Remove Lovable Aside Badge */
+#lovable-badge,
+aside#lovable-badge {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}

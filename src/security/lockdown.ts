@@ -75,28 +75,29 @@ function blockEditorQueryParams(): void {
 /* HARD DOM REMOVAL */
 /* ---------------------------------- */
 function removeLovableHard(): void {
-  const selectors = [
-    '[class*="lovable"]',
-    '[id*="lovable"]',
-    '[data-lovable]',
-    'iframe[src*="lovable"]',
-    'a[href*="lovable"]',
-    'script[src*="lovable"]',
+  // Remove by exact ID
+  const badge = document.getElementById('lovable-badge');
+  if (badge) badge.remove();
+
+  // Remove related elements
+  const extraIds = [
+    'lovable-badge-cta',
+    'lovable-badge-text',
+    'lovable-badge-divider',
+    'lovable-badge-close',
   ];
 
-  selectors.forEach(selector => {
-    document.querySelectorAll(selector).forEach(el => el.remove());
+  extraIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.remove();
   });
 
-  // Text based removal (Edit with Lovable)
-  document.querySelectorAll('*').forEach(el => {
-    if (
-      el.textContent &&
-      el.textContent.toLowerCase().includes('edit with lovable')
-    ) {
-      el.remove();
-    }
-  });
+  // Safety selectors
+  document
+    .querySelectorAll(
+      'aside[id*="lovable"], [class*="lovable-badge"], a[href*="lovable"]'
+    )
+    .forEach(el => el.remove());
 }
 
 /* ---------------------------------- */
@@ -107,6 +108,14 @@ function setupMutationObserver(): void {
     mutations.forEach(mutation => {
       mutation.addedNodes.forEach(node => {
         if (!(node instanceof HTMLElement)) return;
+
+        // Specific check for Lovable badge or aside
+        if (node.id === 'lovable-badge' || node.tagName === 'ASIDE') {
+          if (node.id?.includes('lovable')) {
+            node.remove();
+            return;
+          }
+        }
 
         const text = node.textContent?.toLowerCase() || '';
         const cls = node.className?.toLowerCase() || '';
