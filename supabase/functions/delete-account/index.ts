@@ -8,6 +8,19 @@ Deno.serve(async (req) => {
 
   const corsHeaders = getCorsHeaders(req);
 
+  // Rate Limiting
+  const { allowRequest } = await import("../_shared/rateLimiter.ts");
+  const authHeader = req.headers.get("Authorization");
+  // Use auth token as key if available, otherwise IP (though delete requires auth)
+  const rateKey = authHeader ? authHeader.substring(0, 20) : (req.headers.get("x-forwarded-for") || "unknown");
+
+  if (!allowRequest(rateKey, 5, 20)) {
+    return new Response(
+      JSON.stringify({ success: false, message: "Too many requests" }),
+      { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
   const logs: string[] = [];
   const log = (message: string) => {
     console.log(message);

@@ -37,7 +37,7 @@ export function useRealtimeEvents(filters?: {
   const fetchEventData = useCallback(async () => {
     // Use cache if no filters and cache is valid
     if (!hasFilters) {
-      const cacheValid = Date.now() - eventsCache.timestamp < CACHE_TTL.MEDIUM;
+      const cacheValid = Date.now() - eventsCache.timestamp < CACHE_TTL.LONG;
       if (cacheValid && eventsCache.data.length > 0) {
         if (isMounted.current) {
           setEvents(eventsCache.data);
@@ -49,7 +49,7 @@ export function useRealtimeEvents(filters?: {
 
     try {
       const data = await fetchEvents(filters);
-      
+
       if (isMounted.current) {
         setEvents(data);
         // Update cache if no filters
@@ -128,7 +128,7 @@ export function useRealtimeEvents(filters?: {
           if (newEvent.status === 'published') {
             setEvents(prev => {
               if (prev.some(e => e.id === newEvent.id)) return prev;
-              return [newEvent, ...prev].sort((a, b) => 
+              return [newEvent, ...prev].sort((a, b) =>
                 new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
               );
             });
@@ -145,7 +145,7 @@ export function useRealtimeEvents(filters?: {
           setEvents(prev => {
             // If status changed to published, add it
             if (updated.status === 'published' && !prev.some(e => e.id === updated.id)) {
-              return [...prev, updated].sort((a, b) => 
+              return [...prev, updated].sort((a, b) =>
                 new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
               );
             }

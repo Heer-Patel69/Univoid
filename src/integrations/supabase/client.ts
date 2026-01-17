@@ -5,8 +5,8 @@ import type { Database } from './types';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-// Import the supabase client like this:
-// import { supabase } from "@/integrations/supabase/client";
+// Note: Supabase client does not support configuring DB pool size from the browser.
+// Increase the connection pool size in Supabase Edge Functions via the SUPABASE_POOL_SIZE env variable.
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {

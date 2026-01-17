@@ -27,6 +27,16 @@ serve(async (req) => {
 
   const corsHeaders = getCorsHeaders(req);
 
+  // Rate Limiting
+  const { allowRequest } = await import("../_shared/rateLimiter.ts");
+  const ip = req.headers.get("x-forwarded-for") || "unknown";
+  if (!allowRequest(ip, 2, 20)) { // Strict limit for contact form: 2 req/s, burst 20
+    return new Response(
+      JSON.stringify({ error: "Too many requests. Please try again later." }),
+      { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
   try {
     const payload: ContactEmailPayload = await req.json();
 

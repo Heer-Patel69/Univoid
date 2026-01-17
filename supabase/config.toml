@@ -3,6 +3,9 @@ project_id = "rtvrdbbojqsrbkngnjgq"
 [functions.send-contact-email]
 verify_jwt = false
 
+[functions.health_check]
+verify_jwt = false
+
 [functions.fetch-auto-news]
 verify_jwt = false
 
