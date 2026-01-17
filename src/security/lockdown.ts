@@ -5,18 +5,6 @@
  */
 
 
-
-const FORBIDDEN_KEYWORDS = [
-  'lovable',
-  'gptengineer',
-  'gpt-engineer',
-  'lovable.dev',
-  'lovable.app',
-  'edit with lovable',
-  'lovable-tagger',
-  'lovable-badge',
-];
-
 const FORBIDDEN_DOMAINS = [
   'lovable.dev',
   'lovable.app',
@@ -124,10 +112,11 @@ function setupMutationObserver(): void {
         const cls = node.className?.toLowerCase() || '';
         const id = node.id?.toLowerCase() || '';
 
+        // Inline regex check to avoid top-level keyword list
+        const isForbidden = /lovable|gptengineer|gpt-engineer|lovable-tagger|lovable-badge/i.test(text + cls + id);
+
         const shouldRemove =
-          FORBIDDEN_KEYWORDS.some(k =>
-            text.includes(k) || cls.includes(k) || id.includes(k)
-          ) ||
+          isForbidden ||
           (node instanceof HTMLScriptElement &&
             FORBIDDEN_DOMAINS.some(d => node.src?.includes(d))) ||
           (node instanceof HTMLIFrameElement &&
@@ -183,7 +172,7 @@ function blockScriptInjection(): void {
     if (node instanceof HTMLScriptElement) {
       const src = node.src?.toLowerCase() || '';
       if (FORBIDDEN_DOMAINS.some(d => src.includes(d))) {
-        console.warn('[Security] Blocked Lovable script');
+        console.warn('[Security] Blocked external script');
         return node;
       }
     }
