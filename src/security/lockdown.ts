@@ -1,120 +1,209 @@
 /**
- * Production Security Lockdown
- * Prevents any external editor/badge injection in production builds
+ *  Production Security Lockdown
+ * Blocks Lovable editor, badge, iframe, scripts & reinjections
+ * Use ONLY in production builds
  */
 
 const FORBIDDEN_KEYWORDS = [
   'lovable',
+  'gptengineer',
+  'gpt-engineer',
+  'lovable.dev',
+  'lovable.app',
   'edit with lovable',
   'lovable-tagger',
   'lovable-badge',
 ];
 
 const FORBIDDEN_DOMAINS = [
-  'lovable.dev/editor',
-  'lovable.app/embed',
+  'lovable.dev',
+  'lovable.app',
 ];
 
 export function initSecurityLockdown(): void {
-  // Clear any forced editor flags from storage
+  // Run only in production
+  if (import.meta.env?.MODE !== 'production') return;
+
   clearEditorStorage();
-
-  // Block editor query params
   blockEditorQueryParams();
-
-  // Set up DOM mutation observer to block injected elements
+  injectKillCSS();
   setupMutationObserver();
-
-  // Block external script injection
   blockScriptInjection();
+
+  // Extra safety: periodic cleanup
+  removeLovableHard();
+  setInterval(removeLovableHard, 1000);
 }
 
+/* ---------------------------------- */
+/* Storage Cleanup */
+/* ---------------------------------- */
 function clearEditorStorage(): void {
   try {
-    const keysToRemove = ['lovable', 'editor', 'lovable-editor', 'lovable_mode'];
-    keysToRemove.forEach(key => {
+    const keys = [
+      'lovable',
+      'editor',
+      'lovable-editor',
+      'lovable_mode',
+      'lovableEditor',
+    ];
+
+    keys.forEach(key => {
       localStorage.removeItem(key);
       sessionStorage.removeItem(key);
     });
   } catch {
-    // Storage access may be blocked
+    // ignore
   }
 }
 
+/* ---------------------------------- */
+/* URL Query Param Cleanup */
+/* ---------------------------------- */
 function blockEditorQueryParams(): void {
   try {
     const url = new URL(window.location.href);
-    const editorParams = ['editor', 'lovable', 'edit', 'lovable_mode'];
-    let hasEditorParam = false;
+    const params = ['editor', 'lovable', 'edit', 'lovable_mode'];
 
-    editorParams.forEach(param => {
-      if (url.searchParams.has(param)) {
-        url.searchParams.delete(param);
-        hasEditorParam = true;
+    let changed = false;
+    params.forEach(p => {
+      if (url.searchParams.has(p)) {
+        url.searchParams.delete(p);
+        changed = true;
       }
     });
 
-    if (hasEditorParam) {
+    if (changed) {
       window.history.replaceState({}, '', url.pathname + url.search);
     }
   } catch {
-    // URL manipulation may fail
+    // ignore
   }
 }
 
-function setupMutationObserver(): void {
-  const observer = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-      mutation.addedNodes.forEach((node) => {
-        if (node instanceof HTMLElement) {
-          // Check for forbidden content
-          const shouldRemove =
-            FORBIDDEN_KEYWORDS.some(keyword =>
-              node.textContent?.toLowerCase().includes(keyword) ||
-              node.className?.toLowerCase().includes(keyword) ||
-              node.id?.toLowerCase().includes(keyword)
-            ) ||
-            (node instanceof HTMLScriptElement &&
-              FORBIDDEN_DOMAINS.some(domain => node.src?.includes(domain))) ||
-            (node instanceof HTMLIFrameElement &&
-              FORBIDDEN_DOMAINS.some(domain => node.src?.includes(domain)));
+/* ---------------------------------- */
+/* HARD DOM REMOVAL */
+/* ---------------------------------- */
+function removeLovableHard(): void {
+  const selectors = [
+    '[class*="lovable"]',
+    '[id*="lovable"]',
+    '[data-lovable]',
+    'iframe[src*="lovable"]',
+    'a[href*="lovable"]',
+    'script[src*="lovable"]',
+  ];
 
-          if (shouldRemove) {
-            node.remove();
-          }
+  selectors.forEach(selector => {
+    document.querySelectorAll(selector).forEach(el => el.remove());
+  });
+
+  // Text based removal (Edit with Lovable)
+  document.querySelectorAll('*').forEach(el => {
+    if (
+      el.textContent &&
+      el.textContent.toLowerCase().includes('edit with lovable')
+    ) {
+      el.remove();
+    }
+  });
+}
+
+/* ---------------------------------- */
+/* Mutation Observer (Re-Injection Block) */
+/* ---------------------------------- */
+function setupMutationObserver(): void {
+  const observer = new MutationObserver(mutations => {
+    mutations.forEach(mutation => {
+      mutation.addedNodes.forEach(node => {
+        if (!(node instanceof HTMLElement)) return;
+
+        const text = node.textContent?.toLowerCase() || '';
+        const cls = node.className?.toLowerCase() || '';
+        const id = node.id?.toLowerCase() || '';
+
+        const shouldRemove =
+          FORBIDDEN_KEYWORDS.some(k =>
+            text.includes(k) || cls.includes(k) || id.includes(k)
+          ) ||
+          (node instanceof HTMLScriptElement &&
+            FORBIDDEN_DOMAINS.some(d => node.src?.includes(d))) ||
+          (node instanceof HTMLIFrameElement &&
+            FORBIDDEN_DOMAINS.some(d => node.src?.includes(d)));
+
+        if (shouldRemove) {
+          node.remove();
+          return;
+        }
+
+        // Shadow DOM check
+        const anyNode = node as any;
+        if (anyNode.shadowRoot) {
+          anyNode.shadowRoot.querySelectorAll('*').forEach((el: HTMLElement) => {
+            if (
+              el.textContent?.toLowerCase().includes('lovable') ||
+              el.getAttributeNames().some(a => a.includes('lovable'))
+            ) {
+              el.remove();
+            }
+          });
+        }
+
+        // iframe delayed src injection
+        if (node instanceof HTMLIFrameElement) {
+          setTimeout(() => {
+            if (
+              FORBIDDEN_DOMAINS.some(d =>
+                node.src?.toLowerCase().includes(d)
+              )
+            ) {
+              node.remove();
+            }
+          }, 100);
         }
       });
     });
   });
 
-  // Start observing once DOM is ready
-  if (document.body) {
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-    });
-  } else {
-    document.addEventListener('DOMContentLoaded', () => {
-      observer.observe(document.body, {
-        childList: true,
-        subtree: true,
-      });
-    });
-  }
+  const start = () =>
+    observer.observe(document.body, { childList: true, subtree: true });
+
+  document.body ? start() : document.addEventListener('DOMContentLoaded', start);
 }
 
+/* ---------------------------------- */
+/* Script Injection Block */
+/* ---------------------------------- */
 function blockScriptInjection(): void {
-  // Override appendChild to block forbidden scripts
   const originalAppendChild = Element.prototype.appendChild;
 
   Element.prototype.appendChild = function <T extends Node>(node: T): T {
     if (node instanceof HTMLScriptElement) {
       const src = node.src?.toLowerCase() || '';
-      if (FORBIDDEN_DOMAINS.some(domain => src.includes(domain))) {
-        console.warn('[Security] Blocked external editor script injection');
-        return node; // Return without appending
+      if (FORBIDDEN_DOMAINS.some(d => src.includes(d))) {
+        console.warn('[Security] Blocked Lovable script');
+        return node;
       }
     }
     return originalAppendChild.call(this, node) as T;
   };
+}
+
+/* ---------------------------------- */
+/* CSS Kill Switch (Fastest) */
+/* ---------------------------------- */
+function injectKillCSS(): void {
+  const style = document.createElement('style');
+  style.innerHTML = `
+    [class*="lovable"],
+    [id*="lovable"],
+    [data-lovable],
+    iframe[src*="lovable"],
+    a[href*="lovable"] {
+      display: none !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+  `;
+  document.head.appendChild(style);
 }
