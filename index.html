@@ -9,6 +9,54 @@
   <link rel="icon" href="/favicon.jpg" type="image/jpeg" />
   <link rel="canonical" href="https://univoid.tech/" />
 
+  <!-- 🔒 NUCLEAR SECURITY BLOCKER: PREVENTS LOVABLE BADGE INJECTION -->
+  <script>
+    (function () {
+      // 1. CSS Hide Force
+      const style = document.createElement('style');
+      style.textContent = `
+        #lovable-badge, aside[aria-label="Edit with Lovable"], [class*="lovable-badge"] {
+          display: none !important; opacity: 0 !important; pointer-events: none !important; width: 0 !important; height: 0 !important;
+        }
+      `;
+      document.head.appendChild(style);
+
+      // 2. DOM Node Blocker (overrides)
+      const originalAppend = Element.prototype.appendChild;
+      const originalInsertBefore = Element.prototype.insertBefore;
+
+      function isForbidden(node) {
+        if (!node || !node.tagName) return false;
+        if (node.id === 'lovable-badge' || node.getAttribute?.('aria-label') === 'Edit with Lovable') return true;
+        if (node.tagName === 'ASIDE' && node.id?.includes('lovable')) return true;
+        return false;
+      }
+
+      Element.prototype.appendChild = function (node) {
+        if (isForbidden(node)) { console.log('Blocked Lovable Injection (appendChild)'); return node; }
+        return originalAppend.call(this, node);
+      };
+
+      Element.prototype.insertBefore = function (node, ref) {
+        if (isForbidden(node)) { console.log('Blocked Lovable Injection (insertBefore)'); return node; }
+        return originalInsertBefore.call(this, node, ref);
+      };
+
+      // 3. Early MutationObserver (catches it even if it sneaks in)
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((m) => {
+          m.addedNodes.forEach((node) => {
+            if (node.nodeType === 1 && isForbidden(node)) {
+              node.remove();
+              console.log('Removed Lovable Element via Early Observer');
+            }
+          });
+        });
+      });
+      observer.observe(document.documentElement, { childList: true, subtree: true });
+    })();
+  </script>
+
   <!-- Resource Hints for faster connections -->
   <link rel="dns-prefetch" href="https://rtvrdbbojqsrbkngnjgq.supabase.co" />
   <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com" />
