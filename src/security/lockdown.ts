@@ -4,6 +4,8 @@
  * Use ONLY in production builds
  */
 
+
+
 const FORBIDDEN_KEYWORDS = [
   'lovable',
   'gptengineer',
