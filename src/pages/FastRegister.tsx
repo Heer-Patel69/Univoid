@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchEventById, checkUserRegistration } from "@/services/eventsService";
 import { uploadPaymentScreenshot } from "@/services/registrationService";
 import { useMobileValidation } from "@/hooks/useMobileValidation";
+import { useRateLimiter } from "@/hooks/useRateLimiter";
 import UpsellScreen from "@/components/events/UpsellScreen";
 import {
   fetchEventUpsells,
