@@ -111,7 +111,7 @@ export function useRegistration(options: UseRegistrationOptions) {
           toast.info(result.message, {
             action: {
               label: 'View Ticket',
-              onClick: () => navigate('/my-events'),
+              onClick: () => navigate('/my-tickets'),
             },
           });
         } else {
@@ -121,7 +121,7 @@ export function useRegistration(options: UseRegistrationOptions) {
             {
               action: {
                 label: 'View Ticket',
-                onClick: () => navigate('/my-events'),
+                onClick: () => navigate('/my-tickets'),
               },
             }
           );
