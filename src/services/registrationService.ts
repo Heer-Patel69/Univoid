@@ -38,30 +38,8 @@ export interface RegistrationRequest {
   user_id: string;
   custom_data?: Record<string, unknown>;
   payment_screenshot_url?: string;
-}
-
-/**
- * Rate limiting tracker (client-side)
- */
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const MAX_ATTEMPTS = 10;
-const RATE_LIMIT_WINDOW = 60000; // 1 minute
-
-function checkRateLimit(userId: string): boolean {
-  const now = Date.now();
-  const userLimit = rateLimitMap.get(userId);
-
-  if (!userLimit || now > userLimit.resetAt) {
-    rateLimitMap.set(userId, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
-    return true;
-  }
-
-  if (userLimit.count >= MAX_ATTEMPTS) {
-    return false;
-  }
-
-  userLimit.count++;
-  return true;
+  group_size?: number;
+  is_group_booking?: boolean;
 }
 
 /**
@@ -151,6 +129,8 @@ export async function registerForEventAtomic(
         p_user_id: request.user_id,
         p_custom_data: request.custom_data as Json || null,
         p_payment_screenshot_url: request.payment_screenshot_url || null,
+        p_group_size: request.group_size || 1,
+        p_is_group_booking: request.is_group_booking || false,
       });
 
       if (error) {

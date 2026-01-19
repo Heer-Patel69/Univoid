@@ -53,7 +53,9 @@ export function useRegistration(options: UseRegistrationOptions) {
   
   const register = useCallback(async (
     customData: Record<string, unknown>,
-    paymentFile?: File | null
+    paymentFile?: File | null,
+    groupSize?: number,
+    isGroupBooking?: boolean
   ) => {
     // Prevent double submissions
     if (isSubmittingRef.current) {
@@ -95,6 +97,8 @@ export function useRegistration(options: UseRegistrationOptions) {
         user_id: userId,
         custom_data: customData,
         payment_screenshot_url: screenshotUrl,
+        group_size: groupSize || 1,
+        is_group_booking: isGroupBooking || false,
       });
       
       setState(prev => ({ ...prev, result }));
