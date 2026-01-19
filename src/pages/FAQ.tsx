@@ -137,36 +137,6 @@ const faqSections: FAQSection[] = [
     ]
   },
   {
-    title: "Task Plaza",
-    icon: <ListTodo className="w-5 h-5" />,
-    items: [
-      {
-        question: "What is Task Plaza?",
-        answer: "Task Plaza is where students can post tasks they need help with (like typing, document formatting, data entry) and others can offer to complete them for a fee. Think of it as a peer-to-peer task marketplace."
-      },
-      {
-        question: "How do I post a task?",
-        answer: "Go to Tasks → Create Task. Describe what you need done, set a deadline, mention your budget, and any specific requirements. Other users can then bid on your task."
-      },
-      {
-        question: "How do I find and complete tasks?",
-        answer: "Browse the Tasks page to see open requests. If you're interested in a task, submit a bid with your message. The task poster can then accept your bid and contact you to proceed."
-      },
-      {
-        question: "Does UniVoid guarantee task completion?",
-        answer: "No. UniVoid only connects task posters with task solvers. We do not guarantee work quality, delivery, or payments. All arrangements are directly between users."
-      },
-      {
-        question: "What types of tasks can I post?",
-        answer: "Common tasks include typing handwritten notes, document formatting, presentation design, data entry, translation, and similar student-friendly work. Do not post academic dishonesty requests like writing assignments or exam help."
-      },
-      {
-        question: "How are payments handled?",
-        answer: "Payments are arranged directly between the task poster and solver. UniVoid does not process payments or take any commission. We recommend agreeing on payment terms before starting work."
-      }
-    ]
-  },
-  {
     title: "Project Partner",
     icon: <Users className="w-5 h-5" />,
     items: [

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 
 interface UseSkeletonOptions {
-  /** Minimum time to show skeleton in ms (prevents flash, default: 300) */
+  /** Minimum time to show skeleton in ms (prevents flash, default: 100) */
   minDisplayTime?: number;
 }
 
@@ -17,7 +17,7 @@ export function useSkeletonSync(
   externalLoading: boolean,
   options: UseSkeletonOptions = {}
 ): boolean {
-  const { minDisplayTime = 300 } = options;
+  const { minDisplayTime = 100 } = options;
   
   const [showSkeleton, setShowSkeleton] = useState(externalLoading);
   const loadingStartTime = useRef<number | null>(null);

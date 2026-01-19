@@ -10,7 +10,7 @@ import { DoodleStar, DoodleBook, DoodleLightbulb, DoodleRocket, DoodleHeart, Doo
 import { FloatingDoodles } from "@/components/common/FloatingDoodles";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRoleRedirect } from "@/hooks/useRoleRedirect";
-import { ArrowRight, FileText, Users, BookOpen, Bell, Library, Calendar, Puzzle, Repeat, LogIn, UserCheck, Map, Zap, CheckCircle, Plus, Minus, Briefcase } from "lucide-react";
+import { ArrowRight, FileText, Users, BookOpen, Bell, Library, Calendar, Puzzle, Repeat, LogIn, UserCheck, Map, Zap, CheckCircle, Plus, Minus } from "lucide-react";
 import SEOHead from "@/components/common/SEOHead";
 const Index = () => {
   const [authOpen, setAuthOpen] = useState(false);
@@ -76,12 +76,10 @@ const Index = () => {
     description: "Discover campus events, workshops, and hackathons."
   }, {
     icon: Puzzle,
-    title: "Projects Partner",
-    description: "Collaborate on real projects or find short tasks."
   }, {
-    icon: Briefcase,
-    title: "Task Plaza",
-    description: "Connect with students, take up tasks, earn, and build projects together."
+    icon: Puzzle,
+    title: "Projects Partner",
+    description: "Collaborate on real projects or find teammates."
   }, {
     icon: Repeat,
     title: "Book Exchange",

@@ -1,15 +1,15 @@
 import { useLocation } from "react-router-dom";
 import { PrefetchLink } from "@/components/common/PrefetchLink";
-import { BookOpen, Calendar, Repeat2, Briefcase, Users } from "lucide-react";
+import { BookOpen, Calendar, Repeat2, Users, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Action-focused bottom nav items - no Home, no Profile, no Dashboard
 const navItems = [
   { href: "/materials", label: "Materials", icon: BookOpen },
-  { href: "/projects", label: "Project Partner", icon: Users, highlight: true },
+  { href: "/projects", label: "Projects", icon: Users, highlight: true },
   { href: "/events", label: "Events", icon: Calendar },
-  { href: "/books", label: "Sell Books", icon: Repeat2 },
-  { href: "/tasks", label: "Tasks", icon: Briefcase },
+  { href: "/books", label: "Books", icon: Repeat2 },
+  { href: "/leaderboard", label: "Ranks", icon: Trophy },
 ];
 
 // Paths where bottom nav should NOT appear

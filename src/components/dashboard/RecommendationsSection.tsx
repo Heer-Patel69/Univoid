@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRight, Sparkles, Code, Briefcase, Lightbulb, Calendar, Cpu, Palette, TrendingUp, Beaker, Building, Mic } from "lucide-react";
+import { ArrowRight, Sparkles, Code, Briefcase, Lightbulb, Calendar, Cpu, Palette, TrendingUp, Beaker, Building, Mic, Folder } from "lucide-react";
 import { Profile } from "@/types/database";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,11 +32,11 @@ const DEGREE_RECOMMENDATIONS: Record<string, { title: string; description: strin
   ],
   "B.Sc": [
     { title: "Science Exhibitions", description: "Showcase your experiments", icon: Beaker, href: "/events?category=exhibition", color: "text-teal-500", bgColor: "bg-teal-500/10" },
-    { title: "Research Internships", description: "Work on real research projects", icon: Briefcase, href: "/tasks", color: "text-violet-500", bgColor: "bg-violet-500/10" },
+    { title: "Research Projects", description: "Collaborate on research", icon: Folder, href: "/projects", color: "text-violet-500", bgColor: "bg-violet-500/10" },
   ],
   "BCA": [
     { title: "App Dev Challenges", description: "Build mobile & web apps", icon: Code, href: "/events?category=hackathon", color: "text-blue-500", bgColor: "bg-blue-500/10" },
-    { title: "Tech Internships", description: "Kickstart your tech career", icon: Briefcase, href: "/tasks", color: "text-emerald-500", bgColor: "bg-emerald-500/10" },
+    { title: "Tech Projects", description: "Join or create tech projects", icon: Folder, href: "/projects", color: "text-emerald-500", bgColor: "bg-emerald-500/10" },
   ],
   "B.A": [
     { title: "Cultural Fests", description: "Celebrate arts and culture", icon: Palette, href: "/events?category=cultural", color: "text-rose-500", bgColor: "bg-rose-500/10" },
@@ -52,7 +52,7 @@ const DEGREE_RECOMMENDATIONS: Record<string, { title: string; description: strin
 const INTEREST_RECOMMENDATIONS: Record<string, { title: string; description: string; icon: any; href: string; color: string; bgColor: string }> = {
   "Hackathons": { title: "Hackathon Central", description: "Find upcoming hackathons", icon: Code, href: "/events?category=hackathon", color: "text-blue-500", bgColor: "bg-blue-500/10" },
   "Startups": { title: "Startup Ecosystem", description: "Connect with founders & VCs", icon: Lightbulb, href: "/events?category=workshop", color: "text-orange-500", bgColor: "bg-orange-500/10" },
-  "Internships": { title: "Career Launchpad", description: "Find your dream internship", icon: Briefcase, href: "/tasks", color: "text-purple-500", bgColor: "bg-purple-500/10" },
+  "Internships": { title: "Career Launchpad", description: "Find opportunities", icon: Briefcase, href: "/projects", color: "text-purple-500", bgColor: "bg-purple-500/10" },
   "AI/ML": { title: "AI/ML Projects", description: "Collaborate on AI projects", icon: Cpu, href: "/projects", color: "text-cyan-500", bgColor: "bg-cyan-500/10" },
   "Design": { title: "Design Community", description: "UI/UX workshops & challenges", icon: Palette, href: "/events?category=workshop", color: "text-pink-500", bgColor: "bg-pink-500/10" },
   "Coding": { title: "Code Competitions", description: "Competitive programming events", icon: Code, href: "/events?category=competition", color: "text-emerald-500", bgColor: "bg-emerald-500/10" },
@@ -108,7 +108,7 @@ const RecommendationsSection = ({ profile }: RecommendationsSectionProps) => {
     if (recommendations.length === 0) {
       recommendations.push(
         { title: "Explore Events", description: "Discover workshops, hackathons, and more", icon: Calendar, href: "/events", color: "text-blue-500", bgColor: "bg-blue-500/10" },
-        { title: "Task Plaza", description: "Find tasks and earn while learning", icon: Briefcase, href: "/tasks", color: "text-purple-500", bgColor: "bg-purple-500/10" }
+        { title: "Find Projects", description: "Collaborate and build together", icon: Folder, href: "/projects", color: "text-purple-500", bgColor: "bg-purple-500/10" }
       );
     }
 

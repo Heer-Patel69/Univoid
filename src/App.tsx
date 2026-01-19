@@ -9,7 +9,6 @@ import { CookieConsent } from "@/components/common/CookieConsent";
 import { GlobalRealtimeProvider } from "@/components/common/GlobalRealtimeProvider";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { PushNotificationPrompt } from "@/components/notifications/PushNotificationPrompt";
-import { ErrorTrigger } from "@/components/common/ErrorTrigger";
 import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
 import { FeatureHints } from "@/components/onboarding/FeatureHints";
 import { AnimatedRoutes } from "@/components/common/AnimatedRoutes";
@@ -43,7 +42,6 @@ const App = () => (
                 </ErrorBoundary>
                 <CookieConsent />
                 <PushNotificationPrompt />
-                <ErrorTrigger />
                 <OnboardingTour />
                 <FeatureHints />
               </GlobalRealtimeProvider>
