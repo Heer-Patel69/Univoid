@@ -311,115 +311,119 @@ export default function EnhancedMaterialPreview({
     const viewerUrl = useGoogleViewer ? googleViewerUrl : `${signedUrl}#toolbar=${isAdmin ? '1' : '0'}&navpanes=0&scrollbar=1`;
     
     return (
-      <div className="relative w-full aspect-[3/4] min-h-[300px] sm:min-h-[500px] bg-muted rounded-lg overflow-hidden border border-border">
-        {isLoading && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 z-10">
-            <Loader2 className="w-8 h-8 animate-spin text-primary mb-2" />
-            <span className="text-sm text-muted-foreground">Loading preview...</span>
+      <div className="space-y-3">
+        {/* ALWAYS show Open Document button - users must never be blocked */}
+        <div className="flex items-center justify-between gap-2 p-3 bg-muted/50 rounded-lg border border-border">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <FileText className="w-4 h-4" />
+            <span>Can't see the preview?</span>
           </div>
-        )}
-        
-        {previewError && !useGoogleViewer ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
-            <FileText className="w-16 h-16 text-muted-foreground/40 mb-4" />
-            <p className="text-muted-foreground mb-2">Native preview could not be loaded</p>
-            <p className="text-xs text-muted-foreground/70 text-center mb-4">
-              Try using Google Docs viewer instead
-            </p>
-            <div className="flex gap-2">
-              <Button 
-                variant="default" 
+          <Button 
+            variant="default"
+            size="sm"
+            onClick={() => window.open(signedUrl, '_blank')}
+          >
+            <ExternalLink className="w-4 h-4 mr-2" />
+            Open Document
+          </Button>
+        </div>
+
+        {/* Preview iframe container */}
+        <div className="relative w-full aspect-[3/4] min-h-[300px] sm:min-h-[500px] bg-muted rounded-lg overflow-hidden border border-border">
+          {isLoading && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 z-10">
+              <Loader2 className="w-8 h-8 animate-spin text-primary mb-2" />
+              <span className="text-sm text-muted-foreground">Loading preview...</span>
+            </div>
+          )}
+          
+          {previewError && !useGoogleViewer ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
+              <FileText className="w-16 h-16 text-muted-foreground/40 mb-4" />
+              <p className="text-muted-foreground mb-2">Native preview could not be loaded</p>
+              <p className="text-xs text-muted-foreground/70 text-center mb-4">
+                Try using Google Docs viewer instead
+              </p>
+              <div className="flex gap-2">
+                <Button 
+                  variant="default" 
+                  size="sm"
+                onClick={() => {
+                  setPreviewError(false);
+                  setIsLoading(true);
+                  setUseGoogleViewer(true);
+                  saveViewerPreference(true);
+                }}
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  Try Google Viewer
+                </Button>
+              </div>
+            </div>
+          ) : previewError && useGoogleViewer ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
+              <FileText className="w-16 h-16 text-muted-foreground/40 mb-4" />
+              <p className="text-muted-foreground mb-2">Preview not available</p>
+              <p className="text-xs text-muted-foreground/70 text-center mb-4">
+                Use the "Open Document" button above to view the file
+              </p>
+            </div>
+          ) : (
+            <iframe
+              src={viewerUrl}
+              className="w-full h-full border-0"
+              title={material.title}
+              onLoad={handleIframeLoad}
+              onError={handleIframeError}
+              style={{ border: 'none' }}
+              sandbox="allow-scripts allow-same-origin allow-popups"
+            />
+          )}
+          
+          {/* Viewer toggle for admin */}
+          {isAdmin && !previewError && signedUrl && (
+            <div className="absolute top-2 right-2 z-10">
+              <Button
+                variant="secondary"
                 size="sm"
-              onClick={() => {
-                setPreviewError(false);
-                setIsLoading(true);
-                setUseGoogleViewer(true);
-                saveViewerPreference(true);
-              }}
+                onClick={() => {
+                  setIsLoading(true);
+                  setPreviewError(false);
+                  const newValue = !useGoogleViewer;
+                  setUseGoogleViewer(newValue);
+                  saveViewerPreference(newValue);
+                }}
+                className="text-xs opacity-80 hover:opacity-100"
               >
-                <Eye className="w-4 h-4 mr-2" />
-                Try Google Viewer
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => window.open(signedUrl, '_blank')}
-              >
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Open in new tab
+                {useGoogleViewer ? 'Native Viewer' : 'Google Viewer'}
               </Button>
             </div>
-          </div>
-        ) : previewError && useGoogleViewer ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
-            <FileText className="w-16 h-16 text-muted-foreground/40 mb-4" />
-            <p className="text-muted-foreground mb-2">Preview not available</p>
-            <p className="text-xs text-muted-foreground/70 text-center mb-4">
-              The file may be too large or in an unsupported format
-            </p>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => window.open(signedUrl, '_blank')}
-            >
-              <ExternalLink className="w-4 h-4 mr-2" />
-              Open in new tab
-            </Button>
-          </div>
-        ) : (
-          <iframe
-            src={viewerUrl}
-            className="w-full h-full border-0"
-            title={material.title}
-            onLoad={handleIframeLoad}
-            onError={handleIframeError}
-            style={{ border: 'none' }}
-          />
-        )}
-        
-        {/* Viewer toggle for admin */}
-        {isAdmin && !previewError && signedUrl && (
-          <div className="absolute top-2 right-2 z-10">
-            <Button
-              variant="secondary"
-              size="sm"
-            onClick={() => {
-              setIsLoading(true);
-              setPreviewError(false);
-              const newValue = !useGoogleViewer;
-              setUseGoogleViewer(newValue);
-              saveViewerPreference(newValue);
-            }}
-              className="text-xs opacity-80 hover:opacity-100"
-            >
-              {useGoogleViewer ? 'Native Viewer' : 'Google Viewer'}
-            </Button>
-          </div>
-        )}
-        
-        {/* Preview limit overlay for non-admin users */}
-        {!isAdmin && isLoggedIn && !previewError && (
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background/95 to-transparent p-6 text-center pointer-events-none">
-            <Badge variant="secondary" className="mb-2 bg-primary/20 text-primary">
-              <Eye className="w-3 h-3 mr-1" />
-              Preview: First {previewLimit} pages
-            </Badge>
-            <p className="text-xs text-muted-foreground">
-              Download to view the complete document
-            </p>
-          </div>
-        )}
-        
-        {/* Login prompt for non-logged-in users */}
-        {!isLoggedIn && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/90 backdrop-blur-sm">
-            <Lock className="w-12 h-12 text-muted-foreground mb-4" />
-            <p className="text-lg font-medium mb-2">Login Required</p>
-            <p className="text-sm text-muted-foreground mb-4">
-              Sign in to preview this material
-            </p>
-          </div>
-        )}
+          )}
+          
+          {/* Preview limit overlay for non-admin users */}
+          {!isAdmin && isLoggedIn && !previewError && (
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background/95 to-transparent p-6 text-center pointer-events-none">
+              <Badge variant="secondary" className="mb-2 bg-primary/20 text-primary">
+                <Eye className="w-3 h-3 mr-1" />
+                Preview: First {previewLimit} pages
+              </Badge>
+              <p className="text-xs text-muted-foreground">
+                Download to view the complete document
+              </p>
+            </div>
+          )}
+          
+          {/* Login prompt for non-logged-in users */}
+          {!isLoggedIn && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/90 backdrop-blur-sm">
+              <Lock className="w-12 h-12 text-muted-foreground mb-4" />
+              <p className="text-lg font-medium mb-2">Login Required</p>
+              <p className="text-sm text-muted-foreground mb-4">
+                Sign in to preview this material
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     );
   };
