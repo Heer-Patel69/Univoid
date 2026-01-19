@@ -12,7 +12,6 @@ import {
   Settings,
   LogOut,
   Shield,
-  Newspaper,
   Repeat2,
   Ticket,
   Home,
@@ -48,7 +47,6 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
     { label: "Projects", icon: Folder, href: "/projects" },
     { label: "Task Plaza", icon: Briefcase, href: "/tasks" },
     { label: "Books", icon: Repeat2, href: "/books" },
-    { label: "Campus News", icon: Newspaper, href: "/news" },
     { label: "Leaderboard", icon: Trophy, href: "/leaderboard" },
   ];
 

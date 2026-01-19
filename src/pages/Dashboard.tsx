@@ -209,12 +209,6 @@ const Dashboard = () => {
                   Upcoming Events
                 </Button>
               </Link>
-              <Link to="/news">
-                <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
-                  <BookOpen className="w-4 h-4" />
-                  Campus News
-                </Button>
-              </Link>
             </CardContent>
           </Card>
         </div>

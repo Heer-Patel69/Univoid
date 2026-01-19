@@ -23,7 +23,6 @@ import {
 const Index = lazy(() => import("@/pages/Index"));
 const Materials = lazy(() => import("@/pages/Materials"));
 const MaterialDetail = lazy(() => import("@/pages/MaterialDetail"));
-const News = lazy(() => import("@/pages/News"));
 const Books = lazy(() => import("@/pages/Books"));
 const BookDetail = lazy(() => import("@/pages/BookDetail"));
 const Leaderboard = lazy(() => import("@/pages/Leaderboard"));
@@ -34,7 +33,6 @@ const EditProfile = lazy(() => import("@/pages/EditProfile"));
 const Admin = lazy(() => import("@/pages/Admin"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const UploadMaterial = lazy(() => import("@/pages/UploadMaterial"));
-const SubmitNews = lazy(() => import("@/pages/SubmitNews"));
 const ListBook = lazy(() => import("@/pages/ListBook"));
 const PrivacyPolicy = lazy(() => import("@/pages/PrivacyPolicy"));
 const Terms = lazy(() => import("@/pages/Terms"));
@@ -114,9 +112,6 @@ export const AnimatedRoutes = () => {
         } />
         <Route path="/materials/:materialId" element={
           <Suspense fallback={<DetailSkeleton />}><MaterialDetail /></Suspense>
-        } />
-        <Route path="/news" element={
-          <Suspense fallback={<ListingPageSkeleton />}><News /></Suspense>
         } />
         <Route path="/books" element={
           <Suspense fallback={<BooksSkeleton />}><Books /></Suspense>
@@ -198,9 +193,6 @@ export const AnimatedRoutes = () => {
         <Route path="/upload-material" element={
           <Suspense fallback={<TextSkeleton />}><UploadMaterial /></Suspense>
         } />
-        <Route path="/submit-news" element={
-          <Suspense fallback={<TextSkeleton />}><SubmitNews /></Suspense>
-        } />
         <Route path="/sell-book" element={
           <Suspense fallback={<TextSkeleton />}><ListBook /></Suspense>
         } />
@@ -216,9 +208,6 @@ export const AnimatedRoutes = () => {
         {/* Legacy dashboard routes */}
         <Route path="/dashboard/upload-material" element={
           <Suspense fallback={<TextSkeleton />}><UploadMaterial /></Suspense>
-        } />
-        <Route path="/dashboard/submit-news" element={
-          <Suspense fallback={<TextSkeleton />}><SubmitNews /></Suspense>
         } />
         <Route path="/dashboard/list-book" element={
           <Suspense fallback={<TextSkeleton />}><ListBook /></Suspense>
