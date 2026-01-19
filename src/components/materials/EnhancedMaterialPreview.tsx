@@ -285,13 +285,14 @@ export default function EnhancedMaterialPreview({
       <span className="text-sm text-muted-foreground text-center mb-4">
         {urlError || 'The preview file is not ready yet.'}
       </span>
-      {isAdmin && material.file_url && (
+      {/* Always show "Open Document" fallback button */}
+      {material.file_url && (
         <Button 
-          variant="outline"
+          variant="default"
           onClick={() => window.open(material.file_url, '_blank')}
         >
           <ExternalLink className="w-4 h-4 mr-2" />
-          Try Opening Directly
+          Open Document
         </Button>
       )}
     </div>
@@ -310,7 +311,7 @@ export default function EnhancedMaterialPreview({
     const viewerUrl = useGoogleViewer ? googleViewerUrl : `${signedUrl}#toolbar=${isAdmin ? '1' : '0'}&navpanes=0&scrollbar=1`;
     
     return (
-      <div className="relative w-full aspect-[3/4] min-h-[500px] bg-muted rounded-lg overflow-hidden border border-border">
+      <div className="relative w-full aspect-[3/4] min-h-[300px] sm:min-h-[500px] bg-muted rounded-lg overflow-hidden border border-border">
         {isLoading && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 z-10">
             <Loader2 className="w-8 h-8 animate-spin text-primary mb-2" />
@@ -473,7 +474,7 @@ export default function EnhancedMaterialPreview({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl w-[95vw] sm:w-[90vw] max-h-[90vh] sm:max-h-[95vh] overflow-hidden flex flex-col p-0 gap-0 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+      <DialogContent className="max-w-4xl w-[calc(100vw-2rem)] sm:w-[90vw] max-h-[85vh] sm:max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0 fixed inset-0 m-auto">
         <DialogHeader className="shrink-0 border-b border-border p-4 pb-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">

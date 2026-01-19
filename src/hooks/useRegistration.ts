@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -32,6 +33,7 @@ interface RegistrationState {
 export function useRegistration(options: UseRegistrationOptions) {
   const { eventId, userId, eventTitle, isPaidEvent, onSuccess, onError } = options;
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   
   const [state, setState] = useState<RegistrationState>({
     isSubmitting: false,
@@ -104,13 +106,24 @@ export function useRegistration(options: UseRegistrationOptions) {
       setState(prev => ({ ...prev, result }));
       
       if (result.success) {
-        // Show appropriate toast
+        // Show appropriate toast with action to view ticket
         if (result.already_registered) {
-          toast.info(result.message);
+          toast.info(result.message, {
+            action: {
+              label: 'View Ticket',
+              onClick: () => navigate('/my-events'),
+            },
+          });
         } else {
           toast.success(isPaidEvent 
             ? 'Registration submitted! Payment pending verification.' 
-            : 'Registration confirmed!'
+            : 'Registration confirmed!',
+            {
+              action: {
+                label: 'View Ticket',
+                onClick: () => navigate('/my-events'),
+              },
+            }
           );
           
           // Send confirmation email in background
@@ -120,6 +133,7 @@ export function useRegistration(options: UseRegistrationOptions) {
         // Invalidate queries to refresh data
         queryClient.invalidateQueries({ queryKey: ['registration', eventId] });
         queryClient.invalidateQueries({ queryKey: ['event', eventId] });
+        queryClient.invalidateQueries({ queryKey: ['my-tickets'] });
         
         onSuccess?.(result);
       } else {
