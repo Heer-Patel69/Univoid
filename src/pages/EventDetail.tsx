@@ -27,12 +27,10 @@ import UpsellScreen from "@/components/events/UpsellScreen";
 import { 
   fetchEventUpsells, 
   fetchUpsellSettings,
-  type EventUpsell,
   type SelectedUpsell,
   calculateTotalWithUpsells,
-  saveRegistrationAddons
 } from "@/services/upsellService";
-import { Calendar, MapPin, Users, IndianRupee, ExternalLink, Clock, Share2, CheckCircle, AlertCircle, Upload, Eye, Loader2 } from "lucide-react";
+import { Calendar, MapPin, Users, IndianRupee, ExternalLink, Clock, Share2, CheckCircle, AlertCircle, Upload, Eye } from "lucide-react";
 
 const EventDetail = () => {
   const { eventId } = useParams<{ eventId: string }>();
@@ -158,7 +156,7 @@ const EventDetail = () => {
       })),
     };
 
-    await register(enhancedCustomData, paymentScreenshot);
+    await register(enhancedCustomData, paymentScreenshot, groupSize, groupSize > 1);
   }, [user, event, selectedClubId, membershipId, selectedPrice, register, paymentScreenshot, upsellSettings, upsells, hasSeenUpsells, groupSize, priceCalculation, selectedUpsells]);
 
   const handleUpsellContinue = () => {
