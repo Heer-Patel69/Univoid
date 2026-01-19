@@ -52,9 +52,6 @@ const EditEvent = lazy(() => import("@/pages/EditEvent"));
 const Projects = lazy(() => import("@/pages/Projects"));
 const CreateProject = lazy(() => import("@/pages/CreateProject"));
 const ProjectDetail = lazy(() => import("@/pages/ProjectDetail"));
-const Tasks = lazy(() => import("@/pages/Tasks"));
-const TaskDetail = lazy(() => import("@/pages/TaskDetail"));
-const CreateTask = lazy(() => import("@/pages/CreateTask"));
 const EventCheckIn = lazy(() => import("@/pages/EventCheckIn"));
 const Settings = lazy(() => import("@/pages/Settings"));
 const MyBooks = lazy(() => import("@/pages/MyBooks"));
@@ -74,7 +71,7 @@ const MaterialsSkeleton = memo(() => <ListingPageSkeleton />);
 const BooksSkeleton = memo(() => <ListingPageSkeleton />);
 const EventsSkeleton = memo(() => <EventsPageSkeleton />);
 const ProjectsSkeleton = memo(() => <TaskListingSkeleton />);
-const TasksSkeleton = memo(() => <TaskListingSkeleton />);
+
 const DetailSkeleton = memo(() => <DetailPageSkeleton />);
 const TextSkeleton = memo(() => <TextPageSkeleton />);
 const FAQSkeleton = memo(() => <FAQPageSkeleton />);
@@ -130,12 +127,6 @@ export const AnimatedRoutes = () => {
         } />
         <Route path="/projects/:projectId" element={
           <Suspense fallback={<DetailSkeleton />}><ProjectDetail /></Suspense>
-        } />
-        <Route path="/tasks" element={
-          <Suspense fallback={<TasksSkeleton />}><Tasks /></Suspense>
-        } />
-        <Route path="/tasks/:taskId" element={
-          <Suspense fallback={<DetailSkeleton />}><TaskDetail /></Suspense>
         } />
         <Route path="/leaderboard" element={
           <Suspense fallback={<LeaderboardSkeleton />}><Leaderboard /></Suspense>
@@ -198,12 +189,6 @@ export const AnimatedRoutes = () => {
         } />
         <Route path="/projects/create" element={
           <Suspense fallback={<TextSkeleton />}><CreateProject /></Suspense>
-        } />
-        <Route path="/tasks/create" element={
-          <Suspense fallback={<TextSkeleton />}><CreateTask /></Suspense>
-        } />
-        <Route path="/tasks/my-requests" element={
-          <Suspense fallback={<TasksSkeleton />}><Tasks /></Suspense>
         } />
         {/* Legacy dashboard routes */}
         <Route path="/dashboard/upload-material" element={

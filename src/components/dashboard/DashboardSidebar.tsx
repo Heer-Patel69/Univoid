@@ -7,7 +7,6 @@ import {
   BookOpen,
   Calendar,
   Folder,
-  Briefcase,
   Trophy,
   Settings,
   LogOut,
@@ -45,7 +44,6 @@ const DashboardSidebar = ({ isMobile = false }: DashboardSidebarProps) => {
     { label: "Materials", icon: BookOpen, href: "/materials" },
     { label: "Events", icon: Calendar, href: "/events" },
     { label: "Projects", icon: Folder, href: "/projects" },
-    { label: "Task Plaza", icon: Briefcase, href: "/tasks" },
     { label: "Books", icon: Repeat2, href: "/books" },
     { label: "Leaderboard", icon: Trophy, href: "/leaderboard" },
   ];

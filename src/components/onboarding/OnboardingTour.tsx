@@ -48,15 +48,6 @@ const desktopTourSteps: DriveStep[] = [
     },
   },
   {
-    element: "#nav-tasks",
-    popover: {
-      title: "Task Plaza",
-      description: "Find gigs, internships, and student collaborations.",
-      side: "bottom",
-      align: "center",
-    },
-  },
-  {
     element: "#nav-books",
     popover: {
       title: "Book Exchange",

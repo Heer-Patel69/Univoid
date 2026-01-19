@@ -29,11 +29,10 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Fetch all approved content with categories/subjects for programmatic SEO
-    const [materialsRes, eventsRes, projectsRes, tasksRes, booksRes, profilesRes] = await Promise.all([
+    const [materialsRes, eventsRes, projectsRes, booksRes, profilesRes] = await Promise.all([
       supabase.from("materials").select("id, updated_at, subject, course, branch").eq("status", "approved"),
       supabase.from("events").select("id, updated_at, category, venue_name").eq("status", "published"),
       supabase.from("projects").select("id, updated_at, skills_required"),
-      supabase.from("task_requests").select("id, updated_at, subject, task_type"),
       supabase.from("books").select("id, updated_at, category, slug, title, price").eq("status", "approved"),
       supabase.rpc("get_public_leaderboard", { limit_count: 100 }),
     ]);
@@ -41,7 +40,6 @@ Deno.serve(async (req) => {
     const materials = materialsRes.data || [];
     const events = eventsRes.data || [];
     const projects = projectsRes.data || [];
-    const tasks = tasksRes.data || [];
     const books = booksRes.data || [];
     const profiles = profilesRes.data || [];
 
@@ -53,7 +51,6 @@ Deno.serve(async (req) => {
     const materialBranches = new Set<string>();
     const eventCategories = new Set<string>();
     const bookCategories = new Set<string>();
-    const taskTypes = new Set<string>();
 
     materials.forEach((m) => {
       if (m.subject) materialSubjects.add(m.subject);
@@ -69,17 +66,12 @@ Deno.serve(async (req) => {
       if (b.category) bookCategories.add(b.category);
     });
 
-    tasks.forEach((t) => {
-      if (t.task_type) taskTypes.add(t.task_type);
-    });
-
     // Static pages
     const staticPages = [
       { loc: "/", priority: "1.0", changefreq: "daily" },
       { loc: "/materials", priority: "0.9", changefreq: "daily" },
       { loc: "/events", priority: "0.9", changefreq: "daily" },
       { loc: "/projects", priority: "0.8", changefreq: "daily" },
-      { loc: "/tasks", priority: "0.8", changefreq: "daily" },
       { loc: "/books", priority: "0.8", changefreq: "daily" },
       { loc: "/leaderboard", priority: "0.6", changefreq: "weekly" },
       { loc: "/about-us", priority: "0.6", changefreq: "monthly" },
