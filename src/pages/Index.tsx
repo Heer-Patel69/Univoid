@@ -10,7 +10,7 @@ import { DoodleStar, DoodleBook, DoodleLightbulb, DoodleRocket, DoodleHeart, Doo
 import { FloatingDoodles } from "@/components/common/FloatingDoodles";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRoleRedirect } from "@/hooks/useRoleRedirect";
-import { ArrowRight, FileText, Users, BookOpen, Bell, Library, Calendar, Puzzle, Repeat, Newspaper, LogIn, UserCheck, Map, Zap, CheckCircle, Plus, Minus, Briefcase } from "lucide-react";
+import { ArrowRight, FileText, Users, BookOpen, Bell, Library, Calendar, Puzzle, Repeat, LogIn, UserCheck, Map, Zap, CheckCircle, Plus, Minus, Briefcase } from "lucide-react";
 import SEOHead from "@/components/common/SEOHead";
 const Index = () => {
   const [authOpen, setAuthOpen] = useState(false);
@@ -86,10 +86,6 @@ const Index = () => {
     icon: Repeat,
     title: "Book Exchange",
     description: "Buy, sell, or exchange books directly with students."
-  }, {
-    icon: Newspaper,
-    title: "Campus News",
-    description: "Stay updated with jobs, and student news."
   }];
   const steps = [{
     icon: LogIn,
