@@ -474,7 +474,7 @@ export default function EnhancedMaterialPreview({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl w-[calc(100vw-2rem)] sm:w-[90vw] max-h-[85vh] sm:max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0 fixed inset-0 m-auto">
+      <DialogContent className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 max-w-4xl w-[90vw] max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
         <DialogHeader className="shrink-0 border-b border-border p-4 pb-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
