@@ -10,7 +10,6 @@ const Footer = () => {
     { href: "/projects", label: "Project Partner" },
     { href: "/tasks", label: "Task Plaza" },
     { href: "/books", label: "Books" },
-    { href: "/news", label: "News" },
     { href: "/leaderboard", label: "Leaderboard" },
   ];
 

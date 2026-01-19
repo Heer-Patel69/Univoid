@@ -473,8 +473,8 @@ export default function EnhancedMaterialPreview({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl w-[95vw] max-h-[95vh] overflow-hidden flex flex-col mx-auto">
-        <DialogHeader className="shrink-0 border-b border-border pb-4">
+      <DialogContent className="max-w-4xl w-[95vw] sm:w-[90vw] max-h-[90vh] sm:max-h-[95vh] overflow-hidden flex flex-col p-0 gap-0 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+        <DialogHeader className="shrink-0 border-b border-border p-4 pb-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
               <DialogTitle className="text-xl font-semibold text-foreground mb-2 line-clamp-2">
@@ -501,7 +501,7 @@ export default function EnhancedMaterialPreview({
           </div>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 overflow-auto">
+        <ScrollArea className="flex-1 min-h-0 overflow-auto">
           <div className="p-4 space-y-6">
             {/* Preview Area - Show skeleton while generating URL */}
             {isGeneratingUrl ? renderLoadingSkeleton() : (

@@ -99,10 +99,8 @@ export function useGlobalRealtimeNotifications() {
           label: 'View',
           onClick: () => {
             const routes: Record<string, string> = {
-              scholarships: '/scholarships',
               materials: '/materials',
               events: `/events/${record.id}`,
-              news: '/news',
             };
             window.location.href = routes[tableName] || '/';
           },
@@ -163,20 +161,6 @@ export function useGlobalRealtimeNotifications() {
           if (isRelevantToUser('events', p)) {
             showNotificationToast('events', p.eventType, p.new);
           }
-        }
-      )
-      // News
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'news',
-          filter: 'status=eq.approved',
-        },
-        (payload) => {
-          const p = payload as unknown as RealtimePayload;
-          showNotificationToast('news', (payload as any).eventType, p.new);
         }
       )
       .subscribe();
