@@ -32,11 +32,6 @@
     <changefreq>daily</changefreq>
   </url>
   <url>
-    <loc>https://univoid.tech/news</loc>
-    <priority>0.7</priority>
-    <changefreq>daily</changefreq>
-  </url>
-  <url>
     <loc>https://univoid.tech/leaderboard</loc>
     <priority>0.6</priority>
     <changefreq>weekly</changefreq>

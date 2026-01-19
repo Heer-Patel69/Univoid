@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 import { allowRequest } from "@/lib/rateLimiter";
+import { TICKET_STATUS, getInitialPaymentStatus, type TicketStatus } from "@/constants/ticketStatus";
 
 /**
  * User-friendly error messages mapping
@@ -230,7 +231,11 @@ async function registerForEventFallback(
       };
     }
 
-    // Create registration
+    // Determine payment status based on event type
+    // FREE events are auto-approved, PAID events start as pending
+    const paymentStatus = getInitialPaymentStatus(event.is_paid);
+
+    // Create registration with proper ENUM value
     const { data: registration, error: regError } = await supabase
       .from('event_registrations')
       .insert({
@@ -238,6 +243,7 @@ async function registerForEventFallback(
         user_id: request.user_id,
         custom_data: request.custom_data as Json || null,
         payment_screenshot_url: request.payment_screenshot_url || null,
+        payment_status: paymentStatus as TicketStatus,
         group_size: request.group_size || 1,
         is_group_booking: request.is_group_booking || false,
       })
@@ -289,16 +295,29 @@ async function registerForEventFallback(
       success: true,
       registration_id: registration.id,
       already_registered: false,
+      payment_status: paymentStatus,
       message: event.is_paid 
         ? 'Registration submitted! Payment pending verification.'
         : 'Registration confirmed! Your ticket is ready.',
     };
   } catch (error) {
-    console.error('Registration fallback error:', error);
+    // Log detailed error for debugging
+    const err = error as Error;
+    console.error('Registration fallback error:', {
+      message: err.message,
+      stack: err.stack,
+      request: { event_id: request.event_id, user_id: request.user_id }
+    });
+    
+    // Return specific error if available
+    const errorMessage = err.message?.includes('violates') 
+      ? 'Database constraint error. Please try again.'
+      : err.message || ERROR_MESSAGES.UNKNOWN;
+    
     return {
       success: false,
       error: 'UNKNOWN',
-      message: ERROR_MESSAGES.UNKNOWN,
+      message: errorMessage,
     };
   }
 }
