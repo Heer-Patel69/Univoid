@@ -27,8 +27,8 @@ const Projects = () => {
   const [rawLoading, setRawLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Use skeleton sync for consistent loading behavior
-  const isLoading = useSkeletonSync(rawLoading, { minDisplayTime: 400 });
+  // Use skeleton sync - skeleton only appears if loading takes >150ms
+  const isLoading = useSkeletonSync(rawLoading, { showDelay: 150 });
 
   useEffect(() => {
     loadProjects();

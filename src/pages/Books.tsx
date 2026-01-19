@@ -97,8 +97,8 @@ const Books = () => {
   // Combined books list (cached + local additions from real-time/load more)
   const allBooks = localBooks.length > 0 ? localBooks : cachedBooks;
 
-  // Use skeleton sync for consistent loading behavior with minimum display time
-  const isLoading = useSkeletonSync(rawLoading, { minDisplayTime: 400 });
+  // Use skeleton sync - skeleton only appears if loading takes >150ms
+  const isLoading = useSkeletonSync(rawLoading, { showDelay: 150 });
 
   // Real-time subscription for instant updates
   useEffect(() => {

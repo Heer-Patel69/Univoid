@@ -37,17 +37,14 @@ export function SkeletonTransition({
         {skeleton}
       </div>
 
-      {/* Content layer */}
+      {/* Content layer - render immediately when not loading */}
       <div
         className={cn(
-          "transition-all duration-300 ease-out delay-75",
-          isLoading 
-            ? "opacity-0 translate-y-2" 
-            : "opacity-100 translate-y-0"
+          "transition-opacity duration-200 ease-out",
+          isLoading ? "opacity-0" : "opacity-100"
         )}
-        aria-hidden={isLoading}
       >
-        {!isLoading && children}
+        {children}
       </div>
     </div>
   );
