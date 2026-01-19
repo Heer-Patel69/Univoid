@@ -180,7 +180,7 @@ async function registerForEventFallback(
   request: RegistrationRequest
 ): Promise<RegistrationResult> {
   try {
-    // Check if already registered
+    // Check if already registered FIRST for idempotency
     const { data: existingReg } = await supabase
       .from('event_registrations')
       .select('id, payment_status')
@@ -189,6 +189,7 @@ async function registerForEventFallback(
       .maybeSingle();
 
     if (existingReg) {
+      // Already registered - return success (idempotent)
       return {
         success: true,
         registration_id: existingReg.id,
@@ -235,10 +236,10 @@ async function registerForEventFallback(
     // FREE events are auto-approved, PAID events start as pending
     const paymentStatus = getInitialPaymentStatus(event.is_paid);
 
-    // Create registration with proper ENUM value
+    // Create registration with proper ENUM value - use upsert pattern for idempotency
     const { data: registration, error: regError } = await supabase
       .from('event_registrations')
-      .insert({
+      .upsert({
         event_id: request.event_id,
         user_id: request.user_id,
         custom_data: request.custom_data as Json || null,
@@ -246,12 +247,35 @@ async function registerForEventFallback(
         payment_status: paymentStatus as TicketStatus,
         group_size: request.group_size || 1,
         is_group_booking: request.is_group_booking || false,
+      }, {
+        onConflict: 'event_id,user_id',
+        ignoreDuplicates: true,
       })
       .select('id')
-      .single();
+      .maybeSingle();
+
+    // If upsert returned no data, check for existing registration
+    if (!registration) {
+      const { data: existingReg } = await supabase
+        .from('event_registrations')
+        .select('id, payment_status')
+        .eq('event_id', request.event_id)
+        .eq('user_id', request.user_id)
+        .single();
+
+      if (existingReg) {
+        return {
+          success: true,
+          registration_id: existingReg.id,
+          already_registered: true,
+          payment_status: existingReg.payment_status,
+          message: "You're already registered for this event!",
+        };
+      }
+    }
 
     if (regError) {
-      // Handle unique violation (already registered)
+      // Handle unique violation (already registered) - return success
       if (regError.code === '23505') {
         const { data: existingReg } = await supabase
           .from('event_registrations')
@@ -272,11 +296,10 @@ async function registerForEventFallback(
     }
 
     // For free events, create ticket
-    let ticketId: string | undefined;
-    if (!event.is_paid) {
-      const { data: ticket } = await supabase
+    if (!event.is_paid && registration) {
+      await supabase
         .from('event_tickets')
-        .insert({
+        .upsert({
           event_id: request.event_id,
           user_id: request.user_id,
           registration_id: registration.id,
@@ -284,16 +307,15 @@ async function registerForEventFallback(
           is_used: false,
           is_group_booking: request.is_group_booking || false,
           group_size: request.group_size || 1,
-        })
-        .select('id')
-        .single();
-
-      ticketId = ticket?.id;
+        }, {
+          onConflict: 'registration_id',
+          ignoreDuplicates: true,
+        });
     }
 
     return {
       success: true,
-      registration_id: registration.id,
+      registration_id: registration?.id,
       already_registered: false,
       payment_status: paymentStatus,
       message: event.is_paid 
@@ -308,6 +330,26 @@ async function registerForEventFallback(
       stack: err.stack,
       request: { event_id: request.event_id, user_id: request.user_id }
     });
+    
+    // Check for unique constraint errors and treat as success
+    if (err.message?.includes('unique') || err.message?.includes('duplicate')) {
+      const { data: existingReg } = await supabase
+        .from('event_registrations')
+        .select('id, payment_status')
+        .eq('event_id', request.event_id)
+        .eq('user_id', request.user_id)
+        .maybeSingle();
+      
+      if (existingReg) {
+        return {
+          success: true,
+          registration_id: existingReg.id,
+          already_registered: true,
+          payment_status: existingReg.payment_status,
+          message: "You're already registered for this event!",
+        };
+      }
+    }
     
     // Return specific error if available
     const errorMessage = err.message?.includes('violates') 

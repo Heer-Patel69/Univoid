@@ -168,20 +168,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Add programmatic SEO pages for task types
-    for (const taskType of taskTypes) {
-      const slug = slugify(taskType);
-      if (slug) {
-        xml += `
-  <url>
-    <loc>${SITE_URL}/tasks?type=${encodeURIComponent(taskType)}</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.7</priority>
-  </url>`;
-      }
-    }
-
     // Add individual materials
     for (const item of materials) {
       const lastmod = item.updated_at ? item.updated_at.split("T")[0] : today;
@@ -218,18 +204,6 @@ Deno.serve(async (req) => {
   </url>`;
     }
 
-    // Add individual tasks
-    for (const item of tasks) {
-      const lastmod = item.updated_at ? item.updated_at.split("T")[0] : today;
-      xml += `
-  <url>
-    <loc>${SITE_URL}/tasks/${item.id}</loc>
-    <lastmod>${lastmod}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>`;
-    }
-
     // Add individual books with SEO-friendly slugs
     for (const item of books) {
       const lastmod = item.updated_at ? item.updated_at.split("T")[0] : today;
@@ -258,7 +232,7 @@ Deno.serve(async (req) => {
     xml += `
 </urlset>`;
 
-    console.log(`Generated sitemap with ${materials.length} materials, ${events.length} events, ${projects.length} projects, ${tasks.length} tasks, ${books.length} books, ${profiles.length} profiles`);
+    console.log(`Generated sitemap with ${materials.length} materials, ${events.length} events, ${projects.length} projects, ${books.length} books, ${profiles.length} profiles`);
     console.log(`Programmatic pages: ${materialSubjects.size} subjects, ${materialCourses.size} courses, ${eventCategories.size} event categories, ${bookCategories.size} book categories`);
 
     return new Response(xml, { headers: corsHeaders });
