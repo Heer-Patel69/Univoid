@@ -157,50 +157,66 @@ export default function EnhancedMaterialPreview({
 
     // Try to extract file path and generate a fresh signed URL
     try {
-      // Extract file path from various URL formats
-      // Format 1: Full storage URL with /object/sign/materials/path or /object/public/materials/path
-      // Format 2: Signed URL with token parameter
-      // Format 3: Direct path like userId/timestamp-filename.pdf
-      
       let filePath: string | null = null;
       
-      // Try to extract path from signed URL (contains /materials/ in path)
-      const signedPathMatch = urlToUse.match(/\/materials\/([^?]+)/);
-      if (signedPathMatch) {
-        filePath = signedPathMatch[1];
-      }
+      // Check if this is already a storage path (userId/filename format - no http)
+      // New upload format: userId/uuid.extension (e.g., "105a4f6b-8ddb.../75629823-....jpg")
+      const isDirectPath = !urlToUse.startsWith('http') && urlToUse.includes('/');
       
-      // Try to extract from object path format
-      if (!filePath) {
-        const objectPathMatch = urlToUse.match(/\/object\/(?:sign|public)\/materials\/([^?]+)/);
-        if (objectPathMatch) {
-          filePath = objectPathMatch[1];
+      if (isDirectPath) {
+        // Direct storage path - use as-is
+        filePath = urlToUse;
+        console.log('[Preview] Using direct storage path:', filePath);
+      } else if (urlToUse.startsWith('http')) {
+        // Try to extract path from signed URL (contains /materials/ in path)
+        const signedPathMatch = urlToUse.match(/\/materials\/([^?]+)/);
+        if (signedPathMatch) {
+          filePath = decodeURIComponent(signedPathMatch[1]);
+          console.log('[Preview] Extracted path from signed URL:', filePath);
+        }
+        
+        // Try to extract from object path format
+        if (!filePath) {
+          const objectPathMatch = urlToUse.match(/\/object\/(?:sign|public)\/materials\/([^?]+)/);
+          if (objectPathMatch) {
+            filePath = decodeURIComponent(objectPathMatch[1]);
+            console.log('[Preview] Extracted path from object URL:', filePath);
+          }
         }
       }
       
       // If we found a file path, generate a fresh signed URL
       if (filePath) {
-        // Decode URI components in case path is encoded
-        filePath = decodeURIComponent(filePath);
+        console.log('[Preview] Generating signed URL for path:', filePath);
         
         const { data, error } = await supabase.storage
           .from('materials')
           .createSignedUrl(filePath, 3600); // 1 hour expiry for preview
         
         if (!error && data?.signedUrl) {
+          console.log('[Preview] Successfully generated signed URL');
           setSignedUrl(data.signedUrl);
           setIsGeneratingUrl(false);
           return;
+        } else {
+          console.error('[Preview] Failed to generate signed URL:', error);
         }
       }
       
-      // Fall back to original URL if it's already a valid HTTP URL
-      if (urlToUse.startsWith('http')) {
+      // Fall back to original URL if it's already a valid HTTP URL with token
+      if (urlToUse.startsWith('http') && urlToUse.includes('token=')) {
+        console.log('[Preview] Using existing signed URL as fallback');
+        setSignedUrl(urlToUse);
+      } else if (urlToUse.startsWith('http')) {
+        // Try using the URL directly (might be public)
+        console.log('[Preview] Using HTTP URL directly');
         setSignedUrl(urlToUse);
       } else {
+        console.error('[Preview] Could not generate preview URL for:', urlToUse);
         setUrlError('Could not generate preview URL');
       }
     } catch (err) {
+      console.error('[Preview] Error generating signed URL:', err);
       // Fall back to original URL on any error
       if (urlToUse.startsWith('http')) {
         setSignedUrl(urlToUse);
@@ -209,6 +225,40 @@ export default function EnhancedMaterialPreview({
       }
     } finally {
       setIsGeneratingUrl(false);
+    }
+  };
+
+  // Helper function to open document with signed URL
+  const handleOpenDocument = async () => {
+    // If we already have a signed URL, use it
+    if (signedUrl) {
+      window.open(signedUrl, '_blank');
+      return;
+    }
+    
+    // Otherwise generate one on-the-fly
+    const urlToUse = material?.file_url;
+    if (!urlToUse) return;
+    
+    try {
+      // Check if it's a direct path
+      const isDirectPath = !urlToUse.startsWith('http') && urlToUse.includes('/');
+      
+      if (isDirectPath) {
+        const { data } = await supabase.storage
+          .from('materials')
+          .createSignedUrl(urlToUse, 3600);
+        if (data?.signedUrl) {
+          window.open(data.signedUrl, '_blank');
+          return;
+        }
+      }
+      
+      // Fallback to original URL
+      window.open(urlToUse, '_blank');
+    } catch {
+      // Last resort - try opening original URL
+      window.open(urlToUse, '_blank');
     }
   };
 
@@ -225,7 +275,7 @@ export default function EnhancedMaterialPreview({
           <Button 
             variant="default"
             size="sm"
-            onClick={() => window.open(material.file_url, '_blank')}
+            onClick={handleOpenDocument}
           >
             <ExternalLink className="w-4 h-4 mr-2" />
             Open Document
@@ -449,10 +499,8 @@ export default function EnhancedMaterialPreview({
   };
 
   const renderImagePreview = () => {
-    // Use signed URL if available, otherwise fall back to file_url
-    const imageUrl = signedUrl || material.file_url;
-    
-    if (!imageUrl || urlError) {
+    // Only use signed URL for images - raw file_url is just a path
+    if (!signedUrl || urlError) {
       return renderNoUrlError();
     }
     
@@ -467,7 +515,7 @@ export default function EnhancedMaterialPreview({
           <Button 
             variant="default"
             size="sm"
-            onClick={() => window.open(imageUrl, '_blank')}
+            onClick={() => window.open(signedUrl, '_blank')}
           >
             <ExternalLink className="w-4 h-4 mr-2" />
             Open Image
@@ -493,7 +541,7 @@ export default function EnhancedMaterialPreview({
             </div>
           ) : (
             <img
-              src={imageUrl}
+              src={signedUrl}
               alt={material.title}
               className="max-w-full max-h-[600px] object-contain"
               onLoad={() => setIsLoading(false)}
