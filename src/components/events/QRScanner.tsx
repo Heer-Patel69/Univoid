@@ -56,74 +56,92 @@ export default function QRScanner({ onScan, eventId }: QRScannerProps) {
     lastScannedRef.current = null;
     
     try {
-      // First, explicitly request camera permission to avoid false "Permission Failed" states
-      // This ensures we get a proper permission prompt rather than silent failures
-      let stream: MediaStream | null = null;
+      // Step 1: Verify camera permission with simple constraints first (mobile-friendly)
+      // Using basic constraints to avoid OverconstrainedError on mobile devices
+      let permissionGranted = false;
+      
+      // Try permission check with basic video constraint
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { 
-            facingMode: { ideal: 'environment' },
-            // Request autofocus capabilities upfront
-            // @ts-ignore - advanced constraints
-            focusMode: { ideal: 'continuous' }
-          } 
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: true // Most compatible - works on all mobile browsers
         });
-        console.log('[QRScanner] Camera permission granted via getUserMedia');
-        
-        // Stop this stream - html5-qrcode will create its own
+        console.log('[QRScanner] Camera access granted');
         stream.getTracks().forEach(track => track.stop());
+        permissionGranted = true;
       } catch (permErr: any) {
-        // Handle specific permission errors
+        console.log('[QRScanner] Permission check error:', permErr.name, permErr.message);
+        
         if (permErr.name === 'NotAllowedError' || permErr.name === 'PermissionDeniedError') {
-          throw new Error('Camera permission denied. Please allow camera access in your browser settings.');
+          throw new Error('Camera permission denied. Please allow camera access in your browser settings and reload the page.');
         }
         if (permErr.name === 'NotFoundError' || permErr.name === 'DevicesNotFoundError') {
-          throw new Error('No camera found on this device');
+          throw new Error('No camera found on this device.');
         }
-        // Other errors (like OverconstrainedError) - try without focus constraint
-        console.log('[QRScanner] Retrying without focus constraint:', permErr.message);
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-          stream.getTracks().forEach(track => track.stop());
-        } catch (retryErr: any) {
-          if (retryErr.name === 'NotAllowedError' || retryErr.name === 'PermissionDeniedError') {
-            throw new Error('Camera permission denied. Please allow camera access in your browser settings.');
-          }
-          throw retryErr;
+        if (permErr.name === 'NotReadableError' || permErr.name === 'TrackStartError') {
+          throw new Error('Camera is busy or in use by another app. Please close other camera apps and try again.');
         }
+        if (permErr.name === 'AbortError') {
+          throw new Error('Camera initialization was cancelled. Please try again.');
+        }
+        // For OverconstrainedError or other errors, continue anyway
+        console.log('[QRScanner] Continuing despite initial error...');
+        permissionGranted = true; // Try to start scanner anyway
       }
 
-      // Create scanner instance with optimized settings
+      if (!permissionGranted) {
+        throw new Error('Could not access camera. Please check your browser settings.');
+      }
+
+      // Step 2: Create scanner instance
       const scanner = new Html5Qrcode('qr-reader', {
         verbose: false,
         formatsToSupport: [0], // QR_CODE only for faster detection
       });
       scannerRef.current = scanner;
 
-      // Get available cameras
-      const devices = await Html5Qrcode.getCameras();
-      if (!devices || devices.length === 0) {
-        throw new Error('No camera found on this device');
+      // Step 3: Get available cameras with error handling
+      let devices: { id: string; label: string }[] = [];
+      try {
+        devices = await Html5Qrcode.getCameras();
+      } catch (cameraListErr) {
+        console.log('[QRScanner] Could not enumerate cameras, using facingMode fallback');
+        // Continue with facingMode - this often works even when enumeration fails
+      }
+      
+      console.log('[QRScanner] Found cameras:', devices.length);
+
+      // Step 4: Determine camera configuration
+      // On mobile, prefer facingMode over device ID for better compatibility
+      let cameraConfig: string | { facingMode: string | { ideal: string } };
+      
+      if (devices.length > 0) {
+        // Check for back camera
+        const backCamera = devices.find(d => 
+          d.label.toLowerCase().includes('back') || 
+          d.label.toLowerCase().includes('rear') ||
+          d.label.toLowerCase().includes('environment')
+        );
+        
+        if (backCamera) {
+          // Use facingMode for better mobile compatibility
+          cameraConfig = { facingMode: { ideal: 'environment' } };
+        } else {
+          // Use first available camera
+          cameraConfig = devices[0].id;
+        }
+      } else {
+        // No devices enumerated - use facingMode as fallback
+        cameraConfig = { facingMode: 'environment' };
       }
 
-      // Prefer back camera on mobile for better scanning
-      const backCamera = devices.find(d => 
-        d.label.toLowerCase().includes('back') || 
-        d.label.toLowerCase().includes('rear') ||
-        d.label.toLowerCase().includes('environment')
-      );
-      
-      // Use facingMode constraint for better camera selection and autofocus
-      const cameraConfig = backCamera 
-        ? { facingMode: { ideal: 'environment' } }
-        : devices[0].id;
+      console.log('[QRScanner] Using camera config:', cameraConfig);
 
-      // Start with optimized settings for better autofocus and scan reliability
+      // Step 5: Start scanner with mobile-optimized settings
       await scanner.start(
         cameraConfig,
         {
-          fps: 15, // Balanced FPS for detection speed and reliability
-          qrbox: { width: 280, height: 280 },
+          fps: 10, // Lower FPS for better mobile battery and performance
+          qrbox: { width: 250, height: 250 }, // Slightly smaller for easier framing
           aspectRatio: 1,
           disableFlip: false,
         },
