@@ -41,6 +41,10 @@ export interface RegistrationRequest {
   payment_screenshot_url?: string;
   group_size?: number;
   is_group_booking?: boolean;
+  // Payment amount fields (extracted from custom_data or passed directly)
+  base_amount?: number;
+  addons_amount?: number;
+  total_amount?: number;
 }
 
 /**
@@ -236,6 +240,19 @@ async function registerForEventFallback(
     // FREE events are auto-approved, PAID events start as pending
     const paymentStatus = getInitialPaymentStatus(event.is_paid);
 
+    // Extract payment amounts from custom_data or request parameters
+    const customData = request.custom_data || {};
+    const baseAmount = request.base_amount ?? 
+      (typeof customData._base_amount === 'number' ? customData._base_amount : null) ??
+      (typeof customData._applied_price === 'number' ? customData._applied_price : null) ??
+      (typeof customData._amount === 'number' ? customData._amount : null);
+    
+    const addonsAmount = request.addons_amount ?? 
+      (typeof customData._addons_amount === 'number' ? customData._addons_amount : null);
+    
+    const totalAmount = request.total_amount ?? 
+      (typeof customData._total_amount === 'number' ? customData._total_amount : null);
+
     // Create registration with proper ENUM value - use upsert pattern for idempotency
     const { data: registration, error: regError } = await supabase
       .from('event_registrations')
@@ -247,6 +264,10 @@ async function registerForEventFallback(
         payment_status: paymentStatus as TicketStatus,
         group_size: request.group_size || 1,
         is_group_booking: request.is_group_booking || false,
+        // Save payment amounts to actual DB columns for accurate reporting
+        base_amount: baseAmount,
+        addons_amount: addonsAmount ?? 0,
+        total_amount: totalAmount,
       }, {
         onConflict: 'event_id,user_id',
         ignoreDuplicates: true,
