@@ -228,15 +228,9 @@ export default function QRScanner({ onScan, eventId }: QRScannerProps) {
     stopScanner();
   }, [eventId, stopScanner]);
 
-  // Auto-start scanner on mount for faster UX
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (!isScanning && !isStarting) {
-        startScanner();
-      }
-    }, 500);
-    return () => clearTimeout(timer);
-  }, []);
+  // Auto-start removed - require user gesture for camera access
+  // Many browsers (especially mobile) require explicit user interaction
+  // before allowing camera access to prevent abuse
 
   return (
     <div className="space-y-4">
