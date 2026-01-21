@@ -449,15 +449,65 @@ export default function EnhancedMaterialPreview({
   };
 
   const renderImagePreview = () => {
+    // Use signed URL if available, otherwise fall back to file_url
+    const imageUrl = signedUrl || material.file_url;
+    
+    if (!imageUrl || urlError) {
+      return renderNoUrlError();
+    }
+    
     return (
-      <div className="aspect-video bg-muted rounded-lg flex flex-col items-center justify-center border border-border p-8">
-        <Image className="w-16 h-16 text-muted-foreground/40 mb-4" />
-        <span className="text-lg font-medium text-foreground mb-2">Image File</span>
-        <span className="text-sm text-muted-foreground text-center">
-          Preview available for PDF files only.
-        </span>
-        <p className="text-xs text-muted-foreground mt-2">
-          {material.file_size ? formatFileSize(material.file_size) : 'Unknown size'}
+      <div className="space-y-3">
+        {/* Open Image button for fallback */}
+        <div className="flex items-center justify-between gap-2 p-3 bg-muted/50 rounded-lg border border-border">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Image className="w-4 h-4" />
+            <span>Can't see the image?</span>
+          </div>
+          <Button 
+            variant="default"
+            size="sm"
+            onClick={() => window.open(imageUrl, '_blank')}
+          >
+            <ExternalLink className="w-4 h-4 mr-2" />
+            Open Image
+          </Button>
+        </div>
+        
+        {/* Image preview container */}
+        <div className="relative w-full min-h-[300px] sm:min-h-[500px] bg-muted rounded-lg overflow-hidden border border-border flex items-center justify-center">
+          {isLoading && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 z-10">
+              <Loader2 className="w-8 h-8 animate-spin text-primary mb-2" />
+              <span className="text-sm text-muted-foreground">Loading image...</span>
+            </div>
+          )}
+          
+          {previewError ? (
+            <div className="flex flex-col items-center justify-center p-4">
+              <Image className="w-16 h-16 text-muted-foreground/40 mb-4" />
+              <p className="text-muted-foreground mb-2">Image preview not available</p>
+              <p className="text-xs text-muted-foreground/70 text-center mb-4">
+                Use the "Open Image" button above to view the file
+              </p>
+            </div>
+          ) : (
+            <img
+              src={imageUrl}
+              alt={material.title}
+              className="max-w-full max-h-[600px] object-contain"
+              onLoad={() => setIsLoading(false)}
+              onError={() => {
+                setIsLoading(false);
+                setPreviewError(true);
+              }}
+            />
+          )}
+        </div>
+        
+        {/* File info */}
+        <p className="text-xs text-muted-foreground text-center">
+          {material.file_type.toUpperCase()} • {material.file_size ? formatFileSize(material.file_size) : 'Unknown size'}
         </p>
       </div>
     );
