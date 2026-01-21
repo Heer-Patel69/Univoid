@@ -56,7 +56,7 @@ export default function QRScanner({ onScan, eventId }: QRScannerProps) {
     lastScannedRef.current = null;
     
     try {
-      // Create scanner instance
+      // Create scanner instance with optimized settings
       const scanner = new Html5Qrcode('qr-reader', {
         verbose: false,
         formatsToSupport: [0], // QR_CODE only for faster detection
@@ -77,12 +77,18 @@ export default function QRScanner({ onScan, eventId }: QRScannerProps) {
       );
       const cameraId = backCamera?.id || devices[0].id;
 
-      // Start with just cameraId - simpler and more reliable
+      // Use facingMode constraint for better camera selection and autofocus
+      // This provides better autofocus support on mobile devices
+      const cameraConfig = backCamera 
+        ? { facingMode: { ideal: 'environment' } }
+        : cameraId;
+
+      // Start with optimized settings for better autofocus and scan reliability
       await scanner.start(
-        cameraId,
+        cameraConfig,
         {
-          fps: 15, // Lower FPS for better compatibility
-          qrbox: { width: 250, height: 250 },
+          fps: 10, // Lower FPS = more processing time per frame = better detection
+          qrbox: { width: 280, height: 280 }, // Slightly larger scan area
           aspectRatio: 1,
           disableFlip: false,
         },
@@ -122,6 +128,30 @@ export default function QRScanner({ onScan, eventId }: QRScannerProps) {
           // Error callback - ignore scan errors (normal when no QR visible)
         }
       );
+
+      // After scanner starts, try to enable continuous autofocus via video track constraints
+      try {
+        const videoElement = document.querySelector('#qr-reader video') as HTMLVideoElement;
+        if (videoElement && videoElement.srcObject) {
+          const stream = videoElement.srcObject as MediaStream;
+          const track = stream.getVideoTracks()[0];
+          if (track) {
+            const capabilities = track.getCapabilities?.() as MediaTrackCapabilities & { focusMode?: string[] };
+            if (capabilities?.focusMode?.includes('continuous')) {
+              await track.applyConstraints({
+                // @ts-ignore - focusMode is a valid constraint but not in all TypeScript definitions
+                focusMode: 'continuous'
+              });
+              console.log('[QRScanner] Continuous autofocus enabled');
+            } else {
+              console.log('[QRScanner] Continuous autofocus not supported, using default');
+            }
+          }
+        }
+      } catch (focusErr) {
+        // Autofocus enhancement failed - scanner will still work with default focus
+        console.log('[QRScanner] Could not set autofocus mode:', focusErr);
+      }
 
       setIsScanning(true);
     } catch (err: any) {

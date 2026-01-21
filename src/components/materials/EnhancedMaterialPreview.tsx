@@ -148,7 +148,16 @@ export default function EnhancedMaterialPreview({
     // Determine which URL to use
     const urlToUse = isAdmin ? material.file_url : (material.preview_file_url || material.file_url);
     
+    console.log('[Preview] Starting URL generation for:', {
+      file_url: material.file_url,
+      preview_file_url: material.preview_file_url,
+      urlToUse,
+      isAdmin,
+      file_type: material.file_type
+    });
+    
     if (!urlToUse || urlToUse.trim() === '') {
+      console.error('[Preview] No URL available');
       setUrlError('Preview URL not available');
       setIsLoading(false);
       setIsGeneratingUrl(false);
@@ -159,28 +168,55 @@ export default function EnhancedMaterialPreview({
     try {
       let filePath: string | null = null;
       
-      // Check if this is already a storage path (userId/filename format - no http)
+      // Pattern 1: Direct storage path (userId/filename format - no http)
       // New upload format: userId/uuid.extension (e.g., "105a4f6b-8ddb.../75629823-....jpg")
       const isDirectPath = !urlToUse.startsWith('http') && urlToUse.includes('/');
+      
+      // Pattern 2: Just a filename without path separator (legacy)
+      const isSimpleFilename = !urlToUse.startsWith('http') && !urlToUse.includes('/') && urlToUse.includes('.');
       
       if (isDirectPath) {
         // Direct storage path - use as-is
         filePath = urlToUse;
         console.log('[Preview] Using direct storage path:', filePath);
+      } else if (isSimpleFilename) {
+        // Simple filename - use as-is
+        filePath = urlToUse;
+        console.log('[Preview] Using simple filename:', filePath);
       } else if (urlToUse.startsWith('http')) {
-        // Try to extract path from signed URL (contains /materials/ in path)
-        const signedPathMatch = urlToUse.match(/\/materials\/([^?]+)/);
-        if (signedPathMatch) {
-          filePath = decodeURIComponent(signedPathMatch[1]);
-          console.log('[Preview] Extracted path from signed URL:', filePath);
+        // Try multiple patterns to extract the path from URL
+        
+        // Pattern: /storage/v1/object/sign/materials/path OR /storage/v1/object/public/materials/path
+        let match = urlToUse.match(/\/storage\/v1\/object\/(?:sign|public)\/materials\/([^?]+)/);
+        if (match) {
+          filePath = decodeURIComponent(match[1]);
+          console.log('[Preview] Extracted from storage v1 URL:', filePath);
         }
         
-        // Try to extract from object path format
+        // Pattern: /object/sign/materials/path OR /object/public/materials/path  
         if (!filePath) {
-          const objectPathMatch = urlToUse.match(/\/object\/(?:sign|public)\/materials\/([^?]+)/);
-          if (objectPathMatch) {
-            filePath = decodeURIComponent(objectPathMatch[1]);
-            console.log('[Preview] Extracted path from object URL:', filePath);
+          match = urlToUse.match(/\/object\/(?:sign|public)\/materials\/([^?]+)/);
+          if (match) {
+            filePath = decodeURIComponent(match[1]);
+            console.log('[Preview] Extracted from object URL:', filePath);
+          }
+        }
+        
+        // Pattern: supabase.co/.../materials/path
+        if (!filePath) {
+          match = urlToUse.match(/supabase\.co[^/]*\/[^/]+\/materials\/([^?]+)/);
+          if (match) {
+            filePath = decodeURIComponent(match[1]);
+            console.log('[Preview] Extracted from supabase URL:', filePath);
+          }
+        }
+        
+        // Generic pattern: anything after /materials/
+        if (!filePath) {
+          match = urlToUse.match(/\/materials\/([^?]+)/);
+          if (match) {
+            filePath = decodeURIComponent(match[1]);
+            console.log('[Preview] Extracted from generic /materials/ pattern:', filePath);
           }
         }
       }
@@ -197,24 +233,35 @@ export default function EnhancedMaterialPreview({
           console.log('[Preview] Successfully generated signed URL');
           setSignedUrl(data.signedUrl);
           setIsGeneratingUrl(false);
+          setIsLoading(false); // Mark as not loading for images
           return;
         } else {
-          console.error('[Preview] Failed to generate signed URL:', error);
+          console.error('[Preview] Failed to generate signed URL:', error?.message || error);
+          // Don't give up yet - try fallbacks
         }
       }
       
-      // Fall back to original URL if it's already a valid HTTP URL with token
+      // Fallback 1: URL already has a token (valid signed URL)
       if (urlToUse.startsWith('http') && urlToUse.includes('token=')) {
         console.log('[Preview] Using existing signed URL as fallback');
         setSignedUrl(urlToUse);
-      } else if (urlToUse.startsWith('http')) {
-        // Try using the URL directly (might be public)
-        console.log('[Preview] Using HTTP URL directly');
-        setSignedUrl(urlToUse);
-      } else {
-        console.error('[Preview] Could not generate preview URL for:', urlToUse);
-        setUrlError('Could not generate preview URL');
+        setIsGeneratingUrl(false);
+        setIsLoading(false);
+        return;
       }
+      
+      // Fallback 2: Try using the HTTP URL directly (might be public)
+      if (urlToUse.startsWith('http')) {
+        console.log('[Preview] Using HTTP URL directly as last resort');
+        setSignedUrl(urlToUse);
+        setIsGeneratingUrl(false);
+        setIsLoading(false);
+        return;
+      }
+      
+      // Nothing worked
+      console.error('[Preview] Could not generate preview URL for:', urlToUse);
+      setUrlError('Could not generate preview URL. Try using "Open Document" button.');
     } catch (err) {
       console.error('[Preview] Error generating signed URL:', err);
       // Fall back to original URL on any error
@@ -355,11 +402,11 @@ export default function EnhancedMaterialPreview({
       <span className="text-sm text-muted-foreground text-center mb-4">
         {urlError || 'The preview file is not ready yet.'}
       </span>
-      {/* Always show "Open Document" fallback button */}
+      {/* Always show "Open Document" fallback button - use handleOpenDocument for proper URL generation */}
       {material.file_url && (
         <Button 
           variant="default"
-          onClick={() => window.open(material.file_url, '_blank')}
+          onClick={handleOpenDocument}
         >
           <ExternalLink className="w-4 h-4 mr-2" />
           Open Document
