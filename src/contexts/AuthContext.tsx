@@ -43,17 +43,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const [userRoles, setUserRoles] = useState<string[]>([]);
 
-  // Sync OAuth user verification status to profiles table
+  // Sync OAuth user verification status and full_name to profiles table
   const syncOAuthVerification = async (authUser: User) => {
     const provider = authUser.app_metadata?.provider;
     const isOAuthUser = (provider && provider !== 'email') || 
       authUser.identities?.some((identity: any) => identity.provider && identity.provider !== 'email');
     
     if (isOAuthUser) {
-      // Auto-mark OAuth users as email verified in profiles table
+      // Get OAuth full_name from metadata
+      const oauthFullName = authUser.user_metadata?.full_name || 
+                            authUser.user_metadata?.name ||
+                            null;
+      
+      // First check if profile exists and has a valid full_name
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', authUser.id)
+        .maybeSingle();
+      
+      // Build update payload
+      const updatePayload: Record<string, unknown> = { 
+        email_verified: true 
+      };
+      
+      // Only update full_name if:
+      // 1. We have a valid OAuth name AND
+      // 2. Current profile has no name, a placeholder name, or no profile exists
+      const currentName = existingProfile?.full_name;
+      const needsNameUpdate = oauthFullName && (
+        !currentName || 
+        currentName === 'User' || 
+        currentName === authUser.email?.split('@')[0] ||
+        currentName.toLowerCase() === 'unknown'
+      );
+      
+      if (needsNameUpdate) {
+        updatePayload.full_name = oauthFullName;
+      }
+      
+      // Auto-mark OAuth users as email verified and update name if needed
       await supabase
         .from('profiles')
-        .update({ email_verified: true })
+        .update(updatePayload)
         .eq('id', authUser.id);
     }
   };
