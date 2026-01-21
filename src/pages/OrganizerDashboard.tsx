@@ -113,9 +113,33 @@ const OrganizerDashboard = () => {
     enabled: !!selectedEvent,
   });
 
-  // Calculate stats
+  // Calculate stats - use direct count from registrations query for selected event accuracy
+  // For overview, we fetch actual counts from database to avoid stale registrations_count
+  const { data: actualTotalRegistrations } = useQuery({
+    queryKey: ["organizer-total-registrations", user?.id, eventIds],
+    queryFn: async () => {
+      if (!eventIds.length) return 0;
+      
+      // Fetch actual registration count from event_registrations table
+      const { count, error } = await supabase
+        .from("event_registrations")
+        .select("id", { count: "exact", head: true })
+        .in("event_id", eventIds);
+      
+      if (error) {
+        console.error("Error fetching registration count:", error);
+        return 0;
+      }
+      
+      return count || 0;
+    },
+    enabled: !!user && eventIds.length > 0,
+    staleTime: 10000, // Refresh every 10 seconds
+  });
+
   const totalEvents = events?.length || 0;
-  const totalRegistrations = events?.reduce((sum, e) => sum + (e.registrations_count || 0), 0) || 0;
+  // Use actual count from database query, fallback to sum of events for initial load
+  const totalRegistrations = actualTotalRegistrations ?? (events?.reduce((sum, e) => sum + (e.registrations_count || 0), 0) || 0);
   const pendingCount = registrations?.filter((r: RegistrationWithProfile) => r.payment_status === "pending").length || 0;
   const approvedCount = registrations?.filter((r: RegistrationWithProfile) => r.payment_status === "approved").length || 0;
 

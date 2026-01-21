@@ -233,7 +233,8 @@ export default function EnhancedMaterialPreview({
           console.log('[Preview] Successfully generated signed URL');
           setSignedUrl(data.signedUrl);
           setIsGeneratingUrl(false);
-          setIsLoading(false); // Mark as not loading for images
+          // Keep isLoading true - will be set to false by content load handlers
+          // For PDFs: handleIframeLoad, For images: onLoad
           return;
         } else {
           console.error('[Preview] Failed to generate signed URL:', error?.message || error);
@@ -246,7 +247,7 @@ export default function EnhancedMaterialPreview({
         console.log('[Preview] Using existing signed URL as fallback');
         setSignedUrl(urlToUse);
         setIsGeneratingUrl(false);
-        setIsLoading(false);
+        // Keep isLoading true for content handlers
         return;
       }
       
@@ -255,13 +256,14 @@ export default function EnhancedMaterialPreview({
         console.log('[Preview] Using HTTP URL directly as last resort');
         setSignedUrl(urlToUse);
         setIsGeneratingUrl(false);
-        setIsLoading(false);
+        // Keep isLoading true for content handlers
         return;
       }
       
-      // Nothing worked
+      // Nothing worked - set error state
       console.error('[Preview] Could not generate preview URL for:', urlToUse);
       setUrlError('Could not generate preview URL. Try using "Open Document" button.');
+      setIsLoading(false);
     } catch (err) {
       console.error('[Preview] Error generating signed URL:', err);
       // Fall back to original URL on any error
@@ -269,6 +271,7 @@ export default function EnhancedMaterialPreview({
         setSignedUrl(urlToUse);
       } else {
         setUrlError('Could not generate preview URL');
+        setIsLoading(false);
       }
     } finally {
       setIsGeneratingUrl(false);
@@ -571,8 +574,9 @@ export default function EnhancedMaterialPreview({
         
         {/* Image preview container */}
         <div className="relative w-full min-h-[300px] sm:min-h-[500px] bg-muted rounded-lg overflow-hidden border border-border flex items-center justify-center">
-          {isLoading && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 z-10">
+          {/* Show loading state while image is loading */}
+          {!previewError && (
+            <div className={`absolute inset-0 flex flex-col items-center justify-center bg-background/80 z-10 transition-opacity duration-300 ${isLoading ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
               <Loader2 className="w-8 h-8 animate-spin text-primary mb-2" />
               <span className="text-sm text-muted-foreground">Loading image...</span>
             </div>
@@ -591,7 +595,10 @@ export default function EnhancedMaterialPreview({
               src={signedUrl}
               alt={material.title}
               className="max-w-full max-h-[600px] object-contain"
-              onLoad={() => setIsLoading(false)}
+              onLoad={() => {
+                setIsLoading(false);
+                setPreviewError(false);
+              }}
               onError={() => {
                 setIsLoading(false);
                 setPreviewError(true);

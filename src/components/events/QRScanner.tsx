@@ -56,6 +56,43 @@ export default function QRScanner({ onScan, eventId }: QRScannerProps) {
     lastScannedRef.current = null;
     
     try {
+      // First, explicitly request camera permission to avoid false "Permission Failed" states
+      // This ensures we get a proper permission prompt rather than silent failures
+      let stream: MediaStream | null = null;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            facingMode: { ideal: 'environment' },
+            // Request autofocus capabilities upfront
+            // @ts-ignore - advanced constraints
+            focusMode: { ideal: 'continuous' }
+          } 
+        });
+        console.log('[QRScanner] Camera permission granted via getUserMedia');
+        
+        // Stop this stream - html5-qrcode will create its own
+        stream.getTracks().forEach(track => track.stop());
+      } catch (permErr: any) {
+        // Handle specific permission errors
+        if (permErr.name === 'NotAllowedError' || permErr.name === 'PermissionDeniedError') {
+          throw new Error('Camera permission denied. Please allow camera access in your browser settings.');
+        }
+        if (permErr.name === 'NotFoundError' || permErr.name === 'DevicesNotFoundError') {
+          throw new Error('No camera found on this device');
+        }
+        // Other errors (like OverconstrainedError) - try without focus constraint
+        console.log('[QRScanner] Retrying without focus constraint:', permErr.message);
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+          stream.getTracks().forEach(track => track.stop());
+        } catch (retryErr: any) {
+          if (retryErr.name === 'NotAllowedError' || retryErr.name === 'PermissionDeniedError') {
+            throw new Error('Camera permission denied. Please allow camera access in your browser settings.');
+          }
+          throw retryErr;
+        }
+      }
+
       // Create scanner instance with optimized settings
       const scanner = new Html5Qrcode('qr-reader', {
         verbose: false,
@@ -75,20 +112,18 @@ export default function QRScanner({ onScan, eventId }: QRScannerProps) {
         d.label.toLowerCase().includes('rear') ||
         d.label.toLowerCase().includes('environment')
       );
-      const cameraId = backCamera?.id || devices[0].id;
-
+      
       // Use facingMode constraint for better camera selection and autofocus
-      // This provides better autofocus support on mobile devices
       const cameraConfig = backCamera 
         ? { facingMode: { ideal: 'environment' } }
-        : cameraId;
+        : devices[0].id;
 
       // Start with optimized settings for better autofocus and scan reliability
       await scanner.start(
         cameraConfig,
         {
-          fps: 10, // Lower FPS = more processing time per frame = better detection
-          qrbox: { width: 280, height: 280 }, // Slightly larger scan area
+          fps: 15, // Balanced FPS for detection speed and reliability
+          qrbox: { width: 280, height: 280 },
           aspectRatio: 1,
           disableFlip: false,
         },
@@ -133,8 +168,8 @@ export default function QRScanner({ onScan, eventId }: QRScannerProps) {
       try {
         const videoElement = document.querySelector('#qr-reader video') as HTMLVideoElement;
         if (videoElement && videoElement.srcObject) {
-          const stream = videoElement.srcObject as MediaStream;
-          const track = stream.getVideoTracks()[0];
+          const videoStream = videoElement.srcObject as MediaStream;
+          const track = videoStream.getVideoTracks()[0];
           if (track) {
             const capabilities = track.getCapabilities?.() as MediaTrackCapabilities & { focusMode?: string[] };
             if (capabilities?.focusMode?.includes('continuous')) {
@@ -143,20 +178,39 @@ export default function QRScanner({ onScan, eventId }: QRScannerProps) {
                 focusMode: 'continuous'
               });
               console.log('[QRScanner] Continuous autofocus enabled');
+            } else if (capabilities?.focusMode?.includes('auto')) {
+              // Fallback to auto focus mode if continuous not available
+              await track.applyConstraints({
+                // @ts-ignore
+                focusMode: 'auto'
+              });
+              console.log('[QRScanner] Auto focus mode enabled');
             } else {
-              console.log('[QRScanner] Continuous autofocus not supported, using default');
+              console.log('[QRScanner] No focus mode available, using device default');
             }
           }
         }
       } catch (focusErr) {
         // Autofocus enhancement failed - scanner will still work with default focus
-        console.log('[QRScanner] Could not set autofocus mode:', focusErr);
+        console.log('[QRScanner] Could not set focus mode:', focusErr);
       }
 
       setIsScanning(true);
     } catch (err: any) {
       console.error('Failed to start scanner:', err);
-      setError(err.message || 'Failed to access camera. Please ensure camera permissions are granted.');
+      
+      // Provide more specific error messages
+      let errorMessage = err.message || 'Failed to access camera';
+      
+      if (errorMessage.includes('Permission') || errorMessage.includes('denied')) {
+        errorMessage = 'Camera permission denied. Please allow camera access and try again.';
+      } else if (errorMessage.includes('not found') || errorMessage.includes('No camera')) {
+        errorMessage = 'No camera found on this device.';
+      } else if (errorMessage.includes('in use') || errorMessage.includes('busy')) {
+        errorMessage = 'Camera is being used by another app. Please close other camera apps and try again.';
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsStarting(false);
     }
