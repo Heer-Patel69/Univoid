@@ -212,28 +212,48 @@ export default function EnhancedMaterialPreview({
     }
   };
 
-  // Skeleton component for loading state
+  // Skeleton component for loading state - includes fallback Open Document button
   const renderLoadingSkeleton = () => (
-    <div className="aspect-[3/4] min-h-[500px] bg-muted rounded-lg overflow-hidden border border-border p-6 space-y-4">
-      <div className="flex items-center justify-center mb-4">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-      <Skeleton className="h-4 w-3/4 mx-auto" />
-      <Skeleton className="h-4 w-1/2 mx-auto" />
-      <div className="space-y-3 mt-8">
-        <Skeleton className="h-3 w-full" />
-        <Skeleton className="h-3 w-full" />
-        <Skeleton className="h-3 w-5/6" />
-        <Skeleton className="h-3 w-full" />
-        <Skeleton className="h-3 w-4/5" />
-      </div>
-      <div className="space-y-3 mt-6">
-        <Skeleton className="h-3 w-full" />
-        <Skeleton className="h-3 w-full" />
-        <Skeleton className="h-3 w-3/4" />
-      </div>
-      <div className="text-center mt-6">
-        <span className="text-sm text-muted-foreground">Preparing preview...</span>
+    <div className="space-y-3">
+      {/* Always show Open Document fallback even while loading */}
+      {material?.file_url && (
+        <div className="flex items-center justify-between gap-2 p-3 bg-muted/50 rounded-lg border border-border">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <FileText className="w-4 h-4" />
+            <span>Can't wait? Open directly</span>
+          </div>
+          <Button 
+            variant="default"
+            size="sm"
+            onClick={() => window.open(material.file_url, '_blank')}
+          >
+            <ExternalLink className="w-4 h-4 mr-2" />
+            Open Document
+          </Button>
+        </div>
+      )}
+      
+      <div className="aspect-[3/4] min-h-[500px] bg-muted rounded-lg overflow-hidden border border-border p-6 space-y-4">
+        <div className="flex items-center justify-center mb-4">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+        <Skeleton className="h-4 w-3/4 mx-auto" />
+        <Skeleton className="h-4 w-1/2 mx-auto" />
+        <div className="space-y-3 mt-8">
+          <Skeleton className="h-3 w-full" />
+          <Skeleton className="h-3 w-full" />
+          <Skeleton className="h-3 w-5/6" />
+          <Skeleton className="h-3 w-full" />
+          <Skeleton className="h-3 w-4/5" />
+        </div>
+        <div className="space-y-3 mt-6">
+          <Skeleton className="h-3 w-full" />
+          <Skeleton className="h-3 w-full" />
+          <Skeleton className="h-3 w-3/4" />
+        </div>
+        <div className="text-center mt-6">
+          <span className="text-sm text-muted-foreground">Preparing preview...</span>
+        </div>
       </div>
     </div>
   );
