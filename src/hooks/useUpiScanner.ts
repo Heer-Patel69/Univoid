@@ -44,9 +44,7 @@ function parseUpiIdFromContent(data: string): string | null {
 // Client-side QR scanning from file
 async function scanQRFromFile(file: File): Promise<string | null> {
   return new Promise((resolve) => {
-    const html5QrCode = new Html5Qrcode("qr-reader-hidden", { verbose: false });
-    
-    // Create temporary hidden element
+    // Create temporary hidden element before instantiating Html5Qrcode
     let tempDiv = document.getElementById("qr-reader-hidden");
     if (!tempDiv) {
       tempDiv = document.createElement("div");
@@ -55,14 +53,18 @@ async function scanQRFromFile(file: File): Promise<string | null> {
       document.body.appendChild(tempDiv);
     }
 
+    const html5QrCode = new Html5Qrcode("qr-reader-hidden", { verbose: false });
+
     html5QrCode
       .scanFile(file, true)
       .then((decodedText) => {
         console.log("Client QR scan success:", decodedText);
+        html5QrCode.clear().catch(() => {}); // Clean up instance
         resolve(decodedText);
       })
       .catch((err) => {
         console.log("Client QR scan failed:", err);
+        html5QrCode.clear().catch(() => {}); // Clean up instance
         resolve(null);
       });
   });

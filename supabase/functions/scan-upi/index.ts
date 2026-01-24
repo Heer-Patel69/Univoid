@@ -45,7 +45,7 @@ function parseUpiIdFromContent(data: string): string | null {
 // Try multiple QR decode services
 async function decodeQRFromUrl(imageUrl: string): Promise<string | null> {
   const services = [
-    // Primary: goqr.me API
+    // Primary: api.qrserver.com (ZXing-based)
     `https://api.qrserver.com/v1/read-qr-code/?fileurl=${encodeURIComponent(imageUrl)}`,
   ];
 
