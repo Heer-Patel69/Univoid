@@ -24,17 +24,18 @@ export default function QRScanner({ onScan, eventId }: QRScannerProps) {
   const [showManualInput, setShowManualInput] = useState(false);
   const [manualTicketId, setManualTicketId] = useState('');
   const [isManualSubmitting, setIsManualSubmitting] = useState(false);
+  const [needsUserGesture, setNeedsUserGesture] = useState(true);
   
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const isProcessingRef = useRef(false);
   const lastScannedRef = useRef<string | null>(null);
   const scanCooldownRef = useRef<NodeJS.Timeout | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
-  // Check if browser supports camera
+  // Check if browser supports camera - be more permissive
   const isCameraSupported = typeof navigator !== 'undefined' && 
-    typeof navigator.mediaDevices !== 'undefined' && 
-    typeof navigator.mediaDevices.getUserMedia === 'function';
+    'mediaDevices' in navigator;
 
   // Check if page is served over HTTPS (required for camera on mobile)
   const isSecureContext = typeof window !== 'undefined' && 
@@ -46,6 +47,15 @@ export default function QRScanner({ onScan, eventId }: QRScannerProps) {
       scanCooldownRef.current = null;
     }
     
+    // Stop any active media stream
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => {
+        track.stop();
+        console.log('[QRScanner] Stopped track:', track.label);
+      });
+      streamRef.current = null;
+    }
+    
     if (scannerRef.current) {
       try {
         const state = scannerRef.current.getState();
@@ -54,7 +64,7 @@ export default function QRScanner({ onScan, eventId }: QRScannerProps) {
         }
         scannerRef.current.clear();
       } catch (err) {
-        console.error('[QRScanner] Error stopping scanner:', err);
+        console.log('[QRScanner] Cleanup warning:', err);
       }
       scannerRef.current = null;
     }
@@ -63,121 +73,138 @@ export default function QRScanner({ onScan, eventId }: QRScannerProps) {
     setStatusMessage('');
     isProcessingRef.current = false;
     lastScannedRef.current = null;
+    setNeedsUserGesture(true);
   }, []);
 
   const getCameraErrorInfo = (error: any): { type: CameraError; message: string } => {
     const errorName = error?.name || '';
-    const errorMessage = error?.message || '';
+    const errorMessage = (error?.message || '').toLowerCase();
     
-    if (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError' || errorMessage.includes('denied')) {
+    console.log('[QRScanner] Error details:', { name: errorName, message: errorMessage });
+    
+    if (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError' || errorMessage.includes('denied') || errorMessage.includes('permission')) {
       return {
         type: 'permission_denied',
-        message: 'Camera permission denied. Please allow camera access in your browser settings and reload the page.'
+        message: 'Camera permission was denied. Please tap the camera icon in your browser address bar to allow access, then reload the page.'
       };
     }
-    if (errorName === 'NotFoundError' || errorName === 'DevicesNotFoundError' || errorMessage.includes('not found')) {
+    if (errorName === 'NotFoundError' || errorName === 'DevicesNotFoundError' || errorMessage.includes('not found') || errorMessage.includes('no video')) {
       return {
         type: 'not_found',
-        message: 'No camera found on this device. Please use manual ticket entry instead.'
+        message: 'No camera found. Please ensure your device has a camera and try again.'
       };
     }
-    if (errorName === 'NotReadableError' || errorName === 'TrackStartError' || errorMessage.includes('busy') || errorMessage.includes('in use')) {
+    if (errorName === 'NotReadableError' || errorName === 'TrackStartError' || errorMessage.includes('busy') || errorMessage.includes('in use') || errorMessage.includes('could not start')) {
       return {
         type: 'busy',
-        message: 'Camera is busy or in use by another app. Please close other camera apps and try again.'
+        message: 'Camera is in use by another app. Close other apps using the camera (like video calls) and try again.'
+      };
+    }
+    if (errorName === 'OverconstrainedError') {
+      return {
+        type: 'not_supported',
+        message: 'Camera settings not supported. Trying with basic settings...'
       };
     }
     if (errorName === 'NotSupportedError' || errorName === 'TypeError') {
       return {
         type: 'not_supported',
-        message: 'Camera is not supported in this browser. Please use manual ticket entry.'
+        message: 'Camera not supported in this browser. Please try Chrome, Safari, or Firefox.'
+      };
+    }
+    if (errorName === 'AbortError') {
+      return {
+        type: 'unknown',
+        message: 'Camera access was interrupted. Please try again.'
       };
     }
     return {
       type: 'unknown',
-      message: errorMessage || 'Failed to access camera. Please try manual ticket entry.'
+      message: `Camera error: ${errorMessage || 'Unknown error'}. Try using Manual Entry below.`
     };
   };
 
   const startScanner = useCallback(async () => {
-    if (!containerRef.current) return;
+    if (!containerRef.current) {
+      console.error('[QRScanner] Container not ready');
+      return;
+    }
+    
+    // Clear previous errors
+    setCameraError(null);
+    setErrorDetails('');
+    setNeedsUserGesture(false);
     
     // Pre-flight checks
     if (!isSecureContext) {
       setCameraError('not_supported');
-      setErrorDetails('Camera requires a secure connection (HTTPS). Please use manual entry.');
+      setErrorDetails('Camera requires HTTPS. Please use manual entry.');
       return;
     }
 
     if (!isCameraSupported) {
       setCameraError('not_supported');
-      setErrorDetails('Camera is not supported in this browser. Please use Chrome, Safari, or Firefox.');
+      setErrorDetails('Your browser does not support camera access. Please use Chrome, Safari, or Firefox.');
       return;
     }
     
     setIsStarting(true);
-    setCameraError(null);
-    setErrorDetails('');
     isProcessingRef.current = false;
     lastScannedRef.current = null;
     
     try {
-      // Step 1: Request camera permission with minimal constraints
-      console.log('[QRScanner] Requesting camera access...');
-      let stream: MediaStream;
+      // STEP 1: Request camera with simple constraints first
+      console.log('[QRScanner] Step 1: Requesting camera permission...');
       
-      try {
-        // Try with environment camera first (back camera on mobile)
-        stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: 'environment' }
-        });
-      } catch (envErr) {
-        console.log('[QRScanner] Environment camera failed, trying any camera...');
-        // Fallback to any camera
-        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      let stream: MediaStream | null = null;
+      const attempts = [
+        { video: true },  // Most basic - should work everywhere
+        { video: { facingMode: 'environment' } },  // Back camera
+        { video: { facingMode: 'user' } }  // Front camera as last resort
+      ];
+      
+      for (const constraints of attempts) {
+        try {
+          console.log('[QRScanner] Trying constraints:', JSON.stringify(constraints));
+          stream = await navigator.mediaDevices.getUserMedia(constraints);
+          console.log('[QRScanner] Got stream with tracks:', stream.getTracks().map(t => t.label));
+          break;
+        } catch (e: any) {
+          console.log('[QRScanner] Constraint failed:', e.name);
+          // If permission denied, don't try other constraints
+          if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
+            throw e;
+          }
+        }
       }
       
-      console.log('[QRScanner] Camera access granted');
-      // Release the test stream
+      if (!stream) {
+        throw new Error('Could not access any camera');
+      }
+      
+      // Keep reference to stop later
+      streamRef.current = stream;
+      
+      // Release this test stream before Html5Qrcode takes over
       stream.getTracks().forEach(track => track.stop());
-
-      // Step 2: Create scanner instance
+      streamRef.current = null;
+      
+      console.log('[QRScanner] Step 2: Creating scanner instance...');
+      
+      // STEP 2: Create scanner instance
       const scanner = new Html5Qrcode('qr-reader', {
         verbose: false,
         formatsToSupport: [0], // QR_CODE only
       });
       scannerRef.current = scanner;
 
-      // Step 3: Get available cameras
-      let devices: { id: string; label: string }[] = [];
-      try {
-        devices = await Html5Qrcode.getCameras();
-        console.log('[QRScanner] Found cameras:', devices.length);
-      } catch (cameraListErr) {
-        console.log('[QRScanner] Could not enumerate cameras');
-      }
-
-      // Step 4: Determine camera configuration
-      let cameraConfig: string | { facingMode: string | { ideal: string } };
+      // STEP 3: Start scanner with permissive config
+      console.log('[QRScanner] Step 3: Starting scanner...');
       
-      if (devices.length > 0) {
-        const backCamera = devices.find(d => 
-          d.label.toLowerCase().includes('back') || 
-          d.label.toLowerCase().includes('rear') ||
-          d.label.toLowerCase().includes('environment')
-        );
-        cameraConfig = backCamera ? { facingMode: { ideal: 'environment' } } : devices[0].id;
-      } else {
-        cameraConfig = { facingMode: 'environment' };
-      }
-
-      console.log('[QRScanner] Starting with config:', cameraConfig);
-
-      // Step 5: Start scanner
       await scanner.start(
-        cameraConfig,
+        { facingMode: 'environment' },
         {
-          fps: 12,
+          fps: 10,
           qrbox: { width: 250, height: 250 },
           aspectRatio: 1,
           disableFlip: false,
@@ -213,7 +240,7 @@ export default function QRScanner({ onScan, eventId }: QRScannerProps) {
         () => {} // Ignore scan errors
       );
 
-      // Step 6: Try to enable continuous autofocus
+      // Try to enable continuous autofocus
       try {
         const videoElement = document.querySelector('#qr-reader video') as HTMLVideoElement;
         if (videoElement?.srcObject) {
@@ -223,19 +250,27 @@ export default function QRScanner({ onScan, eventId }: QRScannerProps) {
           
           if (capabilities?.focusMode?.includes('continuous')) {
             await track.applyConstraints({ focusMode: 'continuous' } as any);
-            console.log('[QRScanner] Continuous autofocus enabled');
+            console.log('[QRScanner] Autofocus enabled');
           }
         }
       } catch (focusErr) {
-        console.log('[QRScanner] Could not set focus mode');
+        // Ignore focus errors - non-critical
       }
 
+      console.log('[QRScanner] Scanner started successfully!');
       setIsScanning(true);
+      
     } catch (err: any) {
       console.error('[QRScanner] Failed to start:', err);
       const errorInfo = getCameraErrorInfo(err);
       setCameraError(errorInfo.type);
       setErrorDetails(errorInfo.message);
+      
+      // Cleanup on error
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(t => t.stop());
+        streamRef.current = null;
+      }
     } finally {
       setIsStarting(false);
     }
@@ -296,8 +331,13 @@ export default function QRScanner({ onScan, eventId }: QRScannerProps) {
       {/* Scanner viewport */}
       <div 
         ref={containerRef}
-        className="relative bg-black rounded-xl overflow-hidden"
+        className="relative bg-black rounded-xl overflow-hidden cursor-pointer"
         style={{ minHeight: isScanning ? '340px' : '200px' }}
+        onClick={() => {
+          if (!isScanning && !isStarting && needsUserGesture) {
+            startScanner();
+          }
+        }}
       >
         <div id="qr-reader" className="w-full" />
         
@@ -314,7 +354,7 @@ export default function QRScanner({ onScan, eventId }: QRScannerProps) {
           </div>
         )}
         
-        {/* Non-scanning state */}
+        {/* Non-scanning state - tap to start */}
         {!isScanning && (
           <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center bg-muted/50">
             {cameraError ? (
@@ -326,10 +366,11 @@ export default function QRScanner({ onScan, eventId }: QRScannerProps) {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       setCameraError(null);
                       setErrorDetails('');
-                      startScanner();
+                      setNeedsUserGesture(true);
                     }}
                     disabled={isStarting}
                     className="gap-1"
@@ -340,7 +381,10 @@ export default function QRScanner({ onScan, eventId }: QRScannerProps) {
                   <Button
                     variant="secondary"
                     size="sm"
-                    onClick={() => setShowManualInput(true)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowManualInput(true);
+                    }}
                     className="gap-1"
                   >
                     <Keyboard className="w-4 h-4" />
@@ -351,17 +395,19 @@ export default function QRScanner({ onScan, eventId }: QRScannerProps) {
             ) : isStarting ? (
               <>
                 <Loader2 className="w-12 h-12 text-primary animate-spin mb-3" />
-                <p className="text-sm text-muted-foreground">Initializing camera...</p>
-                <p className="text-xs text-muted-foreground mt-1">Please allow camera access if prompted</p>
+                <p className="text-sm text-muted-foreground">Starting camera...</p>
+                <p className="text-xs text-muted-foreground mt-1">Please allow camera access when prompted</p>
               </>
             ) : (
               <>
-                <Camera className="w-12 h-12 text-muted-foreground mb-3" />
-                <p className="text-sm text-muted-foreground mb-1">
-                  Tap to start camera
+                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-3 animate-pulse">
+                  <Camera className="w-10 h-10 text-primary" />
+                </div>
+                <p className="text-base font-medium text-foreground mb-1">
+                  Tap here to start camera
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Point at QR code to scan
+                  Position QR code within the frame
                 </p>
               </>
             )}
@@ -471,8 +517,8 @@ export default function QRScanner({ onScan, eventId }: QRScannerProps) {
       {/* Instructions */}
       {isScanning && scanStatus === 'idle' && (
         <div className="text-center text-xs text-muted-foreground space-y-1 animate-pulse">
-          <p className="font-medium">Point camera at QR code</p>
-          <p>Detection is automatic</p>
+          <p className="font-medium">Camera is active</p>
+          <p>Point at QR code - detection is automatic</p>
         </div>
       )}
     </div>
