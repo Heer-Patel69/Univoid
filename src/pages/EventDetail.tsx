@@ -15,6 +15,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchEventById, checkUserRegistration } from "@/services/eventsService";
+import { fetchEventFormFields } from "@/services/eventFormService";
 import { useRegistration } from "@/hooks/useRegistration";
 import { useRealtimeCapacity } from "@/hooks/useRealtimeCapacity";
 import AuthModal from "@/components/auth/AuthModal";
@@ -93,6 +94,18 @@ const EventDetail = () => {
     queryFn: () => fetchEventUpsells(eventId!),
     enabled: !!eventId && !!event?.is_paid && !!upsellSettings?.upsell_enabled,
   });
+
+  // Fetch custom form fields to determine Quick Register availability
+  const { data: customFormFields = [] } = useQuery({
+    queryKey: ["event-form-fields", eventId],
+    queryFn: () => fetchEventFormFields(eventId!),
+    enabled: !!eventId,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  // Quick Register is only available if NO custom fields exist
+  const hasCustomFields = customFormFields.length > 0;
+  const canShowQuickRegister = !hasCustomFields && (event as any)?.enable_quick_register !== false;
 
   // Calculate final price with upsells
   const groupOffers = useMemo(() => 
@@ -446,8 +459,8 @@ const EventDetail = () => {
 
                 {!existingRegistration && (
                 <div className="space-y-3">
-                  {/* Primary CTA: Quick Register - only show if enabled */}
-                  {!isEventPast && !isFullNow && (event as any).enable_quick_register !== false && (
+                  {/* Primary CTA: Quick Register - only show if NO custom fields exist */}
+                  {!isEventPast && !isFullNow && canShowQuickRegister && (
                     <QuickRegisterButton 
                       eventId={eventId!} 
                       isPast={isEventPast} 
@@ -467,12 +480,12 @@ const EventDetail = () => {
                   }}>
                     <DialogTrigger asChild>
                       <Button 
-                        variant="outline" 
+                        variant={canShowQuickRegister ? "outline" : "default"}
                         className="w-full rounded-full" 
                         disabled={isEventPast || isFullNow || isSubmitting} 
                         onClick={() => !user && setShowAuthModal(true)}
                       >
-                        {!user ? "Already have an account? Login" : isEventPast ? "Event Ended" : isFullNow ? "Event Full" : "Register with full details"}
+                        {!user ? "Already have an account? Login" : isEventPast ? "Event Ended" : isFullNow ? "Event Full" : hasCustomFields ? "Register Now" : "Register with full details"}
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="max-w-md max-h-[90vh]">

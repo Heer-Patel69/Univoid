@@ -1,8 +1,9 @@
-import { useState, useCallback, useRef } from "react";
-import { Eye, FileText } from "lucide-react";
+import { useState, useCallback } from "react";
+import { Eye, FileText, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 import FormFieldItem from "./FormFieldItem";
 import FieldTypePicker from "./FieldTypePicker";
@@ -112,22 +113,22 @@ const FormBuilder = ({ fields, onChange, eventTitle }: FormBuilderProps) => {
   }, []);
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5" />
-              Registration Form Builder
+    <Card className="w-full overflow-hidden">
+      <CardHeader className="pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="min-w-0">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <FileText className="w-5 h-5 shrink-0" />
+              <span className="truncate">Registration Form Builder</span>
             </CardTitle>
-            <CardDescription>
-              Create custom fields for your event registration form
+            <CardDescription className="mt-1">
+              Create custom fields for event registration
             </CardDescription>
           </div>
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "edit" | "preview")}>
-            <TabsList>
-              <TabsTrigger value="edit">Edit</TabsTrigger>
-              <TabsTrigger value="preview">
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "edit" | "preview")} className="shrink-0">
+            <TabsList className="h-9">
+              <TabsTrigger value="edit" className="text-sm px-3">Edit</TabsTrigger>
+              <TabsTrigger value="preview" className="text-sm px-3">
                 <Eye className="w-4 h-4 mr-1" />
                 Preview
               </TabsTrigger>
@@ -135,21 +136,38 @@ const FormBuilder = ({ fields, onChange, eventTitle }: FormBuilderProps) => {
           </Tabs>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-3 sm:px-6 pb-4">
         {activeTab === "edit" ? (
           <div className="space-y-4">
+            {/* Info about Quick Register behavior */}
+            {fields.length > 0 && (
+              <Alert className="bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800">
+                <AlertDescription className="text-amber-800 dark:text-amber-200 text-sm">
+                  <strong>Note:</strong> Adding custom fields will disable "Quick Register" for this event. 
+                  Attendees will need to fill out the complete form.
+                </AlertDescription>
+              </Alert>
+            )}
+
             {/* Field List */}
             {fields.length === 0 ? (
-              <div className="text-center py-12 border-2 border-dashed rounded-lg">
-                <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="font-medium mb-2">No custom fields yet</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Add fields to collect additional information from registrants
+              <div className="text-center py-8 sm:py-12 border-2 border-dashed rounded-xl">
+                <FileText className="w-10 h-10 sm:w-12 sm:h-12 mx-auto text-muted-foreground mb-3" />
+                <h3 className="font-medium mb-2 text-sm sm:text-base">No custom fields yet</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground mb-4 px-4">
+                  Add fields to collect additional information
                 </p>
                 <FieldTypePicker onSelect={addField} />
               </div>
             ) : (
-              <div className="max-h-[500px] overflow-y-auto pr-4">
+              <div className="space-y-3">
+                {/* Drag hint for mobile */}
+                <div className="flex items-center gap-2 text-xs text-muted-foreground px-1">
+                  <GripVertical className="w-4 h-4" />
+                  <span>Drag to reorder or use arrows</span>
+                </div>
+                
+                {/* Fields list - no max-height to prevent clipping */}
                 <div className="space-y-3">
                   {fields.map((field, index) => (
                     <FormFieldItem
@@ -183,9 +201,8 @@ const FormBuilder = ({ fields, onChange, eventTitle }: FormBuilderProps) => {
             )}
 
             {/* Info text */}
-            <p className="text-xs text-muted-foreground text-center">
-              Basic fields (Name, Email, College) are collected automatically. 
-              Add custom fields here for event-specific information.
+            <p className="text-xs text-muted-foreground text-center px-2">
+              Basic fields (Name, Email, College) are collected automatically.
             </p>
           </div>
         ) : (

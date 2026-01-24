@@ -140,14 +140,14 @@ const Events = () => {
   }, [events]);
 
   return (
-    <div className="pb-24 md:pb-8">
+    <div className="pb-24 md:pb-8 w-full overflow-x-hidden">
       <SEOHead
         title={seoData.title}
         description={seoData.description}
         url="/events"
         keywords={seoData.keywords}
       />
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-4 py-6 max-w-[1600px]">
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div>
