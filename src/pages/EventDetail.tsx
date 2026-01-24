@@ -320,7 +320,7 @@ const EventDetail = () => {
         structuredData={eventStructuredData}
         keywords={[event.category, event.event_type, "college event", "campus event", "student event"]}
       />
-      <div className="container mx-auto px-4 py-6 pb-24 md:pb-8">
+      <div className="container mx-auto px-4 py-6 pb-24 md:pb-8 max-w-6xl">
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
 
       <PageBreadcrumb 
@@ -330,21 +330,20 @@ const EventDetail = () => {
         ]} 
       />
 
-      <div className="grid lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6">
-          {/* Flyer - Respects poster_ratio from DB */}
+      {/* Desktop: Flyer left (fixed width), Info right. Mobile: Stacked */}
+      <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+        {/* Left column: Flyer - Fixed 4:5 container on desktop */}
+        <div className="w-full lg:w-[400px] xl:w-[450px] flex-shrink-0 space-y-6">
+          {/* Flyer - STRICT 4:5 aspect ratio container */}
           <div 
-            className="relative rounded-3xl overflow-hidden bg-muted"
-            style={{ 
-              aspectRatio: (event as any).poster_ratio === '1:1' ? '1/1' : 
-                           (event as any).poster_ratio === '16:9' ? '16/9' : '4/5'
-            }}
+            className="relative rounded-3xl overflow-hidden bg-muted w-full"
+            style={{ aspectRatio: '4/5' }}
           >
             {event.flyer_url ? (
               <img 
                 src={event.flyer_url} 
                 alt={event.title} 
-                className="w-full h-full object-contain" 
+                className="w-full h-full object-cover" 
                 loading="lazy" 
               />
             ) : (
@@ -352,7 +351,7 @@ const EventDetail = () => {
                 <Calendar className="w-24 h-24 text-primary/50" />
               </div>
             )}
-            <div className="absolute top-4 left-4 flex gap-2">
+            <div className="absolute top-4 left-4 flex gap-2 flex-wrap">
               <Badge>{event.category}</Badge>
               <Badge variant="outline" className="bg-background/80 backdrop-blur">{event.event_type}</Badge>
             </div>
@@ -361,33 +360,67 @@ const EventDetail = () => {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-start justify-between gap-4">
+          {/* Title and Share - Mobile shows here, Desktop in sidebar */}
+          <div className="lg:hidden">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <h1 className="font-display text-2xl md:text-3xl font-bold">{event.title}</h1>
+              <Button variant="outline" size="icon" onClick={handleShare}><Share2 className="w-4 h-4" /></Button>
+            </div>
+          </div>
+
+          {/* About section - Desktop shows under flyer */}
+          <div className="hidden lg:block">
+            {event.description && (
+              <Card>
+                <CardHeader><CardTitle>About this Event</CardTitle></CardHeader>
+                <CardContent>
+                  <div 
+                    className="prose prose-sm dark:prose-invert max-w-none" 
+                    dangerouslySetInnerHTML={{ 
+                      __html: DOMPurify.sanitize(event.description, {
+                        ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'ul', 'ol', 'li', 'strong', 'em', 'a', 'blockquote', 'code', 'pre'],
+                        ALLOWED_ATTR: ['href', 'title', 'target', 'rel'],
+                        ALLOW_DATA_ATTR: false
+                      })
+                    }} 
+                  />
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+
+        {/* Right column: Info Card + About (mobile) */}
+        <div className="flex-1 min-w-0 space-y-6">
+          {/* Title - Desktop only */}
+          <div className="hidden lg:flex flex-wrap items-start justify-between gap-4">
             <h1 className="font-display text-2xl md:text-3xl font-bold">{event.title}</h1>
             <Button variant="outline" size="icon" onClick={handleShare}><Share2 className="w-4 h-4" /></Button>
           </div>
 
-          {event.description && (
-            <Card>
-              <CardHeader><CardTitle>About this Event</CardTitle></CardHeader>
-              <CardContent>
-                <div 
-                  className="prose prose-sm dark:prose-invert max-w-none" 
-                  dangerouslySetInnerHTML={{ 
-                    __html: DOMPurify.sanitize(event.description, {
-                      ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'ul', 'ol', 'li', 'strong', 'em', 'a', 'blockquote', 'code', 'pre'],
-                      ALLOWED_ATTR: ['href', 'title', 'target', 'rel'],
-                      ALLOW_DATA_ATTR: false
-                    })
-                  }} 
-                />
-              </CardContent>
-            </Card>
-          )}
-        </div>
+          {/* About section - Mobile shows here */}
+          <div className="lg:hidden">
+            {event.description && (
+              <Card>
+                <CardHeader><CardTitle>About this Event</CardTitle></CardHeader>
+                <CardContent>
+                  <div 
+                    className="prose prose-sm dark:prose-invert max-w-none" 
+                    dangerouslySetInnerHTML={{ 
+                      __html: DOMPurify.sanitize(event.description, {
+                        ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'ul', 'ol', 'li', 'strong', 'em', 'a', 'blockquote', 'code', 'pre'],
+                        ALLOWED_ATTR: ['href', 'title', 'target', 'rel'],
+                        ALLOW_DATA_ATTR: false
+                      })
+                    }} 
+                  />
+                </CardContent>
+              </Card>
+            )}
+          </div>
 
-        {/* Sidebar */}
-        <div className="space-y-4">
-          <Card className="sticky top-20">
+          {/* Sidebar Info Card */}
+          <Card className="lg:sticky lg:top-20">
             <CardContent className="p-6 space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Price</span>
@@ -549,28 +582,51 @@ const EventDetail = () => {
                           {/* Step 3: Payment (after upsells) */}
                           {bookingStep === "payment" && (
                             <>
-                              {/* Price summary */}
+                              {/* Price summary with all discounts clearly shown */}
                               <Card className="bg-muted/50">
                                 <CardContent className="py-4 space-y-2">
+                                  {/* Original price if club discount applied */}
+                                  {selectedPrice !== null && selectedPrice < event.price && (
+                                    <div className="flex justify-between text-sm">
+                                      <span>Original Price ({groupSize} × ₹{event.price})</span>
+                                      <span className="line-through text-muted-foreground">₹{groupSize * event.price}</span>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Club member discount */}
+                                  {selectedPrice !== null && selectedPrice < event.price && (
+                                    <div className="flex justify-between text-sm text-green-600 font-medium">
+                                      <span>🎉 Club Member Discount</span>
+                                      <span>-₹{(event.price - selectedPrice) * groupSize}</span>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Tickets after discount */}
                                   <div className="flex justify-between text-sm">
                                     <span>Tickets ({groupSize} × ₹{selectedPrice !== null ? selectedPrice : event.price})</span>
                                     <span>₹{priceCalculation.baseTotal}</span>
                                   </div>
+                                  
+                                  {/* Group discount */}
                                   {priceCalculation.discounts > 0 && (
                                     <div className="flex justify-between text-sm text-green-600">
                                       <span>Group Discount</span>
                                       <span>-₹{priceCalculation.discounts}</span>
                                     </div>
                                   )}
+                                  
+                                  {/* Add-ons */}
                                   {priceCalculation.addonsTotal > 0 && (
                                     <div className="flex justify-between text-sm">
                                       <span>Add-ons</span>
                                       <span>+₹{priceCalculation.addonsTotal}</span>
                                     </div>
                                   )}
+                                  
+                                  {/* Final total */}
                                   <div className="flex justify-between font-bold text-lg pt-2 border-t">
-                                    <span>Total</span>
-                                    <span>₹{priceCalculation.finalTotal}</span>
+                                    <span>Total Payable</span>
+                                    <span className="text-primary">₹{priceCalculation.finalTotal}</span>
                                   </div>
                                 </CardContent>
                               </Card>
