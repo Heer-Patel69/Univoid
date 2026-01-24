@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Bell, Send, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import CollegeDataIngestion from './CollegeDataIngestion';
 
 interface SystemToolsTabProps {
   userId?: string;
@@ -235,6 +236,9 @@ export const SystemToolsTab = ({ userId }: SystemToolsTabProps) => {
           </div>
         </CardContent>
       </Card>
+
+      {/* College Data Ingestion */}
+      <CollegeDataIngestion />
     </div>
   );
 };

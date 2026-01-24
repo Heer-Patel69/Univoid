@@ -56,6 +56,7 @@ const EventCheckIn = lazy(() => import("@/pages/EventCheckIn"));
 const Settings = lazy(() => import("@/pages/Settings"));
 const MyBooks = lazy(() => import("@/pages/MyBooks"));
 const FastRegister = lazy(() => import("@/pages/FastRegister"));
+const Colleges = lazy(() => import("@/pages/Colleges"));
 
 // Preload critical pages after initial render
 const preloadCriticalPages = () => {
@@ -161,6 +162,9 @@ export const AnimatedRoutes = () => {
         } />
         <Route path="/about-us" element={
           <Suspense fallback={<TextSkeleton />}><AboutUs /></Suspense>
+        } />
+        <Route path="/colleges" element={
+          <Suspense fallback={<ListingPageSkeleton />}><Colleges /></Suspense>
         } />
       </Route>
 

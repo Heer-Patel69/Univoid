@@ -262,6 +262,39 @@ export type Database = {
         }
         Relationships: []
       }
+      colleges: {
+        Row: {
+          college_name: string
+          college_type: string | null
+          created_at: string
+          district: string
+          id: string
+          is_popular: boolean | null
+          state: string
+          university: string
+        }
+        Insert: {
+          college_name: string
+          college_type?: string | null
+          created_at?: string
+          district: string
+          id?: string
+          is_popular?: boolean | null
+          state: string
+          university: string
+        }
+        Update: {
+          college_name?: string
+          college_type?: string | null
+          created_at?: string
+          district?: string
+          id?: string
+          is_popular?: boolean | null
+          state?: string
+          university?: string
+        }
+        Relationships: []
+      }
       contact_messages: {
         Row: {
           created_at: string
@@ -2189,6 +2222,10 @@ export type Database = {
         Returns: boolean
       }
       cleanup_expired_otps: { Args: never; Returns: undefined }
+      count_colleges: {
+        Args: { p_district?: string; p_search?: string; p_state?: string }
+        Returns: number
+      }
       create_secure_ticket: {
         Args: {
           p_event_id: string
@@ -2288,6 +2325,18 @@ export type Database = {
           title: string
           updated_at: string
           views_count: number
+        }[]
+      }
+      get_college_districts: {
+        Args: { p_state: string }
+        Returns: {
+          district: string
+        }[]
+      }
+      get_college_states: {
+        Args: never
+        Returns: {
+          state: string
         }[]
       }
       get_contributor_name: { Args: { user_id: string }; Returns: string }
@@ -2398,6 +2447,24 @@ export type Database = {
           p_user_id: string
         }
         Returns: Json
+      }
+      search_colleges: {
+        Args: {
+          p_district?: string
+          p_limit?: number
+          p_offset?: number
+          p_search?: string
+          p_state?: string
+        }
+        Returns: {
+          college_name: string
+          college_type: string
+          district: string
+          id: string
+          is_popular: boolean
+          state: string
+          university: string
+        }[]
       }
       secure_check_in: {
         Args: {
