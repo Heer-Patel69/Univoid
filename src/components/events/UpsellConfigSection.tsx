@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -43,6 +43,23 @@ interface UpsellConfigSectionProps {
   isPaidEvent: boolean;
 }
 
+// Default form values
+const getDefaultFormData = () => ({
+  name: "",
+  description: "",
+  upsell_type: "addon" as DraftUpsell["upsell_type"],
+  price: 0,
+  discount_amount: 0,
+  min_quantity: 1,
+  max_quantity: 10,
+  group_size: 5,
+  is_active: true,
+  allow_custom_input: false,
+  custom_input_label: "",
+  custom_input_placeholder: "",
+  custom_input_max_length: 200,
+});
+
 export function UpsellConfigSection({
   upsells,
   onChange,
@@ -53,86 +70,99 @@ export function UpsellConfigSection({
   const { toast } = useToast();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingUpsell, setEditingUpsell] = useState<DraftUpsell | null>(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    upsell_type: "addon" as DraftUpsell["upsell_type"],
-    price: 0,
-    discount_amount: 0,
-    min_quantity: 1,
-    max_quantity: 10,
-    group_size: 5,
-    is_active: true,
-    allow_custom_input: false,
-    custom_input_label: "",
-    custom_input_placeholder: "",
-    custom_input_max_length: 200,
-  });
+  
+  // Use refs for inputs to prevent re-renders and keyboard closing
+  const nameRef = useRef<HTMLInputElement>(null);
+  const descRef = useRef<HTMLTextAreaElement>(null);
+  const priceRef = useRef<HTMLInputElement>(null);
+  const discountRef = useRef<HTMLInputElement>(null);
+  const groupSizeRef = useRef<HTMLInputElement>(null);
+  const minQtyRef = useRef<HTMLInputElement>(null);
+  const maxQtyRef = useRef<HTMLInputElement>(null);
+  const customLabelRef = useRef<HTMLInputElement>(null);
+  const customPlaceholderRef = useRef<HTMLInputElement>(null);
+  const customMaxLenRef = useRef<HTMLInputElement>(null);
+  
+  // Only these need state for conditional rendering
+  const [upsellType, setUpsellType] = useState<DraftUpsell["upsell_type"]>("addon");
+  const [isActive, setIsActive] = useState(true);
+  const [allowCustomInput, setAllowCustomInput] = useState(false);
 
-  const resetForm = () => {
-    setFormData({
-      name: "",
-      description: "",
-      upsell_type: "addon",
-      price: 0,
-      discount_amount: 0,
-      min_quantity: 1,
-      max_quantity: 10,
-      group_size: 5,
-      is_active: true,
-      allow_custom_input: false,
-      custom_input_label: "",
-      custom_input_placeholder: "",
-      custom_input_max_length: 200,
-    });
-  };
+  const resetForm = useCallback(() => {
+    if (nameRef.current) nameRef.current.value = "";
+    if (descRef.current) descRef.current.value = "";
+    if (priceRef.current) priceRef.current.value = "0";
+    if (discountRef.current) discountRef.current.value = "0";
+    if (groupSizeRef.current) groupSizeRef.current.value = "5";
+    if (minQtyRef.current) minQtyRef.current.value = "1";
+    if (maxQtyRef.current) maxQtyRef.current.value = "10";
+    if (customLabelRef.current) customLabelRef.current.value = "";
+    if (customPlaceholderRef.current) customPlaceholderRef.current.value = "";
+    if (customMaxLenRef.current) customMaxLenRef.current.value = "200";
+    setUpsellType("addon");
+    setIsActive(true);
+    setAllowCustomInput(false);
+  }, []);
 
-  const openEdit = (upsell: DraftUpsell) => {
+  const openEdit = useCallback((upsell: DraftUpsell) => {
     setEditingUpsell(upsell);
-    setFormData({
-      name: upsell.name,
-      description: upsell.description || "",
-      upsell_type: upsell.upsell_type,
-      price: upsell.price,
-      discount_amount: upsell.discount_amount,
-      min_quantity: upsell.min_quantity,
-      max_quantity: upsell.max_quantity,
-      group_size: upsell.group_size || 5,
-      is_active: upsell.is_active,
-      allow_custom_input: upsell.allow_custom_input || false,
-      custom_input_label: upsell.custom_input_label || "",
-      custom_input_placeholder: upsell.custom_input_placeholder || "",
-      custom_input_max_length: upsell.custom_input_max_length || 200,
-    });
-  };
+    setUpsellType(upsell.upsell_type);
+    setIsActive(upsell.is_active);
+    setAllowCustomInput(upsell.allow_custom_input || false);
+    
+    // Set values after dialog opens (setTimeout to ensure refs are available)
+    setTimeout(() => {
+      if (nameRef.current) nameRef.current.value = upsell.name;
+      if (descRef.current) descRef.current.value = upsell.description || "";
+      if (priceRef.current) priceRef.current.value = String(upsell.price);
+      if (discountRef.current) discountRef.current.value = String(upsell.discount_amount);
+      if (groupSizeRef.current) groupSizeRef.current.value = String(upsell.group_size || 5);
+      if (minQtyRef.current) minQtyRef.current.value = String(upsell.min_quantity);
+      if (maxQtyRef.current) maxQtyRef.current.value = String(upsell.max_quantity);
+      if (customLabelRef.current) customLabelRef.current.value = upsell.custom_input_label || "";
+      if (customPlaceholderRef.current) customPlaceholderRef.current.value = upsell.custom_input_placeholder || "";
+      if (customMaxLenRef.current) customMaxLenRef.current.value = String(upsell.custom_input_max_length || 200);
+    }, 0);
+  }, []);
 
-  const handleSubmit = () => {
-    if (!formData.name) {
+  const handleSubmit = useCallback(() => {
+    const name = nameRef.current?.value || "";
+    const description = descRef.current?.value || "";
+    const price = parseFloat(priceRef.current?.value || "0") || 0;
+    const discount_amount = parseFloat(discountRef.current?.value || "0") || 0;
+    const group_size = parseInt(groupSizeRef.current?.value || "5") || 5;
+    const min_quantity = parseInt(minQtyRef.current?.value || "1") || 1;
+    const max_quantity = parseInt(maxQtyRef.current?.value || "10") || 10;
+    const custom_input_label = customLabelRef.current?.value || "";
+    const custom_input_placeholder = customPlaceholderRef.current?.value || "";
+    const custom_input_max_length = parseInt(customMaxLenRef.current?.value || "200") || 200;
+
+    if (!name) {
       toast({ title: "Name is required", variant: "destructive" });
       return;
     }
 
-    if (formData.upsell_type === "group_offer" && (!formData.group_size || formData.group_size < 2)) {
+    if (upsellType === "group_offer" && group_size < 2) {
       toast({ title: "Group size must be at least 2", variant: "destructive" });
       return;
     }
 
     const newUpsell: DraftUpsell = {
       id: editingUpsell?.id || `draft-${Date.now()}`,
-      upsell_type: formData.upsell_type,
-      name: formData.name,
-      description: formData.description || null,
-      price: formData.price,
-      discount_amount: formData.discount_amount,
-      min_quantity: formData.min_quantity,
-      max_quantity: formData.max_quantity,
-      group_size: formData.upsell_type === "group_offer" ? formData.group_size : null,
-      is_active: formData.is_active,
+      upsell_type: upsellType,
+      name,
+      description: description || null,
+      price,
+      discount_amount,
+      min_quantity,
+      max_quantity,
+      group_size: upsellType === "group_offer" ? group_size : null,
+      is_active: isActive,
       display_order: editingUpsell?.display_order || upsells.length,
-      allow_custom_input: formData.allow_custom_input,
-      custom_input_label: formData.allow_custom_input ? formData.custom_input_label || null : null,
-      custom_input_placeholder: formData.allow_custom_input ? formData.custom_input_placeholder || null : null,
-      custom_input_max_length: formData.custom_input_max_length,
+      allow_custom_input: allowCustomInput,
+      custom_input_label: allowCustomInput ? custom_input_label || null : null,
+      custom_input_placeholder: allowCustomInput ? custom_input_placeholder || null : null,
+      custom_input_max_length,
     };
 
     if (editingUpsell) {
@@ -146,7 +176,7 @@ export function UpsellConfigSection({
     setIsCreateOpen(false);
     setEditingUpsell(null);
     resetForm();
-  };
+  }, [upsellType, isActive, allowCustomInput, editingUpsell, upsells, onChange, toast, resetForm]);
 
   const handleDelete = (id: string) => {
     onChange(upsells.filter(u => u.id !== id));
@@ -161,8 +191,8 @@ export function UpsellConfigSection({
       <div className="space-y-2">
         <Label>Type *</Label>
         <Select 
-          value={formData.upsell_type} 
-          onValueChange={(v) => setFormData(prev => ({ ...prev, upsell_type: v as DraftUpsell["upsell_type"] }))}
+          value={upsellType} 
+          onValueChange={(v) => setUpsellType(v as DraftUpsell["upsell_type"])}
           disabled={!!editingUpsell}
         >
           <SelectTrigger>
@@ -179,41 +209,41 @@ export function UpsellConfigSection({
       <div className="space-y-2">
         <Label>Name *</Label>
         <Input 
-          value={formData.name} 
-          onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-          placeholder={formData.upsell_type === "group_offer" ? "e.g., Group of 5 Discount" : "e.g., Snacks Combo"}
+          ref={nameRef}
+          defaultValue=""
+          placeholder={upsellType === "group_offer" ? "e.g., Group of 5 Discount" : "e.g., Snacks Combo"}
         />
       </div>
 
       <div className="space-y-2">
         <Label>Description</Label>
         <Textarea 
-          value={formData.description}
-          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+          ref={descRef}
+          defaultValue=""
           placeholder="Optional description"
           rows={2}
         />
       </div>
 
-      {formData.upsell_type === "group_offer" ? (
+      {upsellType === "group_offer" ? (
         <>
           <div className="space-y-2">
             <Label>Minimum Group Size *</Label>
             <Input 
+              ref={groupSizeRef}
               type="number"
               min={2}
-              value={formData.group_size}
-              onChange={(e) => setFormData(prev => ({ ...prev, group_size: parseInt(e.target.value) || 2 }))}
+              defaultValue={5}
             />
             <p className="text-xs text-muted-foreground">Users must book at least this many tickets</p>
           </div>
           <div className="space-y-2">
             <Label>Discount Amount (₹) *</Label>
             <Input 
+              ref={discountRef}
               type="number"
               min={0}
-              value={formData.discount_amount}
-              onChange={(e) => setFormData(prev => ({ ...prev, discount_amount: parseFloat(e.target.value) || 0 }))}
+              defaultValue={0}
             />
           </div>
         </>
@@ -222,29 +252,29 @@ export function UpsellConfigSection({
           <div className="space-y-2">
             <Label>Price (₹) *</Label>
             <Input 
+              ref={priceRef}
               type="number"
               min={0}
-              value={formData.price}
-              onChange={(e) => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+              defaultValue={0}
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Min Quantity</Label>
               <Input 
+                ref={minQtyRef}
                 type="number"
                 min={1}
-                value={formData.min_quantity}
-                onChange={(e) => setFormData(prev => ({ ...prev, min_quantity: parseInt(e.target.value) || 1 }))}
+                defaultValue={1}
               />
             </div>
             <div className="space-y-2">
               <Label>Max Quantity</Label>
               <Input 
+                ref={maxQtyRef}
                 type="number"
                 min={1}
-                value={formData.max_quantity}
-                onChange={(e) => setFormData(prev => ({ ...prev, max_quantity: parseInt(e.target.value) || 10 }))}
+                defaultValue={10}
               />
             </div>
           </div>
@@ -257,40 +287,40 @@ export function UpsellConfigSection({
                 <Label className="text-sm font-medium">Allow User Input</Label>
               </div>
               <Switch 
-                checked={formData.allow_custom_input}
-                onCheckedChange={(c) => setFormData(prev => ({ ...prev, allow_custom_input: c }))}
+                checked={allowCustomInput}
+                onCheckedChange={setAllowCustomInput}
               />
             </div>
             <p className="text-xs text-muted-foreground">
               Enable this to let users enter custom text (e.g., names, preferences)
             </p>
 
-            {formData.allow_custom_input && (
+            {allowCustomInput && (
               <div className="space-y-3 pt-2">
                 <div className="space-y-2">
                   <Label className="text-xs">Input Label</Label>
                   <Input 
-                    value={formData.custom_input_label}
-                    onChange={(e) => setFormData(prev => ({ ...prev, custom_input_label: e.target.value }))}
+                    ref={customLabelRef}
+                    defaultValue=""
                     placeholder="e.g., Enter participant names"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs">Placeholder Text</Label>
                   <Input 
-                    value={formData.custom_input_placeholder}
-                    onChange={(e) => setFormData(prev => ({ ...prev, custom_input_placeholder: e.target.value }))}
+                    ref={customPlaceholderRef}
+                    defaultValue=""
                     placeholder="e.g., John, Jane, Mike..."
                   />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs">Max Character Limit</Label>
                   <Input 
+                    ref={customMaxLenRef}
                     type="number"
                     min={10}
                     max={1000}
-                    value={formData.custom_input_max_length}
-                    onChange={(e) => setFormData(prev => ({ ...prev, custom_input_max_length: parseInt(e.target.value) || 200 }))}
+                    defaultValue={200}
                   />
                 </div>
               </div>
@@ -302,8 +332,8 @@ export function UpsellConfigSection({
       <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
         <Label>Active</Label>
         <Switch 
-          checked={formData.is_active}
-          onCheckedChange={(c) => setFormData(prev => ({ ...prev, is_active: c }))}
+          checked={isActive}
+          onCheckedChange={setIsActive}
         />
       </div>
 

@@ -48,7 +48,7 @@ const CreateEvent = () => {
     category: "",
     event_type: "",
     flyer_url: "",
-    poster_ratio: "4:5" as "4:5" | "1:1" | "16:9",
+    poster_ratio: "4:5" as "4:5", // STRICT: Only 4:5 allowed
     state: "",
     city: "",
     is_location_decided: false,
@@ -394,46 +394,21 @@ const CreateEvent = () => {
                 />
 
                 <div className="space-y-2">
-                  <Label>Event Flyer</Label>
-                  <p className="text-xs text-muted-foreground">Upload your event poster</p>
-                  <div className={`border-2 border-dashed rounded-xl p-4 text-center ${flyerError ? 'border-yellow-500' : ''}`}>
+                  <Label>Event Flyer (4:5 aspect ratio only) *</Label>
+                  <p className="text-xs text-muted-foreground">Upload portrait-style poster (800×1000, 1080×1350, etc.)</p>
+                  <div className={`border-2 border-dashed rounded-xl p-4 text-center ${flyerError ? 'border-destructive' : ''}`}>
                     <Input type="file" accept="image/*" onChange={handleFlyerChange} className="hidden" id="flyer" />
                     <label htmlFor="flyer" className="cursor-pointer flex flex-col items-center gap-2">
                       <Image className="w-8 h-8 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">{flyerFile ? flyerFile.name : "Upload flyer image"}</span>
+                      <span className="text-sm text-muted-foreground">{flyerFile ? flyerFile.name : "Click to upload 4:5 flyer"}</span>
                     </label>
                   </div>
                   {flyerError && (
-                    <p className="text-xs text-yellow-600 dark:text-yellow-400">{flyerError}</p>
+                    <p className="text-xs text-destructive">{flyerError}</p>
                   )}
                 </div>
 
-                {/* Poster Aspect Ratio Selection */}
-                <div className="space-y-2">
-                  <Label>Poster Aspect Ratio</Label>
-                  <p className="text-xs text-muted-foreground">Select the ratio that matches your poster</p>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { value: '4:5', label: '4:5', desc: 'Portrait' },
-                      { value: '1:1', label: '1:1', desc: 'Square' },
-                      { value: '16:9', label: '16:9', desc: 'Landscape' },
-                    ].map((ratio) => (
-                      <button
-                        key={ratio.value}
-                        type="button"
-                        onClick={() => updateForm("poster_ratio", ratio.value)}
-                        className={`p-3 rounded-lg border-2 text-center transition-all ${
-                          formData.poster_ratio === ratio.value
-                            ? 'border-primary bg-primary/10'
-                            : 'border-border hover:border-primary/50'
-                        }`}
-                      >
-                        <span className="block font-medium">{ratio.label}</span>
-                        <span className="text-xs text-muted-foreground">{ratio.desc}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                {/* STRICT 4:5 only - aspect ratio selector removed */}
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
