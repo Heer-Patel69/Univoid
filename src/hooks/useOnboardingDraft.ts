@@ -9,6 +9,7 @@ export interface OnboardingFormData {
   mobile_number: string;
   college_name: string;
   college_id: string;
+  is_custom_college: boolean;
   degree: string;
   branch: string;
   branch_id: string;
@@ -26,14 +27,15 @@ const getDefaultFormData = (profile?: any, user?: any): OnboardingFormData => ({
   mobile_number: profile?.mobile_number || "",
   college_name: profile?.college_name || "",
   college_id: "",
+  is_custom_college: false,
   degree: "",
   branch: profile?.course_stream || "",
   branch_id: "",
   current_year: "",
-  city: "",
-  city_id: "",
-  state: "",
-  state_id: "",
+  city: profile?.city || "",
+  city_id: profile?.city || "",
+  state: profile?.state || "",
+  state_id: profile?.state || "",
   interests: [],
   customDegree: "",
 });

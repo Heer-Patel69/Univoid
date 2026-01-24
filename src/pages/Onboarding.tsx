@@ -18,7 +18,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, GraduationCap, X, Plus, Phone, RefreshCw, AlertCircle, CheckCircle } from "lucide-react";
 import { SearchableSelect } from "@/components/common/SearchableSelect";
-import { StateCitySelect } from "@/components/common/StateCitySelect";
+import { CollegeSearchSelect } from "@/components/common/CollegeSearchSelect";
+import { CollegeStateSelect, CollegeDistrictSelect } from "@/components/common/CollegeLocationSelects";
 import { useOnboardingDraft } from "@/hooks/useOnboardingDraft";
 import { useMobileValidation } from "@/hooks/useMobileValidation";
 
@@ -360,14 +361,49 @@ const Onboarding = () => {
             <div className="space-y-4">
               <h3 className="text-sm font-semibold text-foreground">Academic</h3>
 
-              <SearchableSelect
+              {/* State Selection for College - Uses colleges database */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="relative">
+                  <CollegeStateSelect
+                    value={formData.state}
+                    onValueChange={(state) => {
+                      updateFields({
+                        state: state,
+                        state_id: state,
+                        city: "",
+                        city_id: "",
+                        college_id: "",
+                        college_name: "",
+                      });
+                    }}
+                    required
+                    error={!formData.state ? undefined : undefined}
+                  />
+                </div>
+                <div className="relative">
+                  <CollegeDistrictSelect
+                    value={formData.city}
+                    onValueChange={(city) => {
+                      updateFields({
+                        city: city,
+                        city_id: city,
+                        college_id: "",
+                        college_name: "",
+                      });
+                    }}
+                    stateFilter={formData.state}
+                  />
+                </div>
+              </div>
+
+              {/* College Selection - Filtered by State, uses colleges database */}
+              <CollegeSearchSelect
                 label="College/University"
-                tableName="lookup_universities"
                 placeholder="Search your college..."
                 value={formData.college_id}
                 displayValue={formData.college_name}
-                dependencyColumn={formData.state_id ? "state_id" : undefined}
-                dependencyValue={formData.state_id || undefined}
+                stateFilter={formData.state}
+                districtFilter={formData.city || null}
                 onSelect={(item) =>
                   updateFields({
                     college_id: item.id,
@@ -441,31 +477,6 @@ const Onboarding = () => {
                   })
                 }
                 required
-              />
-            </div>
-
-            {/* Location Section */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-foreground">Location</h3>
-              <StateCitySelect
-                state={formData.state}
-                city={formData.city}
-                onStateChange={(state) => {
-                  updateFields({
-                    state: state,
-                    state_id: state,
-                    city: "",
-                    city_id: "",
-                  });
-                }}
-                onCityChange={(city) => {
-                  updateFields({
-                    city: city,
-                    city_id: city,
-                  });
-                }}
-                stateError={!formData.state ? "State is required" : undefined}
-                cityError={!formData.city ? "City is required" : undefined}
               />
             </div>
 
