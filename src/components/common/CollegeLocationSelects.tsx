@@ -34,13 +34,26 @@ export function CollegeStateSelect({
   const inputRef = useRef<HTMLInputElement>(null);
   const isMobile = useIsMobile();
 
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
   // Fetch states on mount
   useEffect(() => {
     const loadStates = async () => {
       setIsLoading(true);
-      const data = await fetchCollegeStates();
-      setStates(data);
-      setIsLoading(false);
+      setFetchError(null);
+      try {
+        const data = await fetchCollegeStates();
+        if (data.length === 0) {
+          setFetchError("No states available. Please try again.");
+        } else {
+          setStates(data);
+        }
+      } catch (err) {
+        console.error("Failed to load states:", err);
+        setFetchError("Failed to load states. Please refresh the page.");
+      } finally {
+        setIsLoading(false);
+      }
     };
     loadStates();
   }, []);
@@ -121,7 +134,23 @@ export function CollegeStateSelect({
 
       {/* Results List */}
       <div className="max-h-[50vh] overflow-y-auto overscroll-contain p-2">
-        {filteredStates.length > 0 ? (
+        {isLoading ? (
+          <div className="py-6 text-center">
+            <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">Loading states...</p>
+          </div>
+        ) : fetchError ? (
+          <div className="py-6 text-center">
+            <p className="text-sm text-destructive">{fetchError}</p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="mt-2 text-xs text-primary underline"
+            >
+              Retry
+            </button>
+          </div>
+        ) : filteredStates.length > 0 ? (
           filteredStates.map((state) => (
             <button
               key={state}

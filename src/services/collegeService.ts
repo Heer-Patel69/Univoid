@@ -10,45 +10,61 @@ export interface College {
   is_popular: boolean;
 }
 
-// Get all unique states - uses direct query with type bypass for new table
+// Fallback Indian states for emergency (if API fails)
+const FALLBACK_INDIAN_STATES = [
+  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+  "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
+  "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram",
+  "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
+  "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
+  "Andaman & Nicobar Islands", "Chandigarh", "Dadra & Nagar Haveli",
+  "Daman & Diu", "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry"
+];
+
+// Get all unique states - uses efficient RPC function
 export async function getCollegeStates(): Promise<string[]> {
   try {
-    const { data, error } = await (supabase as any)
-      .from("colleges")
-      .select("state")
-      .order("state");
+    const { data, error } = await supabase.rpc("get_college_states");
     
     if (error) {
       console.error("Error fetching states:", error);
-      return [];
+      return FALLBACK_INDIAN_STATES;
     }
     
-    // Get unique states
-    const uniqueStates = [...new Set((data || []).map((row: any) => row.state))];
-    return uniqueStates as string[];
+    const states = (data || [])
+      .map((item: { state: string }) => item.state)
+      .filter(Boolean) as string[];
+    
+    // Return fallback if no states found
+    if (states.length === 0) {
+      console.warn("No states in database, using fallback");
+      return FALLBACK_INDIAN_STATES;
+    }
+    
+    return states;
   } catch (err) {
     console.error("Failed to fetch states:", err);
-    return [];
+    return FALLBACK_INDIAN_STATES;
   }
 }
 
-// Get districts for a specific state
+// Get districts for a specific state - uses efficient RPC function
 export async function getCollegeDistricts(state: string): Promise<string[]> {
+  if (!state) return [];
+  
   try {
-    const { data, error } = await (supabase as any)
-      .from("colleges")
-      .select("district")
-      .eq("state", state)
-      .order("district");
+    const { data, error } = await supabase.rpc("get_college_districts", {
+      p_state: state,
+    });
     
     if (error) {
       console.error("Error fetching districts:", error);
       return [];
     }
     
-    // Get unique districts
-    const uniqueDistricts = [...new Set((data || []).map((row: any) => row.district))];
-    return uniqueDistricts as string[];
+    return (data || [])
+      .map((item: { district: string }) => item.district)
+      .filter(Boolean) as string[];
   } catch (err) {
     console.error("Failed to fetch districts:", err);
     return [];
