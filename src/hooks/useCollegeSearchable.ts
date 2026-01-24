@@ -16,6 +16,17 @@ interface UseCollegeSearchableOptions {
   limit?: number;
 }
 
+// Fallback Indian states for emergency (if API fails)
+const FALLBACK_INDIAN_STATES = [
+  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+  "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
+  "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram",
+  "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
+  "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
+  "Andaman & Nicobar Islands", "Chandigarh", "Dadra & Nagar Haveli",
+  "Daman & Diu", "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry"
+];
+
 // Fetch colleges from the colleges table
 async function fetchColleges(
   searchTerm: string | null,
@@ -69,45 +80,56 @@ async function fetchColleges(
   }
 }
 
-// Fetch unique states from colleges table
+// Fetch unique states using RPC function (efficient for large datasets)
 export async function fetchCollegeStates(): Promise<string[]> {
   try {
-    const { data, error } = await supabase
-      .from("colleges")
-      .select("state")
-      .order("state");
+    // Use RPC call for efficient distinct query
+    const { data, error } = await supabase.rpc("get_college_states");
 
     if (error) {
-      console.error("Fetch states error:", error);
-      return [];
+      console.error("Fetch states RPC error:", error);
+      // Return fallback states if database fails
+      console.warn("Using fallback Indian states due to database error");
+      return FALLBACK_INDIAN_STATES;
     }
 
-    // Get unique states
-    const uniqueStates = [...new Set((data || []).map((item) => item.state))].filter(Boolean) as string[];
-    return uniqueStates.sort();
+    const states = (data || [])
+      .map((item: { state: string }) => item.state)
+      .filter(Boolean) as string[];
+
+    // If no states returned from DB, use fallback
+    if (states.length === 0) {
+      console.warn("No states in database, using fallback");
+      return FALLBACK_INDIAN_STATES;
+    }
+
+    return states;
   } catch (err) {
     console.error("Fetch states error:", err);
-    return [];
+    // Return fallback on any error
+    console.warn("Using fallback Indian states due to fetch error");
+    return FALLBACK_INDIAN_STATES;
   }
 }
 
-// Fetch unique districts for a given state
+// Fetch unique districts for a given state using RPC function
 export async function fetchCollegeDistricts(state: string): Promise<string[]> {
+  if (!state) return [];
+
   try {
-    const { data, error } = await supabase
-      .from("colleges")
-      .select("district")
-      .ilike("state", state)
-      .order("district");
+    // Use RPC call for efficient distinct query
+    const { data, error } = await supabase.rpc("get_college_districts", {
+      p_state: state,
+    });
 
     if (error) {
-      console.error("Fetch districts error:", error);
+      console.error("Fetch districts RPC error:", error);
       return [];
     }
 
-    // Get unique districts
-    const uniqueDistricts = [...new Set((data || []).map((item) => item.district))].filter(Boolean) as string[];
-    return uniqueDistricts.sort();
+    return (data || [])
+      .map((item: { district: string }) => item.district)
+      .filter(Boolean) as string[];
   } catch (err) {
     console.error("Fetch districts error:", err);
     return [];
