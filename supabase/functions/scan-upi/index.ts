@@ -12,6 +12,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 const UPI_REGEX = /^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/;
+const QR_DECODE_TIMEOUT_MS = 10000; // 10 seconds timeout for QR decode API calls
 
 function parseUpiIdFromContent(data: string): string | null {
   // Try standard UPI URL format
@@ -54,7 +55,7 @@ async function decodeQRFromUrl(imageUrl: string): Promise<string | null> {
       console.log('scan-upi: Trying QR service:', serviceUrl.split('?')[0]);
       
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+      const timeoutId = setTimeout(() => controller.abort(), QR_DECODE_TIMEOUT_MS);
       
       const response = await fetch(serviceUrl, { signal: controller.signal });
       clearTimeout(timeoutId);

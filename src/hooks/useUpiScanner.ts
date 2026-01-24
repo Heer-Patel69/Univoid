@@ -43,30 +43,37 @@ function parseUpiIdFromContent(data: string): string | null {
 
 // Client-side QR scanning from file
 async function scanQRFromFile(file: File): Promise<string | null> {
-  return new Promise((resolve) => {
-    // Create temporary hidden element before instantiating Html5Qrcode
-    let tempDiv = document.getElementById("qr-reader-hidden");
-    if (!tempDiv) {
-      tempDiv = document.createElement("div");
-      tempDiv.id = "qr-reader-hidden";
-      tempDiv.style.display = "none";
-      document.body.appendChild(tempDiv);
+  return new Promise((resolve, reject) => {
+    try {
+      // Create temporary hidden element before instantiating Html5Qrcode
+      let tempDiv = document.getElementById("qr-reader-hidden");
+      if (!tempDiv) {
+        tempDiv = document.createElement("div");
+        tempDiv.id = "qr-reader-hidden";
+        tempDiv.style.display = "none";
+        document.body.appendChild(tempDiv);
+      }
+
+      const html5QrCode = new Html5Qrcode("qr-reader-hidden", { verbose: false });
+
+      html5QrCode
+        .scanFile(file, true)
+        .then((decodedText) => {
+          console.log("Client QR scan success:", decodedText);
+          resolve(decodedText);
+        })
+        .catch((err) => {
+          console.log("Client QR scan failed:", err);
+          resolve(null);
+        })
+        .finally(() => {
+          // Clean up instance in both success and error cases
+          html5QrCode.clear().catch(() => {});
+        });
+    } catch (err) {
+      console.log("Client QR scan initialization failed:", err);
+      resolve(null);
     }
-
-    const html5QrCode = new Html5Qrcode("qr-reader-hidden", { verbose: false });
-
-    html5QrCode
-      .scanFile(file, true)
-      .then((decodedText) => {
-        console.log("Client QR scan success:", decodedText);
-        html5QrCode.clear().catch(() => {}); // Clean up instance
-        resolve(decodedText);
-      })
-      .catch((err) => {
-        console.log("Client QR scan failed:", err);
-        html5QrCode.clear().catch(() => {}); // Clean up instance
-        resolve(null);
-      });
   });
 }
 
