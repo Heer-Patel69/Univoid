@@ -24,8 +24,8 @@ export const EventCard = ({ event }: EventCardProps) => {
   };
 
   return (
-    <Link to={`/events/${event.id}`}>
-      <Card className="group h-full overflow-hidden hover:shadow-soft-xl hover:-translate-y-2 transition-all duration-300 cursor-pointer">
+    <Link to={`/events/${event.id}`} className="block h-full">
+      <Card className="group h-full overflow-hidden hover:shadow-soft-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col">
         {/* Flyer Image - Respects poster_ratio from DB */}
         <div 
           className="relative overflow-hidden bg-muted"
@@ -85,7 +85,7 @@ export const EventCard = ({ event }: EventCardProps) => {
           </div>
         </div>
 
-        <CardContent className="p-4 space-y-3">
+        <CardContent className="p-4 space-y-3 flex-1 flex flex-col">
           {/* Title */}
           <h3 className="font-display font-bold text-lg line-clamp-2 group-hover:text-primary transition-colors">
             {event.title}
@@ -116,9 +116,9 @@ export const EventCard = ({ event }: EventCardProps) => {
 
           {/* Registration count */}
           {event.max_capacity && (
-            <div className="flex items-center gap-2 text-sm">
+            <div className="flex items-center gap-2 text-sm mt-auto pt-2">
               <Users className="w-4 h-4 flex-shrink-0 text-muted-foreground" />
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <div className="flex justify-between text-xs mb-1">
                   <span className="text-muted-foreground">
                     {event.registrations_count} registered

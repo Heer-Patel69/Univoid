@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { GripVertical, Trash2, Settings, ChevronDown, ChevronUp } from "lucide-react";
+import { GripVertical, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,8 +7,8 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import type { FormFieldInput, FieldOption, FormFieldType } from "@/services/eventFormService";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import type { FormFieldInput } from "@/services/eventFormService";
 import { FIELD_TYPES } from "@/services/eventFormService";
 
 interface FormFieldItemProps {
@@ -47,9 +47,7 @@ const FormFieldItem = ({
   onDrop,
   onDragEnd,
 }: FormFieldItemProps) => {
-  const [isExpanded, setIsExpanded] = useState(false);
   const fieldMeta = FIELD_TYPES.find(f => f.type === field.field_type);
-
   const hasOptions = ['select', 'radio', 'checkbox'].includes(field.field_type);
 
   const handleOptionChange = (optIndex: number, key: 'label' | 'value', value: string) => {
@@ -72,7 +70,7 @@ const FormFieldItem = ({
 
   return (
     <Card 
-      className={`p-4 transition-all duration-200 ${
+      className={`transition-all duration-200 touch-manipulation ${
         isDragging ? 'opacity-50 scale-[0.98] ring-2 ring-primary' : ''
       } ${
         isDragOver ? 'ring-2 ring-primary ring-offset-2 bg-primary/5' : ''
@@ -92,14 +90,33 @@ const FormFieldItem = ({
       onDrop={onDrop}
       onDragEnd={onDragEnd}
     >
-      <div className="flex items-start gap-3">
-        {/* Drag Handle */}
-        <div className="flex flex-col items-center gap-1 pt-1">
-          <GripVertical className="w-5 h-5 text-muted-foreground cursor-grab active:cursor-grabbing" />
+      {/* Mobile-first header with drag handle */}
+      <div className="flex items-center gap-2 p-3 border-b bg-muted/30">
+        {/* Drag Handle - prominent on mobile */}
+        <div 
+          className="flex items-center justify-center w-10 h-10 rounded-lg bg-muted cursor-grab active:cursor-grabbing touch-manipulation shrink-0"
+          onTouchStart={(e) => {
+            // Touch-friendly drag initiation hint
+            e.currentTarget.classList.add('bg-primary/20');
+          }}
+          onTouchEnd={(e) => {
+            e.currentTarget.classList.remove('bg-primary/20');
+          }}
+        >
+          <GripVertical className="w-5 h-5 text-muted-foreground" />
+        </div>
+
+        {/* Field Type Badge */}
+        <Badge variant="secondary" className="shrink-0 text-xs">
+          {fieldMeta?.label || field.field_type}
+        </Badge>
+
+        {/* Reorder buttons for mobile */}
+        <div className="flex items-center gap-1 ml-auto">
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6"
+            className="h-8 w-8"
             onClick={() => onMoveUp(index)}
             disabled={isFirst}
           >
@@ -108,97 +125,108 @@ const FormFieldItem = ({
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6"
+            className="h-8 w-8"
             onClick={() => onMoveDown(index)}
             disabled={isLast}
           >
             <ChevronDown className="w-4 h-4" />
           </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onDelete(field.tempId)}
+            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
         </div>
+      </div>
 
-        {/* Main Content */}
-        <div className="flex-1 space-y-3">
-          {/* Header Row */}
-          <div className="flex items-center gap-3">
-            <Badge variant="secondary" className="shrink-0">
-              {fieldMeta?.label || field.field_type}
-            </Badge>
+      {/* Main Content */}
+      <div className="p-3 space-y-3">
+        {/* Label Input - always visible */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1 space-y-1">
+            <Label className="text-xs text-muted-foreground">Field Label</Label>
             <Input
               value={field.label}
               onChange={(e) => onUpdate(field.tempId, { label: e.target.value })}
-              placeholder="Field label"
-              className="flex-1"
+              placeholder="Enter field label..."
+              className="h-10"
             />
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground">Required</Label>
+          </div>
+          <div className="flex items-end gap-2 shrink-0">
+            <div className="flex items-center gap-2 h-10 px-3 rounded-lg bg-muted/50">
+              <Label className="text-xs text-muted-foreground whitespace-nowrap">Required</Label>
               <Switch
                 checked={field.is_required}
                 onCheckedChange={(checked) => onUpdate(field.tempId, { is_required: checked })}
               />
             </div>
           </div>
+        </div>
 
-          {/* Expandable Settings */}
-          <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" size="sm" className="gap-2">
-                <Settings className="w-4 h-4" />
-                {isExpanded ? "Hide" : "Show"} Settings
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-4 pt-4">
-              {/* Description */}
-              <div className="space-y-2">
-                <Label>Help Text / Description</Label>
+        {/* Expandable Settings in Accordion */}
+        <Accordion type="single" collapsible className="w-full">
+          <AccordionItem value="settings" className="border rounded-lg">
+            <AccordionTrigger className="px-3 py-2 text-sm hover:no-underline">
+              <span className="text-muted-foreground">Advanced Settings</span>
+            </AccordionTrigger>
+            <AccordionContent className="px-3 pb-3 space-y-4">
+              {/* Description / Help Text */}
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Help Text</Label>
                 <Textarea
                   value={field.description || ""}
                   onChange={(e) => onUpdate(field.tempId, { description: e.target.value })}
                   placeholder="Additional instructions for this field"
                   rows={2}
+                  className="resize-none"
                 />
               </div>
 
               {/* Placeholder */}
-              <div className="space-y-2">
-                <Label>Placeholder</Label>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Placeholder</Label>
                 <Input
                   value={field.placeholder || ""}
                   onChange={(e) => onUpdate(field.tempId, { placeholder: e.target.value })}
-                  placeholder="Placeholder text"
+                  placeholder="Placeholder text shown in the input"
                 />
               </div>
 
               {/* Options for select/radio/checkbox */}
               {hasOptions && (
                 <div className="space-y-2">
-                  <Label>Options</Label>
+                  <Label className="text-xs text-muted-foreground">Options</Label>
                   <div className="space-y-2">
                     {(field.options || []).map((option, optIndex) => (
-                      <div key={optIndex} className="flex items-center gap-2">
+                      <div key={optIndex} className="flex flex-col sm:flex-row gap-2">
                         <Input
                           value={option.label}
                           onChange={(e) => handleOptionChange(optIndex, 'label', e.target.value)}
-                          placeholder="Label"
+                          placeholder="Display label"
                           className="flex-1"
                         />
                         <Input
                           value={option.value}
                           onChange={(e) => handleOptionChange(optIndex, 'value', e.target.value)}
                           placeholder="Value"
-                          className="flex-1"
+                          className="flex-1 sm:max-w-[140px]"
                         />
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => removeOption(optIndex)}
                           disabled={field.options?.length === 1}
+                          className="shrink-0 h-10 w-10"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
                     ))}
-                    <Button variant="outline" size="sm" onClick={addOption}>
-                      Add Option
+                    <Button variant="outline" size="sm" onClick={addOption} className="w-full sm:w-auto">
+                      + Add Option
                     </Button>
                   </div>
                 </div>
@@ -206,85 +234,78 @@ const FormFieldItem = ({
 
               {/* Validation Rules */}
               {['text', 'textarea', 'number'].includes(field.field_type) && (
-                <div className="grid grid-cols-2 gap-4">
-                  {field.field_type === 'number' ? (
-                    <>
-                      <div className="space-y-2">
-                        <Label>Min Value</Label>
-                        <Input
-                          type="number"
-                          value={field.validation_rules?.min ?? ""}
-                          onChange={(e) => onUpdate(field.tempId, {
-                            validation_rules: {
-                              ...field.validation_rules,
-                              min: e.target.value ? parseInt(e.target.value) : undefined,
-                            }
-                          })}
-                          placeholder="Minimum"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Max Value</Label>
-                        <Input
-                          type="number"
-                          value={field.validation_rules?.max ?? ""}
-                          onChange={(e) => onUpdate(field.tempId, {
-                            validation_rules: {
-                              ...field.validation_rules,
-                              max: e.target.value ? parseInt(e.target.value) : undefined,
-                            }
-                          })}
-                          placeholder="Maximum"
-                        />
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="space-y-2">
-                        <Label>Min Length</Label>
-                        <Input
-                          type="number"
-                          value={field.validation_rules?.minLength ?? ""}
-                          onChange={(e) => onUpdate(field.tempId, {
-                            validation_rules: {
-                              ...field.validation_rules,
-                              minLength: e.target.value ? parseInt(e.target.value) : undefined,
-                            }
-                          })}
-                          placeholder="Minimum"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Max Length</Label>
-                        <Input
-                          type="number"
-                          value={field.validation_rules?.maxLength ?? ""}
-                          onChange={(e) => onUpdate(field.tempId, {
-                            validation_rules: {
-                              ...field.validation_rules,
-                              maxLength: e.target.value ? parseInt(e.target.value) : undefined,
-                            }
-                          })}
-                          placeholder="Maximum"
-                        />
-                      </div>
-                    </>
-                  )}
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Validation</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {field.field_type === 'number' ? (
+                      <>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Min Value</Label>
+                          <Input
+                            type="number"
+                            value={field.validation_rules?.min ?? ""}
+                            onChange={(e) => onUpdate(field.tempId, {
+                              validation_rules: {
+                                ...field.validation_rules,
+                                min: e.target.value ? parseInt(e.target.value) : undefined,
+                              }
+                            })}
+                            placeholder="Min"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Max Value</Label>
+                          <Input
+                            type="number"
+                            value={field.validation_rules?.max ?? ""}
+                            onChange={(e) => onUpdate(field.tempId, {
+                              validation_rules: {
+                                ...field.validation_rules,
+                                max: e.target.value ? parseInt(e.target.value) : undefined,
+                              }
+                            })}
+                            placeholder="Max"
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Min Length</Label>
+                          <Input
+                            type="number"
+                            value={field.validation_rules?.minLength ?? ""}
+                            onChange={(e) => onUpdate(field.tempId, {
+                              validation_rules: {
+                                ...field.validation_rules,
+                                minLength: e.target.value ? parseInt(e.target.value) : undefined,
+                              }
+                            })}
+                            placeholder="Min"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Max Length</Label>
+                          <Input
+                            type="number"
+                            value={field.validation_rules?.maxLength ?? ""}
+                            onChange={(e) => onUpdate(field.tempId, {
+                              validation_rules: {
+                                ...field.validation_rules,
+                                maxLength: e.target.value ? parseInt(e.target.value) : undefined,
+                              }
+                            })}
+                            placeholder="Max"
+                          />
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               )}
-            </CollapsibleContent>
-          </Collapsible>
-        </div>
-
-        {/* Delete Button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => onDelete(field.tempId)}
-          className="text-destructive hover:text-destructive"
-        >
-          <Trash2 className="w-4 h-4" />
-        </Button>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </div>
     </Card>
   );

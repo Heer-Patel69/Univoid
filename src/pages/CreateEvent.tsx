@@ -124,6 +124,7 @@ const CreateEvent = () => {
     if (!file.type.startsWith('image/')) {
       setFlyerError('Please upload an image file');
       setFlyerFile(null);
+      e.target.value = ''; // Reset input
       return;
     }
 
@@ -131,15 +132,21 @@ const CreateEvent = () => {
     if (file.size > 10 * 1024 * 1024) {
       setFlyerError('Image must be smaller than 10MB');
       setFlyerFile(null);
+      e.target.value = '';
       return;
     }
 
-    // Validate aspect ratio
+    // STRICT: Validate aspect ratio - only allow 4:5
     const isValidRatio = await validateFlyerAspectRatio(file);
     if (!isValidRatio) {
-      setFlyerError('Image should be 4:5 aspect ratio (e.g., 800x1000, 1080x1350)');
-      // Still allow the file but show warning
-      setFlyerFile(file);
+      setFlyerError('Only 4:5 aspect ratio images are allowed for event flyers. Please crop or resize your image (e.g., 800x1000, 1080x1350, 1200x1500).');
+      setFlyerFile(null);
+      e.target.value = ''; // Reset input to reject the file
+      toast({
+        title: "Invalid aspect ratio",
+        description: "Only 4:5 aspect ratio images are allowed. Please resize your image.",
+        variant: "destructive",
+      });
       return;
     }
 
