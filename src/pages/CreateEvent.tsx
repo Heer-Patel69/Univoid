@@ -18,6 +18,7 @@ import { UpsellConfigSection, type DraftUpsell } from "@/components/events/Upsel
 import { createFormFields } from "@/services/eventFormService";
 import { addClubToEvent } from "@/services/clubService";
 import { createEventUpsellsBulk, updateUpsellSettings } from "@/services/upsellService";
+import { sendEventCreatedEmail } from "@/services/brevoEmailService";
 import { ArrowLeft, ArrowRight, Check, Calendar, FileText, Ticket, CreditCard, Image, ClipboardList, Loader2, Sparkles } from "lucide-react";
 import { useUpiScanner } from "@/hooks/useUpiScanner";
 import StateCitySelect from "@/components/common/StateCitySelect";
@@ -337,8 +338,33 @@ const CreateEvent = () => {
         throw err;
       }
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       toast({ title: "Event Created!", description: "Your event is now live and will appear instantly for all users." });
+      
+      // Send event created email notification (fire and forget)
+      if (user?.email) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', user.id)
+          .single();
+        
+        const eventDate = new Date(formData.start_date).toLocaleDateString('en-IN', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        });
+        
+        sendEventCreatedEmail(
+          user.email,
+          profile?.full_name || 'Organizer',
+          data.title,
+          eventDate,
+          data.id
+        );
+      }
+      
       navigate(`/events/${data.id}`);
     },
     onError: (error: Error) => {
