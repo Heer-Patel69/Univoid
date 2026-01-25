@@ -98,20 +98,20 @@ interface FloatingDoodlesProps {
   section?: "hero" | "content" | "full";
 }
 
-// Desktop density counts
+// Desktop density counts - REDUCED for performance
 const densityCount = {
-  low: 20,
-  medium: 32,
-  high: 50,
-  global: 70,
+  low: 8,
+  medium: 12,
+  high: 18,
+  global: 25,
 };
 
-// Mobile density counts (increased for visibility)
+// Mobile density counts - MINIMAL for performance
 const mobileDensityCount = {
-  low: 15,
-  medium: 25,
-  high: 35,
-  global: 50,
+  low: 4,
+  medium: 6,
+  high: 8,
+  global: 12,
 };
 
 export const FloatingDoodles = ({
@@ -119,19 +119,16 @@ export const FloatingDoodles = ({
   density = "medium",
   section = "full"
 }: FloatingDoodlesProps) => {
-  const [doodles, setDoodles] = useState<DoodleConfig[]>([]);
   const isMobile = useIsMobile();
-
-  // Generate doodles on mount
-  useEffect(() => {
-    // Use reduced count on mobile for performance
+  
+  // Generate doodles only once with useMemo-like pattern
+  const [doodles] = useState<DoodleConfig[]>(() => {
     const count = isMobile ? mobileDensityCount[density] : densityCount[density];
     const newDoodles: DoodleConfig[] = [];
 
     for (let i = 0; i < count; i++) {
       const DoodleComponent = doodleComponents[Math.floor(Math.random() * doodleComponents.length)];
 
-      // Distribute based on section
       let xRange = { min: 0, max: 100 };
       const yRange = { min: 0, max: 100 };
 
@@ -140,7 +137,6 @@ export const FloatingDoodles = ({
         xRange = isLeftSide ? { min: 0, max: 20 } : { min: 80, max: 100 };
       }
 
-      // Slightly larger doodles on mobile for visibility
       const sizeRange = isMobile 
         ? { min: 14, max: 24 } 
         : { min: 12, max: 28 };
@@ -155,17 +151,10 @@ export const FloatingDoodles = ({
         animationDuration: Math.random() * 3 + 4,
       });
     }
+    return newDoodles;
+  });
 
-    setDoodles(newDoodles);
-  }, [density, section, isMobile]);
-
-  // Don't render if no doodles generated
-  if (doodles.length === 0) {
-    return null;
-  }
-
-  // Doodle opacity
-  const opacity = 0.7;
+  if (doodles.length === 0) return null;
 
   return (
     <div
@@ -176,6 +165,7 @@ export const FloatingDoodles = ({
       style={{
         transform: "translateZ(0)",
         backfaceVisibility: "hidden",
+        willChange: "auto", // Let browser decide
       }}
       aria-hidden="true"
     >
@@ -190,7 +180,8 @@ export const FloatingDoodles = ({
             height: `${doodle.size}px`,
             animationDelay: `${doodle.animationDelay}s`,
             animationDuration: `${doodle.animationDuration}s`,
-            color: `hsl(var(--foreground) / ${opacity})`,
+            color: `hsl(var(--foreground) / 0.5)`,
+            contain: "layout style paint", // CSS containment for perf
           }}
         >
           {doodle.component}

@@ -151,11 +151,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let isMounted = true;
     let hasInitialized = false;
 
-    // Safety timeout - never block app for more than 8 seconds
-    const AUTH_TIMEOUT_MS = 8000;
+    // REDUCED safety timeout - never block app for more than 3 seconds for faster perceived load
+    const AUTH_TIMEOUT_MS = 3000;
     const safetyTimeout = setTimeout(() => {
       if (isMounted && isLoading && !hasInitialized) {
-        authLogger.warn('Auth loading timeout - proceeding without auth');
+        console.warn('[Auth] Loading timeout - proceeding without auth');
         setIsLoading(false);
         hasInitialized = true;
       }
