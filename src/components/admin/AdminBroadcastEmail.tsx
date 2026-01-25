@@ -169,7 +169,7 @@ export const AdminBroadcastEmail = () => {
   const getAudienceLabel = () => {
     switch (audienceType) {
       case 'all': return 'All Platform Users';
-      case 'registered': return 'Registered Users (event attendees)';
+      case 'registered': return 'All Registered Users (anyone who registered for any event)';
       case 'external': return `External Emails (${validExternalEmails.length} addresses)`;
     }
   };
@@ -301,10 +301,10 @@ export const AdminBroadcastEmail = () => {
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <UserCheck className="w-4 h-4 text-green-600" />
-                    <span className="font-medium">Registered</span>
+                    <span className="font-medium">All Registered Users</span>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {userCounts?.registered ?? '...'} event attendees
+                    {userCounts?.registered ?? '...'} users who registered for any event
                   </p>
                 </div>
               </Label>
