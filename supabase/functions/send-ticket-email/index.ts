@@ -188,8 +188,8 @@ const handler = async (req: Request): Promise<Response> => {
       // Upload PNG to storage for reliable email display
       const qrImageUrl = await generateAndUploadQRCode(supabase, ticketId, qrCode);
 
-      // Generate manual entry code (first 8 characters of QR code hash, uppercase)
-      const manualEntryCode = qrCode.substring(0, 8).toUpperCase();
+      // Use the actual ticket ID (UUID) as the manual entry code
+      const manualEntryCode = ticketId;
 
       if (qrImageUrl) {
         qrCodeImageHtml = `
@@ -201,40 +201,39 @@ const handler = async (req: Request): Promise<Response> => {
               </div>
               <p style="color: #6b7280; font-size: 13px; margin: 16px 0 0 0; font-weight: 500;">Show this at the venue entrance</p>
               
-              <!-- Manual Entry Code -->
+              <!-- Manual Entry Code (Ticket ID) -->
               <div style="margin-top: 20px; padding-top: 16px; border-top: 2px dashed #e5e7eb;">
-                <p style="color: #6b7280; font-size: 12px; margin: 0 0 8px 0;">QR not working? Use manual entry code:</p>
-                <p style="color: #1a1a1a; font-size: 20px; font-weight: 800; margin: 0; letter-spacing: 3px; font-family: monospace;">${manualEntryCode}</p>
+                <p style="color: #6b7280; font-size: 12px; margin: 0 0 8px 0;">QR not working? Show this Ticket ID:</p>
+                <p style="color: #1a1a1a; font-size: 11px; font-weight: 700; margin: 0; font-family: monospace; word-break: break-all; background: #f3f4f6; padding: 10px 14px; border-radius: 8px; border: 1px solid #e5e7eb;">${manualEntryCode}</p>
               </div>
             </div>
           </div>
         `;
       } else {
-        // Fallback: Direct link to view ticket
+        // Fallback: Direct link to view ticket with Ticket ID
         qrCodeImageHtml = `
           <div style="text-align: center; margin: 28px 0;">
             <div style="display: inline-block; background: #FFFDF5; border: 3px solid #1a1a1a; border-radius: 24px; padding: 28px 32px; box-shadow: 6px 6px 0 #1a1a1a;">
               <p style="color: #1a1a1a; font-weight: 800; margin: 0 0 16px 0; font-size: 20px;">🎟️ Your Entry Pass</p>
               
-              <!-- Manual Entry Code -->
+              <!-- Manual Entry Code (Ticket ID) -->
               <div style="margin-bottom: 16px; padding: 12px 20px; background: #FEF3C7; border: 2px solid #F59E0B; border-radius: 12px;">
-                <p style="color: #92400E; font-size: 12px; margin: 0 0 6px 0; font-weight: 600;">Manual Entry Code:</p>
-                <p style="color: #1a1a1a; font-size: 20px; font-weight: 800; margin: 0; letter-spacing: 3px; font-family: monospace;">${manualEntryCode}</p>
+                <p style="color: #92400E; font-size: 12px; margin: 0 0 6px 0; font-weight: 600;">Ticket ID (for manual entry):</p>
+                <p style="color: #1a1a1a; font-size: 11px; font-weight: 700; margin: 0; font-family: monospace; word-break: break-all;">${manualEntryCode}</p>
               </div>
               
-              <p style="color: #6b7280; font-size: 13px; margin: 0;">Show this code at the venue entrance</p>
+              <p style="color: #6b7280; font-size: 13px; margin: 0;">Show this ID at the venue entrance</p>
             </div>
           </div>
         `;
       }
     } catch (qrError) {
       console.error("QR generation error:", qrError);
-      const manualEntryCode = qrCode.substring(0, 8).toUpperCase();
       qrCodeImageHtml = `
         <div style="text-align: center; margin: 24px 0; padding: 24px; background: #FEF3C7; border: 2px solid #F59E0B; border-radius: 16px;">
           <p style="color: #92400E; font-weight: 700; margin: 0 0 12px 0;">🎟️ Your Entry Pass</p>
-          <p style="color: #92400E; font-size: 12px; margin: 0 0 6px 0;">Manual Entry Code:</p>
-          <p style="color: #1a1a1a; font-size: 20px; font-weight: 800; margin: 0 0 12px 0; letter-spacing: 3px; font-family: monospace;">${manualEntryCode}</p>
+          <p style="color: #92400E; font-size: 12px; margin: 0 0 6px 0;">Ticket ID (for manual entry):</p>
+          <p style="color: #1a1a1a; font-size: 11px; font-weight: 700; margin: 0 0 12px 0; font-family: monospace; word-break: break-all;">${ticketId}</p>
           <a href="https://univoid.tech/my-events" style="color: #1a1a1a; font-weight: 700; text-decoration: underline;">View full ticket online</a>
         </div>
       `;
