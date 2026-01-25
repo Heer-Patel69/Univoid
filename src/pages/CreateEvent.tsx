@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import RichTextarea from "@/components/common/RichTextarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
@@ -555,25 +556,22 @@ const CreateEvent = () => {
               <>
                 <div className="space-y-2">
                   <Label>Description * <span className="text-muted-foreground text-xs">(min 50 characters)</span></Label>
-                  <Textarea 
-                    value={formData.description} 
-                    onChange={(e) => updateForm("description", e.target.value)} 
-                    placeholder="Describe your event in detail..." 
+                  <RichTextarea
+                    value={formData.description}
+                    onChange={(val) => updateForm("description", val)}
+                    placeholder="Describe your event in detail..."
                     rows={8}
-                    className={formData.description.length > 0 && formData.description.length < 50 ? "border-destructive" : ""}
+                    minLength={50}
+                    showCharCount
                   />
-                  <p className={`text-xs ${formData.description.length < 50 ? "text-destructive" : "text-muted-foreground"}`}>
-                    {formData.description.length}/50 characters
-                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label>Terms & Conditions *</Label>
-                  <Textarea 
-                    value={formData.terms_conditions} 
-                    onChange={(e) => updateForm("terms_conditions", e.target.value)} 
-                    placeholder="Event rules, refund policy, code of conduct..." 
+                  <RichTextarea
+                    value={formData.terms_conditions}
+                    onChange={(val) => updateForm("terms_conditions", val)}
+                    placeholder="Event rules, refund policy, code of conduct..."
                     rows={4}
-                    className={formData.terms_conditions.length === 0 ? "border-destructive" : ""}
                   />
                   {formData.terms_conditions.length === 0 && (
                     <p className="text-xs text-destructive">Terms & Conditions are required</p>

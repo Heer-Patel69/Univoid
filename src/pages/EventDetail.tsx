@@ -34,6 +34,7 @@ import {
 } from "@/services/upsellService";
 import { getOrganizerProfileByUserId, type OrganizerProfile } from "@/services/organizerService";
 import { toDisplayUrl } from "@/lib/storageProxy";
+import { formatRichText } from "@/lib/formatRichText";
 import { Calendar, MapPin, Users, IndianRupee, ExternalLink, Clock, Share2, CheckCircle, AlertCircle, Upload, Eye, BadgeCheck, ChevronDown, FileText } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -415,7 +416,7 @@ const EventDetail = () => {
                     className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap" 
                     dangerouslySetInnerHTML={{ 
                       __html: DOMPurify.sanitize(
-                        event.description.replace(/\n/g, '<br>'),
+                        formatRichText(event.description),
                         {
                           ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'ul', 'ol', 'li', 'strong', 'em', 'a', 'blockquote', 'code', 'pre'],
                           ALLOWED_ATTR: ['href', 'title', 'target', 'rel'],
@@ -449,7 +450,7 @@ const EventDetail = () => {
                         className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap text-muted-foreground" 
                         dangerouslySetInnerHTML={{ 
                           __html: DOMPurify.sanitize(
-                            event.terms_conditions.replace(/\n/g, '<br>'),
+                            formatRichText(event.terms_conditions),
                             {
                               ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'ul', 'ol', 'li', 'strong', 'em', 'a', 'blockquote', 'code', 'pre'],
                               ALLOWED_ATTR: ['href', 'title', 'target', 'rel'],
@@ -745,7 +746,7 @@ const EventDetail = () => {
                     className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap" 
                     dangerouslySetInnerHTML={{ 
                       __html: DOMPurify.sanitize(
-                        event.description.replace(/\n/g, '<br>'),
+                        formatRichText(event.description),
                         {
                           ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'ul', 'ol', 'li', 'strong', 'em', 'a', 'blockquote', 'code', 'pre'],
                           ALLOWED_ATTR: ['href', 'title', 'target', 'rel'],
@@ -779,7 +780,7 @@ const EventDetail = () => {
                         className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap text-muted-foreground" 
                         dangerouslySetInnerHTML={{ 
                           __html: DOMPurify.sanitize(
-                            event.terms_conditions.replace(/\n/g, '<br>'),
+                            formatRichText(event.terms_conditions),
                             {
                               ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'ul', 'ol', 'li', 'strong', 'em', 'a', 'blockquote', 'code', 'pre'],
                               ALLOWED_ATTR: ['href', 'title', 'target', 'rel'],
