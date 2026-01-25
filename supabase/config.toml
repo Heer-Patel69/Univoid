@@ -77,3 +77,6 @@ verify_jwt = false
 
 [functions.send-brevo-email]
 verify_jwt = false
+
+[functions.send-ticket-email]
+verify_jwt = false
