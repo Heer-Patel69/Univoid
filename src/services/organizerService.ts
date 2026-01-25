@@ -129,6 +129,14 @@ export async function createOrganizerProfile(
     return { profile: null, error: new Error(error.message) };
   }
   
+  // Role is automatically assigned by database trigger
+  // Force refresh the session to pick up new role
+  try {
+    await supabase.auth.refreshSession();
+  } catch (refreshError) {
+    console.warn('Session refresh after profile creation:', refreshError);
+  }
+  
   return { profile: profile as OrganizerProfile, error: null };
 }
 

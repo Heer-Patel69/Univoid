@@ -50,6 +50,17 @@ const AdminOrganizerManager = () => {
     },
   });
   
+  // Helper to check if organizer is new (created in last 7 days)
+  const isNewOrganizer = (createdAt: string) => {
+    const created = new Date(createdAt);
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    return created > sevenDaysAgo;
+  };
+  
+  // Count new organizers
+  const newOrganizersCount = organizers.filter(o => isNewOrganizer(o.created_at)).length;
+  
   const filteredOrganizers = organizers.filter((org) =>
     org.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     org.slug?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -111,6 +122,21 @@ const AdminOrganizerManager = () => {
             </div>
           </CardContent>
         </Card>
+        {newOrganizersCount > 0 && (
+          <Card className="border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-800 col-span-2">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
+                <span className="text-green-600 dark:text-green-400 font-bold text-sm">🆕</span>
+              </div>
+              <div>
+                <p className="text-lg font-bold text-green-700 dark:text-green-400">
+                  {newOrganizersCount} new organizer{newOrganizersCount > 1 ? 's' : ''} this week
+                </p>
+                <p className="text-xs text-green-600 dark:text-green-500">Review and verify new profiles</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
       
       {/* Organizer List */}
@@ -140,6 +166,11 @@ const AdminOrganizerManager = () => {
                       <h3 className="font-medium truncate">{org.name}</h3>
                       {org.is_verified && (
                         <BadgeCheck className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                      )}
+                      {isNewOrganizer(org.created_at) && (
+                        <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs">
+                          NEW
+                        </Badge>
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground">@{org.slug}</p>
