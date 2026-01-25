@@ -57,6 +57,8 @@ const Settings = lazy(() => import("@/pages/Settings"));
 const MyBooks = lazy(() => import("@/pages/MyBooks"));
 const FastRegister = lazy(() => import("@/pages/FastRegister"));
 const Colleges = lazy(() => import("@/pages/Colleges"));
+const OrganizerOnboarding = lazy(() => import("@/pages/OrganizerOnboarding"));
+const OrganizerProfile = lazy(() => import("@/pages/OrganizerProfile"));
 
 // Preload critical pages after initial render
 const preloadCriticalPages = () => {
@@ -166,6 +168,13 @@ export const AnimatedRoutes = () => {
         <Route path="/colleges" element={
           <Suspense fallback={<ListingPageSkeleton />}><Colleges /></Suspense>
         } />
+        {/* Organizer Profile - Public */}
+        <Route path="/o/:slugOrId" element={
+          <Suspense fallback={<DetailSkeleton />}><OrganizerProfile /></Suspense>
+        } />
+        <Route path="/organizer/:slugOrId" element={
+          <Suspense fallback={<DetailSkeleton />}><OrganizerProfile /></Suspense>
+        } />
       </Route>
 
       {/* Dashboard pages with persistent DashboardLayout (Sidebar) */}
@@ -247,6 +256,13 @@ export const AnimatedRoutes = () => {
       <Route path="/onboarding" element={
         <ProtectedRoute skipOnboarding>
           <Suspense fallback={<TextSkeleton />}><Onboarding /></Suspense>
+        </ProtectedRoute>
+      } />
+
+      {/* Organizer Onboarding - must complete before creating events */}
+      <Route path="/organizer/onboarding" element={
+        <ProtectedRoute>
+          <Suspense fallback={<TextSkeleton />}><OrganizerOnboarding /></Suspense>
         </ProtectedRoute>
       } />
 

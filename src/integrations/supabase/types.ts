@@ -1375,6 +1375,113 @@ export type Database = {
         }
         Relationships: []
       }
+      organizer_followers: {
+        Row: {
+          followed_at: string
+          id: string
+          organizer_id: string
+          user_id: string
+        }
+        Insert: {
+          followed_at?: string
+          id?: string
+          organizer_id: string
+          user_id: string
+        }
+        Update: {
+          followed_at?: string
+          id?: string
+          organizer_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organizer_followers_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: false
+            referencedRelation: "organizer_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizer_profiles: {
+        Row: {
+          average_event_size:
+            | Database["public"]["Enums"]["event_size_type"]
+            | null
+          created_at: string
+          discovery_source: string | null
+          event_frequency:
+            | Database["public"]["Enums"]["event_frequency_type"]
+            | null
+          event_types: string[] | null
+          events_count: number
+          follower_count: number
+          id: string
+          identity_type:
+            | Database["public"]["Enums"]["organizer_identity_type"]
+            | null
+          is_verified: boolean
+          logo_url: string | null
+          name: string
+          primary_goals: string[] | null
+          slug: string | null
+          updated_at: string
+          user_id: string
+          website_url: string | null
+        }
+        Insert: {
+          average_event_size?:
+            | Database["public"]["Enums"]["event_size_type"]
+            | null
+          created_at?: string
+          discovery_source?: string | null
+          event_frequency?:
+            | Database["public"]["Enums"]["event_frequency_type"]
+            | null
+          event_types?: string[] | null
+          events_count?: number
+          follower_count?: number
+          id?: string
+          identity_type?:
+            | Database["public"]["Enums"]["organizer_identity_type"]
+            | null
+          is_verified?: boolean
+          logo_url?: string | null
+          name: string
+          primary_goals?: string[] | null
+          slug?: string | null
+          updated_at?: string
+          user_id: string
+          website_url?: string | null
+        }
+        Update: {
+          average_event_size?:
+            | Database["public"]["Enums"]["event_size_type"]
+            | null
+          created_at?: string
+          discovery_source?: string | null
+          event_frequency?:
+            | Database["public"]["Enums"]["event_frequency_type"]
+            | null
+          event_types?: string[] | null
+          events_count?: number
+          follower_count?: number
+          id?: string
+          identity_type?:
+            | Database["public"]["Enums"]["organizer_identity_type"]
+            | null
+          is_verified?: boolean
+          logo_url?: string | null
+          name?: string
+          primary_goals?: string[] | null
+          slug?: string | null
+          updated_at?: string
+          user_id?: string
+          website_url?: string | null
+        }
+        Relationships: []
+      }
       otp_rate_limits: {
         Row: {
           created_at: string | null
@@ -2246,6 +2353,10 @@ export type Database = {
         Args: { book_id: string; book_title: string }
         Returns: string
       }
+      generate_organizer_slug: {
+        Args: { organizer_id: string; organizer_name: string }
+        Returns: string
+      }
       generate_secure_ticket_token: { Args: never; Returns: string }
       generate_ticket_qr: { Args: never; Returns: string }
       get_book_by_id_safe: {
@@ -2405,6 +2516,7 @@ export type Database = {
         }[]
       }
       get_registered_users_count: { Args: never; Returns: number }
+      has_organizer_profile: { Args: { p_user_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -2480,6 +2592,10 @@ export type Database = {
         Args: { p_material_id: string }
         Returns: boolean
       }
+      toggle_organizer_follow: {
+        Args: { p_organizer_id: string }
+        Returns: boolean
+      }
       user_has_liked_material: {
         Args: { p_material_id: string }
         Returns: boolean
@@ -2489,6 +2605,14 @@ export type Database = {
       app_role: "admin" | "student" | "organizer" | "admin_assistant"
       book_status: "available" | "sold" | "rented"
       content_status: "pending" | "approved" | "rejected"
+      event_frequency_type:
+        | "one_time"
+        | "daily"
+        | "weekly"
+        | "monthly"
+        | "seasonal"
+        | "annual"
+      event_size_type: "1-50" | "51-100" | "101-500" | "501-1000" | "1000+"
       event_status: "draft" | "published" | "cancelled" | "completed"
       form_field_type:
         | "text"
@@ -2504,6 +2628,17 @@ export type Database = {
         | "checkbox"
         | "file"
       organizer_application_status: "pending" | "approved" | "rejected"
+      organizer_identity_type:
+        | "individual"
+        | "brand"
+        | "community"
+        | "company"
+        | "nonprofit"
+        | "school"
+        | "university"
+        | "event_company"
+        | "agency"
+        | "others"
       ticket_status: "pending" | "approved" | "rejected" | "used"
       volunteer_invite_role: "entry" | "qr_checkin" | "help_desk" | "all"
       volunteer_invite_status: "pending" | "accepted" | "rejected"
@@ -2637,6 +2772,15 @@ export const Constants = {
       app_role: ["admin", "student", "organizer", "admin_assistant"],
       book_status: ["available", "sold", "rented"],
       content_status: ["pending", "approved", "rejected"],
+      event_frequency_type: [
+        "one_time",
+        "daily",
+        "weekly",
+        "monthly",
+        "seasonal",
+        "annual",
+      ],
+      event_size_type: ["1-50", "51-100", "101-500", "501-1000", "1000+"],
       event_status: ["draft", "published", "cancelled", "completed"],
       form_field_type: [
         "text",
@@ -2653,6 +2797,18 @@ export const Constants = {
         "file",
       ],
       organizer_application_status: ["pending", "approved", "rejected"],
+      organizer_identity_type: [
+        "individual",
+        "brand",
+        "community",
+        "company",
+        "nonprofit",
+        "school",
+        "university",
+        "event_company",
+        "agency",
+        "others",
+      ],
       ticket_status: ["pending", "approved", "rejected", "used"],
       volunteer_invite_role: ["entry", "qr_checkin", "help_desk", "all"],
       volunteer_invite_status: ["pending", "accepted", "rejected"],
