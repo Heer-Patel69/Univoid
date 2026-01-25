@@ -186,11 +186,10 @@ export async function uploadOrganizerLogo(
     return { url: null, error: new Error(uploadError.message) };
   }
   
-  const { data: urlData } = supabase.storage
-    .from('organizer-logos')
-    .getPublicUrl(fileName);
+  // Store path only - proxy will generate URLs on-demand (hides Supabase infrastructure)
+  const storedPath = `organizer-logos:${fileName}`;
   
-  return { url: urlData.publicUrl, error: null };
+  return { url: storedPath, error: null };
 }
 
 export async function toggleFollowOrganizer(organizerId: string): Promise<boolean> {

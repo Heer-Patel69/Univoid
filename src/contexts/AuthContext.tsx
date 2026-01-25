@@ -317,14 +317,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { url: null, error: uploadError as Error };
     }
 
-    const { data: { publicUrl } } = supabase.storage
-      .from('profile-photos')
-      .getPublicUrl(filePath);
+    // Store path only - proxy will generate URLs on-demand (hides Supabase infrastructure)
+    const storedPath = `profile-photos:${filePath}`;
 
     // Update profile in database (this works for both email and Google users)
     const { error: updateError } = await supabase
       .from('profiles')
-      .update({ profile_photo_url: publicUrl })
+      .update({ profile_photo_url: storedPath })
       .eq('id', user.id);
 
     if (updateError) {
@@ -333,10 +332,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Update local profile state immediately
     if (profile) {
-      setProfile({ ...profile, profile_photo_url: publicUrl });
+      setProfile({ ...profile, profile_photo_url: storedPath });
     }
 
-    return { url: publicUrl, error: null };
+    return { url: storedPath, error: null };
   };
 
   const refreshProfile = async (): Promise<void> => {
