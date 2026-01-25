@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,8 @@ import { createEventUpsellsBulk, updateUpsellSettings } from "@/services/upsellS
 import { ArrowLeft, ArrowRight, Check, Calendar, FileText, Ticket, CreditCard, Image, ClipboardList, Loader2, Sparkles } from "lucide-react";
 import { useUpiScanner } from "@/hooks/useUpiScanner";
 import StateCitySelect from "@/components/common/StateCitySelect";
+import { useOrganizerProfile } from "@/hooks/useOrganizerProfile";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const STEPS = [
   { id: 1, title: "Basic Info", icon: Calendar },
@@ -41,6 +43,31 @@ const CreateEvent = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const { scanUpiFromFile, isScanning } = useUpiScanner();
+  const { hasProfile, isLoading: checkingProfile } = useOrganizerProfile();
+  
+  // Redirect to organizer onboarding if no profile
+  useEffect(() => {
+    if (!checkingProfile && user && !hasProfile) {
+      navigate('/organizer/onboarding', { replace: true });
+    }
+  }, [checkingProfile, hasProfile, user, navigate]);
+  
+  // Show loading while checking profile
+  if (checkingProfile) {
+    return (
+      <div className="container max-w-4xl mx-auto py-8 px-4">
+        <Card>
+          <CardContent className="p-8">
+            <div className="space-y-4">
+              <Skeleton className="h-8 w-64" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-32 w-full" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
   
   // Form state
   const [formData, setFormData] = useState({
