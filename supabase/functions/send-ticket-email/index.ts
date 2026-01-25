@@ -237,95 +237,136 @@ const handler = async (req: Request): Promise<Response> => {
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>Your Event Ticket - UniVoid</title>
         </head>
-        <body style="font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #FFFDF5; margin: 0; padding: 40px 16px;">
-          <div style="max-width: 500px; margin: 0 auto;">
-            
-            <!-- Logo Header -->
-            <div style="text-align: center; margin-bottom: 24px;">
-              <div style="display: inline-block; background: #1a1a1a; padding: 16px 32px; border-radius: 50px; box-shadow: 4px 4px 0 #c9b99a;">
-                <span style="color: #ffffff; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">✨ UniVoid</span>
-              </div>
-            </div>
-            
-            <!-- Main Card -->
-            <div style="background: #ffffff; border: 3px solid #1a1a1a; border-radius: 28px; overflow: hidden; box-shadow: 8px 8px 0 #1a1a1a;">
-              
-              <!-- Success Banner -->
-              <div style="background: linear-gradient(135deg, #86EFAC 0%, #4ADE80 100%); padding: 24px; text-align: center; border-bottom: 3px solid #1a1a1a;">
-                <h1 style="color: #166534; margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">
-                  🎉 Registration Confirmed!
-                </h1>
-              </div>
-              
-              <!-- Content -->
-              <div style="padding: 32px 28px;">
-                <p style="color: #374151; font-size: 17px; line-height: 1.6; margin: 0 0 8px 0;">
-                  Hi <strong style="color: #1a1a1a;">${profile.full_name}</strong>,
-                </p>
-                <p style="color: #374151; font-size: 17px; line-height: 1.6; margin: 0 0 24px 0;">
-                  You're all set for <strong style="color: #1a1a1a;">${event.title}</strong>! Here's your entry pass:
-                </p>
-                
-                ${qrCodeImageHtml}
-                
-                <!-- Event Details Card -->
-                <div style="background: #F3E8FF; border: 2px solid #C084FC; border-radius: 20px; padding: 24px; margin: 28px 0;">
-                  <p style="margin: 0 0 16px 0; color: #7C3AED; font-weight: 800; font-size: 17px; letter-spacing: -0.3px;">
-                    📋 Event Details
-                  </p>
-                  <table style="width: 100%; border-collapse: collapse;">
-                    <tr>
-                      <td style="padding: 8px 0; color: #374151; font-size: 15px; vertical-align: top; width: 40px;">🎪</td>
-                      <td style="padding: 8px 0; color: #374151; font-size: 15px;"><strong>Event:</strong> ${event.title}</td>
-                    </tr>
-                    <tr>
-                      <td style="padding: 8px 0; color: #374151; font-size: 15px; vertical-align: top;">📅</td>
-                      <td style="padding: 8px 0; color: #374151; font-size: 15px;"><strong>Date:</strong> ${eventDate}</td>
-                    </tr>
-                    <tr>
-                      <td style="padding: 8px 0; color: #374151; font-size: 15px; vertical-align: top;">📍</td>
-                      <td style="padding: 8px 0; color: #374151; font-size: 15px;"><strong>Location:</strong> ${locationText}</td>
-                    </tr>
-                    ${organizer ? `
-                    <tr>
-                      <td style="padding: 8px 0; color: #374151; font-size: 15px; vertical-align: top;">🎭</td>
-                      <td style="padding: 8px 0; color: #374151; font-size: 15px;"><strong>Organizer:</strong> ${organizer.name}</td>
-                    </tr>
-                    ` : ""}
-                  </table>
-                </div>
-                
-                <!-- Quick Access Pill -->
-                <div style="background: #DBEAFE; border: 2px solid #60A5FA; border-radius: 16px; padding: 16px 20px; margin: 20px 0; text-align: center;">
-                  <p style="margin: 0; color: #1E40AF; font-size: 14px; font-weight: 600;">
-                    👉 View your ticket in My Events: <a href="https://univoid.tech/my-events" style="color: #1a1a1a; font-weight: 800; text-decoration: underline;">univoid.tech/my-events</a>
-                  </p>
-                </div>
-                
-                <!-- Warning -->
-                <div style="background: #FEE2E2; border: 2px solid #F87171; border-radius: 16px; padding: 16px; margin: 24px 0; text-align: center;">
-                  <p style="color: #991B1B; font-weight: 700; margin: 0; font-size: 14px;">
-                    ⚠️ Keep this QR code private — do not share it!
-                  </p>
-                </div>
-              </div>
-              
-              <!-- Footer -->
-              <div style="background: #F9FAFB; padding: 24px; text-align: center; border-top: 2px solid #E5E7EB;">
-                <p style="color: #6B7280; font-size: 12px; margin: 0 0 8px 0;">
-                  Need help? Contact us at <a href="mailto:support@univoid.tech" style="color: #1a1a1a; font-weight: 600;">support@univoid.tech</a>
-                </p>
-                <p style="color: #9CA3AF; font-size: 11px; margin: 0;">
-                  © ${new Date().getFullYear()} UniVoid · Where students learn, share & grow
-                </p>
-              </div>
-            </div>
-            
-            <!-- Bottom Tagline -->
-            <p style="text-align: center; color: #9CA3AF; font-size: 12px; margin-top: 24px;">
-              <a href="https://univoid.tech" style="color: #6B7280; text-decoration: none; font-weight: 600;">univoid.tech</a> · Made with 💜 for students
-            </p>
-          </div>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #FFFDF5; margin: 0; padding: 0;">
+          <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color: #FFFDF5;">
+            <tr>
+              <td style="padding: 40px 16px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width: 520px; margin: 0 auto;">
+                  
+                  <!-- Logo Header -->
+                  <tr>
+                    <td align="center" style="padding-bottom: 28px;">
+                      <table role="presentation" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td style="background-color: #1a1a1a; padding: 14px 28px; border-radius: 50px; box-shadow: 4px 4px 0 #c9b99a;">
+                            <span style="color: #ffffff; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">✨ UniVoid</span>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  
+                  <!-- Main Card -->
+                  <tr>
+                    <td>
+                      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background: #ffffff; border: 3px solid #1a1a1a; border-radius: 24px; overflow: hidden; box-shadow: 6px 6px 0 #1a1a1a;">
+                        
+                        <!-- Success Banner -->
+                        <tr>
+                          <td style="background: linear-gradient(135deg, #86EFAC 0%, #4ADE80 100%); padding: 22px 24px; text-align: center; border-bottom: 3px solid #1a1a1a;">
+                            <h1 style="color: #166534; margin: 0; font-size: 21px; font-weight: 800;">🎉 Registration Confirmed!</h1>
+                          </td>
+                        </tr>
+                        
+                        <!-- Content -->
+                        <tr>
+                          <td style="padding: 28px 24px;">
+                            <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 6px 0;">
+                              Hi <strong style="color: #1a1a1a;">${profile.full_name}</strong>,
+                            </p>
+                            <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
+                              You're all set for <strong style="color: #1a1a1a;">${event.title}</strong>! Here's your entry pass:
+                            </p>
+                            
+                            ${qrCodeImageHtml}
+                            
+                            <!-- Event Details Card -->
+                            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background: #F3E8FF; border: 2px solid #C084FC; border-radius: 16px; margin: 24px 0;">
+                              <tr>
+                                <td style="padding: 20px;">
+                                  <p style="margin: 0 0 14px 0; color: #7C3AED; font-weight: 800; font-size: 16px;">📋 Event Details</p>
+                                  <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                                    <tr>
+                                      <td style="padding: 6px 0; color: #374151; font-size: 14px; vertical-align: top; width: 30px;">🎪</td>
+                                      <td style="padding: 6px 0; color: #374151; font-size: 14px;"><strong>Event:</strong> ${event.title}</td>
+                                    </tr>
+                                    <tr>
+                                      <td style="padding: 6px 0; color: #374151; font-size: 14px; vertical-align: top;">📅</td>
+                                      <td style="padding: 6px 0; color: #374151; font-size: 14px;"><strong>Date:</strong> ${eventDate}</td>
+                                    </tr>
+                                    <tr>
+                                      <td style="padding: 6px 0; color: #374151; font-size: 14px; vertical-align: top;">📍</td>
+                                      <td style="padding: 6px 0; color: #374151; font-size: 14px;"><strong>Location:</strong> ${locationText}</td>
+                                    </tr>
+                                    ${organizer ? `
+                                    <tr>
+                                      <td style="padding: 6px 0; color: #374151; font-size: 14px; vertical-align: top;">🎭</td>
+                                      <td style="padding: 6px 0; color: #374151; font-size: 14px;"><strong>Organizer:</strong> ${organizer.name}</td>
+                                    </tr>
+                                    ` : ""}
+                                  </table>
+                                </td>
+                              </tr>
+                            </table>
+                            
+                            <!-- CTA Button -->
+                            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin: 24px 0;">
+                              <tr>
+                                <td align="center">
+                                  <table role="presentation" cellpadding="0" cellspacing="0">
+                                    <tr>
+                                      <td style="background-color: #7C3AED; border-radius: 50px; box-shadow: 3px 3px 0 #1a1a1a;">
+                                        <a href="https://univoid.tech/my-events" target="_blank" style="display: inline-block; padding: 14px 32px; color: #ffffff; font-size: 15px; font-weight: 700; text-decoration: none; border-radius: 50px;">👉 View Your Ticket</a>
+                                      </td>
+                                    </tr>
+                                  </table>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td align="center" style="padding-top: 10px;">
+                                  <p style="margin: 0; color: #6B7280; font-size: 12px;">or visit <a href="https://univoid.tech/my-events" style="color: #7C3AED; font-weight: 600;">univoid.tech/my-events</a></p>
+                                </td>
+                              </tr>
+                            </table>
+                            
+                            <!-- Warning -->
+                            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background: #FEF2F2; border: 2px solid #FECACA; border-radius: 12px; margin: 20px 0;">
+                              <tr>
+                                <td style="padding: 14px; text-align: center;">
+                                  <p style="color: #B91C1C; font-weight: 700; margin: 0; font-size: 13px;">⚠️ Keep this QR code private — do not share it!</p>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                        
+                        <!-- Footer -->
+                        <tr>
+                          <td style="background: #F9FAFB; padding: 20px 24px; text-align: center; border-top: 2px solid #E5E7EB;">
+                            <p style="color: #6B7280; font-size: 12px; margin: 0 0 6px 0;">
+                              Need help? <a href="mailto:support@univoid.tech" style="color: #7C3AED; font-weight: 600;">support@univoid.tech</a>
+                            </p>
+                            <p style="color: #9CA3AF; font-size: 11px; margin: 0;">
+                              © ${new Date().getFullYear()} UniVoid · Where students learn, share & grow
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  
+                  <!-- Bottom Tagline -->
+                  <tr>
+                    <td align="center" style="padding-top: 20px;">
+                      <p style="color: #9CA3AF; font-size: 11px; margin: 0;">
+                        <a href="https://univoid.tech" style="color: #6B7280; text-decoration: none; font-weight: 600;">univoid.tech</a> · Made with 💜 for students
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
         </body>
       </html>
     `;
