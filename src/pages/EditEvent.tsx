@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import RichTextarea from "@/components/common/RichTextarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
@@ -391,11 +392,19 @@ const EditEvent = () => {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label>Description</Label>
-                <Textarea value={formData.description} onChange={(e) => updateForm("description", e.target.value)} rows={6} />
+                <RichTextarea
+                  value={formData.description}
+                  onChange={(val) => updateForm("description", val)}
+                  rows={6}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Terms & Conditions</Label>
-                <Textarea value={formData.terms_conditions} onChange={(e) => updateForm("terms_conditions", e.target.value)} rows={4} />
+                <RichTextarea
+                  value={formData.terms_conditions}
+                  onChange={(val) => updateForm("terms_conditions", val)}
+                  rows={4}
+                />
               </div>
             </CardContent>
           </Card>
