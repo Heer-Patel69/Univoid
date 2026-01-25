@@ -51,12 +51,11 @@ export async function hasOrganizerProfile(userId: string): Promise<boolean> {
 export async function getOrganizerProfile(userId: string): Promise<OrganizerProfile | null> {
   const { data, error } = await supabase
     .from('organizer_profiles')
-    .select('*')
+    .select('id, user_id, logo_url, name, slug, website_url, identity_type, event_types, event_frequency, average_event_size, primary_goals, discovery_source, is_verified, follower_count, events_count, created_at, updated_at')
     .eq('user_id', userId)
-    .single();
+    .maybeSingle();
   
   if (error) {
-    if (error.code === 'PGRST116') return null; // Not found
     console.error('Error fetching organizer profile:', error);
     return null;
   }
@@ -72,12 +71,11 @@ export async function getOrganizerProfileByUserId(userId: string): Promise<Organ
 export async function getOrganizerProfileBySlug(slug: string): Promise<OrganizerProfile | null> {
   const { data, error } = await supabase
     .from('organizer_profiles')
-    .select('*')
+    .select('id, user_id, logo_url, name, slug, website_url, identity_type, event_types, event_frequency, average_event_size, primary_goals, discovery_source, is_verified, follower_count, events_count, created_at, updated_at')
     .eq('slug', slug)
-    .single();
+    .maybeSingle();
   
   if (error) {
-    if (error.code === 'PGRST116') return null;
     console.error('Error fetching organizer profile by slug:', error);
     return null;
   }
@@ -88,12 +86,11 @@ export async function getOrganizerProfileBySlug(slug: string): Promise<Organizer
 export async function getOrganizerProfileById(id: string): Promise<OrganizerProfile | null> {
   const { data, error } = await supabase
     .from('organizer_profiles')
-    .select('*')
+    .select('id, user_id, logo_url, name, slug, website_url, identity_type, event_types, event_frequency, average_event_size, primary_goals, discovery_source, is_verified, follower_count, events_count, created_at, updated_at')
     .eq('id', id)
-    .single();
+    .maybeSingle();
   
   if (error) {
-    if (error.code === 'PGRST116') return null;
     console.error('Error fetching organizer profile by id:', error);
     return null;
   }
@@ -222,7 +219,7 @@ export async function getOrganizerEvents(organizerId: string, userId: string) {
     .from('organizer_profiles')
     .select('user_id')
     .eq('id', organizerId)
-    .single();
+    .maybeSingle();
   
   if (!profile) return { upcoming: [], past: [] };
   
@@ -255,7 +252,7 @@ export async function getOrganizerEvents(organizerId: string, userId: string) {
 export async function getAllOrganizers(limit = 50) {
   const { data, error } = await supabase
     .from('organizer_profiles')
-    .select('*')
+    .select('id, user_id, logo_url, name, slug, website_url, identity_type, event_types, event_frequency, average_event_size, primary_goals, discovery_source, is_verified, follower_count, events_count, created_at, updated_at')
     .order('events_count', { ascending: false })
     .limit(limit);
   
