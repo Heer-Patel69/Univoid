@@ -430,38 +430,16 @@ const EventDetail = () => {
         </div>
 
         {/* Right column: Info Card + About (mobile) */}
-        <div className="flex-1 min-w-0 space-y-6">
+        {/* On mobile: Registration card comes FIRST, then About section */}
+        <div className="flex-1 min-w-0 space-y-6 flex flex-col">
           {/* Title - Desktop only */}
           <div className="hidden lg:flex flex-wrap items-start justify-between gap-4">
             <h1 className="font-display text-2xl md:text-3xl font-bold">{event.title}</h1>
             <Button variant="outline" size="icon" onClick={handleShare}><Share2 className="w-4 h-4" /></Button>
           </div>
 
-          {/* About section - Mobile shows here */}
-          <div className="lg:hidden">
-            {event.description && (
-              <Card>
-                <CardHeader><CardTitle>About this Event</CardTitle></CardHeader>
-                <CardContent>
-                  <div 
-                    className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap" 
-                    dangerouslySetInnerHTML={{ 
-                      __html: DOMPurify.sanitize(
-                        event.description.replace(/\n/g, '<br>'),
-                        {
-                          ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'ul', 'ol', 'li', 'strong', 'em', 'a', 'blockquote', 'code', 'pre'],
-                          ALLOWED_ATTR: ['href', 'title', 'target', 'rel'],
-                          ALLOW_DATA_ATTR: false
-                        }
-                      )
-                    }} 
-                  />
-                </CardContent>
-              </Card>
-            )}
-          </div>
-
-          {/* Sidebar Info Card */}
+          {/* Sidebar Info Card - Shows first on mobile (order-1), natural on desktop */}
+          <div className="order-1 lg:order-none">
           <Card className="lg:sticky lg:top-20">
             <CardContent className="p-6 space-y-4">
               {/* Organizer Info */}
@@ -718,6 +696,31 @@ const EventDetail = () => {
               )}
             </CardContent>
           </Card>
+          </div>
+
+          {/* About section - Mobile shows AFTER registration card (order-2) */}
+          <div className="lg:hidden order-2">
+            {event.description && (
+              <Card>
+                <CardHeader><CardTitle>About this Event</CardTitle></CardHeader>
+                <CardContent>
+                  <div 
+                    className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap" 
+                    dangerouslySetInnerHTML={{ 
+                      __html: DOMPurify.sanitize(
+                        event.description.replace(/\n/g, '<br>'),
+                        {
+                          ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'ul', 'ol', 'li', 'strong', 'em', 'a', 'blockquote', 'code', 'pre'],
+                          ALLOWED_ATTR: ['href', 'title', 'target', 'rel'],
+                          ALLOW_DATA_ATTR: false
+                        }
+                      )
+                    }} 
+                  />
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </div>
       </div>
       </div>
