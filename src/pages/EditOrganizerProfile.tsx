@@ -19,6 +19,7 @@ import {
   Camera, Globe, Loader2, ArrowLeft, Save, ExternalLink, Sparkles
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { toDisplayUrl } from "@/lib/storageProxy";
 
 const EditOrganizerProfile = () => {
   const { user } = useAuth();
@@ -39,7 +40,8 @@ const EditOrganizerProfile = () => {
     if (profile) {
       setName(profile.name || "");
       setWebsite(profile.website_url || "");
-      setLogoPreviewUrl(profile.logo_url || "");
+      // Convert stored path to display URL for preview
+      setLogoPreviewUrl(toDisplayUrl(profile.logo_url, { forceImage: true }) || "");
     }
   }, [profile]);
   

@@ -139,7 +139,11 @@ const DynamicRegistrationForm = ({
   };
 
   const handleSubmit = async () => {
-    if (!formFields) return;
+    // If no custom fields exist, just call onSubmit directly
+    if (!formFields || formFields.length === 0) {
+      onSubmit({});
+      return;
+    }
 
     // Validate all fields
     let hasErrors = false;

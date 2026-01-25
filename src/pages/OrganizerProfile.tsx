@@ -25,6 +25,7 @@ import {
   UserPlus, UserMinus, ExternalLink, Loader2
 } from "lucide-react";
 import SEOHead from "@/components/common/SEOHead";
+import { toDisplayUrl } from "@/lib/storageProxy";
 
 const OrganizerProfile = () => {
   const { slugOrId } = useParams<{ slugOrId: string }>();
@@ -142,7 +143,7 @@ const OrganizerProfile = () => {
             <CardContent className="p-8">
               <div className="flex flex-col md:flex-row items-center gap-6">
                 <Avatar className="w-32 h-32 border-4 border-background shadow-lg">
-                  <AvatarImage src={profile.logo_url || undefined} alt={profile.name} />
+                  <AvatarImage src={toDisplayUrl(profile.logo_url, { forceImage: true }) || undefined} alt={profile.name} />
                   <AvatarFallback className="text-4xl bg-primary/10 text-primary">
                     {profile.name.charAt(0).toUpperCase()}
                   </AvatarFallback>

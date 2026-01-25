@@ -108,7 +108,7 @@ export const EventCard = ({ event }: EventCardProps) => {
               className="flex items-center gap-2 group/org"
             >
               <Avatar className="w-6 h-6">
-                <AvatarImage src={organizer.logo_url || undefined} alt={organizer.name} />
+                <AvatarImage src={toDisplayUrl(organizer.logo_url, { forceImage: true }) || undefined} alt={organizer.name} />
                 <AvatarFallback className="text-xs bg-primary/10 text-primary">
                   {organizer.name.charAt(0)}
                 </AvatarFallback>
