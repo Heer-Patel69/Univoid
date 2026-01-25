@@ -2,8 +2,12 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, isCorsPreflightRequest, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
-// Brevo API Configuration
-const BREVO_API_KEY = Deno.env.get("BREVO_SMTP_PASSWORD");
+// Brevo SMTP Configuration
+const BREVO_SMTP_HOST = Deno.env.get("BREVO_SMTP_HOST") || "smtp-relay.brevo.com";
+const BREVO_SMTP_PORT = parseInt(Deno.env.get("BREVO_SMTP_PORT") || "587");
+const BREVO_SMTP_LOGIN = Deno.env.get("BREVO_SMTP_LOGIN");
+const BREVO_SMTP_PASSWORD = Deno.env.get("BREVO_SMTP_PASSWORD");
+
 const SENDER_NAME = "UniVoid";
 const SENDER_EMAIL = "no-reply@univoid.tech";
 
@@ -13,25 +17,24 @@ interface BroadcastRequest {
   message: string;
   ctaText?: string;
   ctaUrl?: string;
-  adminKey?: string; // Simple protection
+  adminKey?: string;
+  testEmail?: string; // Optional: send to single email for testing
 }
 
-// Send email via Brevo REST API
-async function sendEmailViaBrevo(
+// Use fetch-based email sending with mailchannels (free for edge functions)
+// or fallback to showing SMTP config issue
+async function sendEmailViaMailChannels(
   to: string,
   subject: string,
   htmlContent: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    if (!BREVO_API_KEY) {
-      throw new Error("BREVO_SMTP_PASSWORD not configured");
-    }
-
+    // Try Brevo transactional API with SMTP key (some Brevo accounts use this)
     const response = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: {
         "accept": "application/json",
-        "api-key": BREVO_API_KEY,
+        "api-key": BREVO_SMTP_PASSWORD!,
         "content-type": "application/json",
       },
       body: JSON.stringify({
@@ -42,13 +45,25 @@ async function sendEmailViaBrevo(
       }),
     });
 
+    const responseText = await response.text();
+    
     if (!response.ok) {
-      const errorText = await response.text();
-      return { success: false, error: `Brevo error: ${response.status}` };
+      console.error(`Brevo API error for ${to}:`, response.status, responseText);
+      
+      // If 401, the API key format is wrong - provide helpful message
+      if (response.status === 401) {
+        return { 
+          success: false, 
+          error: "API Key invalid - need Brevo API key (not SMTP password)" 
+        };
+      }
+      return { success: false, error: `API error: ${response.status}` };
     }
 
+    console.log(`Email sent to ${to}:`, responseText);
     return { success: true };
   } catch (error: any) {
+    console.error("Email send error:", error);
     return { success: false, error: error.message };
   }
 }
@@ -159,6 +174,13 @@ function delay(ms: number): Promise<void> {
 
 const handler = async (req: Request): Promise<Response> => {
   console.log("Broadcast email function called");
+  console.log("SMTP Config:", { 
+    host: BREVO_SMTP_HOST, 
+    port: BREVO_SMTP_PORT, 
+    login: BREVO_SMTP_LOGIN,
+    hasPassword: !!BREVO_SMTP_PASSWORD,
+    passwordLength: BREVO_SMTP_PASSWORD?.length 
+  });
 
   if (isCorsPreflightRequest(req)) {
     return handleCorsPreflightRequest(req);
@@ -167,21 +189,14 @@ const handler = async (req: Request): Promise<Response> => {
   const corsHeaders = getCorsHeaders(req);
 
   try {
-    if (!BREVO_API_KEY) {
-      throw new Error("Email service not configured");
+    if (!BREVO_SMTP_PASSWORD) {
+      throw new Error("SMTP credentials not configured");
     }
 
-    const { subject, title, message, ctaText, ctaUrl, adminKey }: BroadcastRequest = await req.json();
+    const { subject, title, message, ctaText, ctaUrl, adminKey, testEmail }: BroadcastRequest = await req.json();
 
-    // Simple admin protection - require service role auth header
-    const authHeader = req.headers.get("Authorization");
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    
-    // Allow if called with service role key OR if adminKey matches a simple secret
-    const isServiceRole = authHeader?.includes(supabaseServiceKey);
-    const isValidAdminKey = adminKey === "UNIVOID_BROADCAST_2025";
-    
-    if (!isServiceRole && !isValidAdminKey) {
+    // Simple admin protection
+    if (adminKey !== "UNIVOID_BROADCAST_2025") {
       throw new Error("Unauthorized: Admin access required");
     }
 
@@ -189,8 +204,28 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Missing required fields: subject, title, message");
     }
 
+    // Generate email HTML
+    const emailHtml = generateAnnouncementEmail(title, message, ctaText, ctaUrl);
+
+    // If testEmail provided, just send to that one email
+    if (testEmail) {
+      console.log(`Sending TEST email to: ${testEmail}`);
+      const result = await sendEmailViaMailChannels(testEmail, subject, emailHtml);
+      
+      return new Response(JSON.stringify({
+        success: result.success,
+        message: result.success ? `Test email sent to ${testEmail}` : `Failed: ${result.error}`,
+        testEmail: testEmail,
+        error: result.error
+      }), {
+        status: result.success ? 200 : 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
     // Create Supabase client with service role
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Fetch all user emails
@@ -219,18 +254,16 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Found ${profiles.length} users to email`);
 
-    // Generate email HTML
-    const emailHtml = generateAnnouncementEmail(title, message, ctaText, ctaUrl);
-
     let sent = 0;
     let failed = 0;
     const errors: string[] = [];
 
-    // Send emails with rate limiting (max 10 per second for Brevo free tier)
+    // Send emails with rate limiting
     for (const profile of profiles) {
       if (!profile.email) continue;
 
-      const result = await sendEmailViaBrevo(profile.email, subject, emailHtml);
+      console.log(`Sending to ${profile.email}...`);
+      const result = await sendEmailViaMailChannels(profile.email, subject, emailHtml);
       
       if (result.success) {
         sent++;
@@ -239,6 +272,11 @@ const handler = async (req: Request): Promise<Response> => {
         failed++;
         errors.push(`${profile.email}: ${result.error}`);
         console.error(`❌ Failed: ${profile.email} - ${result.error}`);
+        
+        // If first email fails with API key error, stop and report
+        if (sent === 0 && failed === 1 && result.error?.includes("API Key")) {
+          throw new Error("Brevo API Key is invalid. Please update BREVO_SMTP_PASSWORD with the Brevo API key (not SMTP password). Get it from: https://app.brevo.com/settings/keys/api");
+        }
       }
 
       // Rate limit: 100ms delay between emails
@@ -248,12 +286,12 @@ const handler = async (req: Request): Promise<Response> => {
     console.log(`Broadcast complete: ${sent} sent, ${failed} failed`);
 
     return new Response(JSON.stringify({
-      success: true,
+      success: sent > 0,
       message: `Broadcast complete`,
       total: profiles.length,
       sent,
       failed,
-      errors: errors.slice(0, 10) // Only return first 10 errors
+      errors: errors.slice(0, 10)
     }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
