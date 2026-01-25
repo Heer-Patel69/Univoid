@@ -166,12 +166,12 @@ export async function uploadOrganizerLogo(
   file: File
 ): Promise<{ url: string | null; error: Error | null }> {
   const fileExt = file.name.split('.').pop();
+  // Use just the filename - bucket name is specified in .from()
   const fileName = `${userId}-${Date.now()}.${fileExt}`;
-  const filePath = `organizer-logos/${fileName}`;
   
   const { error: uploadError } = await supabase.storage
     .from('organizer-logos')
-    .upload(filePath, file, { upsert: true });
+    .upload(fileName, file, { upsert: true });
   
   if (uploadError) {
     console.error('Error uploading logo:', uploadError);
@@ -180,7 +180,7 @@ export async function uploadOrganizerLogo(
   
   const { data: urlData } = supabase.storage
     .from('organizer-logos')
-    .getPublicUrl(filePath);
+    .getPublicUrl(fileName);
   
   return { url: urlData.publicUrl, error: null };
 }
