@@ -1,9 +1,13 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "https://esm.sh/resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // Use qrcode-svg which works without canvas (Deno compatible)
 import QRCode from "https://esm.sh/qrcode-svg@1.1.0";
 import { getCorsHeaders, isCorsPreflightRequest, handleCorsPreflightRequest } from "../_shared/cors.ts";
+
+// Brevo API Configuration
+const BREVO_API_KEY = Deno.env.get("BREVO_SMTP_PASSWORD"); // Brevo uses SMTP key as API key
+const SENDER_NAME = "UniVoid";
+const SENDER_EMAIL = "no-reply@univoid.tech";
 
 interface StatusEmailRequest {
   registrationId: string;
@@ -32,6 +36,47 @@ function generateQRCodeSVG(data: string): string {
   }
 }
 
+// Send email via Brevo REST API
+async function sendEmailViaBrevo(
+  to: string,
+  subject: string,
+  htmlContent: string
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  try {
+    if (!BREVO_API_KEY) {
+      throw new Error("BREVO_SMTP_PASSWORD not configured");
+    }
+
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "accept": "application/json",
+        "api-key": BREVO_API_KEY,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+        to: [{ email: to }],
+        subject: subject,
+        htmlContent: htmlContent,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Brevo API error:", errorText);
+      return { success: false, error: `Brevo API error: ${response.status} - ${errorText}` };
+    }
+
+    const result = await response.json();
+    console.log("Email sent successfully via Brevo:", result);
+    return { success: true, messageId: result.messageId };
+  } catch (error: any) {
+    console.error("Brevo send error:", error);
+    return { success: false, error: error.message };
+  }
+}
+
 const handler = async (req: Request): Promise<Response> => {
   console.log("Registration status email function called");
 
@@ -42,14 +87,12 @@ const handler = async (req: Request): Promise<Response> => {
   const corsHeaders = getCorsHeaders(req);
 
   try {
-    // CRITICAL: Check API key at runtime
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
-    if (!resendApiKey) {
-      console.error("CRITICAL: RESEND_API_KEY is missing at runtime!");
-      throw new Error("RESEND_API_KEY not configured");
+    // Check Brevo API key
+    if (!BREVO_API_KEY) {
+      console.error("CRITICAL: BREVO_SMTP_PASSWORD is missing!");
+      throw new Error("Email service not configured");
     }
-    const resend = new Resend(resendApiKey);
-    console.log("Resend API key verified ✓");
+    console.log("Brevo API key verified ✓");
 
     const { registrationId, status, eventId, userId, qrCode }: StatusEmailRequest = await req.json();
     console.log("Processing status email:", { registrationId, status, eventId, userId, hasQR: !!qrCode });
@@ -150,15 +193,19 @@ const handler = async (req: Request): Promise<Response> => {
         </head>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f9fafb; margin: 0; padding: 40px 20px;">
           <div style="max-width: 500px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-            <div style="background: ${statusColor}; padding: 24px; text-align: center;">
-              <h1 style="color: white; margin: 0; font-size: 24px;">${statusEmoji} Registration ${statusText}</h1>
+            <div style="background: linear-gradient(135deg, #1a1a1a 0%, #333333 100%); padding: 24px; text-align: center;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700;">✨ UniVoid</h1>
+              <p style="color: rgba(255,255,255,0.8); margin: 8px 0 0 0; font-size: 14px;">Event Registration Update</p>
+            </div>
+            <div style="background: ${statusColor}; padding: 16px; text-align: center;">
+              <h2 style="color: white; margin: 0; font-size: 20px;">${statusEmoji} Registration ${statusText}</h2>
             </div>
             <div style="padding: 32px;">
               <p style="color: #374151; font-size: 16px; margin-bottom: 24px;">Hi ${profile.full_name},</p>
               ${isApproved ? approvedContent : rejectedContent}
               <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
               <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 0;">
-                © ${new Date().getFullYear()} Univoid. All rights reserved.
+                © ${new Date().getFullYear()} UniVoid. All rights reserved.
               </p>
             </div>
           </div>
@@ -169,30 +216,23 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Sending status email to:", profile.email);
     console.log("Email HTML length:", emailHtml.length);
 
-    // CRITICAL: Send email and CHECK for actual errors
-    const { data, error: emailError } = await resend.emails.send({
-      from: "Univoid <onboarding@resend.dev>",
-      to: [profile.email],
-      subject: `${statusEmoji} Registration ${statusText}: ${event.title}`,
-      html: emailHtml,
-    });
+    // Send email via Brevo
+    const result = await sendEmailViaBrevo(
+      profile.email,
+      `${statusEmoji} Registration ${statusText}: ${event.title}`,
+      emailHtml
+    );
 
-    // FORCE ERROR CHECK - No silent failures!
-    if (emailError) {
-      console.error("RESEND EMAIL FAILED:", JSON.stringify(emailError, null, 2));
-      throw new Error(`Email delivery failed: ${emailError.message || JSON.stringify(emailError)}`);
+    if (!result.success) {
+      console.error("BREVO EMAIL FAILED:", result.error);
+      throw new Error(`Email delivery failed: ${result.error}`);
     }
 
-    if (!data || !data.id) {
-      console.error("RESEND NO DATA RETURNED:", data);
-      throw new Error("Email sent but no confirmation received");
-    }
-
-    console.log("✅ EMAIL SENT SUCCESSFULLY:", { emailId: data.id, to: profile.email });
+    console.log("✅ EMAIL SENT SUCCESSFULLY via Brevo:", { messageId: result.messageId, to: profile.email });
 
     return new Response(JSON.stringify({
       success: true,
-      emailId: data.id,
+      messageId: result.messageId,
       recipient: profile.email
     }), {
       status: 200,
@@ -205,7 +245,7 @@ const handler = async (req: Request): Promise<Response> => {
       JSON.stringify({
         success: false,
         error: error.message,
-        details: "Email could not be sent. Please check Resend dashboard for details."
+        details: "Email could not be sent. Please check Brevo dashboard for details."
       }),
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
