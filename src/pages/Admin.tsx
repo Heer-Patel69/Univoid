@@ -13,6 +13,7 @@ import {
 import AdminAssistantManager from "@/components/admin/AdminAssistantManager";
 import AdminOrganizerManager from "@/components/admin/AdminOrganizerManager";
 import { SystemToolsTab } from "@/components/admin/SystemToolsTab";
+import { AdminBroadcastEmail } from "@/components/admin/AdminBroadcastEmail";
 import { AdminEventDeleteDialog } from "@/components/admin/AdminEventDeleteDialog";
 import { isFullAdmin } from "@/services/adminInviteService";
 import { useAuth } from "@/contexts/AuthContext";
@@ -1252,6 +1253,10 @@ const Admin = () => {
                     <Bell className="w-3 h-3 mr-1" />
                     System
                   </TabsTrigger>
+                  <TabsTrigger value="broadcast" className="text-xs sm:text-sm">
+                    <Send className="w-3 h-3 mr-1" />
+                    Broadcast
+                  </TabsTrigger>
                 </TabsList>
               </CardHeader>
 
@@ -1299,6 +1304,10 @@ const Admin = () => {
 
                 <TabsContent value="system" className="mt-0">
                   <SystemToolsTab userId={user?.id} />
+                </TabsContent>
+
+                <TabsContent value="broadcast" className="mt-0">
+                  <AdminBroadcastEmail />
                 </TabsContent>
               </CardContent>
             </Tabs>

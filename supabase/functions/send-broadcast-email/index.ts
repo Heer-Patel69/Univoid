@@ -16,6 +16,7 @@ interface BroadcastRequest {
   ctaUrl?: string;
   adminKey?: string;
   testEmail?: string; // Optional: send to single email for testing
+  senderId?: string; // For logging
 }
 
 // Send email via Brevo REST API
@@ -186,7 +187,7 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("BREVO_API_KEY not configured");
     }
 
-    const { subject, title, message, ctaText, ctaUrl, adminKey, testEmail }: BroadcastRequest = await req.json();
+    const { subject, title, message, ctaText, ctaUrl, adminKey, testEmail, senderId }: BroadcastRequest = await req.json();
 
     // Simple admin protection
     if (adminKey !== "UNIVOID_BROADCAST_2025") {
@@ -196,6 +197,11 @@ const handler = async (req: Request): Promise<Response> => {
     if (!subject || !title || !message) {
       throw new Error("Missing required fields: subject, title, message");
     }
+
+    // Create Supabase client for logging
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Generate email HTML
     const emailHtml = generateAnnouncementEmail(title, message, ctaText, ctaUrl);
@@ -215,11 +221,6 @@ const handler = async (req: Request): Promise<Response> => {
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
-
-    // Create Supabase client with service role
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Fetch all user emails
     const { data: profiles, error: profilesError } = await supabase
@@ -277,6 +278,21 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     console.log(`Broadcast complete: ${sent} sent, ${failed} failed`);
+
+    // Log the broadcast email
+    if (senderId) {
+      await supabase.from("email_logs").insert({
+        sender_id: senderId,
+        sender_type: "admin",
+        event_id: null,
+        subject,
+        body_preview: message.substring(0, 200),
+        recipients_count: sent + failed,
+        status: failed === 0 ? "sent" : sent === 0 ? "failed" : "partial",
+        error_message: errors.length > 0 ? errors.slice(0, 5).join("; ") : null,
+        sent_at: new Date().toISOString(),
+      });
+    }
 
     return new Response(JSON.stringify({
       success: sent > 0,
