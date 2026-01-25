@@ -59,6 +59,7 @@ const FastRegister = lazy(() => import("@/pages/FastRegister"));
 const Colleges = lazy(() => import("@/pages/Colleges"));
 const OrganizerOnboarding = lazy(() => import("@/pages/OrganizerOnboarding"));
 const OrganizerProfile = lazy(() => import("@/pages/OrganizerProfile"));
+const EditOrganizerProfile = lazy(() => import("@/pages/EditOrganizerProfile"));
 
 // Preload critical pages after initial render
 const preloadCriticalPages = () => {
@@ -238,6 +239,9 @@ export const AnimatedRoutes = () => {
         } />
         <Route path="/organizer/check-in/:eventId" element={
           <Suspense fallback={<DashboardSkeleton />}><EventCheckIn /></Suspense>
+        } />
+        <Route path="/organizer/edit-profile" element={
+          <Suspense fallback={<TextSkeleton />}><EditOrganizerProfile /></Suspense>
         } />
         {/* Volunteer check-in route - same component, different path */}
         <Route path="/events/:eventId/check-in" element={
