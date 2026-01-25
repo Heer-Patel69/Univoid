@@ -45,13 +45,6 @@ const CreateEvent = () => {
   const { scanUpiFromFile, isScanning } = useUpiScanner();
   const { hasProfile, isLoading: checkingProfile } = useOrganizerProfile();
   
-  // Redirect to organizer onboarding if no profile
-  useEffect(() => {
-    if (!checkingProfile && user && !hasProfile) {
-      navigate('/organizer/onboarding', { replace: true });
-    }
-  }, [checkingProfile, hasProfile, user, navigate]);
-  
   // Show loading while checking profile
   if (checkingProfile) {
     return (
@@ -63,6 +56,35 @@ const CreateEvent = () => {
               <Skeleton className="h-4 w-full" />
               <Skeleton className="h-32 w-full" />
             </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+  
+  // Redirect to organizer onboarding if no profile
+  if (user && !hasProfile) {
+    return (
+      <div className="container max-w-4xl mx-auto py-8 px-4">
+        <Card className="text-center">
+          <CardHeader>
+            <CardTitle className="text-2xl">Complete Your Organizer Profile</CardTitle>
+            <CardDescription>
+              Before creating events, you need to set up your organizer profile. This only takes a minute!
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-muted-foreground">
+              Your organizer profile helps attendees know who's hosting the event and builds trust in your brand.
+            </p>
+            <Button 
+              size="lg" 
+              onClick={() => navigate('/organizer/onboarding')}
+              className="gap-2"
+            >
+              <Sparkles className="h-4 w-4" />
+              Set Up Organizer Profile
+            </Button>
           </CardContent>
         </Card>
       </div>
