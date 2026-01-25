@@ -180,13 +180,17 @@ Deno.serve(async (req) => {
   </url>`;
     }
 
-    // Add individual events (use slug for SEO-friendly URLs)
+    // Add individual events (ONLY use slug for SEO - skip events without slugs to prevent redirect issues)
     for (const item of events) {
+      // Skip events without slugs to avoid redirect chains in Google indexing
+      if (!item.slug) {
+        console.warn(`Event ${item.id} has no slug, skipping in sitemap`);
+        continue;
+      }
       const lastmod = item.updated_at ? item.updated_at.split("T")[0] : today;
-      const eventUrl = item.slug || item.id;
       xml += `
   <url>
-    <loc>${SITE_URL}/events/${eventUrl}</loc>
+    <loc>${SITE_URL}/events/${item.slug}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
