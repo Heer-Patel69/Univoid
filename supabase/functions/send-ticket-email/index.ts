@@ -189,6 +189,9 @@ const handler = async (req: Request): Promise<Response> => {
       // Upload PNG to storage for reliable email display
       const qrImageUrl = await generateAndUploadQRCode(supabase, ticketId, qrCode);
 
+      // Generate manual entry code (first 8 characters of QR code hash, uppercase)
+      const manualEntryCode = qrCode.substring(0, 8).toUpperCase();
+
       if (qrImageUrl) {
         qrCodeImageHtml = `
           <div style="text-align: center; margin: 28px 0;">
@@ -198,6 +201,12 @@ const handler = async (req: Request): Promise<Response> => {
                 <img src="${qrImageUrl}" alt="Event Entry QR Code" width="180" height="180" style="display: block; border-radius: 8px;" />
               </div>
               <p style="color: #6b7280; font-size: 13px; margin: 16px 0 0 0; font-weight: 500;">Show this at the venue entrance</p>
+              
+              <!-- Manual Entry Code -->
+              <div style="margin-top: 20px; padding-top: 16px; border-top: 2px dashed #e5e7eb;">
+                <p style="color: #6b7280; font-size: 12px; margin: 0 0 8px 0;">QR not working? Use manual entry code:</p>
+                <p style="color: #1a1a1a; font-size: 20px; font-weight: 800; margin: 0; letter-spacing: 3px; font-family: monospace;">${manualEntryCode}</p>
+              </div>
             </div>
           </div>
         `;
@@ -207,18 +216,27 @@ const handler = async (req: Request): Promise<Response> => {
           <div style="text-align: center; margin: 28px 0;">
             <div style="display: inline-block; background: #FFFDF5; border: 3px solid #1a1a1a; border-radius: 24px; padding: 28px 32px; box-shadow: 6px 6px 0 #1a1a1a;">
               <p style="color: #1a1a1a; font-weight: 800; margin: 0 0 16px 0; font-size: 20px;">🎟️ Your Entry Pass</p>
-              <a href="https://univoid.tech/my-events" style="display: inline-block; background: #1a1a1a; color: white; padding: 16px 32px; border-radius: 50px; text-decoration: none; font-weight: 700; font-size: 16px;">View Your Ticket →</a>
-              <p style="color: #6b7280; font-size: 13px; margin: 16px 0 0 0;">Click to view your QR code</p>
+              
+              <!-- Manual Entry Code -->
+              <div style="margin-bottom: 16px; padding: 12px 20px; background: #FEF3C7; border: 2px solid #F59E0B; border-radius: 12px;">
+                <p style="color: #92400E; font-size: 12px; margin: 0 0 6px 0; font-weight: 600;">Manual Entry Code:</p>
+                <p style="color: #1a1a1a; font-size: 20px; font-weight: 800; margin: 0; letter-spacing: 3px; font-family: monospace;">${manualEntryCode}</p>
+              </div>
+              
+              <p style="color: #6b7280; font-size: 13px; margin: 0;">Show this code at the venue entrance</p>
             </div>
           </div>
         `;
       }
     } catch (qrError) {
       console.error("QR generation error:", qrError);
+      const manualEntryCode = qrCode.substring(0, 8).toUpperCase();
       qrCodeImageHtml = `
         <div style="text-align: center; margin: 24px 0; padding: 24px; background: #FEF3C7; border: 2px solid #F59E0B; border-radius: 16px;">
-          <p style="color: #92400E; font-weight: 700; margin: 0 0 12px 0;">🎟️ View Your Entry Pass</p>
-          <a href="https://univoid.tech/my-events" style="color: #1a1a1a; font-weight: 700; text-decoration: underline;">Click here to view your ticket</a>
+          <p style="color: #92400E; font-weight: 700; margin: 0 0 12px 0;">🎟️ Your Entry Pass</p>
+          <p style="color: #92400E; font-size: 12px; margin: 0 0 6px 0;">Manual Entry Code:</p>
+          <p style="color: #1a1a1a; font-size: 20px; font-weight: 800; margin: 0 0 12px 0; letter-spacing: 3px; font-family: monospace;">${manualEntryCode}</p>
+          <a href="https://univoid.tech/my-events" style="color: #1a1a1a; font-weight: 700; text-decoration: underline;">View full ticket online</a>
         </div>
       `;
     }
@@ -315,16 +333,11 @@ const handler = async (req: Request): Promise<Response> => {
                                 <td align="center">
                                   <table role="presentation" cellpadding="0" cellspacing="0">
                                     <tr>
-                                      <td style="background-color: #7C3AED; border-radius: 50px; box-shadow: 3px 3px 0 #1a1a1a;">
-                                        <a href="https://univoid.tech/my-events" target="_blank" style="display: inline-block; padding: 14px 32px; color: #ffffff; font-size: 15px; font-weight: 700; text-decoration: none; border-radius: 50px;">👉 View Your Ticket</a>
+                                      <td style="background-color: #F59E0B; border-radius: 50px; box-shadow: 3px 3px 0 #1a1a1a;">
+                                        <a href="https://univoid.tech/my-events" target="_blank" style="display: inline-block; padding: 14px 32px; color: #1a1a1a; font-size: 15px; font-weight: 700; text-decoration: none; border-radius: 50px;">👉 View Your Ticket</a>
                                       </td>
                                     </tr>
                                   </table>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td align="center" style="padding-top: 10px;">
-                                  <p style="margin: 0; color: #6B7280; font-size: 12px;">or visit <a href="https://univoid.tech/my-events" style="color: #7C3AED; font-weight: 600;">univoid.tech/my-events</a></p>
                                 </td>
                               </tr>
                             </table>
