@@ -8,12 +8,13 @@ const BREVO_API_KEY = Deno.env.get("BREVO_API_KEY");
 const SENDER_NAME = "UniVoid";
 const SENDER_EMAIL = "heerpatel1032@gmail.com";
 
-type AudienceType = 'all' | 'registered' | 'non-registered';
+type AudienceType = 'all' | 'registered' | 'external';
 
 interface BroadcastRequest {
   subject: string;
   message: string;
   audienceType?: AudienceType;
+  externalEmails?: string[];
   // Legacy fields for backward compatibility
   title?: string;
   ctaText?: string;
@@ -158,7 +159,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const body: BroadcastRequest = await req.json();
-    const { subject, message, audienceType = 'all', adminKey, testEmail, senderId, title } = body;
+    const { subject, message, audienceType = 'all', externalEmails, adminKey, testEmail, senderId, title } = body;
 
     // Simple admin protection
     if (adminKey !== "UNIVOID_BROADCAST_2025") {
@@ -172,7 +173,78 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Missing required fields: subject and message");
     }
 
-    // Create Supabase client
+    // Handle external emails (no database lookup needed)
+    if (audienceType === 'external') {
+      if (!externalEmails || externalEmails.length === 0) {
+        throw new Error("No external emails provided");
+      }
+
+      console.log(`Sending to ${externalEmails.length} external emails`);
+
+      let sent = 0;
+      let failed = 0;
+      const errors: string[] = [];
+
+      for (const email of externalEmails) {
+        const emailHtml = generateCustomEmail(emailContent, 'there');
+        console.log(`Sending to external: ${email}...`);
+        const result = await sendEmailViaBrevo(email, subject, emailHtml);
+        
+        if (result.success) {
+          sent++;
+          console.log(`✅ Sent to ${email}`);
+        } else {
+          failed++;
+          errors.push(`${email}: ${result.error}`);
+          console.error(`❌ Failed: ${email} - ${result.error}`);
+          
+          // If first email fails with API key error, stop
+          if (sent === 0 && failed === 1 && result.error?.includes("API Key")) {
+            throw new Error("Brevo API Key is invalid");
+          }
+        }
+
+        // Rate limit: 100ms delay between emails
+        await delay(100);
+      }
+
+      console.log(`External broadcast complete: ${sent} sent, ${failed} failed`);
+
+      // Create Supabase client for logging
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+      // Log the broadcast email
+      if (senderId) {
+        await supabase.from("email_logs").insert({
+          sender_id: senderId,
+          sender_type: "admin",
+          event_id: null,
+          subject: `[EXTERNAL] ${subject}`,
+          body_preview: emailContent.substring(0, 200),
+          recipients_count: sent + failed,
+          status: failed === 0 ? "sent" : sent === 0 ? "failed" : "partial",
+          error_message: errors.length > 0 ? errors.slice(0, 5).join("; ") : null,
+          sent_at: new Date().toISOString(),
+        });
+      }
+
+      return new Response(JSON.stringify({
+        success: sent > 0,
+        message: `External broadcast complete`,
+        audienceType: 'external',
+        total: externalEmails.length,
+        sent,
+        failed,
+        errors: errors.slice(0, 10)
+      }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    // Create Supabase client for platform users
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -237,9 +309,6 @@ const handler = async (req: Request): Promise<Response> => {
     if (audienceType === 'registered') {
       targetProfiles = profiles.filter(p => registeredUserIds.has(p.id));
       console.log(`Filtered to ${targetProfiles.length} registered users`);
-    } else if (audienceType === 'non-registered') {
-      targetProfiles = profiles.filter(p => !registeredUserIds.has(p.id));
-      console.log(`Filtered to ${targetProfiles.length} non-registered users`);
     }
 
     if (targetProfiles.length === 0) {

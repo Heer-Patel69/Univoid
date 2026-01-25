@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,13 +25,16 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Mail, Send, Loader2, CheckCircle, AlertCircle, Users, History, UserCheck, UserX } from 'lucide-react';
+import { Mail, Send, Loader2, CheckCircle, AlertCircle, Users, History, UserCheck, ExternalLink, Plus, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 
-type AudienceType = 'all' | 'registered' | 'non-registered';
+type AudienceType = 'all' | 'registered' | 'external';
+
+// Email validation regex
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const AdminBroadcastEmail = () => {
   const { user } = useAuth();
@@ -41,12 +44,52 @@ export const AdminBroadcastEmail = () => {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [audienceType, setAudienceType] = useState<AudienceType>('all');
   const [lastResult, setLastResult] = useState<{ success: boolean; message: string; sent?: number; failed?: number } | null>(null);
+  
+  // External emails state
+  const [externalEmailsText, setExternalEmailsText] = useState('');
+  const [singleEmail, setSingleEmail] = useState('');
+
+  // Parse and validate external emails
+  const parsedExternalEmails = useMemo(() => {
+    if (!externalEmailsText.trim()) return [];
+    
+    // Split by comma, newline, semicolon, or space
+    const emails = externalEmailsText
+      .split(/[,\n;\s]+/)
+      .map(e => e.trim().toLowerCase())
+      .filter(e => e.length > 0);
+    
+    // Remove duplicates and validate
+    const uniqueEmails = [...new Set(emails)];
+    return uniqueEmails.map(email => ({
+      email,
+      valid: EMAIL_REGEX.test(email)
+    }));
+  }, [externalEmailsText]);
+
+  const validExternalEmails = parsedExternalEmails.filter(e => e.valid).map(e => e.email);
+  const invalidExternalEmails = parsedExternalEmails.filter(e => !e.valid);
+
+  // Add single email to bulk list
+  const handleAddSingleEmail = () => {
+    if (!singleEmail.trim()) return;
+    if (!EMAIL_REGEX.test(singleEmail.trim())) {
+      toast.error('Invalid email format');
+      return;
+    }
+    const newEmail = singleEmail.trim().toLowerCase();
+    if (validExternalEmails.includes(newEmail)) {
+      toast.error('Email already added');
+      return;
+    }
+    setExternalEmailsText(prev => prev ? `${prev}\n${newEmail}` : newEmail);
+    setSingleEmail('');
+  };
 
   // Fetch user counts based on registration status
   const { data: userCounts } = useQuery({
     queryKey: ['user-counts-by-registration'],
     queryFn: async () => {
-      // Get all active users
       const { data: allProfiles, error: profilesError } = await supabase
         .from('profiles')
         .select('id')
@@ -54,7 +97,6 @@ export const AdminBroadcastEmail = () => {
       
       if (profilesError) throw profilesError;
       
-      // Get users who have registered for at least one event
       const { data: registeredUsers, error: regError } = await supabase
         .from('event_registrations')
         .select('user_id')
@@ -65,12 +107,10 @@ export const AdminBroadcastEmail = () => {
       const registeredUserIds = new Set(registeredUsers?.map(r => r.user_id) || []);
       const totalUsers = allProfiles?.length || 0;
       const registeredCount = registeredUserIds.size;
-      const nonRegisteredCount = totalUsers - registeredCount;
       
       return {
         total: totalUsers,
         registered: registeredCount,
-        nonRegistered: nonRegisteredCount,
       };
     },
   });
@@ -91,19 +131,19 @@ export const AdminBroadcastEmail = () => {
   });
 
   const getAudienceCount = () => {
+    if (audienceType === 'external') return validExternalEmails.length;
     if (!userCounts) return '...';
     switch (audienceType) {
       case 'all': return userCounts.total;
       case 'registered': return userCounts.registered;
-      case 'non-registered': return userCounts.nonRegistered;
     }
   };
 
   const getAudienceLabel = () => {
     switch (audienceType) {
-      case 'all': return 'All Users';
+      case 'all': return 'All Platform Users';
       case 'registered': return 'Registered Users (event attendees)';
-      case 'non-registered': return 'Non-Registered Users (never attended events)';
+      case 'external': return `External Emails (${validExternalEmails.length} addresses)`;
     }
   };
 
@@ -118,6 +158,11 @@ export const AdminBroadcastEmail = () => {
       return;
     }
 
+    if (audienceType === 'external' && validExternalEmails.length === 0) {
+      toast.error('Please add at least one valid email address');
+      return;
+    }
+
     setShowConfirmDialog(false);
     setIsSending(true);
     setLastResult(null);
@@ -128,6 +173,7 @@ export const AdminBroadcastEmail = () => {
           subject: subject.trim(),
           message: message.trim(),
           audienceType,
+          externalEmails: audienceType === 'external' ? validExternalEmails : undefined,
           adminKey: 'UNIVOID_BROADCAST_2025',
           senderId: user.id,
         },
@@ -142,10 +188,13 @@ export const AdminBroadcastEmail = () => {
           sent: data.sent,
           failed: data.failed,
         });
-        toast.success(`Email sent to ${data.sent} users`);
+        toast.success(`Email sent to ${data.sent} recipients`);
         // Clear form on success
         setSubject('');
         setMessage('');
+        if (audienceType === 'external') {
+          setExternalEmailsText('');
+        }
         // Refresh logs
         refetchLogs();
       } else {
@@ -164,7 +213,8 @@ export const AdminBroadcastEmail = () => {
     }
   };
 
-  const isFormValid = subject.trim().length > 0 && message.trim().length > 0;
+  const isFormValid = subject.trim().length > 0 && message.trim().length > 0 && 
+    (audienceType !== 'external' || validExternalEmails.length > 0);
 
   return (
     <div className="space-y-6">
@@ -202,7 +252,7 @@ export const AdminBroadcastEmail = () => {
                     <span className="font-medium">All Users</span>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {userCounts?.total ?? '...'} users
+                    {userCounts?.total ?? '...'} platform users
                   </p>
                 </div>
               </Label>
@@ -222,32 +272,118 @@ export const AdminBroadcastEmail = () => {
                     <span className="font-medium">Registered</span>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {userCounts?.registered ?? '...'} attendees
+                    {userCounts?.registered ?? '...'} event attendees
                   </p>
                 </div>
               </Label>
               
               <Label
-                htmlFor="audience-non-registered"
+                htmlFor="audience-external"
                 className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                  audienceType === 'non-registered' 
+                  audienceType === 'external' 
                     ? 'border-primary bg-primary/5' 
                     : 'border-border hover:border-primary/50'
                 }`}
               >
-                <RadioGroupItem value="non-registered" id="audience-non-registered" />
+                <RadioGroupItem value="external" id="audience-external" />
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <UserX className="w-4 h-4 text-orange-600" />
-                    <span className="font-medium">Non-Registered</span>
+                    <ExternalLink className="w-4 h-4 text-blue-600" />
+                    <span className="font-medium">External</span>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {userCounts?.nonRegistered ?? '...'} users
+                    Custom email list
                   </p>
                 </div>
               </Label>
             </RadioGroup>
           </div>
+
+          {/* External Email Input */}
+          {audienceType === 'external' && (
+            <div className="space-y-4 p-4 rounded-lg border-2 border-dashed border-primary/30 bg-primary/5">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Add Email Addresses</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={singleEmail}
+                    onChange={(e) => setSingleEmail(e.target.value)}
+                    placeholder="Enter email address"
+                    type="email"
+                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddSingleEmail())}
+                  />
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="icon"
+                    onClick={handleAddSingleEmail}
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">
+                  Bulk Paste Emails 
+                  <span className="text-muted-foreground font-normal ml-1">
+                    (comma, newline, or semicolon separated)
+                  </span>
+                </Label>
+                <Textarea
+                  value={externalEmailsText}
+                  onChange={(e) => setExternalEmailsText(e.target.value)}
+                  placeholder="email1@example.com, email2@example.com&#10;email3@example.com&#10;email4@example.com"
+                  rows={5}
+                  className="font-mono text-sm"
+                />
+              </div>
+
+              {/* Email Stats */}
+              {parsedExternalEmails.length > 0 && (
+                <div className="flex flex-wrap gap-2 text-sm">
+                  <Badge variant="default" className="bg-green-600">
+                    {validExternalEmails.length} valid
+                  </Badge>
+                  {invalidExternalEmails.length > 0 && (
+                    <Badge variant="destructive">
+                      {invalidExternalEmails.length} invalid
+                    </Badge>
+                  )}
+                </div>
+              )}
+
+              {/* Show invalid emails */}
+              {invalidExternalEmails.length > 0 && (
+                <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+                  <p className="font-medium mb-1">Invalid emails (will be skipped):</p>
+                  <div className="flex flex-wrap gap-1">
+                    {invalidExternalEmails.slice(0, 10).map((e, i) => (
+                      <code key={i} className="px-1.5 py-0.5 bg-destructive/20 rounded text-xs">
+                        {e.email}
+                      </code>
+                    ))}
+                    {invalidExternalEmails.length > 10 && (
+                      <span className="text-xs">+{invalidExternalEmails.length - 10} more</span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Clear button */}
+              {externalEmailsText && (
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setExternalEmailsText('')}
+                  className="text-muted-foreground"
+                >
+                  <X className="w-3 h-3 mr-1" /> Clear all emails
+                </Button>
+              )}
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="broadcast-subject">Email Subject *</Label>
@@ -288,7 +424,7 @@ export const AdminBroadcastEmail = () => {
             ) : (
               <>
                 <Send className="w-4 h-4" />
-                Send to {getAudienceCount()} {audienceType === 'all' ? 'Users' : audienceType === 'registered' ? 'Attendees' : 'Users'}
+                Send to {getAudienceCount()} {audienceType === 'external' ? 'Recipients' : 'Users'}
               </>
             )}
           </Button>
