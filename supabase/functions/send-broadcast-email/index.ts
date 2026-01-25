@@ -8,15 +8,19 @@ const BREVO_API_KEY = Deno.env.get("BREVO_API_KEY");
 const SENDER_NAME = "UniVoid";
 const SENDER_EMAIL = "heerpatel1032@gmail.com";
 
+type AudienceType = 'all' | 'registered' | 'non-registered';
+
 interface BroadcastRequest {
   subject: string;
-  title: string;
   message: string;
+  audienceType?: AudienceType;
+  // Legacy fields for backward compatibility
+  title?: string;
   ctaText?: string;
   ctaUrl?: string;
   adminKey?: string;
-  testEmail?: string; // Optional: send to single email for testing
-  senderId?: string; // For logging
+  testEmail?: string;
+  senderId?: string;
 }
 
 // Send email via Brevo REST API
@@ -50,7 +54,6 @@ async function sendEmailViaBrevo(
     if (!response.ok) {
       console.error(`Brevo API error for ${to}:`, response.status, responseText);
       
-      // If 401, the API key format is wrong - provide helpful message
       if (response.status === 401) {
         return { 
           success: false, 
@@ -68,15 +71,27 @@ async function sendEmailViaBrevo(
   }
 }
 
-// Generate announcement email HTML
-function generateAnnouncementEmail(title: string, message: string, ctaText?: string, ctaUrl?: string): string {
+// Generate custom email HTML with full flexibility
+function generateCustomEmail(message: string, userName?: string): string {
+  // Replace placeholder
+  const processedMessage = message.replace(/\{\{userName\}\}/g, userName || 'User');
+  
+  // Check if message already contains HTML structure
+  const hasHtmlStructure = /<html|<body|<table/i.test(processedMessage);
+  
+  if (hasHtmlStructure) {
+    // Return as-is if it's already formatted HTML
+    return processedMessage;
+  }
+  
+  // Wrap in a simple email template
   return `
     <!DOCTYPE html>
     <html lang="en">
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>${title}</title>
+      <title>UniVoid</title>
     </head>
     <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5;">
       <table role="presentation" cellpadding="0" cellspacing="0" style="width: 100%; background-color: #f4f4f5;">
@@ -85,22 +100,10 @@ function generateAnnouncementEmail(title: string, message: string, ctaText?: str
             <table role="presentation" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
               <!-- Header with Logo -->
               <tr>
-                <td style="background: linear-gradient(135deg, #1a1a1a 0%, #333333 100%); padding: 40px; text-align: center;">
-                  <h1 style="color: #ffffff; margin: 0; font-size: 32px; font-weight: 700; letter-spacing: -0.5px;">
+                <td style="background: linear-gradient(135deg, #1a1a1a 0%, #333333 100%); padding: 30px 40px; text-align: center;">
+                  <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">
                     ✨ UniVoid
                   </h1>
-                  <p style="color: rgba(255,255,255,0.8); margin: 12px 0 0 0; font-size: 16px;">
-                    Where students learn, share, and grow together
-                  </p>
-                </td>
-              </tr>
-              
-              <!-- Announcement Banner -->
-              <tr>
-                <td style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); padding: 24px; text-align: center;">
-                  <h2 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700;">
-                    🎉 ${title}
-                  </h2>
                 </td>
               </tr>
               
@@ -108,41 +111,9 @@ function generateAnnouncementEmail(title: string, message: string, ctaText?: str
               <tr>
                 <td style="padding: 40px 32px;">
                   <div style="color: #333333; font-size: 16px; line-height: 1.8;">
-                    ${message.split('\n').map(line => `<p style="margin: 0 0 16px 0;">${line}</p>`).join('')}
-                  </div>
-                  
-                  ${ctaText && ctaUrl ? `
-                  <div style="text-align: center; margin-top: 32px;">
-                    <a href="${ctaUrl}" 
-                       style="display: inline-block; background: linear-gradient(135deg, #1a1a1a 0%, #333333 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 50px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 14px rgba(0,0,0,0.25);">
-                      ${ctaText} →
-                    </a>
-                  </div>
-                  ` : ''}
-                  
-                  <!-- Features Grid -->
-                  <div style="margin-top: 40px; padding: 24px; background: #f8f8f8; border-radius: 12px;">
-                    <p style="color: #666666; font-size: 14px; font-weight: 600; margin: 0 0 16px 0; text-align: center;">What's waiting for you:</p>
-                    <table style="width: 100%;">
-                      <tr>
-                        <td style="padding: 8px; text-align: center;">
-                          <p style="margin: 0; font-size: 24px;">📚</p>
-                          <p style="margin: 4px 0 0 0; font-size: 12px; color: #666;">Study Materials</p>
-                        </td>
-                        <td style="padding: 8px; text-align: center;">
-                          <p style="margin: 0; font-size: 24px;">🎪</p>
-                          <p style="margin: 4px 0 0 0; font-size: 12px; color: #666;">Campus Events</p>
-                        </td>
-                        <td style="padding: 8px; text-align: center;">
-                          <p style="margin: 0; font-size: 24px;">📖</p>
-                          <p style="margin: 4px 0 0 0; font-size: 12px; color: #666;">Book Exchange</p>
-                        </td>
-                        <td style="padding: 8px; text-align: center;">
-                          <p style="margin: 0; font-size: 24px;">🏆</p>
-                          <p style="margin: 4px 0 0 0; font-size: 12px; color: #666;">XP & Ranks</p>
-                        </td>
-                      </tr>
-                    </table>
+                    ${processedMessage.split('\n').map(line => 
+                      line.trim() ? `<p style="margin: 0 0 16px 0;">${line}</p>` : ''
+                    ).join('')}
                   </div>
                 </td>
               </tr>
@@ -174,7 +145,6 @@ function delay(ms: number): Promise<void> {
 
 const handler = async (req: Request): Promise<Response> => {
   console.log("Broadcast email function called");
-  console.log("Brevo API Key configured:", !!BREVO_API_KEY, "starts with:", BREVO_API_KEY?.substring(0, 10), "length:", BREVO_API_KEY?.length);
 
   if (isCorsPreflightRequest(req)) {
     return handleCorsPreflightRequest(req);
@@ -187,28 +157,30 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("BREVO_API_KEY not configured");
     }
 
-    const { subject, title, message, ctaText, ctaUrl, adminKey, testEmail, senderId }: BroadcastRequest = await req.json();
+    const body: BroadcastRequest = await req.json();
+    const { subject, message, audienceType = 'all', adminKey, testEmail, senderId, title } = body;
 
     // Simple admin protection
     if (adminKey !== "UNIVOID_BROADCAST_2025") {
       throw new Error("Unauthorized: Admin access required");
     }
 
-    if (!subject || !title || !message) {
-      throw new Error("Missing required fields: subject, title, message");
+    // Support legacy format (title + message) or new format (message only)
+    const emailContent = message || title || '';
+    
+    if (!subject || !emailContent) {
+      throw new Error("Missing required fields: subject and message");
     }
 
-    // Create Supabase client for logging
+    // Create Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Generate email HTML
-    const emailHtml = generateAnnouncementEmail(title, message, ctaText, ctaUrl);
-
     // If testEmail provided, just send to that one email
     if (testEmail) {
       console.log(`Sending TEST email to: ${testEmail}`);
+      const emailHtml = generateCustomEmail(emailContent, 'Test User');
       const result = await sendEmailViaBrevo(testEmail, subject, emailHtml);
       
       return new Response(JSON.stringify({
@@ -222,7 +194,20 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    // Fetch all user emails
+    // Get users who have registered for events
+    const { data: registeredUsers, error: regError } = await supabase
+      .from("event_registrations")
+      .select("user_id");
+    
+    if (regError) {
+      console.error("Failed to fetch registrations:", regError);
+      throw new Error("Failed to fetch registration data");
+    }
+
+    const registeredUserIds = new Set(registeredUsers?.map(r => r.user_id) || []);
+    console.log(`Found ${registeredUserIds.size} registered users`);
+
+    // Fetch all user profiles
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
       .select("id, full_name, email")
@@ -246,16 +231,40 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    console.log(`Found ${profiles.length} users to email`);
+    // Filter profiles based on audience type
+    let targetProfiles = profiles;
+    
+    if (audienceType === 'registered') {
+      targetProfiles = profiles.filter(p => registeredUserIds.has(p.id));
+      console.log(`Filtered to ${targetProfiles.length} registered users`);
+    } else if (audienceType === 'non-registered') {
+      targetProfiles = profiles.filter(p => !registeredUserIds.has(p.id));
+      console.log(`Filtered to ${targetProfiles.length} non-registered users`);
+    }
+
+    if (targetProfiles.length === 0) {
+      return new Response(JSON.stringify({
+        success: true,
+        message: `No ${audienceType} users found`,
+        sent: 0,
+        failed: 0
+      }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    console.log(`Sending to ${targetProfiles.length} users (audience: ${audienceType})`);
 
     let sent = 0;
     let failed = 0;
     const errors: string[] = [];
 
     // Send emails with rate limiting
-    for (const profile of profiles) {
+    for (const profile of targetProfiles) {
       if (!profile.email) continue;
 
+      const emailHtml = generateCustomEmail(emailContent, profile.full_name);
       console.log(`Sending to ${profile.email}...`);
       const result = await sendEmailViaBrevo(profile.email, subject, emailHtml);
       
@@ -267,9 +276,9 @@ const handler = async (req: Request): Promise<Response> => {
         errors.push(`${profile.email}: ${result.error}`);
         console.error(`❌ Failed: ${profile.email} - ${result.error}`);
         
-        // If first email fails with API key error, stop and report
+        // If first email fails with API key error, stop
         if (sent === 0 && failed === 1 && result.error?.includes("API Key")) {
-          throw new Error("Brevo API Key is invalid. Please update BREVO_SMTP_PASSWORD with the Brevo API key (not SMTP password). Get it from: https://app.brevo.com/settings/keys/api");
+          throw new Error("Brevo API Key is invalid");
         }
       }
 
@@ -285,8 +294,8 @@ const handler = async (req: Request): Promise<Response> => {
         sender_id: senderId,
         sender_type: "admin",
         event_id: null,
-        subject,
-        body_preview: message.substring(0, 200),
+        subject: `[${audienceType.toUpperCase()}] ${subject}`,
+        body_preview: emailContent.substring(0, 200),
         recipients_count: sent + failed,
         status: failed === 0 ? "sent" : sent === 0 ? "failed" : "partial",
         error_message: errors.length > 0 ? errors.slice(0, 5).join("; ") : null,
@@ -297,7 +306,8 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(JSON.stringify({
       success: sent > 0,
       message: `Broadcast complete`,
-      total: profiles.length,
+      audienceType,
+      total: targetProfiles.length,
       sent,
       failed,
       errors: errors.slice(0, 10)
