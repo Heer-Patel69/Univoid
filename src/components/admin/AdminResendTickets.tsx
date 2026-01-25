@@ -38,7 +38,7 @@ export const AdminResendTickets = () => {
   const { data: ticketStats, isLoading, refetch } = useQuery({
     queryKey: ['all-approved-tickets'],
     queryFn: async () => {
-      // Get all approved registrations with tickets
+      // Get all tickets with QR codes
       const { data: tickets, error } = await supabase
         .from('event_tickets')
         .select(`
@@ -47,16 +47,37 @@ export const AdminResendTickets = () => {
           event_id,
           user_id,
           qr_code,
-          events!inner(title),
-          profiles:user_id(full_name)
+          events!inner(title)
         `)
         .not('qr_code', 'is', null);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching tickets:', error);
+        throw error;
+      }
+
+      console.log('Fetched tickets:', tickets?.length || 0);
+
+      // Fetch user names separately to avoid join issues
+      const ticketsWithNames = await Promise.all(
+        (tickets || []).map(async (ticket: any) => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', ticket.user_id)
+            .maybeSingle();
+          
+          return {
+            ...ticket,
+            userName: profile?.full_name || 'Unknown User',
+            eventTitle: ticket.events?.title || 'Unknown Event'
+          };
+        })
+      );
 
       return {
-        total: tickets?.length || 0,
-        tickets: tickets || []
+        total: ticketsWithNames.length,
+        tickets: ticketsWithNames
       };
     },
   });
