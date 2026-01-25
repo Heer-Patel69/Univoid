@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -77,9 +77,9 @@ const CreateEvent = () => {
             <p className="text-muted-foreground">
               Your organizer profile helps attendees know who's hosting the event and builds trust in your brand.
             </p>
-            <Button 
+            <Button
               size="lg" 
-              onClick={() => navigate('/organizer/onboarding')}
+              onClick={() => navigate('/organizer/onboarding?redirect=/organizer/create-event')}
               className="gap-2"
             >
               <Sparkles className="h-4 w-4" />

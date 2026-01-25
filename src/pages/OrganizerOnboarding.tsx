@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -93,6 +93,8 @@ interface FormData {
 const OrganizerOnboarding = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectUrl = searchParams.get('redirect');
   const { toast } = useToast();
   
   const [currentStep, setCurrentStep] = useState(0);
@@ -139,9 +141,10 @@ const OrganizerOnboarding = () => {
       const timer = setTimeout(() => setCountdown(c => c - 1), 1000);
       return () => clearTimeout(timer);
     } else if (showSuccess && countdown === 0) {
-      navigate("/organizer/dashboard");
+      // Redirect to original page if specified, otherwise to dashboard
+      navigate(redirectUrl || "/organizer/dashboard");
     }
-  }, [showSuccess, countdown, navigate]);
+  }, [showSuccess, countdown, navigate, redirectUrl]);
   
   const updateField = <K extends keyof FormData>(field: K, value: FormData[K]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -312,7 +315,17 @@ const OrganizerOnboarding = () => {
           </p>
           
           <div className="space-y-3">
-            {createdSlug && (
+            {redirectUrl && (
+              <Button 
+                onClick={() => navigate(redirectUrl)}
+                className="w-full"
+                size="lg"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                Continue to Create Event
+              </Button>
+            )}
+            {createdSlug && !redirectUrl && (
               <Button 
                 onClick={() => navigate(`/o/${createdSlug}`)}
                 className="w-full"
@@ -324,11 +337,11 @@ const OrganizerOnboarding = () => {
             )}
             <Button 
               variant="outline" 
-              onClick={() => navigate("/organizer/dashboard")}
+              onClick={() => navigate(redirectUrl || "/organizer/dashboard")}
               className="w-full"
               size="lg"
             >
-              Go to Dashboard
+              {redirectUrl ? "Go to Dashboard Instead" : "Go to Dashboard"}
             </Button>
           </div>
           
