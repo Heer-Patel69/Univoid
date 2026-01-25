@@ -166,8 +166,8 @@ export async function uploadOrganizerLogo(
   file: File
 ): Promise<{ url: string | null; error: Error | null }> {
   const fileExt = file.name.split('.').pop();
-  // Use just the filename - bucket name is specified in .from()
-  const fileName = `${userId}-${Date.now()}.${fileExt}`;
+  // Use folder structure: userId/filename to match RLS policy pattern
+  const fileName = `${userId}/${Date.now()}.${fileExt}`;
   
   const { error: uploadError } = await supabase.storage
     .from('organizer-logos')
