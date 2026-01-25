@@ -322,6 +322,56 @@ export type Database = {
         }
         Relationships: []
       }
+      email_logs: {
+        Row: {
+          body_preview: string | null
+          created_at: string
+          error_message: string | null
+          event_id: string | null
+          id: string
+          recipients_count: number
+          sender_id: string
+          sender_type: string
+          sent_at: string | null
+          status: string
+          subject: string
+        }
+        Insert: {
+          body_preview?: string | null
+          created_at?: string
+          error_message?: string | null
+          event_id?: string | null
+          id?: string
+          recipients_count?: number
+          sender_id: string
+          sender_type: string
+          sent_at?: string | null
+          status?: string
+          subject: string
+        }
+        Update: {
+          body_preview?: string | null
+          created_at?: string
+          error_message?: string | null
+          event_id?: string | null
+          id?: string
+          recipients_count?: number
+          sender_id?: string
+          sender_type?: string
+          sent_at?: string | null
+          status?: string
+          subject?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_logs_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_preferences: {
         Row: {
           created_at: string

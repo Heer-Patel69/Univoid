@@ -27,8 +27,9 @@ import { DeleteEventDialog } from "@/components/organizer/DeleteEventDialog";
 import { 
   Plus, Calendar, Users, CheckCircle, XCircle, Eye, 
   ScanLine, Pencil, TicketCheck, Clock, FileSpreadsheet, 
-  UserPlus, BarChart3, Shield, ChevronLeft, Gift, Sparkles
+  UserPlus, BarChart3, Shield, ChevronLeft, Gift, Sparkles, Mail
 } from "lucide-react";
+import { EventEmailComposer } from "@/components/organizer/EventEmailComposer";
 import { format } from "date-fns";
 import type { Event } from "@/services/eventsService";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -517,6 +518,10 @@ const OrganizerDashboard = () => {
                   <FileSpreadsheet className="w-4 h-4" /> 
                   <span className="hidden sm:inline">Export</span>
                 </TabsTrigger>
+                <TabsTrigger value="email" className="gap-1.5">
+                  <Mail className="w-4 h-4" /> 
+                  <span className="hidden sm:inline">Email</span>
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="registrations">
@@ -643,6 +648,14 @@ const OrganizerDashboard = () => {
                     eventTitle={selectedEventData.title} 
                   />
                 )}
+              </TabsContent>
+
+              <TabsContent value="email">
+                <EventEmailComposer 
+                  eventId={selectedEvent!}
+                  eventTitle={selectedEventData.title}
+                  registrationsCount={approvedCount}
+                />
               </TabsContent>
             </Tabs>
           </CardContent>
