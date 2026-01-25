@@ -56,32 +56,27 @@ const AuthModal = ({ isOpen, onClose, onSuccess, message }: AuthModalProps) => {
     window: 60000, // 5 attempts per minute
   });
 
-  // Auto-close and redirect when user logs in
+  // Auto-close modal when user logs in - redirect handled by useRoleRedirect hook
   useEffect(() => {
     if (user && !isLoading && isOpen) {
       onClose();
-
-      // Determine redirect path based on role
-      let redirectPath = '/dashboard';
-      if (isAdmin || isAdminOrAssistant) {
-        redirectPath = '/admin';
-      } else if (userRoles.includes('organizer')) {
-        redirectPath = '/organizer-dashboard';
-      }
-
-      navigate(redirectPath, { replace: true });
       onSuccess?.();
+      // Don't navigate here - let useRoleRedirect in App.tsx handle the redirect
+      // to avoid race conditions with OAuth callback
     }
-  }, [user, isLoading, isOpen, userRoles, isAdmin, isAdminOrAssistant, navigate, onClose, onSuccess]);
+  }, [user, isLoading, isOpen, onClose, onSuccess]);
 
   const handleGoogleSignIn = async () => {
     if (!checkLimit()) return;
     setIsGoogleLoading(true);
     try {
+      // Use a dedicated auth callback route to handle OAuth properly
+      const redirectUrl = `${window.location.origin}/`;
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/dashboard`,
+          redirectTo: redirectUrl,
           queryParams: {
             access_type: 'offline',
             prompt: 'select_account',

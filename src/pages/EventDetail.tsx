@@ -32,6 +32,7 @@ import {
   calculateTotalWithUpsells,
 } from "@/services/upsellService";
 import { getOrganizerProfileByUserId, type OrganizerProfile } from "@/services/organizerService";
+import { toDisplayUrl } from "@/lib/storageProxy";
 import { Calendar, MapPin, Users, IndianRupee, ExternalLink, Clock, Share2, CheckCircle, AlertCircle, Upload, Eye, BadgeCheck } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -271,7 +272,7 @@ const EventDetail = () => {
       <p className="text-sm text-muted-foreground">Pay ₹{displayPrice} using UPI, then upload screenshot.</p>
       {event.upi_qr_url && (
         <div className="bg-white p-4 rounded-xl w-fit mx-auto">
-          <img src={event.upi_qr_url} alt="UPI QR" className="w-48 h-48 object-contain" loading="lazy" />
+          <img src={toDisplayUrl(event.upi_qr_url, { forceImage: true }) || undefined} alt="UPI QR" className="w-48 h-48 object-contain" loading="lazy" />
         </div>
       )}
       {event.upi_vpa && <p className="text-center text-sm">UPI ID: <code className="bg-background px-2 py-1 rounded">{event.upi_vpa}</code></p>}
@@ -375,7 +376,7 @@ const EventDetail = () => {
           >
             {event.flyer_url ? (
               <img 
-                src={event.flyer_url} 
+                src={toDisplayUrl(event.flyer_url, { forceImage: true }) || undefined} 
                 alt={event.title} 
                 className="w-full h-full object-cover" 
                 loading="lazy" 

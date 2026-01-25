@@ -352,6 +352,17 @@ const FastRegister = () => {
   const handleQuickRegister = async () => {
     if (!user || !eventId || !event) return;
 
+    // UUID validation
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!UUID_REGEX.test(eventId) || !UUID_REGEX.test(user.id)) {
+      toast({
+        title: "Invalid request",
+        description: "Please refresh the page and try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsRegistering(true);
     try {
       let screenshotUrl: string | null = null;
@@ -391,7 +402,9 @@ const FastRegister = () => {
         p_event_id: eventId,
         p_user_id: user.id,
         p_custom_data: customData,
-        p_payment_screenshot_url: screenshotUrl
+        p_payment_screenshot_url: screenshotUrl,
+        p_group_size: groupSize,
+        p_is_group_booking: groupSize > 1,
       });
 
       if (error) throw error;
