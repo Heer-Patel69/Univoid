@@ -1,5 +1,5 @@
-import { useState, useCallback, useMemo } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useState, useCallback, useMemo, useEffect } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format, isPast } from "date-fns";
 import DOMPurify from "dompurify";
@@ -39,6 +39,7 @@ const EventDetail = () => {
   const { eventId } = useParams<{ eventId: string }>();
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
@@ -62,12 +63,24 @@ const EventDetail = () => {
     setMembershipId(memId);
   }, []);
 
+  // Fetch event by ID or slug
   const { data: event, isLoading: eventLoading } = useQuery({
     queryKey: ["event", eventId],
     queryFn: () => fetchEventById(eventId!),
     enabled: !!eventId,
     staleTime: 5 * 60 * 1000,
   });
+
+  // Redirect from ID to slug for SEO (canonical URLs)
+  useEffect(() => {
+    if (event?.slug && eventId !== event.slug) {
+      // Check if current URL uses ID instead of slug
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(eventId || '');
+      if (isUUID) {
+        navigate(`/events/${event.slug}`, { replace: true });
+      }
+    }
+  }, [event?.slug, eventId, navigate]);
 
   // Fetch organizer profile for this event
   const { data: organizer } = useQuery({
@@ -193,10 +206,14 @@ const EventDetail = () => {
   };
 
   const handleShare = async () => {
+    // Use slug-based URL for professional sharing
+    const eventSlug = event?.slug || eventId;
+    const shareUrl = `https://univoid.tech/events/${eventSlug}`;
+    
     try {
-      await navigator.share({ title: event?.title, url: window.location.href });
+      await navigator.share({ title: event?.title, url: shareUrl });
     } catch {
-      navigator.clipboard.writeText(window.location.href);
+      navigator.clipboard.writeText(shareUrl);
       toast({ title: "Link copied!" });
     }
   };
@@ -323,13 +340,16 @@ const EventDetail = () => {
     ? DOMPurify.sanitize(event.description, { ALLOWED_TAGS: [] }).substring(0, 155) 
     : `${event.title} - ${event.category} event on ${format(new Date(event.start_date), "MMMM d, yyyy")}. ${event.is_paid ? `Entry: ₹${event.price}` : "Free entry"}.`;
 
+  // Use slug for canonical URL
+  const eventSlug = event.slug || eventId;
+
   return (
     <div className="w-full max-w-full overflow-x-hidden">
       <SEOHead
         title={event.title}
         description={seoDescription}
-        image={event.flyer_url}
-        url={`/events/${eventId}`}
+        image={event.flyer_url || undefined}
+        url={`/events/${eventSlug}`}
         type="event"
         structuredData={eventStructuredData}
         keywords={[event.category, event.event_type, "college event", "campus event", "student event"]}

@@ -48,7 +48,7 @@ const Events = () => {
     };
   }, [urlCategory]);
 
-  // Fetch events with filters
+  // Fetch events with filters - use useQuery for better caching
   const loadEvents = async () => {
     setIsLoading(true);
     try {
@@ -71,12 +71,7 @@ const Events = () => {
     loadEvents();
   }, [category, priceFilter, search, stateFilter, cityFilter]);
 
-  // Refetch on window focus for fresh data
-  useEffect(() => {
-    const handleFocus = () => loadEvents();
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
-  }, [category, priceFilter, search, stateFilter, cityFilter]);
+  // REMOVED: Focus refetch was causing unnecessary slow reloads
 
   // Real-time subscription for instant updates
   useEffect(() => {

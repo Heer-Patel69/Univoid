@@ -33,8 +33,11 @@ export const EventCard = ({ event }: EventCardProps) => {
     return colors[category.toLowerCase()] || "bg-muted text-muted-foreground";
   };
 
+  // Use slug for SEO-friendly URLs, fallback to ID
+  const eventUrl = event.slug ? `/events/${event.slug}` : `/events/${event.id}`;
+
   return (
-    <Link to={`/events/${event.id}`} className="block h-full">
+    <Link to={eventUrl} className="block h-full">
       <Card className="group h-full overflow-hidden hover:shadow-soft-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col">
         {/* Flyer Image - Respects poster_ratio from DB */}
         <div 

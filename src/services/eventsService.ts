@@ -33,6 +33,7 @@ export interface Event {
   updated_at: string;
   enable_quick_register?: boolean;
   poster_ratio?: '4:5' | '1:1' | '16:9';
+  slug?: string;
 }
 
 // Check if registration is open for an event
@@ -147,10 +148,13 @@ export const fetchEvents = async (filters?: EventFilters) => {
   return result.data;
 };
 
-// Fetch single event with secure function (hides payment details from non-registered users)
-export const fetchEventById = async (id: string) => {
+// Fetch single event by ID or slug
+export const fetchEventByIdOrSlug = async (identifier: string): Promise<Event> => {
+  // Check if it looks like a UUID
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
+  
   const { data, error } = await supabase
-    .rpc('get_event_safe', { p_event_id: id });
+    .rpc('get_event_by_id_or_slug', { p_identifier: identifier });
 
   if (error) throw error;
   
@@ -159,6 +163,11 @@ export const fetchEventById = async (id: string) => {
   if (!event) throw new Error('Event not found');
   
   return event as Event;
+};
+
+// Legacy function for backward compatibility - now uses slug support
+export const fetchEventById = async (id: string) => {
+  return fetchEventByIdOrSlug(id);
 };
 
 // Register for event

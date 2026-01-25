@@ -94,6 +94,7 @@ interface Event {
   is_paid: boolean;
   price: number | null;
   registrations_count: number;
+  slug: string | null;
 }
 
 interface Book {
@@ -255,24 +256,36 @@ async function handleMaterial(supabase: any, id: string) {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function handleEvent(supabase: any, id: string) {
-  const { data, error } = await supabase
+async function handleEvent(supabase: any, identifier: string) {
+  // Check if it looks like a UUID
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
+  
+  let query = supabase
     .from('events')
     .select('*')
-    .eq('id', id)
-    .eq('status', 'published')
-    .single();
+    .eq('status', 'published');
+    
+  if (isUUID) {
+    query = query.eq('id', identifier);
+  } else {
+    query = query.eq('slug', identifier);
+  }
+  
+  const { data, error } = await query.single();
 
   if (error || !data) {
-    console.log('Event not found:', id, error);
+    console.log('Event not found:', identifier, error);
     return null;
   }
 
   const event = data as Event;
   const title = `${event.title} | Events | UniVoid`;
   const description = event.description || `Register for ${event.title} - ${event.category} event${event.venue_name ? ` at ${event.venue_name}` : ''}. Join now on UniVoid!`;
+  // IMPORTANT: Use flyer_url for social preview image
   const image = event.flyer_url || DEFAULT_OG_IMAGE;
-  const url = `${SITE_URL}/events/${id}`;
+  // Use slug for canonical URL
+  const eventSlug = event.slug || event.id;
+  const url = `${SITE_URL}/events/${eventSlug}`;
 
   const structuredData = {
     "@context": "https://schema.org",

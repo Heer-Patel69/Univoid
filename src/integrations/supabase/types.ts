@@ -951,6 +951,7 @@ export type Database = {
           price: number | null
           registration_end_date: string | null
           registrations_count: number
+          slug: string | null
           start_date: string
           state: string | null
           status: Database["public"]["Enums"]["event_status"]
@@ -983,6 +984,7 @@ export type Database = {
           price?: number | null
           registration_end_date?: string | null
           registrations_count?: number
+          slug?: string | null
           start_date: string
           state?: string | null
           status?: Database["public"]["Enums"]["event_status"]
@@ -1015,6 +1017,7 @@ export type Database = {
           price?: number | null
           registration_end_date?: string | null
           registrations_count?: number
+          slug?: string | null
           start_date?: string
           state?: string | null
           status?: Database["public"]["Enums"]["event_status"]
@@ -2353,6 +2356,10 @@ export type Database = {
         Args: { book_id: string; book_title: string }
         Returns: string
       }
+      generate_event_slug: {
+        Args: { event_id: string; title: string }
+        Returns: string
+      }
       generate_organizer_slug: {
         Args: { organizer_id: string; organizer_name: string }
         Returns: string
@@ -2457,6 +2464,48 @@ export type Database = {
           full_name: string
           user_id: string
         }[]
+      }
+      get_event_by_id_or_slug: {
+        Args: { p_identifier: string }
+        Returns: {
+          category: string
+          city: string | null
+          created_at: string
+          custom_fields: Json | null
+          description: string | null
+          enable_quick_register: boolean
+          end_date: string | null
+          event_type: string
+          flyer_url: string | null
+          id: string
+          is_location_decided: boolean
+          is_paid: boolean
+          maps_link: string | null
+          max_capacity: number | null
+          organizer_id: string
+          poster_ratio: string | null
+          price: number | null
+          registration_end_date: string | null
+          registrations_count: number
+          slug: string | null
+          start_date: string
+          state: string | null
+          status: Database["public"]["Enums"]["event_status"]
+          terms_conditions: string | null
+          title: string
+          updated_at: string
+          upi_qr_url: string | null
+          upi_vpa: string | null
+          venue_address: string | null
+          venue_name: string | null
+          views_count: number
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "events"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_event_registrations_with_profiles: {
         Args: { p_event_id: string }
