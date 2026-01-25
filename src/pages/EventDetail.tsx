@@ -31,7 +31,9 @@ import {
   type SelectedUpsell,
   calculateTotalWithUpsells,
 } from "@/services/upsellService";
-import { Calendar, MapPin, Users, IndianRupee, ExternalLink, Clock, Share2, CheckCircle, AlertCircle, Upload, Eye } from "lucide-react";
+import { getOrganizerProfileByUserId, type OrganizerProfile } from "@/services/organizerService";
+import { Calendar, MapPin, Users, IndianRupee, ExternalLink, Clock, Share2, CheckCircle, AlertCircle, Upload, Eye, BadgeCheck } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const EventDetail = () => {
   const { eventId } = useParams<{ eventId: string }>();
@@ -65,6 +67,14 @@ const EventDetail = () => {
     queryFn: () => fetchEventById(eventId!),
     enabled: !!eventId,
     staleTime: 5 * 60 * 1000,
+  });
+
+  // Fetch organizer profile for this event
+  const { data: organizer } = useQuery({
+    queryKey: ["organizer-profile", event?.organizer_id],
+    queryFn: () => getOrganizerProfileByUserId(event!.organizer_id),
+    enabled: !!event?.organizer_id,
+    staleTime: 10 * 60 * 1000,
   });
 
   const { data: existingRegistration } = useQuery({
@@ -287,7 +297,11 @@ const EventDetail = () => {
       name: "Location to be announced",
     },
     image: event.flyer_url || "https://univoid.tech/images/univoid-og.jpg",
-    organizer: {
+    organizer: organizer ? {
+      "@type": "Organization",
+      name: organizer.name,
+      url: organizer.website_url || `https://univoid.tech/o/${organizer.slug}`,
+    } : {
       "@type": "Organization",
       name: "UniVoid",
       url: "https://univoid.tech",
@@ -422,6 +436,31 @@ const EventDetail = () => {
           {/* Sidebar Info Card */}
           <Card className="lg:sticky lg:top-20">
             <CardContent className="p-6 space-y-4">
+              {/* Organizer Info */}
+              {organizer && (
+                <Link 
+                  to={`/o/${organizer.slug}`}
+                  className="flex items-center gap-3 p-3 -mx-3 rounded-xl hover:bg-muted/50 transition-colors"
+                >
+                  <Avatar className="w-10 h-10 border">
+                    <AvatarImage src={organizer.logo_url || undefined} alt={organizer.name} />
+                    <AvatarFallback className="bg-primary/10 text-primary">
+                      {organizer.name.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1">
+                      <span className="font-medium truncate">{organizer.name}</span>
+                      {organizer.is_verified && (
+                        <BadgeCheck className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Organizer</p>
+                  </div>
+                  <ExternalLink className="w-4 h-4 text-muted-foreground" />
+                </Link>
+              )}
+
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Price</span>
                 <span className="text-2xl font-bold flex items-center">
