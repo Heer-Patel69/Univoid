@@ -61,7 +61,7 @@ export const EventCard = ({ event }: EventCardProps) => {
           )}
           
           {/* Subtle black gradient overlay at bottom for text contrast */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
           
           {/* Price Badge */}
           <div className="absolute top-3 right-3">
@@ -94,11 +94,28 @@ export const EventCard = ({ event }: EventCardProps) => {
             )}
           </div>
 
-          {/* Category */}
-          <div className="absolute bottom-3 left-3">
-            <Badge className={getCategoryColor(event.category)}>
-              {event.category}
-            </Badge>
+          {/* Bottom overlay with event details - Locality style */}
+          <div className="absolute bottom-0 left-0 right-0 p-3 space-y-1">
+            {/* Event Title */}
+            <h3 className="font-display font-bold text-white text-lg line-clamp-2 drop-shadow-md">
+              {event.title}
+            </h3>
+            {/* Venue / Location */}
+            <div className="flex items-center gap-1.5 text-white/90 text-sm">
+              <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+              <span className="truncate drop-shadow-sm">
+                {event.city && event.state 
+                  ? `${event.city}, ${event.state}`
+                  : event.is_location_decided 
+                    ? event.venue_name || "Venue TBA" 
+                    : "Location TBA"}
+              </span>
+            </div>
+            {/* Event Date */}
+            <div className="flex items-center gap-1.5 text-white/90 text-sm">
+              <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
+              <span className="drop-shadow-sm">{format(new Date(event.start_date), "dd MMM yyyy")}</span>
+            </div>
           </div>
         </div>
 
