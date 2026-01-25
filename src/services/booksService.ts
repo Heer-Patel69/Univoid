@@ -157,10 +157,9 @@ export async function createBook(
         .upload(filePath, image);
 
       if (!uploadError) {
-        const { data: urlData } = supabase.storage
-          .from('book-images')
-          .getPublicUrl(filePath);
-        imageUrls.push(urlData.publicUrl);
+        // Store path only - proxy will generate URLs on-demand (hides Supabase infrastructure)
+        const storedPath = `book-images:${filePath}`;
+        imageUrls.push(storedPath);
       }
     }
   }

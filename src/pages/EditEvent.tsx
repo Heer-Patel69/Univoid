@@ -114,24 +114,24 @@ const EditEvent = () => {
       let flyerUrl = event.flyer_url;
       let upiQrUrl = event.upi_qr_url;
 
-      // Upload new flyer if provided
+      // Upload new flyer if provided - store PATH only
       if (flyerFile) {
         const ext = flyerFile.name.split(".").pop();
         const path = `${user.id}/flyers/${Date.now()}.${ext}`;
         const { error } = await supabase.storage.from("event-assets").upload(path, flyerFile);
         if (error) throw error;
-        const { data: { publicUrl } } = supabase.storage.from("event-assets").getPublicUrl(path);
-        flyerUrl = publicUrl;
+        // Store path only - proxy will generate URLs on-demand
+        flyerUrl = `event-assets:${path}`;
       }
 
-      // Upload new UPI QR if provided
+      // Upload new UPI QR if provided - store PATH only
       if (qrFile && formData.is_paid) {
         const ext = qrFile.name.split(".").pop();
         const path = `${user.id}/upi-qr/${Date.now()}.${ext}`;
         const { error } = await supabase.storage.from("event-assets").upload(path, qrFile);
         if (error) throw error;
-        const { data: { publicUrl } } = supabase.storage.from("event-assets").getPublicUrl(path);
-        upiQrUrl = publicUrl;
+        // Store path only - proxy will generate URLs on-demand
+        upiQrUrl = `event-assets:${path}`;
       }
 
       const { error } = await supabase

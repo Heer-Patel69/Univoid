@@ -217,7 +217,7 @@ const CreateEvent = () => {
       let upiQrUrl = formData.upi_qr_url;
 
       try {
-        // Upload flyer
+        // Upload flyer - store PATH only, not full Supabase URL
         if (flyerFile) {
           console.log("[CreateEvent] Uploading flyer...");
           const ext = flyerFile.name.split(".").pop();
@@ -227,12 +227,12 @@ const CreateEvent = () => {
             console.error("[CreateEvent] Flyer upload error:", error);
             throw new Error(`Flyer upload failed: ${error.message}`);
           }
-          const { data: { publicUrl } } = supabase.storage.from("event-assets").getPublicUrl(path);
-          flyerUrl = publicUrl;
-          console.log("[CreateEvent] Flyer uploaded:", flyerUrl);
+          // Store path only - proxy will generate URLs on-demand
+          flyerUrl = `event-assets:${path}`;
+          console.log("[CreateEvent] Flyer uploaded, path:", path);
         }
 
-        // Upload UPI QR
+        // Upload UPI QR - store PATH only
         if (qrFile && formData.is_paid) {
           console.log("[CreateEvent] Uploading UPI QR...");
           const ext = qrFile.name.split(".").pop();
@@ -242,9 +242,9 @@ const CreateEvent = () => {
             console.error("[CreateEvent] UPI QR upload error:", error);
             throw new Error(`UPI QR upload failed: ${error.message}`);
           }
-          const { data: { publicUrl } } = supabase.storage.from("event-assets").getPublicUrl(path);
-          upiQrUrl = publicUrl;
-          console.log("[CreateEvent] UPI QR uploaded:", upiQrUrl);
+          // Store path only - proxy will generate URLs on-demand
+          upiQrUrl = `event-assets:${path}`;
+          console.log("[CreateEvent] UPI QR uploaded, path:", path);
         }
 
         console.log("[CreateEvent] Inserting event into database...");

@@ -102,11 +102,10 @@ export async function uploadPaymentScreenshot(
 
     if (uploadError) throw uploadError;
 
-    const { data: { publicUrl } } = supabase.storage
-      .from("event-assets")
-      .getPublicUrl(fileName);
+    // Store path only - proxy will generate URLs on-demand (hides Supabase infrastructure)
+    const storedPath = `event-assets:${fileName}`;
 
-    return publicUrl;
+    return storedPath;
   });
 }
 
