@@ -173,7 +173,7 @@ function delay(ms: number): Promise<void> {
 
 const handler = async (req: Request): Promise<Response> => {
   console.log("Broadcast email function called");
-  console.log("Brevo API Key configured:", !!BREVO_API_KEY);
+  console.log("Brevo API Key configured:", !!BREVO_API_KEY, "starts with:", BREVO_API_KEY?.substring(0, 10), "length:", BREVO_API_KEY?.length);
 
   if (isCorsPreflightRequest(req)) {
     return handleCorsPreflightRequest(req);
