@@ -4,6 +4,19 @@ import { allowRequest } from "@/lib/rateLimiter";
 import { TICKET_STATUS, getInitialPaymentStatus, type TicketStatus } from "@/constants/ticketStatus";
 
 /**
+ * UUID validation regex
+ */
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/**
+ * Validate if a string is a valid UUID
+ */
+function isValidUUID(value: string | null | undefined): boolean {
+  if (!value || typeof value !== 'string') return false;
+  return UUID_REGEX.test(value);
+}
+
+/**
  * User-friendly error messages mapping
  */
 const ERROR_MESSAGES: Record<string, string> = {
@@ -13,6 +26,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   EVENT_FULL: "Sorry, this event is full. No spots available.",
   CONCURRENT_REQUEST: "High traffic detected. Please try again in a moment.",
   ALREADY_REGISTERED: "You're already registered for this event!",
+  INVALID_INPUT: "Invalid event or user ID. Please refresh and try again.",
 
   // Network errors
   NETWORK_ERROR: "Connection lost. Please check your internet and try again.",
@@ -122,6 +136,16 @@ export async function registerForEventAtomic(
       success: false,
       error: 'RATE_LIMITED',
       message: ERROR_MESSAGES.RATE_LIMITED,
+    };
+  }
+
+  // Validate UUIDs before making RPC call
+  if (!isValidUUID(request.event_id) || !isValidUUID(request.user_id)) {
+    console.error('Invalid UUID:', { event_id: request.event_id, user_id: request.user_id });
+    return {
+      success: false,
+      error: 'INVALID_INPUT',
+      message: ERROR_MESSAGES.INVALID_INPUT,
     };
   }
 

@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import type { Event } from "@/services/eventsService";
 import { getOrganizerProfileByUserId } from "@/services/organizerService";
+import { toDisplayUrl } from "@/lib/storageProxy";
 
 interface EventCardProps {
   event: Event;
@@ -49,7 +50,7 @@ export const EventCard = ({ event }: EventCardProps) => {
         >
           {event.flyer_url ? (
             <img
-              src={event.flyer_url}
+              src={toDisplayUrl(event.flyer_url, { forceImage: true }) || undefined}
               alt={event.title}
               className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
             />
