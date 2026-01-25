@@ -7,7 +7,7 @@ import { getCorsHeaders, isCorsPreflightRequest, handleCorsPreflightRequest } fr
 // Brevo API Configuration
 const BREVO_API_KEY = Deno.env.get("BREVO_API_KEY");
 const SENDER_NAME = "UniVoid";
-const SENDER_EMAIL = "no-reply@univoid.tech";
+const SENDER_EMAIL = "heerpatel1032@gmail.com";
 
 interface StatusEmailRequest {
   registrationId: string;
