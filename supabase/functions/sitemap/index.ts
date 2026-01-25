@@ -209,14 +209,17 @@ Deno.serve(async (req) => {
   </url>`;
     }
 
-    // Add individual books with SEO-friendly slugs
+    // Add individual books (ONLY use database slug to prevent redirect issues)
     for (const item of books) {
+      // Skip books without slugs to avoid redirect chains in Google indexing
+      if (!item.slug) {
+        console.warn(`Book ${item.id} has no slug, skipping in sitemap`);
+        continue;
+      }
       const lastmod = item.updated_at ? item.updated_at.split("T")[0] : today;
-      // Use slug if available, otherwise generate from title, fallback to ID
-      const bookPath = item.slug || (item.title ? slugify(item.title) : item.id);
       xml += `
   <url>
-    <loc>${SITE_URL}/books/${bookPath}</loc>
+    <loc>${SITE_URL}/books/${item.slug}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
