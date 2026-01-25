@@ -91,39 +91,40 @@ const EventDetail = () => {
     staleTime: 10 * 60 * 1000,
   });
 
+  // Check user registration - use event.id (actual UUID) for DB queries
   const { data: existingRegistration } = useQuery({
-    queryKey: ["registration", eventId, user?.id],
-    queryFn: () => checkUserRegistration(eventId!, user!.id),
-    enabled: !!eventId && !!user,
+    queryKey: ["registration", event?.id, user?.id],
+    queryFn: () => checkUserRegistration(event!.id, user!.id),
+    enabled: !!event?.id && !!user,
     staleTime: 5 * 60 * 1000,
   });
 
-  // Real-time capacity updates
+  // Real-time capacity updates - use event.id for DB subscriptions
   const { 
     registrationsCount, 
     maxCapacity, 
     isFull, 
     spotsRemaining 
-  } = useRealtimeCapacity(eventId);
+  } = useRealtimeCapacity(event?.id);
 
-  // Fetch upsell settings and upsells
+  // Fetch upsell settings and upsells - use event.id for DB queries
   const { data: upsellSettings } = useQuery({
-    queryKey: ["upsell-settings", eventId],
-    queryFn: () => fetchUpsellSettings(eventId!),
-    enabled: !!eventId && !!event?.is_paid,
+    queryKey: ["upsell-settings", event?.id],
+    queryFn: () => fetchUpsellSettings(event!.id),
+    enabled: !!event?.id && !!event?.is_paid,
   });
 
   const { data: upsells = [] } = useQuery({
-    queryKey: ["event-upsells", eventId],
-    queryFn: () => fetchEventUpsells(eventId!),
-    enabled: !!eventId && !!event?.is_paid && !!upsellSettings?.upsell_enabled,
+    queryKey: ["event-upsells", event?.id],
+    queryFn: () => fetchEventUpsells(event!.id),
+    enabled: !!event?.id && !!event?.is_paid && !!upsellSettings?.upsell_enabled,
   });
 
   // Fetch custom form fields to determine Quick Register availability
   const { data: customFormFields = [] } = useQuery({
-    queryKey: ["event-form-fields", eventId],
-    queryFn: () => fetchEventFormFields(eventId!),
-    enabled: !!eventId,
+    queryKey: ["event-form-fields", event?.id],
+    queryFn: () => fetchEventFormFields(event!.id),
+    enabled: !!event?.id,
     staleTime: 10 * 60 * 1000,
   });
 
@@ -142,13 +143,13 @@ const EventDetail = () => {
     return calculateTotalWithUpsells(basePrice, groupSize, selectedUpsells, groupOffers);
   }, [selectedPrice, event?.price, groupSize, selectedUpsells, groupOffers]);
 
-  // Robust registration with debouncing and error handling
+  // Robust registration with debouncing and error handling - use event.id for DB operations
   const { 
     register, 
     isSubmitting, 
     isUploading 
   } = useRegistration({
-    eventId: eventId!,
+    eventId: event?.id || '',
     userId: user?.id || '',
     eventTitle: event?.title,
     isPaidEvent: event?.is_paid,
