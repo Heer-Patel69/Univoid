@@ -78,107 +78,158 @@ async function sendEmailViaBrevo(
   }
 }
 
-// UniVoid logo as base64 embedded SVG
-const UNIVOID_LOGO = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 40" width="120" height="40">
-  <defs>
-    <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#8B5CF6"/>
-      <stop offset="100%" style="stop-color:#D946EF"/>
-    </linearGradient>
-  </defs>
-  <text x="10" y="28" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="url(#logoGrad)">UniVoid</text>
-</svg>`;
-
-// Generate custom email HTML with full flexibility
+// Official UniVoid Premium Email Template
+// Neubrutalism design with warm cream backgrounds and chunky borders
 function generateCustomEmail(message: string, userName?: string, buttons?: EmailButton[]): string {
-  // Replace placeholder
-  const processedMessage = message.replace(/\{\{userName\}\}/g, userName || 'User');
+  // Replace placeholder with personalized name
+  const displayName = userName || 'there';
+  const processedMessage = message
+    .replace(/\{\{userName\}\}/g, displayName)
+    .replace(/\{\{name\}\}/g, displayName);
   
   // Check if message already contains HTML structure
   const hasHtmlStructure = /<html|<body|<table/i.test(processedMessage);
   
   if (hasHtmlStructure) {
-    // Return as-is if it's already formatted HTML
     return processedMessage;
   }
   
-  // Generate buttons HTML
+  // Process message into formatted paragraphs with proper spacing
+  const formattedContent = processedMessage
+    .split('\n')
+    .map(line => {
+      const trimmed = line.trim();
+      if (!trimmed) return '<div style="height: 16px;"></div>';
+      // Handle bullet points
+      if (trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*')) {
+        return `<p style="margin: 0 0 12px 20px; padding-left: 8px; border-left: 3px solid #8B5CF6;">${trimmed.substring(1).trim()}</p>`;
+      }
+      return `<p style="margin: 0 0 16px 0;">${trimmed}</p>`;
+    })
+    .join('');
+  
+  // Generate CTA buttons with neubrutalism style
   const buttonsHtml = buttons && buttons.length > 0 
     ? `
       <tr>
-        <td style="padding: 24px 32px 0;">
-          <table role="presentation" cellpadding="0" cellspacing="0" style="width: 100%;">
-            <tr>
-              <td style="text-align: center;">
-                ${buttons.map(btn => `
-                  <a href="${btn.url}" target="_blank" style="display: inline-block; margin: 6px 8px; padding: 14px 28px; background: linear-gradient(135deg, #8B5CF6 0%, #D946EF 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; box-shadow: 0 4px 14px rgba(139, 92, 246, 0.4);">
-                    ${btn.label}
-                  </a>
-                `).join('')}
-              </td>
-            </tr>
-          </table>
+        <td style="padding: 32px 40px 16px; text-align: center;">
+          ${buttons.map(btn => `
+            <a href="${btn.url}" target="_blank" style="display: inline-block; margin: 8px 10px; padding: 16px 32px; background: #1a1a1a; color: #ffffff; text-decoration: none; border-radius: 50px; font-weight: 700; font-size: 15px; letter-spacing: -0.3px; box-shadow: 4px 4px 0 #c9b99a; transition: transform 0.2s;">
+              ${btn.label}
+            </a>
+          `).join('')}
         </td>
       </tr>
     `
     : '';
   
-  // Wrap in a branded email template with UniVoid logo
+  // Premium UniVoid Email Template - Neubrutalism Style
   return `
     <!DOCTYPE html>
     <html lang="en">
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
       <title>UniVoid</title>
+      <!--[if mso]>
+      <noscript>
+        <xml>
+          <o:OfficeDocumentSettings>
+            <o:PixelsPerInch>96</o:PixelsPerInch>
+          </o:OfficeDocumentSettings>
+        </xml>
+      </noscript>
+      <![endif]-->
     </head>
-    <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5;">
-      <table role="presentation" cellpadding="0" cellspacing="0" style="width: 100%; background-color: #f4f4f5;">
+    <body style="margin: 0; padding: 0; font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #FFFDF5; -webkit-font-smoothing: antialiased;">
+      
+      <!-- Outer Container -->
+      <table role="presentation" cellpadding="0" cellspacing="0" style="width: 100%; background-color: #FFFDF5;">
         <tr>
-          <td style="padding: 40px 20px;">
-            <table role="presentation" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-              <!-- Header with Logo -->
+          <td style="padding: 48px 20px;">
+            
+            <!-- Main Email Card -->
+            <table role="presentation" cellpadding="0" cellspacing="0" style="max-width: 560px; margin: 0 auto; background-color: #ffffff; border: 3px solid #1a1a1a; border-radius: 28px; overflow: hidden; box-shadow: 8px 8px 0 #1a1a1a;">
+              
+              <!-- Header with UniVoid Logo -->
               <tr>
-                <td style="background: linear-gradient(135deg, #1a1a1a 0%, #333333 100%); padding: 30px 40px; text-align: center;">
+                <td style="background: #1a1a1a; padding: 28px 40px; text-align: center;">
                   <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
                     <tr>
-                      <td>
-                        ${UNIVOID_LOGO}
+                      <td style="text-align: center;">
+                        <span style="color: #ffffff; font-size: 28px; font-weight: 800; letter-spacing: -0.5px;">✨ UniVoid</span>
                       </td>
                     </tr>
                   </table>
                 </td>
               </tr>
               
-              <!-- Content -->
+              <!-- Accent Strip -->
               <tr>
-                <td style="padding: 40px 32px;">
-                  <div style="color: #333333; font-size: 16px; line-height: 1.8;">
-                    ${processedMessage.split('\n').map(line => 
-                      line.trim() ? `<p style="margin: 0 0 16px 0;">${line}</p>` : ''
-                    ).join('')}
+                <td style="height: 6px; background: linear-gradient(90deg, #8B5CF6 0%, #D946EF 50%, #F97316 100%);"></td>
+              </tr>
+              
+              <!-- Greeting -->
+              <tr>
+                <td style="padding: 40px 40px 0;">
+                  <p style="margin: 0; color: #1a1a1a; font-size: 20px; font-weight: 700; letter-spacing: -0.3px;">
+                    Hey ${displayName}! 👋
+                  </p>
+                </td>
+              </tr>
+              
+              <!-- Main Content -->
+              <tr>
+                <td style="padding: 24px 40px 32px;">
+                  <div style="color: #374151; font-size: 16px; line-height: 1.75;">
+                    ${formattedContent}
                   </div>
                 </td>
               </tr>
               
-              <!-- Buttons -->
+              <!-- CTA Buttons -->
               ${buttonsHtml}
+              
+              <!-- Divider -->
+              <tr>
+                <td style="padding: 16px 40px;">
+                  <div style="height: 2px; background: #E5E7EB;"></div>
+                </td>
+              </tr>
               
               <!-- Footer -->
               <tr>
-                <td style="background-color: #f8f8f8; padding: 24px 32px; text-align: center; margin-top: 20px;">
-                  <p style="color: #666666; font-size: 14px; margin: 0 0 8px 0;">
-                    © ${new Date().getFullYear()} UniVoid. All rights reserved.
+                <td style="background-color: #FAFAFA; padding: 28px 40px; text-align: center; border-top: 2px solid #E5E7EB;">
+                  <p style="color: #6B7280; font-size: 14px; margin: 0 0 12px 0; font-weight: 600;">
+                    Made with 💜 for students
                   </p>
-                  <p style="color: #999999; font-size: 12px; margin: 0;">
-                    <a href="https://univoid.lovable.app" style="color: #8B5CF6; text-decoration: none;">univoid.lovable.app</a>
+                  <p style="color: #9CA3AF; font-size: 13px; margin: 0 0 8px 0;">
+                    © ${new Date().getFullYear()} UniVoid · Where students learn, share & grow
+                  </p>
+                  <p style="margin: 0;">
+                    <a href="https://univoid.tech" style="color: #8B5CF6; text-decoration: none; font-weight: 600; font-size: 13px;">univoid.tech</a>
+                  </p>
+                </td>
+              </tr>
+              
+            </table>
+            
+            <!-- Bottom Tagline -->
+            <table role="presentation" cellpadding="0" cellspacing="0" style="max-width: 560px; margin: 24px auto 0;">
+              <tr>
+                <td style="text-align: center;">
+                  <p style="color: #9CA3AF; font-size: 12px; margin: 0;">
+                    You're receiving this because you're part of the UniVoid community.
                   </p>
                 </td>
               </tr>
             </table>
+            
           </td>
         </tr>
       </table>
+      
     </body>
     </html>
   `;
