@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
     // Fetch all approved content with categories/subjects for programmatic SEO
     const [materialsRes, eventsRes, projectsRes, booksRes, profilesRes] = await Promise.all([
       supabase.from("materials").select("id, updated_at, subject, course, branch").eq("status", "approved"),
-      supabase.from("events").select("id, updated_at, category, venue_name").eq("status", "published"),
+      supabase.from("events").select("id, updated_at, category, venue_name, slug").eq("status", "published"),
       supabase.from("projects").select("id, updated_at, skills_required"),
       supabase.from("books").select("id, updated_at, category, slug, title, price").eq("status", "approved"),
       supabase.rpc("get_public_leaderboard", { limit_count: 100 }),
@@ -180,12 +180,13 @@ Deno.serve(async (req) => {
   </url>`;
     }
 
-    // Add individual events
+    // Add individual events (use slug for SEO-friendly URLs)
     for (const item of events) {
       const lastmod = item.updated_at ? item.updated_at.split("T")[0] : today;
+      const eventUrl = item.slug || item.id;
       xml += `
   <url>
-    <loc>${SITE_URL}/events/${item.id}</loc>
+    <loc>${SITE_URL}/events/${eventUrl}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
