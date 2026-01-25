@@ -1,7 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-// Use qrcode-svg which works without canvas (Deno compatible)
-import QRCode from "https://esm.sh/qrcode-svg@1.1.0";
 import { getCorsHeaders, isCorsPreflightRequest, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 // Brevo API Configuration
@@ -17,45 +15,37 @@ interface StatusEmailRequest {
   qrCode?: string; // The generated QR code string
 }
 
-// Generate QR code as SVG string
-function generateQRCodeSVG(data: string): string {
-  try {
-    const qr = new QRCode({
-      content: data,
-      padding: 4,
-      width: 240,
-      height: 240,
-      color: "#000000",
-      background: "#ffffff",
-      ecl: "M",
-    });
-    return qr.svg();
-  } catch (error) {
-    console.error("QR SVG generation error:", error);
-    throw error;
-  }
-}
-
-// Upload QR code SVG to Supabase Storage and return public URL
-async function uploadQRCodeToStorage(
+// Generate QR code PNG using external API and upload to storage
+async function generateAndUploadQRCode(
   supabase: any,
   registrationId: string,
-  svgContent: string
+  qrData: string
 ): Promise<string | null> {
   try {
-    const fileName = `qr-${registrationId}.svg`;
-    const filePath = fileName;
+    // Use Google Charts API to generate QR code as PNG
+    const qrApiUrl = `https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=${encodeURIComponent(qrData)}&choe=UTF-8&chld=M|4`;
     
-    // Convert SVG string to Uint8Array
-    const encoder = new TextEncoder();
-    const svgBytes = encoder.encode(svgContent);
+    console.log("Fetching QR PNG from Google Charts API...");
+    const response = await fetch(qrApiUrl);
     
-    // Upload to storage bucket
-    const { data, error } = await supabase.storage
+    if (!response.ok) {
+      console.error("QR API error:", response.status);
+      return null;
+    }
+    
+    const pngBuffer = await response.arrayBuffer();
+    const pngBytes = new Uint8Array(pngBuffer);
+    
+    console.log("QR PNG fetched, size:", pngBytes.length, "bytes");
+    
+    // Upload PNG to storage
+    const fileName = `qr-reg-${registrationId}.png`;
+    
+    const { error } = await supabase.storage
       .from("ticket-qrcodes")
-      .upload(filePath, svgBytes, {
-        contentType: "image/svg+xml",
-        upsert: true, // Overwrite if exists
+      .upload(fileName, pngBytes, {
+        contentType: "image/png",
+        upsert: true,
       });
     
     if (error) {
@@ -66,12 +56,12 @@ async function uploadQRCodeToStorage(
     // Get the public URL
     const { data: urlData } = supabase.storage
       .from("ticket-qrcodes")
-      .getPublicUrl(filePath);
+      .getPublicUrl(fileName);
     
-    console.log("QR code uploaded successfully:", urlData.publicUrl);
+    console.log("QR PNG uploaded successfully:", urlData.publicUrl);
     return urlData.publicUrl;
   } catch (error) {
-    console.error("QR upload error:", error);
+    console.error("QR generation/upload error:", error);
     return null;
   }
 }
@@ -180,49 +170,35 @@ const handler = async (req: Request): Promise<Response> => {
       minute: "2-digit",
     });
 
-    // Generate and upload QR code to storage for reliable email display
+    // Generate and upload QR code as PNG for reliable email display
     let qrCodeImageHtml = "";
     if (qrCode && isApproved) {
       try {
-        console.log("Generating QR code SVG for payload:", qrCode.substring(0, 50) + "...");
-        const qrSvg = generateQRCodeSVG(qrCode);
-        console.log("QR code SVG generated successfully, length:", qrSvg.length);
-
-        // Upload to storage and get public URL
-        const qrImageUrl = await uploadQRCodeToStorage(supabase, registrationId, qrSvg);
+        console.log("Generating QR code PNG for registration:", registrationId);
+        
+        const qrImageUrl = await generateAndUploadQRCode(supabase, registrationId, qrCode);
 
         if (qrImageUrl) {
-          // Use hosted URL - works in all email clients!
           qrCodeImageHtml = `
             <div style="text-align: center; margin: 24px 0; padding: 20px; background: #f9fafb; border-radius: 12px;">
               <p style="color: #374151; font-weight: 600; margin-bottom: 16px;">🎫 Your Entry QR Code</p>
-              <img src="${qrImageUrl}" alt="Event Entry QR Code" style="width: 240px; height: 240px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" />
+              <img src="${qrImageUrl}" alt="Event Entry QR Code" width="200" height="200" style="display: block; margin: 0 auto; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" />
               <p style="color: #6b7280; font-size: 12px; margin-top: 12px;">Show this QR code at the entry gate</p>
             </div>
           `;
         } else {
-          // Fallback to base64 if upload fails
-          console.warn("Storage upload failed, falling back to base64");
-          const svgBase64 = btoa(qrSvg);
-          const svgDataUrl = `data:image/svg+xml;base64,${svgBase64}`;
+          // Fallback to link
           qrCodeImageHtml = `
             <div style="text-align: center; margin: 24px 0; padding: 20px; background: #f9fafb; border-radius: 12px;">
-              <p style="color: #374151; font-weight: 600; margin-bottom: 16px;">🎫 Your Entry QR Code</p>
-              <img src="${svgDataUrl}" alt="Event Entry QR Code" style="width: 240px; height: 240px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" />
-              <p style="color: #6b7280; font-size: 12px; margin-top: 12px;">Show this QR code at the entry gate</p>
-              <p style="color: #f59e0b; font-size: 11px; margin-top: 8px;">💡 If QR doesn't display, view it on the <a href="https://univoid.tech/my-tickets" style="color: #4f46e5;">My Tickets</a> page</p>
+              <p style="color: #374151; font-weight: 600; margin-bottom: 16px;">🎫 Your Entry Pass</p>
+              <a href="https://univoid.tech/my-tickets" style="display: inline-block; background: #4f46e5; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">View Your QR Ticket</a>
+              <p style="color: #6b7280; font-size: 12px; margin-top: 12px;">Click to view your QR code for event entry</p>
             </div>
           `;
         }
       } catch (qrError) {
         console.error("QR generation error:", qrError);
-        // Don't fail the email, just skip QR with helpful message
-        qrCodeImageHtml = `
-          <div style="text-align: center; margin: 24px 0; padding: 20px; background: #fef3c7; border-radius: 12px;">
-            <p style="color: #92400e; font-weight: 600;">🎫 Access Your QR Code</p>
-            <p style="color: #78350f; font-size: 14px; margin-top: 8px;">View your entry QR code on the <a href="https://univoid.tech/my-tickets" style="color: #4f46e5; font-weight: 600;">My Tickets</a> page</p>
-          </div>
-        `;
+        qrCodeImageHtml = `<p style="color: #ef4444; text-align: center;">QR code could not be generated. Please visit <a href="https://univoid.tech/my-tickets">My Tickets</a> to view your QR.</p>`;
       }
     }
 
