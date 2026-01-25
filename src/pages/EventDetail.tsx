@@ -411,13 +411,16 @@ const EventDetail = () => {
                 <CardHeader><CardTitle>About this Event</CardTitle></CardHeader>
                 <CardContent>
                   <div 
-                    className="prose prose-sm dark:prose-invert max-w-none" 
+                    className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap" 
                     dangerouslySetInnerHTML={{ 
-                      __html: DOMPurify.sanitize(event.description, {
-                        ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'ul', 'ol', 'li', 'strong', 'em', 'a', 'blockquote', 'code', 'pre'],
-                        ALLOWED_ATTR: ['href', 'title', 'target', 'rel'],
-                        ALLOW_DATA_ATTR: false
-                      })
+                      __html: DOMPurify.sanitize(
+                        event.description.replace(/\n/g, '<br>'),
+                        {
+                          ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'ul', 'ol', 'li', 'strong', 'em', 'a', 'blockquote', 'code', 'pre'],
+                          ALLOWED_ATTR: ['href', 'title', 'target', 'rel'],
+                          ALLOW_DATA_ATTR: false
+                        }
+                      )
                     }} 
                   />
                 </CardContent>
@@ -441,13 +444,16 @@ const EventDetail = () => {
                 <CardHeader><CardTitle>About this Event</CardTitle></CardHeader>
                 <CardContent>
                   <div 
-                    className="prose prose-sm dark:prose-invert max-w-none" 
+                    className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap" 
                     dangerouslySetInnerHTML={{ 
-                      __html: DOMPurify.sanitize(event.description, {
-                        ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'ul', 'ol', 'li', 'strong', 'em', 'a', 'blockquote', 'code', 'pre'],
-                        ALLOWED_ATTR: ['href', 'title', 'target', 'rel'],
-                        ALLOW_DATA_ATTR: false
-                      })
+                      __html: DOMPurify.sanitize(
+                        event.description.replace(/\n/g, '<br>'),
+                        {
+                          ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'ul', 'ol', 'li', 'strong', 'em', 'a', 'blockquote', 'code', 'pre'],
+                          ALLOWED_ATTR: ['href', 'title', 'target', 'rel'],
+                          ALLOW_DATA_ATTR: false
+                        }
+                      )
                     }} 
                   />
                 </CardContent>
@@ -465,7 +471,7 @@ const EventDetail = () => {
                   className="flex items-center gap-3 p-3 -mx-3 rounded-xl hover:bg-muted/50 transition-colors"
                 >
                   <Avatar className="w-10 h-10 border">
-                    <AvatarImage src={organizer.logo_url || undefined} alt={organizer.name} />
+                    <AvatarImage src={toDisplayUrl(organizer.logo_url, { forceImage: true }) || undefined} alt={organizer.name} />
                     <AvatarFallback className="bg-primary/10 text-primary">
                       {organizer.name.charAt(0).toUpperCase()}
                     </AvatarFallback>

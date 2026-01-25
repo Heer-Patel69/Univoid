@@ -13,6 +13,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useState } from "react";
 import { useOrganizerProfile } from "@/hooks/useOrganizerProfile";
+import { toDisplayUrl } from "@/lib/storageProxy";
 
 interface OrganizerBottomNavProps {
   showBackButton?: boolean;
@@ -207,7 +208,7 @@ export function OrganizerBottomNav({
               <div className="bg-muted/50 rounded-lg p-3 mt-4 mb-2">
                 <div className="flex items-center gap-3">
                   <Avatar className="w-10 h-10 border-2 border-background">
-                    <AvatarImage src={organizerProfile.logo_url || undefined} alt={organizerProfile.name} />
+                    <AvatarImage src={toDisplayUrl(organizerProfile.logo_url, { forceImage: true }) || undefined} alt={organizerProfile.name} />
                     <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                       {organizerProfile.name.charAt(0).toUpperCase()}
                     </AvatarFallback>
