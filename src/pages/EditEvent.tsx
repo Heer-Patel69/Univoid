@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchEventById } from "@/services/eventsService";
+import { toDisplayUrl } from "@/lib/storageProxy";
 import AuthModal from "@/components/auth/AuthModal";
 import { UpsellManager } from "@/components/organizer/UpsellManager";
 import { DeleteEventDialog } from "@/components/organizer/DeleteEventDialog";
@@ -436,7 +437,7 @@ const EditEvent = () => {
                       Upload the <strong>original QR image</strong> from your payment app. Screenshots or WhatsApp images may not work.
                     </p>
                     {event.upi_qr_url && (
-                      <img src={event.upi_qr_url} alt="Current QR" className="w-24 h-24 object-contain rounded-lg mb-2" />
+                      <img src={toDisplayUrl(event.upi_qr_url, { forceImage: true }) || undefined} alt="Current QR" className="w-24 h-24 object-contain rounded-lg mb-2" />
                     )}
                     <div className="border-2 border-dashed rounded-xl p-4 text-center">
                       <Input type="file" accept="image/*" onChange={(e) => handleQrFileChange(e.target.files?.[0] || null)} className="hidden" id="qr" />

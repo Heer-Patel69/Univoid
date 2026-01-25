@@ -17,6 +17,7 @@ import { uploadPaymentScreenshot } from "@/services/registrationService";
 import { useMobileValidation } from "@/hooks/useMobileValidation";
 import { useRateLimiter } from "@/hooks/useRateLimiter";
 import UpsellScreen from "@/components/events/UpsellScreen";
+import { toDisplayUrl } from "@/lib/storageProxy";
 import {
   fetchEventUpsells,
   fetchUpsellSettings,
@@ -106,25 +107,25 @@ const FastRegister = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Check if user already registered
+  // Check if user already registered - use event.id (actual UUID) for DB queries
   const { data: existingRegistration, refetch: refetchRegistration } = useQuery({
-    queryKey: ["registration", eventId, user?.id],
-    queryFn: () => checkUserRegistration(eventId!, user!.id),
-    enabled: !!eventId && !!user,
+    queryKey: ["registration", event?.id, user?.id],
+    queryFn: () => checkUserRegistration(event!.id, user!.id),
+    enabled: !!event?.id && !!user,
     staleTime: 5 * 60 * 1000,
   });
 
-  // Fetch upsell settings and upsells
+  // Fetch upsell settings and upsells - use event.id for DB queries
   const { data: upsellSettings } = useQuery({
-    queryKey: ["upsell-settings", eventId],
-    queryFn: () => fetchUpsellSettings(eventId!),
-    enabled: !!eventId && !!event?.is_paid,
+    queryKey: ["upsell-settings", event?.id],
+    queryFn: () => fetchUpsellSettings(event!.id),
+    enabled: !!event?.id && !!event?.is_paid,
   });
 
   const { data: upsells = [] } = useQuery({
-    queryKey: ["event-upsells", eventId],
-    queryFn: () => fetchEventUpsells(eventId!),
-    enabled: !!eventId && !!event?.is_paid && !!upsellSettings?.upsell_enabled,
+    queryKey: ["event-upsells", event?.id],
+    queryFn: () => fetchEventUpsells(event!.id),
+    enabled: !!event?.id && !!event?.is_paid && !!upsellSettings?.upsell_enabled,
   });
 
   // Calculate price with upsells
@@ -350,11 +351,11 @@ const FastRegister = () => {
   };
 
   const handleQuickRegister = async () => {
-    if (!user || !eventId || !event) return;
+    if (!user || !event) return;
 
-    // UUID validation
+    // UUID validation - use event.id (actual UUID) not eventId (URL param which could be a slug)
     const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (!UUID_REGEX.test(eventId) || !UUID_REGEX.test(user.id)) {
+    if (!UUID_REGEX.test(event.id) || !UUID_REGEX.test(user.id)) {
       toast({
         title: "Invalid request",
         description: "Please refresh the page and try again.",
@@ -367,11 +368,11 @@ const FastRegister = () => {
     try {
       let screenshotUrl: string | null = null;
 
-      // Upload payment screenshot for paid events
+      // Upload payment screenshot for paid events - use event.id for consistent path
       if (event.is_paid && paymentScreenshot) {
         setIsUploadingPayment(true);
         try {
-          screenshotUrl = await uploadPaymentScreenshot(paymentScreenshot, user.id, eventId);
+          screenshotUrl = await uploadPaymentScreenshot(paymentScreenshot, user.id, event.id);
         } catch (uploadError: any) {
           toast({
             title: "Upload failed",
@@ -399,7 +400,7 @@ const FastRegister = () => {
       } : {};
 
       const { data, error } = await supabase.rpc('register_for_event_atomic', {
-        p_event_id: eventId,
+        p_event_id: event.id,
         p_user_id: user.id,
         p_custom_data: customData,
         p_payment_screenshot_url: screenshotUrl,
@@ -725,7 +726,7 @@ const FastRegister = () => {
                 {event.upi_qr_url && (
                   <div className="bg-white p-4 rounded-xl w-fit mx-auto">
                     <img
-                      src={event.upi_qr_url}
+                      src={toDisplayUrl(event.upi_qr_url, { forceImage: true }) || undefined}
                       alt="UPI QR Code"
                       className="w-48 h-48 object-contain max-w-full"
                     />
