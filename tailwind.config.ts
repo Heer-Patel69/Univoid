@@ -158,8 +158,8 @@ export default {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "fade-in": "fade-in 0.3s ease-out",
-        "fade-in-up": "fade-in-up 0.4s ease-out",
+        "fade-in": "fade-in 0.25s ease-out forwards",
+        "fade-in-up": "fade-in-up 0.3s ease-out forwards",
         "scale-in": "scale-in 0.2s ease-out",
         "bounce-soft": "bounce-soft 2s ease-in-out infinite",
         "pulse-soft": "pulse-soft 2s ease-in-out infinite",
