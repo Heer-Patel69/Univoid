@@ -263,8 +263,8 @@ const handler = async (req: Request): Promise<Response> => {
                         
                         <!-- Success Banner -->
                         <tr>
-                          <td style="background: linear-gradient(135deg, #86EFAC 0%, #4ADE80 100%); padding: 22px 24px; text-align: center; border-bottom: 3px solid #1a1a1a;">
-                            <h1 style="color: #166534; margin: 0; font-size: 21px; font-weight: 800;">🎉 Registration Confirmed!</h1>
+                          <td style="background: #1a1a1a; padding: 28px 24px; text-align: center;">
+                            <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px;">✅ Registration Confirmed</h1>
                           </td>
                         </tr>
                         
@@ -342,25 +342,13 @@ const handler = async (req: Request): Promise<Response> => {
                         
                         <!-- Footer -->
                         <tr>
-                          <td style="background: #F9FAFB; padding: 20px 24px; text-align: center; border-top: 2px solid #E5E7EB;">
-                            <p style="color: #6B7280; font-size: 12px; margin: 0 0 6px 0;">
-                              Need help? <a href="mailto:support@univoid.tech" style="color: #7C3AED; font-weight: 600;">support@univoid.tech</a>
-                            </p>
+                          <td style="background: #1a1a1a; padding: 18px 24px; text-align: center;">
                             <p style="color: #9CA3AF; font-size: 11px; margin: 0;">
-                              © ${new Date().getFullYear()} UniVoid · Where students learn, share & grow
+                              © ${new Date().getFullYear()} UniVoid · <a href="https://univoid.tech" style="color: #C084FC; text-decoration: none; font-weight: 600;">univoid.tech</a>
                             </p>
                           </td>
                         </tr>
                       </table>
-                    </td>
-                  </tr>
-                  
-                  <!-- Bottom Tagline -->
-                  <tr>
-                    <td align="center" style="padding-top: 20px;">
-                      <p style="color: #9CA3AF; font-size: 11px; margin: 0;">
-                        <a href="https://univoid.tech" style="color: #6B7280; text-decoration: none; font-weight: 600;">univoid.tech</a> · Made with 💜 for students
-                      </p>
                     </td>
                   </tr>
                 </table>
