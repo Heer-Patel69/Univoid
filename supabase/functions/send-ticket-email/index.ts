@@ -66,16 +66,20 @@ async function generateAndUploadQRCode(
   }
 }
 
-// Send email via Brevo REST API
+// Send email via Brevo REST API with improved deliverability headers
 async function sendEmailViaBrevo(
   to: string,
+  toName: string,
   subject: string,
   htmlContent: string
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
     if (!BREVO_API_KEY) {
+      console.error("BREVO_API_KEY is not configured!");
       throw new Error("BREVO_API_KEY not configured");
     }
+
+    console.log("Sending email via Brevo to:", to);
 
     const response = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
@@ -86,23 +90,33 @@ async function sendEmailViaBrevo(
       },
       body: JSON.stringify({
         sender: { name: SENDER_NAME, email: SENDER_EMAIL },
-        to: [{ email: to }],
+        to: [{ email: to, name: toName }],
         subject: subject,
         htmlContent: htmlContent,
+        // Transactional email headers to avoid Promotions tab
+        headers: {
+          "X-Priority": "1",
+          "X-MSMail-Priority": "High",
+          "Importance": "high"
+        },
+        tags: ["transactional", "ticket", "confirmation"],
       }),
     });
 
+    const responseText = await response.text();
+    console.log("Brevo API response status:", response.status);
+    console.log("Brevo API response body:", responseText);
+
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Brevo API error:", errorText);
-      return { success: false, error: `Brevo API error: ${response.status}` };
+      console.error("Brevo API error:", responseText);
+      return { success: false, error: `Brevo API error: ${response.status} - ${responseText}` };
     }
 
-    const result = await response.json();
-    console.log("Email sent successfully via Brevo:", result);
+    const result = JSON.parse(responseText);
+    console.log("Email sent successfully via Brevo, messageId:", result.messageId);
     return { success: true, messageId: result.messageId };
   } catch (error: any) {
-    console.error("Brevo send error:", error);
+    console.error("Brevo send error:", error.message, error.stack);
     return { success: false, error: error.message };
   }
 }
@@ -193,36 +207,31 @@ const handler = async (req: Request): Promise<Response> => {
 
       if (qrImageUrl) {
         qrCodeImageHtml = `
-          <div style="text-align: center; margin: 28px 0;">
-            <div style="display: inline-block; background: #FFFDF5; border: 3px solid #1a1a1a; border-radius: 24px; padding: 28px 32px; box-shadow: 6px 6px 0 #1a1a1a;">
-              <p style="color: #1a1a1a; font-weight: 800; margin: 0 0 20px 0; font-size: 20px; letter-spacing: -0.5px;">🎟️ Your Entry Pass</p>
-              <div style="background: white; border: 2px solid #e5e7eb; border-radius: 16px; padding: 16px; display: inline-block;">
-                <img src="${qrImageUrl}" alt="Event Entry QR Code" width="180" height="180" style="display: block; border-radius: 8px;" />
+          <div style="text-align: center; margin: 24px 0;">
+            <div style="display: inline-block; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px;">
+              <p style="color: #1a1a1a; font-weight: 600; margin: 0 0 16px 0; font-size: 14px;">Entry Pass</p>
+              <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; display: inline-block;">
+                <img src="${qrImageUrl}" alt="Entry QR Code" width="160" height="160" style="display: block;" />
               </div>
-              <p style="color: #6b7280; font-size: 13px; margin: 16px 0 0 0; font-weight: 500;">Show this at the venue entrance</p>
+              <p style="color: #6b7280; font-size: 12px; margin: 16px 0 0 0;">Present this QR code at the venue</p>
               
-              <!-- Manual Entry Code (Ticket ID) -->
-              <div style="margin-top: 20px; padding-top: 16px; border-top: 2px dashed #e5e7eb;">
-                <p style="color: #6b7280; font-size: 12px; margin: 0 0 8px 0;">QR not working? Show this Ticket ID:</p>
-                <p style="color: #1a1a1a; font-size: 11px; font-weight: 700; margin: 0; font-family: monospace; word-break: break-all; background: #f3f4f6; padding: 10px 14px; border-radius: 8px; border: 1px solid #e5e7eb;">${manualEntryCode}</p>
+              <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #e5e7eb;">
+                <p style="color: #6b7280; font-size: 11px; margin: 0 0 6px 0;">Ticket ID (backup):</p>
+                <p style="color: #1a1a1a; font-size: 10px; font-weight: 600; margin: 0; font-family: monospace; word-break: break-all; background: #f3f4f6; padding: 8px; border-radius: 4px;">${manualEntryCode}</p>
               </div>
             </div>
           </div>
         `;
       } else {
-        // Fallback: Direct link to view ticket with Ticket ID
         qrCodeImageHtml = `
-          <div style="text-align: center; margin: 28px 0;">
-            <div style="display: inline-block; background: #FFFDF5; border: 3px solid #1a1a1a; border-radius: 24px; padding: 28px 32px; box-shadow: 6px 6px 0 #1a1a1a;">
-              <p style="color: #1a1a1a; font-weight: 800; margin: 0 0 16px 0; font-size: 20px;">🎟️ Your Entry Pass</p>
-              
-              <!-- Manual Entry Code (Ticket ID) -->
-              <div style="margin-bottom: 16px; padding: 12px 20px; background: #FEF3C7; border: 2px solid #F59E0B; border-radius: 12px;">
-                <p style="color: #92400E; font-size: 12px; margin: 0 0 6px 0; font-weight: 600;">Ticket ID (for manual entry):</p>
-                <p style="color: #1a1a1a; font-size: 11px; font-weight: 700; margin: 0; font-family: monospace; word-break: break-all;">${manualEntryCode}</p>
+          <div style="text-align: center; margin: 24px 0;">
+            <div style="display: inline-block; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px;">
+              <p style="color: #1a1a1a; font-weight: 600; margin: 0 0 12px 0; font-size: 14px;">Entry Pass</p>
+              <div style="padding: 12px; background: #f3f4f6; border-radius: 6px;">
+                <p style="color: #6b7280; font-size: 11px; margin: 0 0 6px 0;">Ticket ID:</p>
+                <p style="color: #1a1a1a; font-size: 10px; font-weight: 600; margin: 0; font-family: monospace; word-break: break-all;">${manualEntryCode}</p>
               </div>
-              
-              <p style="color: #6b7280; font-size: 13px; margin: 0;">Show this ID at the venue entrance</p>
+              <p style="color: #6b7280; font-size: 12px; margin: 12px 0 0 0;">Present this ID at the venue</p>
             </div>
           </div>
         `;
@@ -230,11 +239,10 @@ const handler = async (req: Request): Promise<Response> => {
     } catch (qrError) {
       console.error("QR generation error:", qrError);
       qrCodeImageHtml = `
-        <div style="text-align: center; margin: 24px 0; padding: 24px; background: #FEF3C7; border: 2px solid #F59E0B; border-radius: 16px;">
-          <p style="color: #92400E; font-weight: 700; margin: 0 0 12px 0;">🎟️ Your Entry Pass</p>
-          <p style="color: #92400E; font-size: 12px; margin: 0 0 6px 0;">Ticket ID (for manual entry):</p>
-          <p style="color: #1a1a1a; font-size: 11px; font-weight: 700; margin: 0 0 12px 0; font-family: monospace; word-break: break-all;">${ticketId}</p>
-          <a href="https://univoid.tech/my-events" style="color: #1a1a1a; font-weight: 700; text-decoration: underline;">View full ticket online</a>
+        <div style="text-align: center; margin: 24px 0; padding: 20px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px;">
+          <p style="color: #1a1a1a; font-weight: 600; margin: 0 0 8px 0; font-size: 14px;">Entry Pass</p>
+          <p style="color: #6b7280; font-size: 11px; margin: 0 0 6px 0;">Ticket ID:</p>
+          <p style="color: #1a1a1a; font-size: 10px; font-weight: 600; margin: 0; font-family: monospace; word-break: break-all;">${ticketId}</p>
         </div>
       `;
     }
@@ -251,73 +259,67 @@ const handler = async (req: Request): Promise<Response> => {
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Your Event Ticket - UniVoid</title>
+          <title>Ticket Confirmation - ${event.title}</title>
         </head>
-        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #FFFDF5; margin: 0; padding: 0;">
-          <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color: #FFFDF5;">
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f9fafb; margin: 0; padding: 0;">
+          <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f9fafb;">
             <tr>
               <td style="padding: 40px 16px;">
                 <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width: 520px; margin: 0 auto;">
                   
                   <!-- Logo Header -->
                   <tr>
-                    <td align="center" style="padding-bottom: 28px;">
-                      <table role="presentation" cellpadding="0" cellspacing="0">
-                        <tr>
-                          <td style="background-color: #1a1a1a; padding: 14px 28px; border-radius: 50px; box-shadow: 4px 4px 0 #c9b99a;">
-                            <span style="color: #ffffff; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">✨ UniVoid</span>
-                          </td>
-                        </tr>
-                      </table>
+                    <td align="center" style="padding-bottom: 24px;">
+                      <span style="color: #1a1a1a; font-size: 20px; font-weight: 700;">UniVoid</span>
                     </td>
                   </tr>
                   
                   <!-- Main Card -->
                   <tr>
                     <td>
-                      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background: #ffffff; border: 3px solid #1a1a1a; border-radius: 24px; overflow: hidden; box-shadow: 6px 6px 0 #1a1a1a;">
+                      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
                         
-                        <!-- Success Banner -->
+                        <!-- Header -->
                         <tr>
-                          <td style="background: #1a1a1a; padding: 28px 24px; text-align: center;">
-                            <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px;">✅ Registration Confirmed</h1>
+                          <td style="background: #1a1a1a; padding: 24px; text-align: center;">
+                            <h1 style="color: #ffffff; margin: 0; font-size: 20px; font-weight: 600;">Registration Confirmed</h1>
                           </td>
                         </tr>
                         
                         <!-- Content -->
                         <tr>
-                          <td style="padding: 28px 24px;">
-                            <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 6px 0;">
-                              Hi <strong style="color: #1a1a1a;">${profile.full_name}</strong>,
+                          <td style="padding: 24px;">
+                            <p style="color: #374151; font-size: 15px; line-height: 1.6; margin: 0 0 16px 0;">
+                              Hi ${profile.full_name},
                             </p>
-                            <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
-                              You're all set for <strong style="color: #1a1a1a;">${event.title}</strong>! Here's your entry pass:
+                            <p style="color: #374151; font-size: 15px; line-height: 1.6; margin: 0 0 24px 0;">
+                              Your registration for <strong>${event.title}</strong> is confirmed. Below is your entry pass.
                             </p>
                             
                             ${qrCodeImageHtml}
                             
-                            <!-- Event Details Card -->
-                            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background: #F3E8FF; border: 2px solid #C084FC; border-radius: 16px; margin: 24px 0;">
+                            <!-- Event Details -->
+                            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; margin: 24px 0;">
                               <tr>
-                                <td style="padding: 20px;">
-                                  <p style="margin: 0 0 14px 0; color: #7C3AED; font-weight: 800; font-size: 16px;">📋 Event Details</p>
+                                <td style="padding: 16px;">
+                                  <p style="margin: 0 0 12px 0; color: #1a1a1a; font-weight: 600; font-size: 14px;">Event Details</p>
                                   <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
                                     <tr>
-                                      <td style="padding: 6px 0; color: #374151; font-size: 14px; vertical-align: top; width: 30px;">🎪</td>
-                                      <td style="padding: 6px 0; color: #374151; font-size: 14px;"><strong>Event:</strong> ${event.title}</td>
+                                      <td style="padding: 4px 0; color: #6b7280; font-size: 13px; width: 80px;">Event</td>
+                                      <td style="padding: 4px 0; color: #1a1a1a; font-size: 13px;">${event.title}</td>
                                     </tr>
                                     <tr>
-                                      <td style="padding: 6px 0; color: #374151; font-size: 14px; vertical-align: top;">📅</td>
-                                      <td style="padding: 6px 0; color: #374151; font-size: 14px;"><strong>Date:</strong> ${eventDate}</td>
+                                      <td style="padding: 4px 0; color: #6b7280; font-size: 13px;">Date</td>
+                                      <td style="padding: 4px 0; color: #1a1a1a; font-size: 13px;">${eventDate}</td>
                                     </tr>
                                     <tr>
-                                      <td style="padding: 6px 0; color: #374151; font-size: 14px; vertical-align: top;">📍</td>
-                                      <td style="padding: 6px 0; color: #374151; font-size: 14px;"><strong>Location:</strong> ${locationText}</td>
+                                      <td style="padding: 4px 0; color: #6b7280; font-size: 13px;">Location</td>
+                                      <td style="padding: 4px 0; color: #1a1a1a; font-size: 13px;">${locationText}</td>
                                     </tr>
                                     ${organizer ? `
                                     <tr>
-                                      <td style="padding: 6px 0; color: #374151; font-size: 14px; vertical-align: top;">🎭</td>
-                                      <td style="padding: 6px 0; color: #374151; font-size: 14px;"><strong>Organizer:</strong> ${organizer.name}</td>
+                                      <td style="padding: 4px 0; color: #6b7280; font-size: 13px;">Organizer</td>
+                                      <td style="padding: 4px 0; color: #1a1a1a; font-size: 13px;">${organizer.name}</td>
                                     </tr>
                                     ` : ""}
                                   </table>
@@ -325,37 +327,27 @@ const handler = async (req: Request): Promise<Response> => {
                               </tr>
                             </table>
                             
-                            <!-- CTA Button -->
+                            <!-- View Ticket Link -->
                             <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin: 24px 0;">
                               <tr>
                                 <td align="center">
-                                  <table role="presentation" cellpadding="0" cellspacing="0">
-                                    <tr>
-                                      <td style="background-color: #F59E0B; border-radius: 50px; box-shadow: 3px 3px 0 #1a1a1a;">
-                                        <a href="https://univoid.tech/my-events" target="_blank" style="display: inline-block; padding: 14px 32px; color: #1a1a1a; font-size: 15px; font-weight: 700; text-decoration: none; border-radius: 50px;">👉 View Your Ticket</a>
-                                      </td>
-                                    </tr>
-                                  </table>
+                                  <a href="https://univoid.tech/my-events" target="_blank" style="display: inline-block; padding: 12px 24px; background-color: #1a1a1a; color: #ffffff; font-size: 14px; font-weight: 600; text-decoration: none; border-radius: 6px;">View Your Ticket</a>
                                 </td>
                               </tr>
                             </table>
                             
-                            <!-- Warning -->
-                            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background: #FEF2F2; border: 2px solid #FECACA; border-radius: 12px; margin: 20px 0;">
-                              <tr>
-                                <td style="padding: 14px; text-align: center;">
-                                  <p style="color: #B91C1C; font-weight: 700; margin: 0; font-size: 13px;">⚠️ Keep this QR code private — do not share it!</p>
-                                </td>
-                              </tr>
-                            </table>
+                            <!-- Security Note -->
+                            <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 16px 0 0 0;">
+                              Please keep this QR code private and do not share it with others.
+                            </p>
                           </td>
                         </tr>
                         
                         <!-- Footer -->
                         <tr>
-                          <td style="background: #1a1a1a; padding: 18px 24px; text-align: center;">
-                            <p style="color: #9CA3AF; font-size: 11px; margin: 0;">
-                              © ${new Date().getFullYear()} UniVoid · <a href="https://univoid.tech" style="color: #C084FC; text-decoration: none; font-weight: 600;">univoid.tech</a>
+                          <td style="background: #f9fafb; padding: 16px 24px; text-align: center; border-top: 1px solid #e5e7eb;">
+                            <p style="color: #9ca3af; font-size: 11px; margin: 0;">
+                              This is a transactional email from UniVoid regarding your event registration.
                             </p>
                           </td>
                         </tr>
@@ -370,11 +362,13 @@ const handler = async (req: Request): Promise<Response> => {
       </html>
     `;
 
-    console.log("Sending ticket email to:", profile.email);
+    console.log("Sending ticket email to:", profile.email, "for user:", profile.full_name);
 
+    // Use clean subject line without emojis (helps avoid Promotions tab)
     const result = await sendEmailViaBrevo(
       profile.email,
-      `🎫 Your Ticket: ${event.title}`,
+      profile.full_name,
+      `Your Ticket Confirmation - ${event.title}`,
       emailHtml
     );
 
