@@ -188,106 +188,132 @@ const CreateEvent = () => {
   const createEventMutation = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("Not authenticated");
+      console.log("[CreateEvent] Starting event creation...");
       setUploading(true);
 
       let flyerUrl = formData.flyer_url;
       let upiQrUrl = formData.upi_qr_url;
 
-      // Upload flyer
-      if (flyerFile) {
-        const ext = flyerFile.name.split(".").pop();
-        const path = `${user.id}/flyers/${Date.now()}.${ext}`;
-        const { error } = await supabase.storage.from("event-assets").upload(path, flyerFile);
-        if (error) throw error;
-        const { data: { publicUrl } } = supabase.storage.from("event-assets").getPublicUrl(path);
-        flyerUrl = publicUrl;
-      }
-
-      // Upload UPI QR
-      if (qrFile && formData.is_paid) {
-        const ext = qrFile.name.split(".").pop();
-        const path = `${user.id}/upi-qr/${Date.now()}.${ext}`;
-        const { error } = await supabase.storage.from("event-assets").upload(path, qrFile);
-        if (error) throw error;
-        const { data: { publicUrl } } = supabase.storage.from("event-assets").getPublicUrl(path);
-        upiQrUrl = publicUrl;
-      }
-
-      const { data, error } = await supabase.from("events").insert({
-        organizer_id: user.id,
-        title: formData.title,
-        category: formData.category,
-        event_type: formData.event_type,
-        flyer_url: flyerUrl || null,
-        poster_ratio: formData.poster_ratio,
-        state: formData.state,
-        city: formData.city,
-        is_location_decided: formData.is_location_decided,
-        venue_name: formData.is_location_decided ? formData.venue_name : null,
-        venue_address: formData.is_location_decided ? formData.venue_address : null,
-        maps_link: formData.is_location_decided ? formData.maps_link : null,
-        start_date: formData.start_date,
-        end_date: formData.end_date || null,
-        description: formData.description || null,
-        terms_conditions: formData.terms_conditions || null,
-        is_paid: formData.is_paid,
-        price: formData.is_paid ? formData.price : 0,
-        max_capacity: formData.max_capacity ? parseInt(formData.max_capacity) : null,
-        upi_qr_url: formData.is_paid ? upiQrUrl : null,
-        upi_vpa: formData.is_paid ? formData.upi_vpa : null,
-        enable_quick_register: formData.enable_quick_register,
-        status: "published",
-      }).select().single();
-
-      if (error) throw error;
-
-      // Save custom form fields if any
-      if (customFields.length > 0) {
-        const fieldsToSave = customFields.map((field, index) => ({
-          field_type: field.field_type,
-          label: field.label,
-          description: field.description,
-          placeholder: field.placeholder,
-          is_required: field.is_required,
-          field_order: index,
-          options: field.options,
-          validation_rules: field.validation_rules,
-          conditional_logic: field.conditional_logic,
-        }));
-
-        await createFormFields(data.id, fieldsToSave);
-      }
-
-      // Save club pricing configs if any
-      if (clubConfigs.length > 0) {
-        for (const config of clubConfigs) {
-          await addClubToEvent(data.id, config.clubId, config.memberPrice, config.memberBenefits);
+      try {
+        // Upload flyer
+        if (flyerFile) {
+          console.log("[CreateEvent] Uploading flyer...");
+          const ext = flyerFile.name.split(".").pop();
+          const path = `${user.id}/flyers/${Date.now()}.${ext}`;
+          const { error } = await supabase.storage.from("event-assets").upload(path, flyerFile);
+          if (error) {
+            console.error("[CreateEvent] Flyer upload error:", error);
+            throw new Error(`Flyer upload failed: ${error.message}`);
+          }
+          const { data: { publicUrl } } = supabase.storage.from("event-assets").getPublicUrl(path);
+          flyerUrl = publicUrl;
+          console.log("[CreateEvent] Flyer uploaded:", flyerUrl);
         }
+
+        // Upload UPI QR
+        if (qrFile && formData.is_paid) {
+          console.log("[CreateEvent] Uploading UPI QR...");
+          const ext = qrFile.name.split(".").pop();
+          const path = `${user.id}/upi-qr/${Date.now()}.${ext}`;
+          const { error } = await supabase.storage.from("event-assets").upload(path, qrFile);
+          if (error) {
+            console.error("[CreateEvent] UPI QR upload error:", error);
+            throw new Error(`UPI QR upload failed: ${error.message}`);
+          }
+          const { data: { publicUrl } } = supabase.storage.from("event-assets").getPublicUrl(path);
+          upiQrUrl = publicUrl;
+          console.log("[CreateEvent] UPI QR uploaded:", upiQrUrl);
+        }
+
+        console.log("[CreateEvent] Inserting event into database...");
+        const { data, error } = await supabase.from("events").insert({
+          organizer_id: user.id,
+          title: formData.title,
+          category: formData.category,
+          event_type: formData.event_type,
+          flyer_url: flyerUrl || null,
+          poster_ratio: formData.poster_ratio,
+          state: formData.state,
+          city: formData.city,
+          is_location_decided: formData.is_location_decided,
+          venue_name: formData.is_location_decided ? formData.venue_name : null,
+          venue_address: formData.is_location_decided ? formData.venue_address : null,
+          maps_link: formData.is_location_decided ? formData.maps_link : null,
+          start_date: formData.start_date,
+          end_date: formData.end_date || null,
+          description: formData.description || null,
+          terms_conditions: formData.terms_conditions || null,
+          is_paid: formData.is_paid,
+          price: formData.is_paid ? formData.price : 0,
+          max_capacity: formData.max_capacity ? parseInt(formData.max_capacity) : null,
+          upi_qr_url: formData.is_paid ? upiQrUrl : null,
+          upi_vpa: formData.is_paid ? formData.upi_vpa : null,
+          enable_quick_register: formData.enable_quick_register,
+          status: "published",
+        }).select().single();
+
+        if (error) {
+          console.error("[CreateEvent] Database insert error:", error);
+          throw new Error(`Failed to create event: ${error.message}`);
+        }
+        console.log("[CreateEvent] Event created:", data.id);
+
+        // Save custom form fields if any
+        if (customFields.length > 0) {
+          console.log("[CreateEvent] Saving custom form fields...");
+          const fieldsToSave = customFields.map((field, index) => ({
+            field_type: field.field_type,
+            label: field.label,
+            description: field.description,
+            placeholder: field.placeholder,
+            is_required: field.is_required,
+            field_order: index,
+            options: field.options,
+            validation_rules: field.validation_rules,
+            conditional_logic: field.conditional_logic,
+          }));
+
+          await createFormFields(data.id, fieldsToSave);
+        }
+
+        // Save club pricing configs if any
+        if (clubConfigs.length > 0) {
+          console.log("[CreateEvent] Saving club configs...");
+          for (const config of clubConfigs) {
+            await addClubToEvent(data.id, config.clubId, config.memberPrice, config.memberBenefits);
+          }
+        }
+
+        // Save upsells if any (only for paid events)
+        if (formData.is_paid && draftUpsells.length > 0) {
+          console.log("[CreateEvent] Saving upsells...");
+          await createEventUpsellsBulk(data.id, draftUpsells);
+          await updateUpsellSettings(data.id, { upsell_enabled: upsellEnabled });
+        }
+
+        // Auto-assign organizer role to the user (silently, no UI interruption)
+        const { data: existingRole } = await supabase
+          .from("user_roles")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("role", "organizer")
+          .maybeSingle();
+
+        if (!existingRole) {
+          console.log("[CreateEvent] Assigning organizer role...");
+          await supabase.from("user_roles").insert({
+            user_id: user.id,
+            role: "organizer",
+          });
+        }
+
+        setUploading(false);
+        console.log("[CreateEvent] Success!");
+        return data;
+      } catch (err) {
+        console.error("[CreateEvent] Caught error:", err);
+        throw err;
       }
-
-      // Save upsells if any (only for paid events)
-      if (formData.is_paid && draftUpsells.length > 0) {
-        await createEventUpsellsBulk(data.id, draftUpsells);
-        await updateUpsellSettings(data.id, { upsell_enabled: upsellEnabled });
-      }
-
-      // Auto-assign organizer role to the user (silently, no UI interruption)
-      const { data: existingRole } = await supabase
-        .from("user_roles")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("role", "organizer")
-        .maybeSingle();
-
-      if (!existingRole) {
-        await supabase.from("user_roles").insert({
-          user_id: user.id,
-          role: "organizer",
-        });
-      }
-
-      setUploading(false);
-      return data;
     },
     onSuccess: (data) => {
       toast({ title: "Event Created!", description: "Your event is now live and will appear instantly for all users." });
@@ -295,7 +321,8 @@ const CreateEvent = () => {
     },
     onError: (error: Error) => {
       setUploading(false);
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      console.error("[CreateEvent] Mutation error:", error);
+      toast({ title: "Error", description: error.message || "Something went wrong", variant: "destructive" });
     },
   });
 
