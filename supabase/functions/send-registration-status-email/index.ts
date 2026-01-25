@@ -5,7 +5,7 @@ import QRCode from "https://esm.sh/qrcode-svg@1.1.0";
 import { getCorsHeaders, isCorsPreflightRequest, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 // Brevo API Configuration
-const BREVO_API_KEY = Deno.env.get("BREVO_SMTP_PASSWORD"); // Brevo uses SMTP key as API key
+const BREVO_API_KEY = Deno.env.get("BREVO_API_KEY");
 const SENDER_NAME = "UniVoid";
 const SENDER_EMAIL = "no-reply@univoid.tech";
 

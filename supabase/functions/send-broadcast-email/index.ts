@@ -2,11 +2,8 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, isCorsPreflightRequest, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
-// Brevo SMTP Configuration
-const BREVO_SMTP_HOST = Deno.env.get("BREVO_SMTP_HOST") || "smtp-relay.brevo.com";
-const BREVO_SMTP_PORT = parseInt(Deno.env.get("BREVO_SMTP_PORT") || "587");
-const BREVO_SMTP_LOGIN = Deno.env.get("BREVO_SMTP_LOGIN");
-const BREVO_SMTP_PASSWORD = Deno.env.get("BREVO_SMTP_PASSWORD");
+// Brevo API Configuration
+const BREVO_API_KEY = Deno.env.get("BREVO_API_KEY");
 
 const SENDER_NAME = "UniVoid";
 const SENDER_EMAIL = "no-reply@univoid.tech";
@@ -21,20 +18,22 @@ interface BroadcastRequest {
   testEmail?: string; // Optional: send to single email for testing
 }
 
-// Use fetch-based email sending with mailchannels (free for edge functions)
-// or fallback to showing SMTP config issue
-async function sendEmailViaMailChannels(
+// Send email via Brevo REST API
+async function sendEmailViaBrevo(
   to: string,
   subject: string,
   htmlContent: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    // Try Brevo transactional API with SMTP key (some Brevo accounts use this)
+    if (!BREVO_API_KEY) {
+      throw new Error("BREVO_API_KEY not configured");
+    }
+    
     const response = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: {
         "accept": "application/json",
-        "api-key": BREVO_SMTP_PASSWORD!,
+        "api-key": BREVO_API_KEY,
         "content-type": "application/json",
       },
       body: JSON.stringify({
@@ -174,13 +173,7 @@ function delay(ms: number): Promise<void> {
 
 const handler = async (req: Request): Promise<Response> => {
   console.log("Broadcast email function called");
-  console.log("SMTP Config:", { 
-    host: BREVO_SMTP_HOST, 
-    port: BREVO_SMTP_PORT, 
-    login: BREVO_SMTP_LOGIN,
-    hasPassword: !!BREVO_SMTP_PASSWORD,
-    passwordLength: BREVO_SMTP_PASSWORD?.length 
-  });
+  console.log("Brevo API Key configured:", !!BREVO_API_KEY);
 
   if (isCorsPreflightRequest(req)) {
     return handleCorsPreflightRequest(req);
@@ -189,8 +182,8 @@ const handler = async (req: Request): Promise<Response> => {
   const corsHeaders = getCorsHeaders(req);
 
   try {
-    if (!BREVO_SMTP_PASSWORD) {
-      throw new Error("SMTP credentials not configured");
+    if (!BREVO_API_KEY) {
+      throw new Error("BREVO_API_KEY not configured");
     }
 
     const { subject, title, message, ctaText, ctaUrl, adminKey, testEmail }: BroadcastRequest = await req.json();
@@ -210,7 +203,7 @@ const handler = async (req: Request): Promise<Response> => {
     // If testEmail provided, just send to that one email
     if (testEmail) {
       console.log(`Sending TEST email to: ${testEmail}`);
-      const result = await sendEmailViaMailChannels(testEmail, subject, emailHtml);
+      const result = await sendEmailViaBrevo(testEmail, subject, emailHtml);
       
       return new Response(JSON.stringify({
         success: result.success,
@@ -263,7 +256,7 @@ const handler = async (req: Request): Promise<Response> => {
       if (!profile.email) continue;
 
       console.log(`Sending to ${profile.email}...`);
-      const result = await sendEmailViaMailChannels(profile.email, subject, emailHtml);
+      const result = await sendEmailViaBrevo(profile.email, subject, emailHtml);
       
       if (result.success) {
         sent++;
