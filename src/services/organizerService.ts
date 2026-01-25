@@ -33,15 +33,19 @@ export interface CreateOrganizerProfileData {
 }
 
 export async function hasOrganizerProfile(userId: string): Promise<boolean> {
+  // Direct query instead of RPC to avoid type issues
   const { data, error } = await supabase
-    .rpc('has_organizer_profile', { p_user_id: userId });
+    .from('organizer_profiles')
+    .select('id')
+    .eq('user_id', userId)
+    .maybeSingle();
   
   if (error) {
     console.error('Error checking organizer profile:', error);
     return false;
   }
   
-  return data === true;
+  return data !== null;
 }
 
 export async function getOrganizerProfile(userId: string): Promise<OrganizerProfile | null> {
