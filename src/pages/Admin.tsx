@@ -13,6 +13,7 @@ import {
 import AdminAssistantManager from "@/components/admin/AdminAssistantManager";
 import AdminOrganizerManager from "@/components/admin/AdminOrganizerManager";
 import { SystemToolsTab } from "@/components/admin/SystemToolsTab";
+import { AdminEventDeleteDialog } from "@/components/admin/AdminEventDeleteDialog";
 import { isFullAdmin } from "@/services/adminInviteService";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
@@ -1047,10 +1048,16 @@ const Admin = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => window.open(`/events/${event.id}`, '_blank')}
+                        onClick={() => window.open(`/events/${event.slug || event.id}`, '_blank')}
                       >
                         <Eye className="w-4 h-4" />
                       </Button>
+                      <AdminEventDeleteDialog
+                        eventId={event.id}
+                        eventTitle={event.title}
+                        registrationsCount={event.registrations_count || 0}
+                        onDeleted={() => setAllEvents(prev => prev.filter(e => e.id !== event.id))}
+                      />
                     </div>
                   </td>
                 </tr>
