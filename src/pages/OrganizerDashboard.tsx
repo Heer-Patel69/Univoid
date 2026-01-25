@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOrganizerProfile } from "@/hooks/useOrganizerProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganizerRealtime } from "@/hooks/useOrganizerRealtime";
 import AuthModal from "@/components/auth/AuthModal";
@@ -26,7 +27,7 @@ import { DeleteEventDialog } from "@/components/organizer/DeleteEventDialog";
 import { 
   Plus, Calendar, Users, CheckCircle, XCircle, Eye, 
   ScanLine, Pencil, TicketCheck, Clock, FileSpreadsheet, 
-  UserPlus, BarChart3, Shield, ChevronLeft, Gift
+  UserPlus, BarChart3, Shield, ChevronLeft, Gift, Sparkles
 } from "lucide-react";
 import { format } from "date-fns";
 import type { Event } from "@/services/eventsService";
@@ -34,6 +35,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 const OrganizerDashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
@@ -42,6 +44,9 @@ const OrganizerDashboard = () => {
   const [scannerOpen, setScannerOpen] = useState(false);
   const [qrInput, setQrInput] = useState("");
   const [activeTab, setActiveTab] = useState("registrations");
+  
+  // Check for organizer profile
+  const { hasProfile, profile, isLoading: profileLoading } = useOrganizerProfile();
 
   // Fetch organizer's events
   const { data: events, isLoading: eventsLoading } = useQuery({
@@ -252,7 +257,7 @@ const OrganizerDashboard = () => {
     };
   }, []);
 
-  if (eventsLoading) {
+  if (eventsLoading || profileLoading) {
     return (
       <div className="h-dvh flex overflow-hidden">
         <OrganizerSidebar 
@@ -271,6 +276,38 @@ const OrganizerDashboard = () => {
           onTabChange={setActiveTab}
         />
       </div>
+    );
+  }
+
+  // Redirect to onboarding if no organizer profile
+  if (!hasProfile) {
+    return (
+      <main className="flex-1 container mx-auto px-4 py-20">
+        <Card className="max-w-lg mx-auto text-center">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-center gap-2">
+              <Sparkles className="h-6 w-6 text-primary" />
+              Complete Your Organizer Profile
+            </CardTitle>
+            <CardDescription>
+              Set up your organizer profile to start creating and managing events.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-muted-foreground">
+              Your organizer profile helps attendees know who's hosting the event and builds trust in your brand.
+            </p>
+            <Button 
+              size="lg" 
+              onClick={() => navigate('/organizer/onboarding')}
+              className="gap-2"
+            >
+              <Sparkles className="h-4 w-4" />
+              Set Up Profile
+            </Button>
+          </CardContent>
+        </Card>
+      </main>
     );
   }
 

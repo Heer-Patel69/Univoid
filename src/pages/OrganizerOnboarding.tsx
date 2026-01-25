@@ -7,8 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOrganizerProfile } from "@/hooks/useOrganizerProfile";
 import { 
   createOrganizerProfile, 
   uploadOrganizerLogo,
@@ -97,6 +99,9 @@ const OrganizerOnboarding = () => {
   const redirectUrl = searchParams.get('redirect');
   const { toast } = useToast();
   
+  // Check if user already has an organizer profile
+  const { hasProfile, profile, isLoading: checkingProfile } = useOrganizerProfile();
+  
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -115,6 +120,18 @@ const OrganizerOnboarding = () => {
     primaryGoals: [],
     discoverySource: null,
   });
+  
+  // Redirect if user already has an organizer profile
+  useEffect(() => {
+    if (!checkingProfile && hasProfile && !showSuccess) {
+      toast({
+        title: "Profile already exists",
+        description: "You already have an organizer profile. Redirecting...",
+      });
+      // Navigate to the redirect URL or dashboard
+      navigate(redirectUrl || "/organizer/dashboard");
+    }
+  }, [checkingProfile, hasProfile, showSuccess, navigate, redirectUrl, toast]);
   
   // Load from localStorage
   useEffect(() => {
@@ -145,6 +162,23 @@ const OrganizerOnboarding = () => {
       navigate(redirectUrl || "/organizer/dashboard");
     }
   }, [showSuccess, countdown, navigate, redirectUrl]);
+  
+  // Show loading while checking for existing profile
+  if (checkingProfile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 flex items-center justify-center p-4">
+        <Card className="w-full max-w-2xl">
+          <CardContent className="p-8">
+            <div className="flex flex-col items-center gap-4">
+              <Skeleton className="h-8 w-48" />
+              <Skeleton className="h-4 w-64" />
+              <Skeleton className="h-2 w-full" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
   
   const updateField = <K extends keyof FormData>(field: K, value: FormData[K]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
