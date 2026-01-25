@@ -39,7 +39,7 @@ export const EventCard = ({ event }: EventCardProps) => {
 
   return (
     <Link to={eventUrl} className="block h-full">
-      <Card className="group h-full overflow-hidden hover:shadow-soft-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col">
+      <Card className="group h-full overflow-hidden hover:shadow-soft-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer">
         {/* Flyer Image - Respects poster_ratio from DB */}
         <div 
           className="relative overflow-hidden bg-muted"
@@ -63,7 +63,7 @@ export const EventCard = ({ event }: EventCardProps) => {
           {/* Subtle black gradient overlay at bottom for text contrast */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
           
-          {/* Price Badge */}
+          {/* Price Badge - Top Right */}
           <div className="absolute top-3 right-3">
             <Badge 
               variant={event.is_paid ? "default" : "secondary"}
@@ -80,7 +80,7 @@ export const EventCard = ({ event }: EventCardProps) => {
             </Badge>
           </div>
 
-          {/* Status badges */}
+          {/* Status badges - Top Left */}
           <div className="absolute top-3 left-3 flex flex-col gap-2">
             {isEventPast && (
               <Badge variant="destructive" className="shadow-soft">
@@ -95,106 +95,58 @@ export const EventCard = ({ event }: EventCardProps) => {
           </div>
 
           {/* Bottom overlay with event details - Locality style */}
-          <div className="absolute bottom-0 left-0 right-0 p-3 space-y-1">
-            {/* Event Title */}
-            <h3 className="font-display font-bold text-white text-lg line-clamp-2 drop-shadow-md">
-              {event.title}
-            </h3>
-            {/* Venue / Location */}
-            <div className="flex items-center gap-1.5 text-white/90 text-sm">
-              <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
-              <span className="truncate drop-shadow-sm">
-                {event.city && event.state 
-                  ? `${event.city}, ${event.state}`
-                  : event.is_location_decided 
-                    ? event.venue_name || "Venue TBA" 
-                    : "Location TBA"}
-              </span>
-            </div>
-            {/* Event Date */}
-            <div className="flex items-center gap-1.5 text-white/90 text-sm">
-              <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
-              <span className="drop-shadow-sm">{format(new Date(event.start_date), "dd MMM yyyy")}</span>
+          <div className="absolute bottom-0 left-0 right-0 p-3">
+            <div className="flex items-end justify-between gap-2">
+              {/* Left side: Title, Location, Date */}
+              <div className="flex-1 min-w-0 space-y-1">
+                {/* Event Title */}
+                <h3 className="font-display font-bold text-white text-lg line-clamp-2 drop-shadow-md">
+                  {event.title}
+                </h3>
+                {/* Venue / Location */}
+                <div className="flex items-center gap-1.5 text-white/90 text-sm">
+                  <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span className="truncate drop-shadow-sm">
+                    {event.city && event.state 
+                      ? `${event.city}, ${event.state}`
+                      : event.is_location_decided 
+                        ? event.venue_name || "Venue TBA" 
+                        : "Location TBA"}
+                  </span>
+                </div>
+                {/* Event Date */}
+                <div className="flex items-center gap-1.5 text-white/90 text-sm">
+                  <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span className="drop-shadow-sm">{format(new Date(event.start_date), "dd MMM yyyy")}</span>
+                </div>
+              </div>
+
+              {/* Right side: Organizer Logo + Name */}
+              {organizer && (
+                <Link 
+                  to={`/o/${organizer.slug}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex flex-col items-center gap-1 flex-shrink-0 group/org"
+                >
+                  <Avatar className="w-10 h-10 border-2 border-white/30 shadow-md">
+                    <AvatarImage src={toDisplayUrl(organizer.logo_url, { forceImage: true }) || undefined} alt={organizer.name} />
+                    <AvatarFallback className="text-xs bg-white/20 text-white">
+                      {organizer.name.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex items-center gap-0.5">
+                    <span className="text-xs text-white/80 group-hover/org:text-white transition-colors max-w-[60px] truncate drop-shadow-sm">
+                      {organizer.name}
+                    </span>
+                    {organizer.is_verified && (
+                      <BadgeCheck className="w-3 h-3 text-amber-400 flex-shrink-0" />
+                    )}
+                  </div>
+                </Link>
+              )}
             </div>
           </div>
         </div>
-
-        <CardContent className="p-4 space-y-3 flex-1 flex flex-col">
-          {/* Organizer Info */}
-          {organizer && (
-            <Link 
-              to={`/o/${organizer.slug}`}
-              onClick={(e) => e.stopPropagation()}
-              className="flex items-center gap-2 group/org"
-            >
-              <Avatar className="w-6 h-6">
-                <AvatarImage src={toDisplayUrl(organizer.logo_url, { forceImage: true }) || undefined} alt={organizer.name} />
-                <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                  {organizer.name.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
-              <span className="text-sm text-muted-foreground group-hover/org:text-primary transition-colors truncate">
-                {organizer.name}
-              </span>
-              {organizer.is_verified && (
-                <BadgeCheck className="w-4 h-4 text-amber-500 flex-shrink-0" />
-              )}
-            </Link>
-          )}
-
-          {/* Title */}
-          <h3 className="font-display font-bold text-lg line-clamp-2 group-hover:text-primary transition-colors">
-            {event.title}
-          </h3>
-
-          {/* Event Type */}
-          <Badge variant="outline" className="text-xs w-fit">
-            {event.event_type}
-          </Badge>
-
-          {/* Date & Time */}
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Calendar className="w-4 h-4 flex-shrink-0" />
-            <span>{format(new Date(event.start_date), "EEE, MMM d • h:mm a")}</span>
-          </div>
-
-          {/* Location - City, State */}
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <MapPin className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate">
-              {event.city && event.state 
-                ? `${event.city}, ${event.state}`
-                : event.is_location_decided 
-                  ? event.venue_name || "Venue TBA" 
-                  : "Location TBA"}
-            </span>
-          </div>
-
-          {/* Registration count */}
-          {event.max_capacity && (
-            <div className="flex items-center gap-2 text-sm mt-auto pt-2">
-              <Users className="w-4 h-4 flex-shrink-0 text-muted-foreground" />
-              <div className="flex-1 min-w-0">
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="text-muted-foreground">
-                    {event.registrations_count} registered
-                  </span>
-                  <span className="text-muted-foreground">
-                    {event.max_capacity} spots
-                  </span>
-                </div>
-                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-primary rounded-full transition-all"
-                    style={{ 
-                      width: `${Math.min((event.registrations_count / event.max_capacity) * 100, 100)}%` 
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-        </CardContent>
       </Card>
     </Link>
   );
