@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { PrefetchLink } from "@/components/common/PrefetchLink";
-import { LayoutDashboard, Calendar, ScanLine, Users, MoreHorizontal, ChevronLeft, Home, Settings, BarChart3 } from "lucide-react";
+import { LayoutDashboard, Calendar, ScanLine, Users, MoreHorizontal, ChevronLeft, Home, Settings, BarChart3, Pencil, BadgeCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,7 +10,9 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useState } from "react";
+import { useOrganizerProfile } from "@/hooks/useOrganizerProfile";
 
 interface OrganizerBottomNavProps {
   showBackButton?: boolean;
@@ -30,6 +32,7 @@ export function OrganizerBottomNav({
   const location = useLocation();
   const navigate = useNavigate();
   const [moreOpen, setMoreOpen] = useState(false);
+  const { profile: organizerProfile } = useOrganizerProfile();
 
   // Only show on organizer pages and mobile
   if (!location.pathname.startsWith("/organizer")) {
@@ -198,6 +201,42 @@ export function OrganizerBottomNav({
             <SheetHeader>
               <SheetTitle>More Options</SheetTitle>
             </SheetHeader>
+            
+            {/* Organizer Profile Card for Mobile */}
+            {organizerProfile && (
+              <div className="bg-muted/50 rounded-lg p-3 mt-4 mb-2">
+                <div className="flex items-center gap-3">
+                  <Avatar className="w-10 h-10 border-2 border-background">
+                    <AvatarImage src={organizerProfile.logo_url || undefined} alt={organizerProfile.name} />
+                    <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                      {organizerProfile.name.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1">
+                      <p className="font-medium text-sm truncate">{organizerProfile.name}</p>
+                      {organizerProfile.is_verified && (
+                        <BadgeCheck className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Organizer</p>
+                  </div>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="w-full mt-2 gap-1.5 text-xs"
+                  onClick={() => {
+                    navigate("/organizer/edit-profile");
+                    setMoreOpen(false);
+                  }}
+                >
+                  <Pencil className="w-3 h-3" />
+                  Edit Profile
+                </Button>
+              </div>
+            )}
+            
             <div className="grid grid-cols-2 gap-3 py-4">
               {moreItems.map((item) => {
                 const Icon = item.icon;

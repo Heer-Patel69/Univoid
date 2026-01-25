@@ -379,7 +379,7 @@ const CreateEvent = () => {
       case 1: return formData.title && formData.category && formData.event_type && formData.start_date && formData.state && formData.city;
       case 2: return formData.description.length >= 50 && formData.terms_conditions.length >= 10;
       case 3: return true; // Custom form is optional
-      case 4: return true;
+      case 4: return !formData.is_paid || formData.price > 0; // Price required for paid events
       case 5: return true; // Upsells are optional
       case 6: return !formData.is_paid || (formData.upi_vpa || qrFile);
       default: return true;
@@ -394,6 +394,9 @@ const CreateEvent = () => {
       if (formData.terms_conditions.length < 10) {
         return "Terms & Conditions are required";
       }
+    }
+    if (currentStep === 4 && formData.is_paid && formData.price <= 0) {
+      return "Please enter a valid ticket price greater than ₹0";
     }
     return null;
   };
