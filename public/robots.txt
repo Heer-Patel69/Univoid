@@ -42,8 +42,8 @@ Disallow: /my-books
 Disallow: /onboarding
 Disallow: /check-in
 
-# Dynamic sitemap (served via UniVoid domain)
-Sitemap: https://univoid.tech/sitemap.xml
+# Dynamic sitemap (served via Edge Function)
+Sitemap: https://rtvrdbbojqsrbkngnjgq.supabase.co/functions/v1/sitemap
 
 # Allow crawling of all static assets
 Allow: /*.js$

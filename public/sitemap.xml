@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+  This is a static fallback sitemap.
+  The dynamic sitemap with all events, materials, books, and projects is served at:
+  https://rtvrdbbojqsrbkngnjgq.supabase.co/functions/v1/sitemap
+  
+  Google Search Console should use the URL in robots.txt which points to the dynamic sitemap.
+-->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <!-- Main Pages -->
   <url>
@@ -27,11 +34,6 @@
     <changefreq>daily</changefreq>
   </url>
   <url>
-    <loc>https://univoid.tech/tasks</loc>
-    <priority>0.8</priority>
-    <changefreq>daily</changefreq>
-  </url>
-  <url>
     <loc>https://univoid.tech/leaderboard</loc>
     <priority>0.6</priority>
     <changefreq>weekly</changefreq>
@@ -39,7 +41,7 @@
   
   <!-- Info Pages -->
   <url>
-    <loc>https://univoid.tech/about</loc>
+    <loc>https://univoid.tech/about-us</loc>
     <priority>0.6</priority>
     <changefreq>monthly</changefreq>
   </url>
