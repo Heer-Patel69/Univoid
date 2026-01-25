@@ -64,6 +64,11 @@ export async function getOrganizerProfile(userId: string): Promise<OrganizerProf
   return data as OrganizerProfile;
 }
 
+// Get organizer profile by user_id (same as above, explicit naming)
+export async function getOrganizerProfileByUserId(userId: string): Promise<OrganizerProfile | null> {
+  return getOrganizerProfile(userId);
+}
+
 export async function getOrganizerProfileBySlug(slug: string): Promise<OrganizerProfile | null> {
   const { data, error } = await supabase
     .from('organizer_profiles')

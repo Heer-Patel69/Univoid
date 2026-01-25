@@ -1,15 +1,25 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Users, IndianRupee, Clock } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Calendar, MapPin, Users, IndianRupee, BadgeCheck } from "lucide-react";
 import { format, isPast, differenceInDays } from "date-fns";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import type { Event } from "@/services/eventsService";
+import { getOrganizerProfileByUserId } from "@/services/organizerService";
 
 interface EventCardProps {
   event: Event;
 }
 
 export const EventCard = ({ event }: EventCardProps) => {
+  // Fetch organizer profile for the event
+  const { data: organizer } = useQuery({
+    queryKey: ['organizer-profile', event.organizer_id],
+    queryFn: () => getOrganizerProfileByUserId(event.organizer_id),
+    enabled: !!event.organizer_id,
+    staleTime: 1000 * 60 * 10, // Cache for 10 mins
+  });
   const isEventPast = isPast(new Date(event.start_date));
   const daysUntil = differenceInDays(new Date(event.start_date), new Date());
   
@@ -86,13 +96,35 @@ export const EventCard = ({ event }: EventCardProps) => {
         </div>
 
         <CardContent className="p-4 space-y-3 flex-1 flex flex-col">
+          {/* Organizer Info */}
+          {organizer && (
+            <Link 
+              to={`/o/${organizer.slug}`}
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center gap-2 group/org"
+            >
+              <Avatar className="w-6 h-6">
+                <AvatarImage src={organizer.logo_url || undefined} alt={organizer.name} />
+                <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                  {organizer.name.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-sm text-muted-foreground group-hover/org:text-primary transition-colors truncate">
+                {organizer.name}
+              </span>
+              {organizer.is_verified && (
+                <BadgeCheck className="w-4 h-4 text-amber-500 flex-shrink-0" />
+              )}
+            </Link>
+          )}
+
           {/* Title */}
           <h3 className="font-display font-bold text-lg line-clamp-2 group-hover:text-primary transition-colors">
             {event.title}
           </h3>
 
           {/* Event Type */}
-          <Badge variant="outline" className="text-xs">
+          <Badge variant="outline" className="text-xs w-fit">
             {event.event_type}
           </Badge>
 

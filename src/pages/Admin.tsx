@@ -11,6 +11,7 @@ import {
   Bell, Send
 } from "lucide-react";
 import AdminAssistantManager from "@/components/admin/AdminAssistantManager";
+import AdminOrganizerManager from "@/components/admin/AdminOrganizerManager";
 import { SystemToolsTab } from "@/components/admin/SystemToolsTab";
 import { isFullAdmin } from "@/services/adminInviteService";
 import { useAuth } from "@/contexts/AuthContext";
@@ -1216,7 +1217,11 @@ const Admin = () => {
                   </TabsTrigger>
                   <TabsTrigger value="organizers" className="text-xs sm:text-sm">
                     <Sparkles className="w-3 h-3 mr-1" />
-                    Organizers {organizerAppsCount > 0 && <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 text-xs">{organizerAppsCount}</Badge>}
+                    Applications {organizerAppsCount > 0 && <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 text-xs">{organizerAppsCount}</Badge>}
+                  </TabsTrigger>
+                  <TabsTrigger value="org-profiles" className="text-xs sm:text-sm">
+                    <Users className="w-3 h-3 mr-1" />
+                    Organizers
                   </TabsTrigger>
                   <TabsTrigger value="events" className="text-xs sm:text-sm">
                     <Calendar className="w-3 h-3 mr-1" />
@@ -1260,6 +1265,10 @@ const Admin = () => {
 
                 <TabsContent value="organizers" className="mt-0">
                   {renderOrganizerAppsTab()}
+                </TabsContent>
+
+                <TabsContent value="org-profiles" className="mt-0">
+                  <AdminOrganizerManager />
                 </TabsContent>
 
                 <TabsContent value="events" className="mt-0">
