@@ -22,11 +22,10 @@ async function generateAndUploadQRCode(
   qrData: string
 ): Promise<string | null> {
   try {
-    // Use Google Charts API to generate QR code as PNG
-    // This is a reliable, free service that returns actual PNG images
-    const qrApiUrl = `https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=${encodeURIComponent(qrData)}&choe=UTF-8&chld=M|4`;
+    // Use QRServer API (free, reliable, no deprecation)
+    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrData)}&format=png&margin=10`;
     
-    console.log("Fetching QR PNG from Google Charts API...");
+    console.log("Fetching QR PNG from QRServer API...");
     const response = await fetch(qrApiUrl);
     
     if (!response.ok) {
