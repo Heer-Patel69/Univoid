@@ -2,11 +2,8 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, isCorsPreflightRequest, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
-// Brevo SMTP Configuration
-const BREVO_SMTP_HOST = Deno.env.get("BREVO_SMTP_HOST") || "smtp-relay.brevo.com";
-const BREVO_SMTP_PORT = parseInt(Deno.env.get("BREVO_SMTP_PORT") || "587");
-const BREVO_SMTP_LOGIN = Deno.env.get("BREVO_SMTP_LOGIN");
-const BREVO_SMTP_PASSWORD = Deno.env.get("BREVO_SMTP_PASSWORD");
+// Brevo API Configuration
+const BREVO_API_KEY = Deno.env.get("BREVO_API_KEY");
 
 const SENDER_NAME = "UniVoid";
 const SENDER_EMAIL = "no-reply@univoid.tech";
@@ -38,12 +35,16 @@ async function sendEmailViaSMTP(
   htmlContent: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    // Use Brevo's REST API instead of raw SMTP (more reliable in edge functions)
+    if (!BREVO_API_KEY) {
+      throw new Error("BREVO_API_KEY not configured");
+    }
+    
+    // Use Brevo's REST API
     const response = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: {
         "accept": "application/json",
-        "api-key": BREVO_SMTP_PASSWORD!, // Brevo uses the SMTP key as API key
+        "api-key": BREVO_API_KEY,
         "content-type": "application/json",
       },
       body: JSON.stringify({
@@ -318,9 +319,9 @@ const handler = async (req: Request): Promise<Response> => {
   const corsHeaders = getCorsHeaders(req);
 
   try {
-    // Validate SMTP credentials
-    if (!BREVO_SMTP_PASSWORD) {
-      console.error("BREVO_SMTP_PASSWORD not configured");
+    // Validate API key
+    if (!BREVO_API_KEY) {
+      console.error("BREVO_API_KEY not configured");
       throw new Error("Email service not configured");
     }
 
