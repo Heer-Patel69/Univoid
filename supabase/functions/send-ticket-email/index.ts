@@ -191,30 +191,34 @@ const handler = async (req: Request): Promise<Response> => {
 
       if (qrImageUrl) {
         qrCodeImageHtml = `
-          <div style="text-align: center; margin: 24px 0; padding: 24px; background: #ffffff; border-radius: 16px; border: 2px solid #e5e7eb;">
-            <p style="color: #374151; font-weight: 700; margin-bottom: 16px; font-size: 18px;">🎫 Your Entry Pass</p>
-            <img src="${qrImageUrl}" alt="Event Entry QR Code" width="200" height="200" style="display: block; margin: 0 auto; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);" />
-            <p style="color: #6b7280; font-size: 13px; margin-top: 16px;">Show this QR code at the event entrance</p>
+          <div style="text-align: center; margin: 28px 0;">
+            <div style="display: inline-block; background: #FFFDF5; border: 3px solid #1a1a1a; border-radius: 24px; padding: 28px 32px; box-shadow: 6px 6px 0 #1a1a1a;">
+              <p style="color: #1a1a1a; font-weight: 800; margin: 0 0 20px 0; font-size: 20px; letter-spacing: -0.5px;">🎟️ Your Entry Pass</p>
+              <div style="background: white; border: 2px solid #e5e7eb; border-radius: 16px; padding: 16px; display: inline-block;">
+                <img src="${qrImageUrl}" alt="Event Entry QR Code" width="180" height="180" style="display: block; border-radius: 8px;" />
+              </div>
+              <p style="color: #6b7280; font-size: 13px; margin: 16px 0 0 0; font-weight: 500;">Show this at the venue entrance</p>
+            </div>
           </div>
         `;
       } else {
         // Fallback: Direct link to view ticket
         qrCodeImageHtml = `
-          <div style="text-align: center; margin: 24px 0; padding: 24px; background: #ffffff; border-radius: 16px; border: 2px solid #e5e7eb;">
-            <p style="color: #374151; font-weight: 700; margin-bottom: 16px; font-size: 18px;">🎫 Your Entry Pass</p>
-            <a href="https://univoid.tech/my-tickets" style="display: inline-block; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: white; padding: 14px 28px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 16px;">View Your QR Ticket</a>
-            <p style="color: #6b7280; font-size: 13px; margin-top: 16px;">Click to view your QR code for event entry</p>
+          <div style="text-align: center; margin: 28px 0;">
+            <div style="display: inline-block; background: #FFFDF5; border: 3px solid #1a1a1a; border-radius: 24px; padding: 28px 32px; box-shadow: 6px 6px 0 #1a1a1a;">
+              <p style="color: #1a1a1a; font-weight: 800; margin: 0 0 16px 0; font-size: 20px;">🎟️ Your Entry Pass</p>
+              <a href="https://univoid.tech/my-tickets" style="display: inline-block; background: #1a1a1a; color: white; padding: 16px 32px; border-radius: 50px; text-decoration: none; font-weight: 700; font-size: 16px;">View QR Ticket →</a>
+              <p style="color: #6b7280; font-size: 13px; margin: 16px 0 0 0;">Click to view your QR code</p>
+            </div>
           </div>
         `;
       }
     } catch (qrError) {
       console.error("QR generation error:", qrError);
       qrCodeImageHtml = `
-        <div style="text-align: center; margin: 24px 0; padding: 20px; background: #fef3c7; border-radius: 12px;">
-          <p style="color: #92400e; font-weight: 600;">🎫 View Your QR Code</p>
-          <p style="color: #78350f; font-size: 14px; margin-top: 8px;">
-            <a href="https://univoid.tech/my-tickets" style="color: #4f46e5; font-weight: 600;">Click here to view your ticket</a>
-          </p>
+        <div style="text-align: center; margin: 24px 0; padding: 24px; background: #FEF3C7; border: 2px solid #F59E0B; border-radius: 16px;">
+          <p style="color: #92400E; font-weight: 700; margin: 0 0 12px 0;">🎟️ View Your Entry Pass</p>
+          <a href="https://univoid.tech/my-tickets" style="color: #1a1a1a; font-weight: 700; text-decoration: underline;">Click here to view your ticket</a>
         </div>
       `;
     }
@@ -231,59 +235,96 @@ const handler = async (req: Request): Promise<Response> => {
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Your Event Ticket</title>
+          <title>Your Event Ticket - UniVoid</title>
         </head>
-        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f3f4f6; margin: 0; padding: 40px 20px;">
-          <div style="max-width: 480px; margin: 0 auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);">
+        <body style="font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #FFFDF5; margin: 0; padding: 40px 16px;">
+          <div style="max-width: 500px; margin: 0 auto;">
             
-            <!-- Header -->
-            <div style="background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); padding: 28px; text-align: center;">
-              <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px;">✨ UniVoid</h1>
-              <p style="color: rgba(255,255,255,0.7); margin: 8px 0 0 0; font-size: 14px;">Your ticket is ready!</p>
+            <!-- Logo Header -->
+            <div style="text-align: center; margin-bottom: 24px;">
+              <div style="display: inline-block; background: #1a1a1a; padding: 16px 32px; border-radius: 50px; box-shadow: 4px 4px 0 #c9b99a;">
+                <span style="color: #ffffff; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">✨ UniVoid</span>
+              </div>
             </div>
             
-            <!-- Success Banner -->
-            <div style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); padding: 18px; text-align: center;">
-              <h2 style="color: white; margin: 0; font-size: 18px; font-weight: 600;">🎉 Registration Confirmed!</h2>
-            </div>
-            
-            <!-- Content -->
-            <div style="padding: 32px;">
-              <p style="color: #374151; font-size: 16px; margin-bottom: 24px;">
-                Hi <strong>${profile.full_name}</strong>,<br><br>
-                You're all set for <strong>${event.title}</strong>! Here's your entry pass:
-              </p>
+            <!-- Main Card -->
+            <div style="background: #ffffff; border: 3px solid #1a1a1a; border-radius: 28px; overflow: hidden; box-shadow: 8px 8px 0 #1a1a1a;">
               
-              ${qrCodeImageHtml}
-              
-              <!-- Event Details Card -->
-              <div style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); padding: 20px; border-radius: 12px; margin: 24px 0; border: 1px solid #e2e8f0;">
-                <p style="margin: 0 0 12px 0; color: #1e293b; font-weight: 700; font-size: 16px;">📋 Event Details</p>
-                <p style="margin: 0 0 10px 0; color: #475569;"><strong>📅 Event:</strong> ${event.title}</p>
-                <p style="margin: 0 0 10px 0; color: #475569;"><strong>🗓️ Date:</strong> ${eventDate}</p>
-                <p style="margin: 0 0 10px 0; color: #475569;"><strong>📍 Location:</strong> ${locationText}</p>
-                ${organizer ? `<p style="margin: 0; color: #475569;"><strong>🎪 Organizer:</strong> ${organizer.name}</p>` : ""}
+              <!-- Success Banner -->
+              <div style="background: linear-gradient(135deg, #86EFAC 0%, #4ADE80 100%); padding: 24px; text-align: center; border-bottom: 3px solid #1a1a1a;">
+                <h1 style="color: #166534; margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">
+                  🎉 Registration Confirmed!
+                </h1>
               </div>
               
-              <!-- Ticket Info -->
-              <div style="background: #eef2ff; padding: 16px; border-radius: 10px; margin: 20px 0; border-left: 4px solid #6366f1;">
-                <p style="margin: 0; color: #4338ca; font-size: 14px;">
-                  📱 <strong>Access anytime:</strong> View your ticket on <a href="https://univoid.tech/my-tickets" style="color: #4f46e5; font-weight: 600;">My Tickets</a>
+              <!-- Content -->
+              <div style="padding: 32px 28px;">
+                <p style="color: #374151; font-size: 17px; line-height: 1.6; margin: 0 0 8px 0;">
+                  Hi <strong style="color: #1a1a1a;">${profile.full_name}</strong>,
+                </p>
+                <p style="color: #374151; font-size: 17px; line-height: 1.6; margin: 0 0 24px 0;">
+                  You're all set for <strong style="color: #1a1a1a;">${event.title}</strong>! Here's your entry pass:
+                </p>
+                
+                ${qrCodeImageHtml}
+                
+                <!-- Event Details Card -->
+                <div style="background: #F3E8FF; border: 2px solid #C084FC; border-radius: 20px; padding: 24px; margin: 28px 0;">
+                  <p style="margin: 0 0 16px 0; color: #7C3AED; font-weight: 800; font-size: 17px; letter-spacing: -0.3px;">
+                    📋 Event Details
+                  </p>
+                  <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                      <td style="padding: 8px 0; color: #374151; font-size: 15px; vertical-align: top; width: 40px;">🎪</td>
+                      <td style="padding: 8px 0; color: #374151; font-size: 15px;"><strong>Event:</strong> ${event.title}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 8px 0; color: #374151; font-size: 15px; vertical-align: top;">📅</td>
+                      <td style="padding: 8px 0; color: #374151; font-size: 15px;"><strong>Date:</strong> ${eventDate}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 8px 0; color: #374151; font-size: 15px; vertical-align: top;">📍</td>
+                      <td style="padding: 8px 0; color: #374151; font-size: 15px;"><strong>Location:</strong> ${locationText}</td>
+                    </tr>
+                    ${organizer ? `
+                    <tr>
+                      <td style="padding: 8px 0; color: #374151; font-size: 15px; vertical-align: top;">🎭</td>
+                      <td style="padding: 8px 0; color: #374151; font-size: 15px;"><strong>Organizer:</strong> ${organizer.name}</td>
+                    </tr>
+                    ` : ""}
+                  </table>
+                </div>
+                
+                <!-- Quick Access Pill -->
+                <div style="background: #DBEAFE; border: 2px solid #60A5FA; border-radius: 16px; padding: 16px 20px; margin: 20px 0; text-align: center;">
+                  <p style="margin: 0; color: #1E40AF; font-size: 14px; font-weight: 600;">
+                    📱 Access anytime at <a href="https://univoid.tech/my-tickets" style="color: #1a1a1a; font-weight: 800; text-decoration: underline;">univoid.tech/my-tickets</a>
+                  </p>
+                </div>
+                
+                <!-- Warning -->
+                <div style="background: #FEE2E2; border: 2px solid #F87171; border-radius: 16px; padding: 16px; margin: 24px 0; text-align: center;">
+                  <p style="color: #991B1B; font-weight: 700; margin: 0; font-size: 14px;">
+                    ⚠️ Keep this QR code private — do not share it!
+                  </p>
+                </div>
+              </div>
+              
+              <!-- Footer -->
+              <div style="background: #F9FAFB; padding: 24px; text-align: center; border-top: 2px solid #E5E7EB;">
+                <p style="color: #6B7280; font-size: 12px; margin: 0 0 8px 0;">
+                  Need help? Contact us at <a href="mailto:support@univoid.tech" style="color: #1a1a1a; font-weight: 600;">support@univoid.tech</a>
+                </p>
+                <p style="color: #9CA3AF; font-size: 11px; margin: 0;">
+                  © ${new Date().getFullYear()} UniVoid · Where students learn, share & grow
                 </p>
               </div>
-              
-              <!-- Warning -->
-              <p style="color: #dc2626; font-weight: 600; text-align: center; background: #fef2f2; padding: 12px; border-radius: 8px; margin: 20px 0;">
-                ⚠️ Do NOT share this QR code with anyone!
-              </p>
-              
-              <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 28px 0;">
-              
-              <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 0;">
-                © ${new Date().getFullYear()} UniVoid. All rights reserved.<br>
-                <a href="https://univoid.tech" style="color: #6b7280;">univoid.tech</a>
-              </p>
             </div>
+            
+            <!-- Bottom Tagline -->
+            <p style="text-align: center; color: #9CA3AF; font-size: 12px; margin-top: 24px;">
+              <a href="https://univoid.tech" style="color: #6B7280; text-decoration: none; font-weight: 600;">univoid.tech</a> · Made with 💜 for students
+            </p>
           </div>
         </body>
       </html>
