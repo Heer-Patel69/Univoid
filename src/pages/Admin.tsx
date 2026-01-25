@@ -14,6 +14,7 @@ import AdminAssistantManager from "@/components/admin/AdminAssistantManager";
 import AdminOrganizerManager from "@/components/admin/AdminOrganizerManager";
 import { SystemToolsTab } from "@/components/admin/SystemToolsTab";
 import { AdminBroadcastEmail } from "@/components/admin/AdminBroadcastEmail";
+import { AdminResendTickets } from "@/components/admin/AdminResendTickets";
 import { AdminEventDeleteDialog } from "@/components/admin/AdminEventDeleteDialog";
 import { isFullAdmin } from "@/services/adminInviteService";
 import { useAuth } from "@/contexts/AuthContext";
@@ -1306,7 +1307,8 @@ const Admin = () => {
                   <SystemToolsTab userId={user?.id} />
                 </TabsContent>
 
-                <TabsContent value="broadcast" className="mt-0">
+                <TabsContent value="broadcast" className="mt-0 space-y-6">
+                  <AdminResendTickets />
                   <AdminBroadcastEmail />
                 </TabsContent>
               </CardContent>
