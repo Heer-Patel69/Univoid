@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { sendPartnerRequestEmail } from './brevoEmailService';
 
 export interface Project {
   id: string;
@@ -279,6 +280,47 @@ export async function requestToJoinProject(
       user_id: userData.user.id,
       message,
     });
+
+  if (!error) {
+    // Send email notification to project owner (fire and forget)
+    try {
+      // Get project details and owner info
+      const { data: projectData } = await supabase
+        .from('projects')
+        .select('title, owner_id')
+        .eq('id', projectId)
+        .single();
+      
+      if (projectData) {
+        // Get owner email
+        const { data: ownerProfile } = await supabase
+          .from('profiles')
+          .select('email, full_name')
+          .eq('id', projectData.owner_id)
+          .single();
+        
+        // Get sender info
+        const { data: senderProfile } = await supabase
+          .from('profiles')
+          .select('full_name, email')
+          .eq('id', userData.user.id)
+          .single();
+        
+        if (ownerProfile && senderProfile) {
+          sendPartnerRequestEmail(
+            ownerProfile.email,
+            ownerProfile.full_name,
+            senderProfile.full_name,
+            senderProfile.email,
+            projectData.title,
+            message || undefined
+          );
+        }
+      }
+    } catch (emailError) {
+      console.error('[ProjectsService] Failed to send partner request email:', emailError);
+    }
+  }
 
   return { error: error as Error | null };
 }

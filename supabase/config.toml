@@ -74,3 +74,6 @@ verify_jwt = false
 
 [functions.submit-to-google-indexing]
 verify_jwt = false
+
+[functions.send-brevo-email]
+verify_jwt = false

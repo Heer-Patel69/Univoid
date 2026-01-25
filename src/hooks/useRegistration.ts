@@ -9,6 +9,7 @@ import {
   getUserFriendlyError,
   type RegistrationResult 
 } from '@/services/registrationService';
+import { sendEventRegistrationEmail } from '@/services/brevoEmailService';
 
 interface UseRegistrationOptions {
   eventId: string;
@@ -177,6 +178,7 @@ export function useRegistration(options: UseRegistrationOptions) {
 
 /**
  * Send confirmation email in background (fire-and-forget)
+ * Uses Brevo SMTP for reliable delivery
  */
 async function sendConfirmationEmail(
   userId: string, 
@@ -197,24 +199,24 @@ async function sendConfirmationEmail(
       .single();
     
     if (profile?.email && event) {
-      await supabase.functions.invoke('send-registration-email', {
-        body: {
-          userEmail: profile.email,
-          userName: profile.full_name,
-          eventTitle: eventTitle || event.title,
-          eventDate: event.start_date ? new Date(event.start_date).toLocaleDateString('en-IN', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-          }) : '',
-          eventLocation: event.venue_name || 'TBA',
-          isPaid: event.is_paid || false,
-          ticketPrice: event.price,
-        },
-      });
+      const eventDate = event.start_date ? new Date(event.start_date).toLocaleDateString('en-IN', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      }) : 'TBA';
+      
+      // Send via Brevo SMTP (fire and forget)
+      sendEventRegistrationEmail(
+        profile.email,
+        profile.full_name || 'Participant',
+        eventTitle || event.title,
+        eventDate,
+        event.venue_name || 'TBA',
+        event.is_paid || false
+      );
     }
   } catch (emailError) {
     console.error('Failed to send confirmation email:', emailError);

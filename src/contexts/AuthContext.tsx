@@ -3,6 +3,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Profile, UserRole, AppRole } from '@/types/database';
 import { authLogger } from '@/services/errorLoggingService';
+import { sendLoginNotificationEmail } from '@/services/brevoEmailService';
 
 interface AuthContextType {
   user: User | null;
@@ -258,7 +259,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (data.user) {
       const { data: profileData } = await supabase
         .from('profiles')
-        .select('is_disabled')
+        .select('is_disabled, full_name')
         .eq('id', data.user.id)
         .single();
 
@@ -266,6 +267,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await supabase.auth.signOut();
         return { error: new Error('Your account has been disabled. Please contact support.') };
       }
+
+      // Send login notification email (fire and forget)
+      sendLoginNotificationEmail(email, profileData?.full_name || 'User');
     }
 
     return { error: null };
