@@ -207,7 +207,7 @@ const handler = async (req: Request): Promise<Response> => {
           <div style="text-align: center; margin: 28px 0;">
             <div style="display: inline-block; background: #FFFDF5; border: 3px solid #1a1a1a; border-radius: 24px; padding: 28px 32px; box-shadow: 6px 6px 0 #1a1a1a;">
               <p style="color: #1a1a1a; font-weight: 800; margin: 0 0 16px 0; font-size: 20px;">🎟️ Your Entry Pass</p>
-              <a href="https://univoid.tech/my-tickets" style="display: inline-block; background: #1a1a1a; color: white; padding: 16px 32px; border-radius: 50px; text-decoration: none; font-weight: 700; font-size: 16px;">View QR Ticket →</a>
+              <a href="https://univoid.tech/my-events" style="display: inline-block; background: #1a1a1a; color: white; padding: 16px 32px; border-radius: 50px; text-decoration: none; font-weight: 700; font-size: 16px;">View Your Ticket →</a>
               <p style="color: #6b7280; font-size: 13px; margin: 16px 0 0 0;">Click to view your QR code</p>
             </div>
           </div>
@@ -218,7 +218,7 @@ const handler = async (req: Request): Promise<Response> => {
       qrCodeImageHtml = `
         <div style="text-align: center; margin: 24px 0; padding: 24px; background: #FEF3C7; border: 2px solid #F59E0B; border-radius: 16px;">
           <p style="color: #92400E; font-weight: 700; margin: 0 0 12px 0;">🎟️ View Your Entry Pass</p>
-          <a href="https://univoid.tech/my-tickets" style="color: #1a1a1a; font-weight: 700; text-decoration: underline;">Click here to view your ticket</a>
+          <a href="https://univoid.tech/my-events" style="color: #1a1a1a; font-weight: 700; text-decoration: underline;">Click here to view your ticket</a>
         </div>
       `;
     }
@@ -298,7 +298,7 @@ const handler = async (req: Request): Promise<Response> => {
                 <!-- Quick Access Pill -->
                 <div style="background: #DBEAFE; border: 2px solid #60A5FA; border-radius: 16px; padding: 16px 20px; margin: 20px 0; text-align: center;">
                   <p style="margin: 0; color: #1E40AF; font-size: 14px; font-weight: 600;">
-                    📱 Access anytime at <a href="https://univoid.tech/my-tickets" style="color: #1a1a1a; font-weight: 800; text-decoration: underline;">univoid.tech/my-tickets</a>
+                    👉 View your ticket in My Events: <a href="https://univoid.tech/my-events" style="color: #1a1a1a; font-weight: 800; text-decoration: underline;">univoid.tech/my-events</a>
                   </p>
                 </div>
                 
