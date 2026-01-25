@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchEventById, checkUserRegistration } from "@/services/eventsService";
@@ -33,7 +34,7 @@ import {
 } from "@/services/upsellService";
 import { getOrganizerProfileByUserId, type OrganizerProfile } from "@/services/organizerService";
 import { toDisplayUrl } from "@/lib/storageProxy";
-import { Calendar, MapPin, Users, IndianRupee, ExternalLink, Clock, Share2, CheckCircle, AlertCircle, Upload, Eye, BadgeCheck } from "lucide-react";
+import { Calendar, MapPin, Users, IndianRupee, ExternalLink, Clock, Share2, CheckCircle, AlertCircle, Upload, Eye, BadgeCheck, ChevronDown, FileText } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const EventDetail = () => {
@@ -405,7 +406,7 @@ const EventDetail = () => {
           </div>
 
           {/* About section - Desktop shows under flyer */}
-          <div className="hidden lg:block">
+          <div className="hidden lg:block space-y-4">
             {event.description && (
               <Card>
                 <CardHeader><CardTitle>About this Event</CardTitle></CardHeader>
@@ -425,6 +426,42 @@ const EventDetail = () => {
                   />
                 </CardContent>
               </Card>
+            )}
+
+            {/* Terms & Conditions - Desktop */}
+            {event.terms_conditions && (
+              <Collapsible>
+                <Card>
+                  <CollapsibleTrigger asChild>
+                    <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors rounded-t-xl">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="flex items-center gap-2 text-base">
+                          <FileText className="w-4 h-4" />
+                          Terms & Conditions
+                        </CardTitle>
+                        <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                      </div>
+                    </CardHeader>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <CardContent className="pt-0">
+                      <div 
+                        className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap text-muted-foreground" 
+                        dangerouslySetInnerHTML={{ 
+                          __html: DOMPurify.sanitize(
+                            event.terms_conditions.replace(/\n/g, '<br>'),
+                            {
+                              ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'ul', 'ol', 'li', 'strong', 'em', 'a', 'blockquote', 'code', 'pre'],
+                              ALLOWED_ATTR: ['href', 'title', 'target', 'rel'],
+                              ALLOW_DATA_ATTR: false
+                            }
+                          )
+                        }} 
+                      />
+                    </CardContent>
+                  </CollapsibleContent>
+                </Card>
+              </Collapsible>
             )}
           </div>
         </div>
@@ -699,7 +736,7 @@ const EventDetail = () => {
           </div>
 
           {/* About section - Mobile shows AFTER registration card (order-2) */}
-          <div className="lg:hidden order-2">
+          <div className="lg:hidden order-2 space-y-4">
             {event.description && (
               <Card>
                 <CardHeader><CardTitle>About this Event</CardTitle></CardHeader>
@@ -719,6 +756,42 @@ const EventDetail = () => {
                   />
                 </CardContent>
               </Card>
+            )}
+
+            {/* Terms & Conditions - Mobile */}
+            {event.terms_conditions && (
+              <Collapsible>
+                <Card>
+                  <CollapsibleTrigger asChild>
+                    <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors rounded-t-xl">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="flex items-center gap-2 text-base">
+                          <FileText className="w-4 h-4" />
+                          Terms & Conditions
+                        </CardTitle>
+                        <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                      </div>
+                    </CardHeader>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <CardContent className="pt-0">
+                      <div 
+                        className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap text-muted-foreground" 
+                        dangerouslySetInnerHTML={{ 
+                          __html: DOMPurify.sanitize(
+                            event.terms_conditions.replace(/\n/g, '<br>'),
+                            {
+                              ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'ul', 'ol', 'li', 'strong', 'em', 'a', 'blockquote', 'code', 'pre'],
+                              ALLOWED_ATTR: ['href', 'title', 'target', 'rel'],
+                              ALLOW_DATA_ATTR: false
+                            }
+                          )
+                        }} 
+                      />
+                    </CardContent>
+                  </CollapsibleContent>
+                </Card>
+              </Collapsible>
             )}
           </div>
         </div>
