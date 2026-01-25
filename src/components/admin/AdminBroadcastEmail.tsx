@@ -24,33 +24,54 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Mail, Send, Loader2, CheckCircle, AlertCircle, Users, History } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Mail, Send, Loader2, CheckCircle, AlertCircle, Users, History, UserCheck, UserX } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 
+type AudienceType = 'all' | 'registered' | 'non-registered';
+
 export const AdminBroadcastEmail = () => {
   const { user } = useAuth();
   const [subject, setSubject] = useState('');
-  const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
-  const [ctaText, setCtaText] = useState('');
-  const [ctaUrl, setCtaUrl] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [audienceType, setAudienceType] = useState<AudienceType>('all');
   const [lastResult, setLastResult] = useState<{ success: boolean; message: string; sent?: number; failed?: number } | null>(null);
 
-  // Fetch total user count
-  const { data: totalUsers } = useQuery({
-    queryKey: ['total-users-count'],
+  // Fetch user counts based on registration status
+  const { data: userCounts } = useQuery({
+    queryKey: ['user-counts-by-registration'],
     queryFn: async () => {
-      const { count, error } = await supabase
+      // Get all active users
+      const { data: allProfiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('id', { count: 'exact', head: true })
+        .select('id')
         .eq('is_disabled', false);
-      if (error) throw error;
-      return count || 0;
+      
+      if (profilesError) throw profilesError;
+      
+      // Get users who have registered for at least one event
+      const { data: registeredUsers, error: regError } = await supabase
+        .from('event_registrations')
+        .select('user_id')
+        .not('user_id', 'is', null);
+      
+      if (regError) throw regError;
+      
+      const registeredUserIds = new Set(registeredUsers?.map(r => r.user_id) || []);
+      const totalUsers = allProfiles?.length || 0;
+      const registeredCount = registeredUserIds.size;
+      const nonRegisteredCount = totalUsers - registeredCount;
+      
+      return {
+        total: totalUsers,
+        registered: registeredCount,
+        nonRegistered: nonRegisteredCount,
+      };
     },
   });
 
@@ -69,14 +90,31 @@ export const AdminBroadcastEmail = () => {
     },
   });
 
+  const getAudienceCount = () => {
+    if (!userCounts) return '...';
+    switch (audienceType) {
+      case 'all': return userCounts.total;
+      case 'registered': return userCounts.registered;
+      case 'non-registered': return userCounts.nonRegistered;
+    }
+  };
+
+  const getAudienceLabel = () => {
+    switch (audienceType) {
+      case 'all': return 'All Users';
+      case 'registered': return 'Registered Users (event attendees)';
+      case 'non-registered': return 'Non-Registered Users (never attended events)';
+    }
+  };
+
   const handleSend = async () => {
     if (!user) {
       toast.error('You must be logged in');
       return;
     }
 
-    if (!subject.trim() || !title.trim() || !message.trim()) {
-      toast.error('Please fill in subject, title, and message');
+    if (!subject.trim() || !message.trim()) {
+      toast.error('Please fill in subject and message');
       return;
     }
 
@@ -88,12 +126,10 @@ export const AdminBroadcastEmail = () => {
       const { data, error } = await supabase.functions.invoke('send-broadcast-email', {
         body: {
           subject: subject.trim(),
-          title: title.trim(),
           message: message.trim(),
-          ctaText: ctaText.trim() || undefined,
-          ctaUrl: ctaUrl.trim() || undefined,
+          audienceType,
           adminKey: 'UNIVOID_BROADCAST_2025',
-          senderId: user.id, // For logging
+          senderId: user.id,
         },
       });
 
@@ -109,10 +145,7 @@ export const AdminBroadcastEmail = () => {
         toast.success(`Email sent to ${data.sent} users`);
         // Clear form on success
         setSubject('');
-        setTitle('');
         setMessage('');
-        setCtaText('');
-        setCtaUrl('');
         // Refresh logs
         refetchLogs();
       } else {
@@ -131,7 +164,7 @@ export const AdminBroadcastEmail = () => {
     }
   };
 
-  const isFormValid = subject.trim().length > 0 && title.trim().length > 0 && message.trim().length > 0;
+  const isFormValid = subject.trim().length > 0 && message.trim().length > 0;
 
   return (
     <div className="space-y-6">
@@ -139,76 +172,107 @@ export const AdminBroadcastEmail = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Mail className="w-5 h-5" />
-            Global Email Broadcast
+            Custom Email Broadcast
           </CardTitle>
           <CardDescription>
-            Send a custom announcement email to all users on the platform
+            Send fully custom emails to specific user groups
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-            <Users className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">
-              This email will be sent to <strong className="text-foreground">{totalUsers ?? '...'}</strong> users
-            </span>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="broadcast-subject">Email Subject *</Label>
-              <Input
-                id="broadcast-subject"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                placeholder="e.g., 🎉 Exciting Updates from UniVoid"
-                maxLength={100}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="broadcast-title">Banner Title *</Label>
-              <Input
-                id="broadcast-title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g., New Features Available!"
-                maxLength={80}
-              />
-            </div>
+        <CardContent className="space-y-5">
+          {/* Audience Selection */}
+          <div className="space-y-3">
+            <Label className="text-base font-medium">Select Audience</Label>
+            <RadioGroup
+              value={audienceType}
+              onValueChange={(val) => setAudienceType(val as AudienceType)}
+              className="grid gap-3 sm:grid-cols-3"
+            >
+              <Label
+                htmlFor="audience-all"
+                className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  audienceType === 'all' 
+                    ? 'border-primary bg-primary/5' 
+                    : 'border-border hover:border-primary/50'
+                }`}
+              >
+                <RadioGroupItem value="all" id="audience-all" />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-muted-foreground" />
+                    <span className="font-medium">All Users</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {userCounts?.total ?? '...'} users
+                  </p>
+                </div>
+              </Label>
+              
+              <Label
+                htmlFor="audience-registered"
+                className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  audienceType === 'registered' 
+                    ? 'border-primary bg-primary/5' 
+                    : 'border-border hover:border-primary/50'
+                }`}
+              >
+                <RadioGroupItem value="registered" id="audience-registered" />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <UserCheck className="w-4 h-4 text-green-600" />
+                    <span className="font-medium">Registered</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {userCounts?.registered ?? '...'} attendees
+                  </p>
+                </div>
+              </Label>
+              
+              <Label
+                htmlFor="audience-non-registered"
+                className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  audienceType === 'non-registered' 
+                    ? 'border-primary bg-primary/5' 
+                    : 'border-border hover:border-primary/50'
+                }`}
+              >
+                <RadioGroupItem value="non-registered" id="audience-non-registered" />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <UserX className="w-4 h-4 text-orange-600" />
+                    <span className="font-medium">Non-Registered</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {userCounts?.nonRegistered ?? '...'} users
+                  </p>
+                </div>
+              </Label>
+            </RadioGroup>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="broadcast-message">Message *</Label>
+            <Label htmlFor="broadcast-subject">Email Subject *</Label>
+            <Input
+              id="broadcast-subject"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder="e.g., 🎉 Special Announcement from UniVoid"
+              maxLength={100}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="broadcast-message">Email Body (HTML supported) *</Label>
             <Textarea
               id="broadcast-message"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Write your announcement here...&#10;&#10;Each paragraph will be displayed separately."
-              rows={6}
-              className="resize-none"
+              placeholder="Write your complete email content here...&#10;&#10;You can use HTML tags like <b>bold</b>, <i>italic</i>, <a href='url'>links</a>, etc.&#10;&#10;Line breaks will be preserved."
+              rows={10}
+              className="resize-none font-mono text-sm"
             />
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="broadcast-cta-text">Button Text (optional)</Label>
-              <Input
-                id="broadcast-cta-text"
-                value={ctaText}
-                onChange={(e) => setCtaText(e.target.value)}
-                placeholder="e.g., Explore Now"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="broadcast-cta-url">Button URL (optional)</Label>
-              <Input
-                id="broadcast-cta-url"
-                value={ctaUrl}
-                onChange={(e) => setCtaUrl(e.target.value)}
-                placeholder="https://univoid.tech/..."
-              />
-            </div>
+            <p className="text-xs text-muted-foreground">
+              Tip: Use HTML for formatting. Available placeholders: {`{{userName}}`} for recipient's name.
+            </p>
           </div>
 
           <Button
@@ -219,12 +283,12 @@ export const AdminBroadcastEmail = () => {
             {isSending ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Sending to all users...
+                Sending emails...
               </>
             ) : (
               <>
                 <Send className="w-4 h-4" />
-                Send Broadcast to {totalUsers ?? '...'} Users
+                Send to {getAudienceCount()} {audienceType === 'all' ? 'Users' : audienceType === 'registered' ? 'Attendees' : 'Users'}
               </>
             )}
           </Button>
@@ -312,7 +376,10 @@ export const AdminBroadcastEmail = () => {
             <AlertDialogTitle>Confirm Broadcast</AlertDialogTitle>
             <AlertDialogDescription className="space-y-2">
               <p>
-                Are you sure you want to send this email to <strong>{totalUsers}</strong> users?
+                Are you sure you want to send this email to <strong>{getAudienceCount()}</strong> users?
+              </p>
+              <p className="text-sm">
+                <strong>Audience:</strong> {getAudienceLabel()}
               </p>
               <p className="text-sm">
                 <strong>Subject:</strong> {subject}
@@ -325,7 +392,7 @@ export const AdminBroadcastEmail = () => {
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isSending}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleSend} disabled={isSending}>
-              {isSending ? 'Sending...' : 'Yes, Send to All'}
+              {isSending ? 'Sending...' : 'Yes, Send Now'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
