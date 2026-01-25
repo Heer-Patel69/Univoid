@@ -10,9 +10,15 @@ const SENDER_EMAIL = "heerpatel1032@gmail.com";
 
 type AudienceType = 'all' | 'registered' | 'external';
 
+interface EmailButton {
+  label: string;
+  url: string;
+}
+
 interface BroadcastRequest {
   subject: string;
   message: string;
+  buttons?: EmailButton[];
   audienceType?: AudienceType;
   externalEmails?: string[];
   // Legacy fields for backward compatibility
@@ -72,8 +78,19 @@ async function sendEmailViaBrevo(
   }
 }
 
+// UniVoid logo as base64 embedded SVG
+const UNIVOID_LOGO = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 40" width="120" height="40">
+  <defs>
+    <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8B5CF6"/>
+      <stop offset="100%" style="stop-color:#D946EF"/>
+    </linearGradient>
+  </defs>
+  <text x="10" y="28" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="url(#logoGrad)">UniVoid</text>
+</svg>`;
+
 // Generate custom email HTML with full flexibility
-function generateCustomEmail(message: string, userName?: string): string {
+function generateCustomEmail(message: string, userName?: string, buttons?: EmailButton[]): string {
   // Replace placeholder
   const processedMessage = message.replace(/\{\{userName\}\}/g, userName || 'User');
   
@@ -85,7 +102,28 @@ function generateCustomEmail(message: string, userName?: string): string {
     return processedMessage;
   }
   
-  // Wrap in a simple email template
+  // Generate buttons HTML
+  const buttonsHtml = buttons && buttons.length > 0 
+    ? `
+      <tr>
+        <td style="padding: 24px 32px 0;">
+          <table role="presentation" cellpadding="0" cellspacing="0" style="width: 100%;">
+            <tr>
+              <td style="text-align: center;">
+                ${buttons.map(btn => `
+                  <a href="${btn.url}" target="_blank" style="display: inline-block; margin: 6px 8px; padding: 14px 28px; background: linear-gradient(135deg, #8B5CF6 0%, #D946EF 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; box-shadow: 0 4px 14px rgba(139, 92, 246, 0.4);">
+                    ${btn.label}
+                  </a>
+                `).join('')}
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    `
+    : '';
+  
+  // Wrap in a branded email template with UniVoid logo
   return `
     <!DOCTYPE html>
     <html lang="en">
@@ -102,9 +140,13 @@ function generateCustomEmail(message: string, userName?: string): string {
               <!-- Header with Logo -->
               <tr>
                 <td style="background: linear-gradient(135deg, #1a1a1a 0%, #333333 100%); padding: 30px 40px; text-align: center;">
-                  <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">
-                    ✨ UniVoid
-                  </h1>
+                  <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+                    <tr>
+                      <td>
+                        ${UNIVOID_LOGO}
+                      </td>
+                    </tr>
+                  </table>
                 </td>
               </tr>
               
@@ -119,14 +161,17 @@ function generateCustomEmail(message: string, userName?: string): string {
                 </td>
               </tr>
               
+              <!-- Buttons -->
+              ${buttonsHtml}
+              
               <!-- Footer -->
               <tr>
-                <td style="background-color: #f8f8f8; padding: 24px 32px; text-align: center;">
+                <td style="background-color: #f8f8f8; padding: 24px 32px; text-align: center; margin-top: 20px;">
                   <p style="color: #666666; font-size: 14px; margin: 0 0 8px 0;">
                     © ${new Date().getFullYear()} UniVoid. All rights reserved.
                   </p>
                   <p style="color: #999999; font-size: 12px; margin: 0;">
-                    <a href="https://univoid.lovable.app" style="color: #666666; text-decoration: none;">univoid.lovable.app</a>
+                    <a href="https://univoid.lovable.app" style="color: #8B5CF6; text-decoration: none;">univoid.lovable.app</a>
                   </p>
                 </td>
               </tr>
@@ -159,7 +204,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const body: BroadcastRequest = await req.json();
-    const { subject, message, audienceType = 'all', externalEmails, adminKey, testEmail, senderId, title } = body;
+    const { subject, message, buttons, audienceType = 'all', externalEmails, adminKey, testEmail, senderId, title } = body;
 
     // Simple admin protection
     if (adminKey !== "UNIVOID_BROADCAST_2025") {
@@ -186,7 +231,7 @@ const handler = async (req: Request): Promise<Response> => {
       const errors: string[] = [];
 
       for (const email of externalEmails) {
-        const emailHtml = generateCustomEmail(emailContent, 'there');
+        const emailHtml = generateCustomEmail(emailContent, 'there', buttons);
         console.log(`Sending to external: ${email}...`);
         const result = await sendEmailViaBrevo(email, subject, emailHtml);
         
@@ -252,7 +297,7 @@ const handler = async (req: Request): Promise<Response> => {
     // If testEmail provided, just send to that one email
     if (testEmail) {
       console.log(`Sending TEST email to: ${testEmail}`);
-      const emailHtml = generateCustomEmail(emailContent, 'Test User');
+      const emailHtml = generateCustomEmail(emailContent, 'Test User', buttons);
       const result = await sendEmailViaBrevo(testEmail, subject, emailHtml);
       
       return new Response(JSON.stringify({
@@ -333,7 +378,7 @@ const handler = async (req: Request): Promise<Response> => {
     for (const profile of targetProfiles) {
       if (!profile.email) continue;
 
-      const emailHtml = generateCustomEmail(emailContent, profile.full_name);
+      const emailHtml = generateCustomEmail(emailContent, profile.full_name, buttons);
       console.log(`Sending to ${profile.email}...`);
       const result = await sendEmailViaBrevo(profile.email, subject, emailHtml);
       

@@ -25,11 +25,16 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Mail, Send, Loader2, CheckCircle, AlertCircle, Users, History, UserCheck, ExternalLink, Plus, X } from 'lucide-react';
+import { Mail, Send, Loader2, CheckCircle, AlertCircle, Users, History, UserCheck, ExternalLink, Plus, X, Link } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
+
+interface EmailButton {
+  label: string;
+  url: string;
+}
 
 type AudienceType = 'all' | 'registered' | 'external';
 
@@ -48,6 +53,9 @@ export const AdminBroadcastEmail = () => {
   // External emails state
   const [externalEmailsText, setExternalEmailsText] = useState('');
   const [singleEmail, setSingleEmail] = useState('');
+  
+  // Custom buttons state
+  const [buttons, setButtons] = useState<EmailButton[]>([]);
 
   // Parse and validate external emails
   const parsedExternalEmails = useMemo(() => {
@@ -84,6 +92,25 @@ export const AdminBroadcastEmail = () => {
     }
     setExternalEmailsText(prev => prev ? `${prev}\n${newEmail}` : newEmail);
     setSingleEmail('');
+  };
+
+  // Button management
+  const addButton = () => {
+    if (buttons.length >= 4) {
+      toast.error('Maximum 4 buttons allowed');
+      return;
+    }
+    setButtons([...buttons, { label: '', url: '' }]);
+  };
+
+  const updateButton = (index: number, field: 'label' | 'url', value: string) => {
+    const updated = [...buttons];
+    updated[index][field] = value;
+    setButtons(updated);
+  };
+
+  const removeButton = (index: number) => {
+    setButtons(buttons.filter((_, i) => i !== index));
   };
 
   // Fetch user counts based on registration status
@@ -168,10 +195,14 @@ export const AdminBroadcastEmail = () => {
     setLastResult(null);
 
     try {
+      // Filter out empty buttons
+      const validButtons = buttons.filter(b => b.label.trim() && b.url.trim());
+      
       const { data, error } = await supabase.functions.invoke('send-broadcast-email', {
         body: {
           subject: subject.trim(),
           message: message.trim(),
+          buttons: validButtons.length > 0 ? validButtons : undefined,
           audienceType,
           externalEmails: audienceType === 'external' ? validExternalEmails : undefined,
           adminKey: 'UNIVOID_BROADCAST_2025',
@@ -192,6 +223,7 @@ export const AdminBroadcastEmail = () => {
         // Clear form on success
         setSubject('');
         setMessage('');
+        setButtons([]);
         if (audienceType === 'external') {
           setExternalEmailsText('');
         }
@@ -406,8 +438,61 @@ export const AdminBroadcastEmail = () => {
               rows={10}
               className="resize-none font-mono text-sm"
             />
+          </div>
+
+          {/* Custom Buttons Section */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <Link className="w-4 h-4" />
+                Call-to-Action Buttons (Optional)
+              </Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addButton}
+                disabled={buttons.length >= 4}
+              >
+                <Plus className="w-3 h-3 mr-1" /> Add Button
+              </Button>
+            </div>
+            
+            {buttons.length > 0 && (
+              <div className="space-y-2">
+                {buttons.map((button, index) => (
+                  <div key={index} className="flex gap-2 items-center p-3 rounded-lg border bg-muted/30">
+                    <div className="flex-1 grid grid-cols-2 gap-2">
+                      <Input
+                        value={button.label}
+                        onChange={(e) => updateButton(index, 'label', e.target.value)}
+                        placeholder="Button text (e.g., Register Now)"
+                        className="text-sm"
+                      />
+                      <Input
+                        value={button.url}
+                        onChange={(e) => updateButton(index, 'url', e.target.value)}
+                        placeholder="https://..."
+                        type="url"
+                        className="text-sm"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeButton(index)}
+                      className="flex-shrink-0 text-muted-foreground hover:text-destructive"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+            
             <p className="text-xs text-muted-foreground">
-              Tip: Use HTML for formatting. Available placeholders: {`{{userName}}`} for recipient's name.
+              Add up to 4 buttons with custom links. They'll appear below your message.
             </p>
           </div>
 
