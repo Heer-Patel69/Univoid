@@ -930,7 +930,17 @@ const Admin = () => {
 
   const renderOrganizerAppsTab = () => {
     if (organizerApps.length === 0) {
-      return <p className="text-muted-foreground text-center py-8">No pending organizer applications</p>;
+      return (
+        <div className="text-center py-8 space-y-4">
+          <p className="text-muted-foreground">No pending organizer applications</p>
+          <div className="p-4 rounded-lg bg-muted/50 max-w-md mx-auto">
+            <p className="text-sm text-muted-foreground">
+              <strong>Note:</strong> With the new onboarding flow, organizers can register directly. 
+              Check the <strong>"Organizers"</strong> tab to manage all organizer profiles and verification status.
+            </p>
+          </div>
+        </div>
+      );
     }
 
     return (

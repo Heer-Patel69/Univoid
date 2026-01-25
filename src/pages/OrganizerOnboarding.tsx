@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQueryClient } from "@tanstack/react-query";
 import { useOrganizerProfile } from "@/hooks/useOrganizerProfile";
 import { 
   createOrganizerProfile, 
@@ -93,11 +94,12 @@ interface FormData {
 }
 
 const OrganizerOnboarding = () => {
-  const { user } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectUrl = searchParams.get('redirect');
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   // Check if user already has an organizer profile
   const { hasProfile, profile, isLoading: checkingProfile } = useOrganizerProfile();
@@ -298,6 +300,13 @@ const OrganizerOnboarding = () => {
       
       // Clear draft
       localStorage.removeItem("organizer_onboarding_draft");
+      
+      // Refresh auth context to pick up new organizer role
+      await refreshProfile();
+      
+      // Invalidate organizer profile queries
+      queryClient.invalidateQueries({ queryKey: ['hasOrganizerProfile'] });
+      queryClient.invalidateQueries({ queryKey: ['organizerProfile'] });
       
       // Show success with confetti
       setCreatedSlug(profile?.slug || null);
