@@ -128,8 +128,8 @@ const OrganizerOnboarding = () => {
         title: "Profile already exists",
         description: "You already have an organizer profile. Redirecting...",
       });
-      // Navigate to the redirect URL or dashboard
-      navigate(redirectUrl || "/organizer/dashboard");
+      // Navigate to the redirect URL or organizer panel
+      navigate(redirectUrl || "/organizer");
     }
   }, [checkingProfile, hasProfile, showSuccess, navigate, redirectUrl, toast]);
   
@@ -158,8 +158,8 @@ const OrganizerOnboarding = () => {
       const timer = setTimeout(() => setCountdown(c => c - 1), 1000);
       return () => clearTimeout(timer);
     } else if (showSuccess && countdown === 0) {
-      // Redirect to original page if specified, otherwise to dashboard
-      navigate(redirectUrl || "/organizer/dashboard");
+      // Redirect to original page if specified, otherwise to organizer panel
+      navigate(redirectUrl || "/organizer");
     }
   }, [showSuccess, countdown, navigate, redirectUrl]);
   
@@ -371,11 +371,11 @@ const OrganizerOnboarding = () => {
             )}
             <Button 
               variant="outline" 
-              onClick={() => navigate(redirectUrl || "/organizer/dashboard")}
+              onClick={() => navigate(redirectUrl || "/organizer")}
               className="w-full"
               size="lg"
             >
-              {redirectUrl ? "Go to Dashboard Instead" : "Go to Dashboard"}
+              {redirectUrl ? "Go to Organizer Panel Instead" : "Go to Organizer Panel"}
             </Button>
           </div>
           

@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import AuthModal from "@/components/auth/AuthModal";
 import { 
   getOrganizerProfileBySlug,
   getOrganizerProfileById,
@@ -30,6 +31,7 @@ const OrganizerProfile = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [showAuthModal, setShowAuthModal] = useState(false);
   
   // Fetch organizer profile
   const { data: profile, isLoading: profileLoading, error } = useQuery({
@@ -182,7 +184,8 @@ const OrganizerProfile = () => {
                 </div>
                 
                 <div className="flex flex-col gap-2">
-                  {user && user.id !== profile.user_id && (
+                  {/* Show Follow button for all users */}
+                  {user && user.id !== profile.user_id ? (
                     <Button
                       onClick={() => followMutation.mutate()}
                       disabled={followMutation.isPending}
@@ -201,6 +204,14 @@ const OrganizerProfile = () => {
                           Follow
                         </>
                       )}
+                    </Button>
+                  ) : !user && (
+                    <Button
+                      onClick={() => setShowAuthModal(true)}
+                      variant="default"
+                    >
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Follow
                     </Button>
                   )}
                 </div>
@@ -284,6 +295,12 @@ const OrganizerProfile = () => {
           </Tabs>
         </div>
       </div>
+      
+      {/* Auth Modal for Follow */}
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={() => setShowAuthModal(false)} 
+      />
     </>
   );
 };

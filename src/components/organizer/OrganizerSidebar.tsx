@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { PrefetchLink } from "@/components/common/PrefetchLink";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOrganizerProfile } from "@/hooks/useOrganizerProfile";
 import { 
   LayoutDashboard, 
   Calendar, 
@@ -10,7 +11,9 @@ import {
   ChevronLeft,
   LogOut,
   Home,
-  Plus
+  Plus,
+  Pencil,
+  BadgeCheck
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -38,6 +41,7 @@ export function OrganizerSidebar({
 }: OrganizerSidebarProps) {
   const location = useLocation();
   const { user, profile } = useAuth();
+  const { profile: organizerProfile } = useOrganizerProfile();
 
   const isActive = (href: string, exact = false) => {
     if (exact) return location.pathname === href;
@@ -50,15 +54,43 @@ export function OrganizerSidebar({
 
   return (
     <aside className="hidden lg:flex flex-col w-64 border-r border-border bg-card h-dvh sticky top-0 shrink-0 overflow-hidden">
-      {/* Header */}
+      {/* Header with Organizer Branding */}
       <div className="p-4 border-b border-border">
-        <Link to="/" className="flex items-center gap-2 group">
+        <Link to="/" className="flex items-center gap-2 group mb-3">
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
             <span className="text-primary-foreground font-bold text-sm">U</span>
           </div>
           <span className="font-display font-bold text-lg">UniVoid</span>
         </Link>
-        <p className="text-xs text-muted-foreground mt-1">Organizer Console</p>
+        
+        {/* Organizer Profile Card */}
+        {organizerProfile && (
+          <div className="bg-muted/50 rounded-lg p-3 mt-2">
+            <div className="flex items-center gap-3">
+              <Avatar className="w-10 h-10 border-2 border-background">
+                <AvatarImage src={organizerProfile.logo_url || undefined} alt={organizerProfile.name} />
+                <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                  {organizerProfile.name.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1">
+                  <p className="font-medium text-sm truncate">{organizerProfile.name}</p>
+                  {organizerProfile.is_verified && (
+                    <BadgeCheck className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">Organizer</p>
+              </div>
+            </div>
+            <Link to="/organizer/edit-profile">
+              <Button variant="ghost" size="sm" className="w-full mt-2 gap-1.5 text-xs">
+                <Pencil className="w-3 h-3" />
+                Edit Profile
+              </Button>
+            </Link>
+          </div>
+        )}
       </div>
 
       <ScrollArea className="flex-1">
