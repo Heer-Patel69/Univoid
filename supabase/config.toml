@@ -71,3 +71,6 @@ verify_jwt = false
 
 [functions.prerender]
 verify_jwt = false
+
+[functions.submit-to-google-indexing]
+verify_jwt = false
