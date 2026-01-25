@@ -60,6 +60,9 @@ export const EventCard = ({ event }: EventCardProps) => {
             </div>
           )}
           
+          {/* Subtle black gradient overlay at bottom for text contrast */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent pointer-events-none" />
+          
           {/* Price Badge */}
           <div className="absolute top-3 right-3">
             <Badge 
