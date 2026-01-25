@@ -175,6 +175,9 @@ const handler = async (req: Request): Promise<Response> => {
         ${event.venue_name ? `<p style="margin: 0 0 8px 0; color: #374151;"><strong>📍 Venue:</strong> ${event.venue_name}</p>` : ""}
         ${event.venue_address ? `<p style="margin: 0; color: #374151;"><strong>🏠 Address:</strong> ${event.venue_address}</p>` : ""}
       </div>
+      <div style="background: #eef2ff; padding: 16px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #6366f1;">
+        <p style="margin: 0; color: #374151;">📱 <strong>Access Your Ticket:</strong> You can access your ticket on the <strong>My Tickets</strong> page. You can also view it using this link: <a href="https://univoid.tech/my-events" style="color: #4f46e5; font-weight: 600;">https://univoid.tech/my-events</a></p>
+      </div>
       <p style="color: #dc2626; font-weight: 600; text-align: center;">⚠️ Do NOT share this QR code with anyone!</p>
     `;
 
