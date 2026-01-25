@@ -10,6 +10,9 @@ Disallow: /settings
 Disallow: /edit-profile
 Disallow: /my-tickets
 Disallow: /my-books
+Disallow: /onboarding
+Disallow: /check-in
+Disallow: /checkin
 
 User-agent: Bingbot
 Allow: /
@@ -41,9 +44,11 @@ Disallow: /my-tickets
 Disallow: /my-books
 Disallow: /onboarding
 Disallow: /check-in
+Disallow: /checkin
+Disallow: /fast-register
 
-# Dynamic sitemap (served via Edge Function)
-Sitemap: https://rtvrdbbojqsrbkngnjgq.supabase.co/functions/v1/sitemap
+# Primary sitemap (dynamic, includes all indexed content)
+Sitemap: https://univoid.tech/sitemap-index.xml
 
 # Allow crawling of all static assets
 Allow: /*.js$
