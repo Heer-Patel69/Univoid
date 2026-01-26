@@ -348,7 +348,7 @@ const EventDetail = () => {
   const eventSlug = event.slug || eventId;
 
   return (
-    <>
+    <div className="w-full max-w-full">
       <SEOHead
         title={event.title}
         description={seoDescription}
@@ -358,230 +358,232 @@ const EventDetail = () => {
         structuredData={eventStructuredData}
         keywords={[event.category, event.event_type, "college event", "campus event", "student event"]}
       />
+      <div className="container mx-auto px-5 lg:px-10 py-6 pb-24 md:pb-8 max-w-6xl">
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
-      
-      {/* MOBILE LAYOUT - Standard scrolling page */}
-      <div className="lg:hidden">
-        <div className="container mx-auto px-5 py-6 pb-24 max-w-6xl space-y-5">
-          <PageBreadcrumb 
-            items={[
-              { label: "Events", href: "/events" },
-              { label: event.title }
-            ]} 
-          />
-          
-          {/* Mobile: Flyer */}
-          <div className="relative rounded-3xl overflow-hidden bg-muted w-full">
-            {event.flyer_url ? (
-              <img 
-                src={toDisplayUrl(event.flyer_url, { forceImage: true }) || undefined} 
-                alt={event.title} 
-                className="w-full h-auto object-contain rounded-3xl" 
-                loading="eager" 
-              />
-            ) : (
-              <div className="w-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/30" style={{ aspectRatio: '4/5' }}>
-                <Calendar className="w-24 h-24 text-primary/50" />
+
+      <PageBreadcrumb 
+        items={[
+          { label: "Events", href: "/events" },
+          { label: event.title }
+        ]} 
+      />
+
+      {/* MOBILE LAYOUT: Stacked - Registration first, then flyer, then description */}
+      <div className="lg:hidden space-y-5">
+        {/* Mobile: Flyer first */}
+        <div className="relative rounded-3xl overflow-hidden bg-muted w-full">
+          {event.flyer_url ? (
+            <img 
+              src={toDisplayUrl(event.flyer_url, { forceImage: true }) || undefined} 
+              alt={event.title} 
+              className="w-full h-auto object-contain rounded-3xl" 
+              loading="eager" 
+            />
+          ) : (
+            <div 
+              className="w-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/30"
+              style={{ aspectRatio: '4/5' }}
+            >
+              <Calendar className="w-24 h-24 text-primary/50" />
+            </div>
+          )}
+          <div className="absolute top-4 left-4 flex gap-2 flex-wrap">
+            <Badge>{event.category}</Badge>
+            <Badge variant="outline" className="bg-background/80 backdrop-blur">{event.event_type}</Badge>
+          </div>
+          <div className="absolute bottom-4 right-4">
+            <Badge variant="secondary" className="gap-1"><Eye className="w-3 h-3" />{event.views_count} views</Badge>
+          </div>
+        </div>
+
+        {/* Mobile: Title and Share */}
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <h1 className="font-display text-2xl md:text-3xl font-bold">{event.title}</h1>
+          <Button variant="outline" size="icon" onClick={handleShare}><Share2 className="w-4 h-4" /></Button>
+        </div>
+
+        {/* Mobile: Registration Card */}
+        <Card>
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Price</span>
+              <span className="text-xl font-bold flex items-center">
+                {event.is_paid ? (<><IndianRupee className="w-4 h-4" />{event.price}</>) : (<Badge variant="secondary">Free</Badge>)}
+              </span>
+            </div>
+            <div className="flex items-start gap-2.5 text-sm">
+              <Calendar className="w-4 h-4 mt-0.5 text-muted-foreground flex-shrink-0" />
+              <div>
+                <p className="font-medium">{format(new Date(event.start_date), "EEE, MMM d, yyyy")}</p>
+                <p className="text-xs text-muted-foreground">{format(new Date(event.start_date), "h:mm a")}</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-2.5 text-sm">
+              <MapPin className="w-4 h-4 mt-0.5 text-muted-foreground flex-shrink-0" />
+              <div className="min-w-0">
+                {(event as any).city && (event as any).state && (
+                  <p className="font-medium">{(event as any).city}, {(event as any).state}</p>
+                )}
+                {event.is_location_decided ? (
+                  <>
+                    <p className={`truncate ${(event as any).city ? 'text-xs text-muted-foreground' : 'font-medium'}`}>{event.venue_name}</p>
+                    {event.maps_link && (
+                      <a href={event.maps_link} target="_blank" rel="noopener noreferrer" className="text-xs text-primary flex items-center gap-1 hover:underline">
+                        Open in Maps <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
+                  </>
+                ) : !((event as any).city && (event as any).state) && (
+                  <p className="text-muted-foreground">Location TBA</p>
+                )}
+              </div>
+            </div>
+            {effectiveCapacity && (
+              <div className="flex items-center gap-2.5 text-sm">
+                <Users className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <div className="flex-1">
+                  <div className="flex justify-between text-xs mb-1">
+                    <span>{effectiveRegistrations} registered</span>
+                    <span>{effectiveCapacity} spots</span>
+                  </div>
+                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full transition-all ${isFullNow ? "bg-destructive" : "bg-primary"}`} style={{ width: `${Math.min((effectiveRegistrations / effectiveCapacity) * 100, 100)}%` }} />
+                  </div>
+                  {spotsRemaining !== null && spotsRemaining <= 10 && spotsRemaining > 0 && (
+                    <p className="text-xs text-destructive mt-1">Only {spotsRemaining} spots left!</p>
+                  )}
+                </div>
               </div>
             )}
-            <div className="absolute top-4 left-4 flex gap-2 flex-wrap">
-              <Badge>{event.category}</Badge>
-              <Badge variant="outline" className="bg-background/80 backdrop-blur">{event.event_type}</Badge>
-            </div>
-            <div className="absolute bottom-4 right-4">
-              <Badge variant="secondary" className="gap-1"><Eye className="w-3 h-3" />{event.views_count} views</Badge>
-            </div>
-          </div>
+            {existingRegistration && (
+              <div className={`p-2.5 rounded-lg flex items-center gap-2 text-sm ${
+                existingRegistration.payment_status === "approved" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                : existingRegistration.payment_status === "rejected" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300"
+              }`}>
+                {existingRegistration.payment_status === "approved" ? (<><CheckCircle className="w-4 h-4" /><span>You're registered!</span></>) 
+                : existingRegistration.payment_status === "rejected" ? (<><AlertCircle className="w-4 h-4" /><span>Registration rejected</span></>)
+                : (<><Clock className="w-4 h-4" /><span>Payment pending</span></>)}
+              </div>
+            )}
+            {!existingRegistration && (
+              <div className="space-y-3">
+                {!isEventPast && !isFullNow && canShowQuickRegister && (
+                  <QuickRegisterButton eventId={eventId!} isPast={isEventPast} isFull={isFullNow} variant="primary" className="w-full" />
+                )}
+                <Dialog open={isRegisterOpen} onOpenChange={(open) => { setIsRegisterOpen(open); if (!open) setBookingStep("form"); }}>
+                  <DialogTrigger asChild>
+                    <Button variant={canShowQuickRegister ? "outline" : "default"} className="w-full rounded-full" disabled={isEventPast || isFullNow || isSubmitting} onClick={() => !user && setShowAuthModal(true)}>
+                      {!user ? "Already have an account? Login" : isEventPast ? "Event Ended" : isFullNow ? "Event Full" : hasCustomFields ? "Register Now" : "Register with full details"}
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md max-h-[90vh]">
+                    <DialogHeader>
+                      <DialogTitle>{bookingStep === "upsells" ? "Enhance Your Experience" : `Register for ${event.title}`}</DialogTitle>
+                      <DialogDescription>{bookingStep === "upsells" ? "Add extras to your booking" : bookingStep === "payment" ? `Total: ₹${priceCalculation.finalTotal}` : event.is_paid ? `Pay ₹${displayPrice} and complete the form` : "Complete your registration"}</DialogDescription>
+                    </DialogHeader>
+                    <ScrollArea className="max-h-[60vh] pr-4">
+                      <div className="py-4 space-y-4">
+                        {bookingStep === "form" && (
+                          <>
+                            {clubSection}
+                            <DynamicRegistrationForm eventId={eventId!} onSubmit={handleRegister} isSubmitting={isSubmitting || isUploading} isPaidEvent={event.is_paid} paymentSection={!upsellSettings?.upsell_enabled ? paymentSection : undefined} termsSection={!upsellSettings?.upsell_enabled ? termsSection : undefined} submitDisabled={!upsellSettings?.upsell_enabled && ((event.is_paid && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms))} submitLabel={isSubmitting ? "Processing..." : upsellSettings?.upsell_enabled && upsells.length > 0 ? "Continue" : event.is_paid ? "Submit Registration" : "Confirm Registration"} />
+                          </>
+                        )}
+                        {bookingStep === "upsells" && (
+                          <UpsellScreen upsells={upsells} basePrice={selectedPrice !== null ? selectedPrice : (event.price || 0)} groupSize={groupSize} onGroupSizeChange={setGroupSize} selectedUpsells={selectedUpsells} onUpsellsChange={setSelectedUpsells} onContinue={handleUpsellContinue} onSkip={handleUpsellSkip} />
+                        )}
+                        {bookingStep === "payment" && (
+                          <>
+                            <Card className="bg-muted/50">
+                              <CardContent className="py-4 space-y-2">
+                                {selectedPrice !== null && selectedPrice < event.price && (<div className="flex justify-between text-sm"><span>Original Price ({groupSize} × ₹{event.price})</span><span className="line-through text-muted-foreground">₹{groupSize * event.price}</span></div>)}
+                                {selectedPrice !== null && selectedPrice < event.price && (<div className="flex justify-between text-sm text-green-600 font-medium"><span>🎉 Club Member Discount</span><span>-₹{(event.price - selectedPrice) * groupSize}</span></div>)}
+                                <div className="flex justify-between text-sm"><span>Tickets ({groupSize} × ₹{selectedPrice !== null ? selectedPrice : event.price})</span><span>₹{priceCalculation.baseTotal}</span></div>
+                                {priceCalculation.discounts > 0 && (<div className="flex justify-between text-sm text-green-600"><span>Group Discount</span><span>-₹{priceCalculation.discounts}</span></div>)}
+                                {priceCalculation.addonsTotal > 0 && (<div className="flex justify-between text-sm"><span>Add-ons</span><span>+₹{priceCalculation.addonsTotal}</span></div>)}
+                                <div className="flex justify-between font-bold text-lg pt-2 border-t"><span>Total Payable</span><span className="text-primary">₹{priceCalculation.finalTotal}</span></div>
+                              </CardContent>
+                            </Card>
+                            {paymentSection}
+                            {termsSection}
+                            <Button onClick={() => handleRegister({})} disabled={isSubmitting || isUploading || (event.is_paid && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms)} className="w-full">{isSubmitting ? "Submitting..." : "Complete Registration"}</Button>
+                          </>
+                        )}
+                      </div>
+                    </ScrollArea>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-          {/* Mobile: Title and Share */}
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <h1 className="font-display text-2xl md:text-3xl font-bold">{event.title}</h1>
-            <Button variant="outline" size="icon" onClick={handleShare}><Share2 className="w-4 h-4" /></Button>
-          </div>
-
-          {/* Mobile: Registration Card */}
+        {/* Mobile: Organizer Card */}
+        {organizer && (
           <Card>
-            <CardContent className="p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Price</span>
-                <span className="text-xl font-bold flex items-center">
-                  {event.is_paid ? (<><IndianRupee className="w-4 h-4" />{event.price}</>) : (<Badge variant="secondary">Free</Badge>)}
-                </span>
-              </div>
-              <div className="flex items-start gap-2.5 text-sm">
-                <Calendar className="w-4 h-4 mt-0.5 text-muted-foreground flex-shrink-0" />
-                <div>
-                  <p className="font-medium">{format(new Date(event.start_date), "EEE, MMM d, yyyy")}</p>
-                  <p className="text-xs text-muted-foreground">{format(new Date(event.start_date), "h:mm a")}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-2.5 text-sm">
-                <MapPin className="w-4 h-4 mt-0.5 text-muted-foreground flex-shrink-0" />
-                <div className="min-w-0">
-                  {(event as any).city && (event as any).state && (
-                    <p className="font-medium">{(event as any).city}, {(event as any).state}</p>
-                  )}
-                  {event.is_location_decided ? (
-                    <>
-                      <p className={`truncate ${(event as any).city ? 'text-xs text-muted-foreground' : 'font-medium'}`}>{event.venue_name}</p>
-                      {event.maps_link && (
-                        <a href={event.maps_link} target="_blank" rel="noopener noreferrer" className="text-xs text-primary flex items-center gap-1 hover:underline">
-                          Open in Maps <ExternalLink className="w-3 h-3" />
-                        </a>
-                      )}
-                    </>
-                  ) : !((event as any).city && (event as any).state) && (
-                    <p className="text-muted-foreground">Location TBA</p>
-                  )}
-                </div>
-              </div>
-              {effectiveCapacity && (
-                <div className="flex items-center gap-2.5 text-sm">
-                  <Users className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                  <div className="flex-1">
-                    <div className="flex justify-between text-xs mb-1">
-                      <span>{effectiveRegistrations} registered</span>
-                      <span>{effectiveCapacity} spots</span>
-                    </div>
-                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                      <div className={`h-full rounded-full transition-all ${isFullNow ? "bg-destructive" : "bg-primary"}`} style={{ width: `${Math.min((effectiveRegistrations / effectiveCapacity) * 100, 100)}%` }} />
-                    </div>
-                    {spotsRemaining !== null && spotsRemaining <= 10 && spotsRemaining > 0 && (
-                      <p className="text-xs text-destructive mt-1">Only {spotsRemaining} spots left!</p>
-                    )}
+            <CardContent className="p-4">
+              <Link to={`/o/${organizer.slug}`} className="flex items-center gap-3 rounded-lg hover:bg-muted/50 transition-colors -m-1 p-1">
+                <Avatar className="w-10 h-10 border">
+                  <AvatarImage src={toDisplayUrl(organizer.logo_url, { forceImage: true }) || undefined} alt={organizer.name} />
+                  <AvatarFallback className="bg-primary/10 text-primary">{organizer.name.charAt(0).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1">
+                    <span className="font-medium truncate text-sm">{organizer.name}</span>
+                    {organizer.is_verified && (<BadgeCheck className="w-4 h-4 text-amber-500 flex-shrink-0" />)}
                   </div>
+                  <p className="text-xs text-muted-foreground">Event Organizer</p>
                 </div>
-              )}
-              {existingRegistration && (
-                <div className={`p-2.5 rounded-lg flex items-center gap-2 text-sm ${
-                  existingRegistration.payment_status === "approved" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
-                  : existingRegistration.payment_status === "rejected" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
-                  : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300"
-                }`}>
-                  {existingRegistration.payment_status === "approved" ? (<><CheckCircle className="w-4 h-4" /><span>You're registered!</span></>) 
-                  : existingRegistration.payment_status === "rejected" ? (<><AlertCircle className="w-4 h-4" /><span>Registration rejected</span></>)
-                  : (<><Clock className="w-4 h-4" /><span>Payment pending</span></>)}
-                </div>
-              )}
-              {!existingRegistration && (
-                <div className="space-y-3">
-                  {!isEventPast && !isFullNow && canShowQuickRegister && (
-                    <QuickRegisterButton eventId={eventId!} isPast={isEventPast} isFull={isFullNow} variant="primary" className="w-full" />
-                  )}
-                  <Dialog open={isRegisterOpen} onOpenChange={(open) => { setIsRegisterOpen(open); if (!open) setBookingStep("form"); }}>
-                    <DialogTrigger asChild>
-                      <Button variant={canShowQuickRegister ? "outline" : "default"} className="w-full rounded-full" disabled={isEventPast || isFullNow || isSubmitting} onClick={() => !user && setShowAuthModal(true)}>
-                        {!user ? "Already have an account? Login" : isEventPast ? "Event Ended" : isFullNow ? "Event Full" : hasCustomFields ? "Register Now" : "Register with full details"}
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-md max-h-[90vh]">
-                      <DialogHeader>
-                        <DialogTitle>{bookingStep === "upsells" ? "Enhance Your Experience" : `Register for ${event.title}`}</DialogTitle>
-                        <DialogDescription>{bookingStep === "upsells" ? "Add extras to your booking" : bookingStep === "payment" ? `Total: ₹${priceCalculation.finalTotal}` : event.is_paid ? `Pay ₹${displayPrice} and complete the form` : "Complete your registration"}</DialogDescription>
-                      </DialogHeader>
-                      <ScrollArea className="max-h-[60vh] pr-4">
-                        <div className="py-4 space-y-4">
-                          {bookingStep === "form" && (
-                            <>
-                              {clubSection}
-                              <DynamicRegistrationForm eventId={eventId!} onSubmit={handleRegister} isSubmitting={isSubmitting || isUploading} isPaidEvent={event.is_paid} paymentSection={!upsellSettings?.upsell_enabled ? paymentSection : undefined} termsSection={!upsellSettings?.upsell_enabled ? termsSection : undefined} submitDisabled={!upsellSettings?.upsell_enabled && ((event.is_paid && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms))} submitLabel={isSubmitting ? "Processing..." : upsellSettings?.upsell_enabled && upsells.length > 0 ? "Continue" : event.is_paid ? "Submit Registration" : "Confirm Registration"} />
-                            </>
-                          )}
-                          {bookingStep === "upsells" && (
-                            <UpsellScreen upsells={upsells} basePrice={selectedPrice !== null ? selectedPrice : (event.price || 0)} groupSize={groupSize} onGroupSizeChange={setGroupSize} selectedUpsells={selectedUpsells} onUpsellsChange={setSelectedUpsells} onContinue={handleUpsellContinue} onSkip={handleUpsellSkip} />
-                          )}
-                          {bookingStep === "payment" && (
-                            <>
-                              <Card className="bg-muted/50">
-                                <CardContent className="py-4 space-y-2">
-                                  {selectedPrice !== null && selectedPrice < event.price && (<div className="flex justify-between text-sm"><span>Original Price ({groupSize} × ₹{event.price})</span><span className="line-through text-muted-foreground">₹{groupSize * event.price}</span></div>)}
-                                  {selectedPrice !== null && selectedPrice < event.price && (<div className="flex justify-between text-sm text-green-600 font-medium"><span>🎉 Club Member Discount</span><span>-₹{(event.price - selectedPrice) * groupSize}</span></div>)}
-                                  <div className="flex justify-between text-sm"><span>Tickets ({groupSize} × ₹{selectedPrice !== null ? selectedPrice : event.price})</span><span>₹{priceCalculation.baseTotal}</span></div>
-                                  {priceCalculation.discounts > 0 && (<div className="flex justify-between text-sm text-green-600"><span>Group Discount</span><span>-₹{priceCalculation.discounts}</span></div>)}
-                                  {priceCalculation.addonsTotal > 0 && (<div className="flex justify-between text-sm"><span>Add-ons</span><span>+₹{priceCalculation.addonsTotal}</span></div>)}
-                                  <div className="flex justify-between font-bold text-lg pt-2 border-t"><span>Total Payable</span><span className="text-primary">₹{priceCalculation.finalTotal}</span></div>
-                                </CardContent>
-                              </Card>
-                              {paymentSection}
-                              {termsSection}
-                              <Button onClick={() => handleRegister({})} disabled={isSubmitting || isUploading || (event.is_paid && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms)} className="w-full">{isSubmitting ? "Submitting..." : "Complete Registration"}</Button>
-                            </>
-                          )}
-                        </div>
-                      </ScrollArea>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              )}
+                <ExternalLink className="w-4 h-4 text-muted-foreground" />
+              </Link>
             </CardContent>
           </Card>
+        )}
 
-          {/* Mobile: Organizer Card */}
-          {organizer && (
+        {/* Mobile: About section */}
+        {event.description && (
+          <Card>
+            <CardHeader className="pb-3"><CardTitle className="text-lg">About this Event</CardTitle></CardHeader>
+            <CardContent className="pt-0">
+              <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formatRichText(event.description), { ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'ul', 'ol', 'li', 'strong', 'em', 'a', 'blockquote', 'code', 'pre'], ALLOWED_ATTR: ['href', 'title', 'target', 'rel'], ALLOW_DATA_ATTR: false }) }} />
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Mobile: Terms & Conditions */}
+        {event.terms_conditions && (
+          <Collapsible>
             <Card>
-              <CardContent className="p-4">
-                <Link to={`/o/${organizer.slug}`} className="flex items-center gap-3 rounded-lg hover:bg-muted/50 transition-colors -m-1 p-1">
-                  <Avatar className="w-10 h-10 border">
-                    <AvatarImage src={toDisplayUrl(organizer.logo_url, { forceImage: true }) || undefined} alt={organizer.name} />
-                    <AvatarFallback className="bg-primary/10 text-primary">{organizer.name.charAt(0).toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1">
-                      <span className="font-medium truncate text-sm">{organizer.name}</span>
-                      {organizer.is_verified && (<BadgeCheck className="w-4 h-4 text-amber-500 flex-shrink-0" />)}
-                    </div>
-                    <p className="text-xs text-muted-foreground">Event Organizer</p>
+              <CollapsibleTrigger asChild>
+                <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors rounded-t-xl py-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2 text-base"><FileText className="w-4 h-4" />Terms & Conditions</CardTitle>
+                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
                   </div>
-                  <ExternalLink className="w-4 h-4 text-muted-foreground" />
-                </Link>
-              </CardContent>
+                </CardHeader>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <CardContent className="pt-0">
+                  <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap text-muted-foreground" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formatRichText(event.terms_conditions), { ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'ul', 'ol', 'li', 'strong', 'em', 'a', 'blockquote', 'code', 'pre'], ALLOWED_ATTR: ['href', 'title', 'target', 'rel'], ALLOW_DATA_ATTR: false }) }} />
+                </CardContent>
+              </CollapsibleContent>
             </Card>
-          )}
-
-          {/* Mobile: About section */}
-          {event.description && (
-            <Card>
-              <CardHeader className="pb-3"><CardTitle className="text-lg">About this Event</CardTitle></CardHeader>
-              <CardContent className="pt-0">
-                <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formatRichText(event.description), { ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'ul', 'ol', 'li', 'strong', 'em', 'a', 'blockquote', 'code', 'pre'], ALLOWED_ATTR: ['href', 'title', 'target', 'rel'], ALLOW_DATA_ATTR: false }) }} />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Mobile: Terms & Conditions */}
-          {event.terms_conditions && (
-            <Collapsible>
-              <Card>
-                <CollapsibleTrigger asChild>
-                  <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors rounded-t-xl py-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="flex items-center gap-2 text-base"><FileText className="w-4 h-4" />Terms & Conditions</CardTitle>
-                      <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                    </div>
-                  </CardHeader>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <CardContent className="pt-0">
-                    <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap text-muted-foreground" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formatRichText(event.terms_conditions), { ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'ul', 'ol', 'li', 'strong', 'em', 'a', 'blockquote', 'code', 'pre'], ALLOWED_ATTR: ['href', 'title', 'target', 'rel'], ALLOW_DATA_ATTR: false }) }} />
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
-          )}
-        </div>
+          </Collapsible>
+        )}
       </div>
 
+      {/* DESKTOP LAYOUT: Two equal columns - Flyer left, Cards right (sticky) */}
       {/* 
-        DESKTOP LAYOUT: BookMyShow-style isolated scroll
-        - Container has fixed height (viewport - header)
-        - Container has overflow:hidden to disable page scroll
-        - Left column has overflow-y:auto for isolated scrolling  
-        - Right column is self-start (doesn't stretch) and stays fixed in place
-        - Heights are NOT matched between columns
+        STICKY ARCHITECTURE:
+        - Container uses items-stretch (default) so right column matches left column height
+        - Right column wrapper stretches to full height of left column
+        - Sticky div inside right column sticks within that tall wrapper
+        - This creates the scroll boundary sticky needs to work
       */}
-      <div className="hidden lg:flex lg:flex-row lg:gap-6 lg:h-[calc(100vh-5rem)] lg:overflow-hidden container mx-auto px-10 py-6 max-w-6xl">
-        {/* Left column - ISOLATED SCROLL - only this column scrolls */}
-        <div className="flex-1 overflow-y-auto space-y-5 pr-4">
+      <div className="hidden lg:flex lg:flex-row lg:gap-6">
+        {/* Left column - Scrollable content (determines the scroll height) */}
+        <div className="flex-1 space-y-5">
           {/* Desktop: Hero Flyer - 4:5 aspect ratio, no outer spacing */}
           <div className="relative rounded-2xl overflow-hidden bg-muted aspect-[4/5]">
             {event.flyer_url ? (
@@ -638,14 +640,14 @@ const EventDetail = () => {
         </div>
 
         {/* 
-          Right column - INDEPENDENT, does NOT scroll, does NOT stretch
-          - self-start prevents height matching with left column
-          - No overflow, no scroll - completely static
-          - Content stays in one place like BookMyShow
+          Right column - MUST stretch to match left column height (items-stretch default)
+          The sticky div INSIDE this wrapper will stick within the tall container
+          DO NOT add self-start here - it breaks sticky!
         */}
-        <div className="flex-1 self-start space-y-4">
-          {/* Desktop: Title */}
-          <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex-1">
+          <div className="sticky top-20 space-y-4">
+            {/* Desktop: Title */}
+            <div className="flex flex-wrap items-start justify-between gap-3">
               <h1 className="font-display text-xl xl:text-2xl font-bold leading-tight">{event.title}</h1>
               <Button variant="outline" size="icon" className="h-9 w-9" onClick={handleShare}><Share2 className="w-4 h-4" /></Button>
             </div>
@@ -788,9 +790,11 @@ const EventDetail = () => {
                 </CardContent>
               </Card>
             )}
+          </div>
         </div>
       </div>
-    </>
+    </div>
+    </div>
   );
 };
 
