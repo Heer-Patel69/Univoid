@@ -574,7 +574,7 @@ const EventDetail = () => {
       </div>
 
       {/* DESKTOP LAYOUT: Two equal columns - Flyer left, Cards right (sticky) */}
-      <div className="hidden lg:grid lg:grid-cols-2 lg:gap-6">
+      <div className="hidden lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
         {/* Left column - Flyer with 4:5 aspect ratio */}
         <div className="space-y-5">
           {/* Desktop: Hero Flyer - 4:5 aspect ratio, no outer spacing */}
