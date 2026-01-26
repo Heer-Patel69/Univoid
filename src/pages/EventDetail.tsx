@@ -534,14 +534,25 @@ const EventDetail = () => {
           </Card>
         )}
 
-        {/* Mobile: About section */}
+        {/* Mobile: About section - Collapsible */}
         {event.description && (
-          <Card>
-            <CardHeader className="pb-3"><CardTitle className="text-lg">About this Event</CardTitle></CardHeader>
-            <CardContent className="pt-0">
-              <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formatRichText(event.description), { ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'ul', 'ol', 'li', 'strong', 'em', 'a', 'blockquote', 'code', 'pre'], ALLOWED_ATTR: ['href', 'title', 'target', 'rel'], ALLOW_DATA_ATTR: false }) }} />
-            </CardContent>
-          </Card>
+          <Collapsible>
+            <Card>
+              <CollapsibleTrigger asChild>
+                <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors rounded-t-xl py-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2 text-base"><FileText className="w-4 h-4" />About this Event</CardTitle>
+                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                </CardHeader>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <CardContent className="pt-0">
+                  <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formatRichText(event.description), { ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'ul', 'ol', 'li', 'strong', 'em', 'a', 'blockquote', 'code', 'pre'], ALLOWED_ATTR: ['href', 'title', 'target', 'rel'], ALLOW_DATA_ATTR: false }) }} />
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
         )}
 
         {/* Mobile: Terms & Conditions */}
@@ -600,14 +611,25 @@ const EventDetail = () => {
             </div>
           </div>
 
-          {/* Desktop: About section */}
+          {/* Desktop: About section - Collapsible */}
           {event.description && (
-            <Card>
-              <CardHeader className="pb-3"><CardTitle className="text-lg">About this Event</CardTitle></CardHeader>
-              <CardContent className="pt-0">
-                <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formatRichText(event.description), { ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'ul', 'ol', 'li', 'strong', 'em', 'a', 'blockquote', 'code', 'pre'], ALLOWED_ATTR: ['href', 'title', 'target', 'rel'], ALLOW_DATA_ATTR: false }) }} />
-              </CardContent>
-            </Card>
+            <Collapsible>
+              <Card>
+                <CollapsibleTrigger asChild>
+                  <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors rounded-t-xl py-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-2 text-base"><FileText className="w-4 h-4" />About this Event</CardTitle>
+                      <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="pt-0">
+                    <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formatRichText(event.description), { ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'ul', 'ol', 'li', 'strong', 'em', 'a', 'blockquote', 'code', 'pre'], ALLOWED_ATTR: ['href', 'title', 'target', 'rel'], ALLOW_DATA_ATTR: false }) }} />
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
           )}
 
           {/* Desktop: Terms & Conditions */}
