@@ -577,17 +577,17 @@ const EventDetail = () => {
       <div className="hidden lg:grid lg:grid-cols-[1fr_380px] lg:gap-0 lg:items-start">
         {/* Left column - Flyer fills entire width with NO gaps */}
         <div className="space-y-5 pr-5">
-          {/* Desktop: Hero Flyer - fills full column width */}
-          <div className="relative rounded-2xl overflow-hidden bg-muted">
+          {/* Desktop: Hero Flyer - 4:5 aspect ratio, no outer spacing */}
+          <div className="relative rounded-2xl overflow-hidden bg-muted aspect-[4/5]">
             {event.flyer_url ? (
               <img 
                 src={toDisplayUrl(event.flyer_url, { forceImage: true }) || undefined} 
                 alt={event.title} 
-                className="w-full max-h-[75vh] object-cover rounded-2xl" 
+                className="w-full h-full object-cover" 
                 loading="eager" 
               />
             ) : (
-              <div className="w-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/30" style={{ aspectRatio: '4/5', maxHeight: '75vh' }}>
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/30">
                 <Calendar className="w-24 h-24 text-primary/50" />
               </div>
             )}
