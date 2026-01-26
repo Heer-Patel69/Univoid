@@ -361,11 +361,10 @@ const EventDetail = () => {
         structuredData={eventStructuredData}
         keywords={[event.category, event.event_type, "college event", "campus event", "student event"]}
       />
-      <div className="container mx-auto px-5 lg:px-10 pt-3 pb-24 md:pb-8 max-w-6xl">
-      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
-
-      {/* MOBILE LAYOUT: Stacked - Registration first, then flyer, then description */}
-      <div className="lg:hidden space-y-5">
+      {/* Mobile: Regular scrollable layout */}
+      <div className="lg:hidden">
+        <div className="container mx-auto px-5 pt-3 pb-24 max-w-6xl space-y-5">
+          <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
         {/* Mobile: Flyer first */}
         <div className="relative rounded-3xl overflow-hidden bg-muted w-full">
           {event.flyer_url ? (
@@ -576,19 +575,22 @@ const EventDetail = () => {
             </Card>
           </Collapsible>
         )}
+        </div>
       </div>
 
-      {/* DESKTOP LAYOUT: Two equal columns - Flyer left, Cards right (sticky) */}
+      {/* DESKTOP LAYOUT: Fixed viewport, left column scrolls internally, right column fixed */}
       {/* 
-        STICKY ARCHITECTURE:
-        - Container uses items-stretch (default) so right column matches left column height
-        - Right column wrapper stretches to full height of left column
-        - Sticky div inside right column sticks within that tall wrapper
-        - This creates the scroll boundary sticky needs to work
+        FIXED VIEWPORT ARCHITECTURE:
+        - Container fills viewport height (100vh - header)
+        - Left column has internal scroll with hidden scrollbar
+        - Right column is static, does not scroll
+        - Page itself does not scroll on desktop
       */}
-      <div className="hidden lg:flex lg:flex-row lg:gap-6">
-        {/* Left column - Scrollable content (determines the scroll height) */}
-        <div className="flex-1 space-y-5">
+      <div className="hidden lg:flex lg:flex-row lg:gap-6 lg:h-[calc(100vh-5rem)] container mx-auto px-10 max-w-6xl pt-3">
+        <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+        
+        {/* Left column - Internal scroll, hidden scrollbar */}
+        <div className="flex-1 overflow-y-auto scrollbar-hide pr-2 space-y-5 pb-8" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           {/* Desktop: Hero Flyer - 4:5 aspect ratio, no outer spacing */}
           <div className="relative rounded-2xl overflow-hidden bg-muted aspect-[4/5]">
             {event.flyer_url ? (
@@ -653,13 +655,9 @@ const EventDetail = () => {
           )}
         </div>
 
-        {/* 
-          Right column - MUST stretch to match left column height (items-stretch default)
-          The sticky div INSIDE this wrapper will stick within the tall container
-          DO NOT add self-start here - it breaks sticky!
-        */}
-        <div className="flex-1">
-          <div className="sticky top-20 space-y-4">
+        {/* Right column - Fixed, no scroll, aligned to top */}
+        <div className="flex-1 pt-0">
+          <div className="space-y-4">
             {/* Desktop: Title */}
             <div className="flex flex-wrap items-start justify-between gap-3">
               <h1 className="font-display text-xl xl:text-2xl font-bold leading-tight">{event.title}</h1>
@@ -807,7 +805,6 @@ const EventDetail = () => {
           </div>
         </div>
       </div>
-    </div>
     </div>
   );
 };
