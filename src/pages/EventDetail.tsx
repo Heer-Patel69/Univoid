@@ -632,9 +632,8 @@ const EventDetail = () => {
           )}
         </div>
 
-        {/* Right column - STICKY Registration + Organizer cards (equal width) */}
-        <div className="relative">
-          <div className="lg:sticky lg:top-20 space-y-4">
+        {/* Right column - STICKY Registration + Organizer cards */}
+        <div className="lg:sticky lg:top-20 lg:self-start space-y-4">
             {/* Desktop: Title */}
             <div className="flex flex-wrap items-start justify-between gap-3">
               <h1 className="font-display text-xl xl:text-2xl font-bold leading-tight">{event.title}</h1>
@@ -781,7 +780,6 @@ const EventDetail = () => {
             )}
           </div>
         </div>
-      </div>
       </div>
     </div>
   );
