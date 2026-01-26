@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format, isPast } from "date-fns";
@@ -62,6 +62,9 @@ const EventDetail = () => {
   // Description expand state (WordPress-style read more)
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [membershipId, setMembershipId] = useState<string | null>(null);
+  
+  // Ref for left column scroll container (desktop scroll ownership)
+  const leftColumnRef = useRef<HTMLDivElement>(null);
 
   const handlePriceChange = useCallback((price: number, clubId: string | null, memId: string | null) => {
     setSelectedPrice(price);
@@ -76,6 +79,21 @@ const EventDetail = () => {
     enabled: !!eventId,
     staleTime: 5 * 60 * 1000,
   });
+
+  // Lock body scroll on desktop for this page - scroll ownership control
+  useEffect(() => {
+    const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
+    if (isDesktop && event) {
+      // Lock body scroll
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+    }
+    return () => {
+      // Restore on unmount
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    };
+  }, [event]);
 
   // Redirect from ID to slug for SEO (canonical URLs)
   useEffect(() => {
@@ -578,19 +596,33 @@ const EventDetail = () => {
         </div>
       </div>
 
-      {/* DESKTOP LAYOUT: Fixed viewport, left column scrolls internally, right column fixed */}
+      {/* DESKTOP LAYOUT: Fixed viewport with scroll ownership control */}
       {/* 
-        FIXED VIEWPORT ARCHITECTURE:
-        - Container fills viewport height (100vh - header)
-        - Left column has internal scroll with hidden scrollbar
-        - Right column is static, does not scroll
-        - Page itself does not scroll on desktop
+        SCROLL OWNERSHIP ARCHITECTURE:
+        - Entire container captures wheel events and routes to left column
+        - Body scroll is locked via useEffect
+        - Left column is the ONLY scrollable element
+        - Right column is fixed and never scrolls
+        - Footer is unreachable until left column content is exhausted
       */}
-      <div className="hidden lg:flex lg:flex-row lg:gap-6 lg:h-[calc(100vh-5rem)] container mx-auto px-10 max-w-6xl pt-3">
+      <div 
+        className="hidden lg:flex lg:flex-row lg:gap-6 lg:h-[calc(100vh-5rem)] container mx-auto px-10 max-w-6xl pt-3"
+        onWheel={(e) => {
+          // Capture ALL wheel events and route to left column
+          if (leftColumnRef.current) {
+            leftColumnRef.current.scrollTop += e.deltaY;
+            e.preventDefault();
+          }
+        }}
+      >
         <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
         
-        {/* Left column - Internal scroll, hidden scrollbar */}
-        <div className="flex-1 overflow-y-auto scrollbar-hide pr-2 space-y-5 pb-8" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        {/* Left column - Internal scroll, hidden scrollbar, receives delegated scroll */}
+        <div 
+          ref={leftColumnRef}
+          className="flex-1 overflow-y-auto scrollbar-hide pr-2 space-y-5 pb-8" 
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
           {/* Desktop: Hero Flyer - 4:5 aspect ratio, no outer spacing */}
           <div className="relative rounded-2xl overflow-hidden bg-muted aspect-[4/5]">
             {event.flyer_url ? (
