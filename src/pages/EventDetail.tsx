@@ -58,6 +58,9 @@ const EventDetail = () => {
   // Club membership state
   const [selectedPrice, setSelectedPrice] = useState<number | null>(null);
   const [selectedClubId, setSelectedClubId] = useState<string | null>(null);
+  
+  // Description expand state (WordPress-style read more)
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [membershipId, setMembershipId] = useState<string | null>(null);
 
   const handlePriceChange = useCallback((price: number, clubId: string | null, memId: string | null) => {
@@ -534,25 +537,23 @@ const EventDetail = () => {
           </Card>
         )}
 
-        {/* Mobile: About section - Collapsible */}
+        {/* Mobile: About section - WordPress-style inline expand */}
         {event.description && (
-          <Collapsible>
-            <Card>
-              <CollapsibleTrigger asChild>
-                <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors rounded-t-xl py-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2 text-base"><FileText className="w-4 h-4" />About this Event</CardTitle>
-                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                  </div>
-                </CardHeader>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <CardContent className="pt-0">
-                  <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formatRichText(event.description), { ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'ul', 'ol', 'li', 'strong', 'em', 'a', 'blockquote', 'code', 'pre'], ALLOWED_ATTR: ['href', 'title', 'target', 'rel'], ALLOW_DATA_ATTR: false }) }} />
-                </CardContent>
-              </CollapsibleContent>
-            </Card>
-          </Collapsible>
+          <Card>
+            <CardHeader className="pb-3"><CardTitle className="text-lg">About this Event</CardTitle></CardHeader>
+            <CardContent className="pt-0">
+              <div 
+                className={`prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap transition-all duration-300 ${!isDescriptionExpanded ? 'line-clamp-5' : ''}`} 
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formatRichText(event.description), { ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'ul', 'ol', 'li', 'strong', 'em', 'a', 'blockquote', 'code', 'pre'], ALLOWED_ATTR: ['href', 'title', 'target', 'rel'], ALLOW_DATA_ATTR: false }) }} 
+              />
+              <button 
+                onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                className="text-primary text-sm font-medium mt-2 hover:underline focus:outline-none"
+              >
+                {isDescriptionExpanded ? 'Read less' : 'Read more'}
+              </button>
+            </CardContent>
+          </Card>
         )}
 
         {/* Mobile: Terms & Conditions */}
@@ -611,25 +612,23 @@ const EventDetail = () => {
             </div>
           </div>
 
-          {/* Desktop: About section - Collapsible */}
+          {/* Desktop: About section - WordPress-style inline expand */}
           {event.description && (
-            <Collapsible>
-              <Card>
-                <CollapsibleTrigger asChild>
-                  <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors rounded-t-xl py-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="flex items-center gap-2 text-base"><FileText className="w-4 h-4" />About this Event</CardTitle>
-                      <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                    </div>
-                  </CardHeader>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <CardContent className="pt-0">
-                    <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formatRichText(event.description), { ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'ul', 'ol', 'li', 'strong', 'em', 'a', 'blockquote', 'code', 'pre'], ALLOWED_ATTR: ['href', 'title', 'target', 'rel'], ALLOW_DATA_ATTR: false }) }} />
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
+            <Card>
+              <CardHeader className="pb-3"><CardTitle className="text-lg">About this Event</CardTitle></CardHeader>
+              <CardContent className="pt-0">
+                <div 
+                  className={`prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap transition-all duration-300 ${!isDescriptionExpanded ? 'line-clamp-5' : ''}`} 
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formatRichText(event.description), { ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'ul', 'ol', 'li', 'strong', 'em', 'a', 'blockquote', 'code', 'pre'], ALLOWED_ATTR: ['href', 'title', 'target', 'rel'], ALLOW_DATA_ATTR: false }) }} 
+                />
+                <button 
+                  onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                  className="text-primary text-sm font-medium mt-2 hover:underline focus:outline-none"
+                >
+                  {isDescriptionExpanded ? 'Read less' : 'Read more'}
+                </button>
+              </CardContent>
+            </Card>
           )}
 
           {/* Desktop: Terms & Conditions */}
