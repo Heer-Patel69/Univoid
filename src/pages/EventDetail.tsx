@@ -358,7 +358,7 @@ const EventDetail = () => {
         structuredData={eventStructuredData}
         keywords={[event.category, event.event_type, "college event", "campus event", "student event"]}
       />
-      <div className="container mx-auto px-4 py-6 pb-24 md:pb-8 max-w-6xl">
+      <div className="container mx-auto px-4 py-6 pb-24 md:pb-8 max-w-5xl">
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
 
       <PageBreadcrumb 
@@ -368,10 +368,10 @@ const EventDetail = () => {
         ]} 
       />
 
-      {/* Desktop: Flyer left (fixed width), Info right. Mobile: Stacked */}
-      <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
-        {/* Left column: Flyer - Fixed 4:5 container on desktop */}
-        <div className="w-full lg:w-[400px] xl:w-[450px] flex-shrink-0 space-y-6">
+      {/* Desktop: Flyer left, Info right. Mobile: Stacked */}
+      <div className="flex flex-col lg:flex-row gap-5 lg:gap-6">
+        {/* Left column: Flyer */}
+        <div className="w-full lg:w-[340px] xl:w-[380px] flex-shrink-0 space-y-5">
           {/* Flyer - STRICT 4:5 aspect ratio container */}
           <div 
             className="relative rounded-3xl overflow-hidden bg-muted w-full"
@@ -468,8 +468,7 @@ const EventDetail = () => {
         </div>
 
         {/* Right column: Info Card + About (mobile) */}
-        {/* On mobile: Registration card comes FIRST, then About section */}
-        <div className="flex-1 min-w-0 space-y-6 flex flex-col">
+        <div className="flex-1 min-w-0 space-y-5 flex flex-col">
           {/* Title - Desktop only */}
           <div className="hidden lg:flex flex-wrap items-start justify-between gap-4">
             <h1 className="font-display text-2xl md:text-3xl font-bold">{event.title}</h1>

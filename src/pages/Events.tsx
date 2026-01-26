@@ -142,7 +142,7 @@ const Events = () => {
         url="/events"
         keywords={seoData.keywords}
       />
-      <main className="container mx-auto px-4 py-6 max-w-[1600px]">
+      <main className="container mx-auto px-4 py-6 max-w-5xl">
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div>
@@ -192,8 +192,8 @@ const Events = () => {
         </div>
 
         {isLoading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-stretch">
-            {Array.from({ length: 8 }).map((_, i) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
+            {Array.from({ length: 6 }).map((_, i) => (
               <EventCardSkeleton key={i} />
             ))}
           </div>
@@ -205,7 +205,7 @@ const Events = () => {
               <h2 className="font-display text-xl font-semibold">Upcoming Events</h2>
               <Badge variant="secondary">{upcomingEvents.length}</Badge>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-stretch">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
               {upcomingEvents.map((event) => (
                 <EventCard key={event.id} event={event} />
               ))}
