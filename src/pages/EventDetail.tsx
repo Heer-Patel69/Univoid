@@ -358,7 +358,7 @@ const EventDetail = () => {
         structuredData={eventStructuredData}
         keywords={[event.category, event.event_type, "college event", "campus event", "student event"]}
       />
-      <div className="container mx-auto px-4 lg:px-8 py-6 pb-24 md:pb-8 max-w-7xl">
+      <div className="container mx-auto px-5 lg:px-10 py-6 pb-24 md:pb-8 max-w-6xl">
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
 
       <PageBreadcrumb 
