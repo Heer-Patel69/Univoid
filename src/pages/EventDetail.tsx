@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format, isPast } from "date-fns";
@@ -62,6 +62,60 @@ const EventDetail = () => {
   // Description expand state (WordPress-style read more)
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [membershipId, setMembershipId] = useState<string | null>(null);
+  
+  // Refs for scroll capture system (BookMyShow-style)
+  const leftColumnRef = useRef<HTMLDivElement>(null);
+  const desktopContainerRef = useRef<HTMLDivElement>(null);
+  const [isLeftColumnFullyScrolled, setIsLeftColumnFullyScrolled] = useState(false);
+
+  // Scroll capture: forward all scroll to left column first, then body
+  useEffect(() => {
+    const container = desktopContainerRef.current;
+    const leftColumn = leftColumnRef.current;
+    if (!container || !leftColumn) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      const { scrollTop, scrollHeight, clientHeight } = leftColumn;
+      const isAtBottom = scrollTop + clientHeight >= scrollHeight - 2;
+      const isAtTop = scrollTop <= 2;
+      
+      // Scrolling down
+      if (e.deltaY > 0) {
+        if (!isAtBottom) {
+          // Left column not fully scrolled - consume scroll
+          e.preventDefault();
+          leftColumn.scrollTop += e.deltaY;
+          setIsLeftColumnFullyScrolled(false);
+        } else {
+          // Left column fully scrolled - allow body scroll
+          setIsLeftColumnFullyScrolled(true);
+        }
+      }
+      // Scrolling up
+      else if (e.deltaY < 0) {
+        if (!isAtTop) {
+          // Left column not at top - consume scroll
+          e.preventDefault();
+          leftColumn.scrollTop += e.deltaY;
+          setIsLeftColumnFullyScrolled(false);
+        }
+      }
+    };
+
+    // Track left column scroll state
+    const handleLeftColumnScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = leftColumn;
+      setIsLeftColumnFullyScrolled(scrollTop + clientHeight >= scrollHeight - 2);
+    };
+
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    leftColumn.addEventListener('scroll', handleLeftColumnScroll);
+
+    return () => {
+      container.removeEventListener('wheel', handleWheel);
+      leftColumn.removeEventListener('scroll', handleLeftColumnScroll);
+    };
+  }, []);
 
   const handlePriceChange = useCallback((price: number, clubId: string | null, memId: string | null) => {
     setSelectedPrice(price);
@@ -578,19 +632,26 @@ const EventDetail = () => {
         </div>
       </div>
 
-      {/* DESKTOP LAYOUT: Fixed viewport, left column scrolls internally, right column fixed */}
+      {/* DESKTOP LAYOUT: Scroll capture system - scroll anywhere scrolls left column first */}
       {/* 
-        FIXED VIEWPORT ARCHITECTURE:
-        - Container fills viewport height (100vh - header)
-        - Left column has internal scroll with hidden scrollbar
-        - Right column is static, does not scroll
-        - Page itself does not scroll on desktop
+        BOOKMYSHOW-STYLE SCROLL:
+        - Container captures all wheel events
+        - Scroll is forwarded to left column first
+        - Only when left column is fully scrolled, body scroll starts
+        - Footer appears last, naturally
       */}
-      <div className="hidden lg:flex lg:flex-row lg:gap-6 lg:h-[calc(100vh-5rem)] container mx-auto px-10 max-w-6xl pt-3">
+      <div 
+        ref={desktopContainerRef}
+        className="hidden lg:flex lg:flex-row lg:gap-6 lg:min-h-[calc(100vh-5rem)] container mx-auto px-10 max-w-6xl pt-3"
+      >
         <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
         
-        {/* Left column - Internal scroll, hidden scrollbar */}
-        <div className="flex-1 overflow-y-auto scrollbar-hide pr-2 space-y-5 pb-8" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        {/* Left column - Primary scroll target, hidden scrollbar */}
+        <div 
+          ref={leftColumnRef}
+          className="flex-1 overflow-y-auto pr-2 space-y-5 pb-8" 
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', maxHeight: 'calc(100vh - 5rem)' }}
+        >
           {/* Desktop: Hero Flyer - 4:5 aspect ratio, no outer spacing */}
           <div className="relative rounded-2xl overflow-hidden bg-muted aspect-[4/5]">
             {event.flyer_url ? (
@@ -655,8 +716,8 @@ const EventDetail = () => {
           )}
         </div>
 
-        {/* Right column - Fixed, no scroll, aligned to top */}
-        <div className="flex-1 pt-0">
+        {/* Right column - Sticky, stays fixed while left column scrolls */}
+        <div className="flex-1 sticky top-20 self-start" style={{ maxHeight: 'calc(100vh - 6rem)' }}>
           <div className="space-y-4">
             {/* Desktop: Title */}
             <div className="flex flex-wrap items-start justify-between gap-3">
