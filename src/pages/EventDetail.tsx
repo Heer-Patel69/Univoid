@@ -368,11 +368,11 @@ const EventDetail = () => {
         ]} 
       />
 
-      {/* Desktop: Flyer left, Info right. Mobile: Stacked */}
-      <div className="flex flex-col lg:flex-row gap-5 lg:gap-6">
-        {/* Left column: Flyer */}
-        <div className="w-full lg:w-[340px] xl:w-[380px] flex-shrink-0 space-y-5">
-          {/* Flyer - STRICT 4:5 aspect ratio container */}
+      {/* Desktop: Large flyer left, Sticky sidebar right. Mobile: Stacked */}
+      <div className="flex flex-col lg:flex-row gap-5 lg:gap-8">
+        {/* Left column: Large Flyer + Description + Terms (scrollable content) */}
+        <div className="flex-1 min-w-0 space-y-5">
+          {/* Flyer - Large, main visual focus */}
           <div 
             className="relative rounded-3xl overflow-hidden bg-muted w-full"
             style={{ aspectRatio: '4/5' }}
@@ -398,7 +398,7 @@ const EventDetail = () => {
             </div>
           </div>
 
-          {/* Title and Share - Mobile shows here, Desktop in sidebar */}
+          {/* Title and Share - Mobile shows here */}
           <div className="lg:hidden">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <h1 className="font-display text-2xl md:text-3xl font-bold">{event.title}</h1>
@@ -410,8 +410,8 @@ const EventDetail = () => {
           <div className="hidden lg:block space-y-4">
             {event.description && (
               <Card>
-                <CardHeader><CardTitle>About this Event</CardTitle></CardHeader>
-                <CardContent>
+                <CardHeader className="pb-3"><CardTitle className="text-lg">About this Event</CardTitle></CardHeader>
+                <CardContent className="pt-0">
                   <div 
                     className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap" 
                     dangerouslySetInnerHTML={{ 
@@ -434,7 +434,7 @@ const EventDetail = () => {
               <Collapsible>
                 <Card>
                   <CollapsibleTrigger asChild>
-                    <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors rounded-t-xl">
+                    <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors rounded-t-xl py-3">
                       <div className="flex items-center justify-between">
                         <CardTitle className="flex items-center gap-2 text-base">
                           <FileText className="w-4 h-4" />
@@ -467,110 +467,85 @@ const EventDetail = () => {
           </div>
         </div>
 
-        {/* Right column: Info Card + About (mobile) */}
-        <div className="flex-1 min-w-0 space-y-5 flex flex-col">
+        {/* Right column: Sticky sidebar with Registration + Organizer cards */}
+        <div className="w-full lg:w-[320px] xl:w-[340px] flex-shrink-0 space-y-4 flex flex-col">
           {/* Title - Desktop only */}
-          <div className="hidden lg:flex flex-wrap items-start justify-between gap-4">
-            <h1 className="font-display text-2xl md:text-3xl font-bold">{event.title}</h1>
-            <Button variant="outline" size="icon" onClick={handleShare}><Share2 className="w-4 h-4" /></Button>
+          <div className="hidden lg:flex flex-wrap items-start justify-between gap-3">
+            <h1 className="font-display text-xl xl:text-2xl font-bold leading-tight">{event.title}</h1>
+            <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleShare}><Share2 className="w-4 h-4" /></Button>
           </div>
 
-          {/* Sidebar Info Card - Shows first on mobile (order-1), natural on desktop */}
-          <div className="order-1 lg:order-none">
-          <Card className="lg:sticky lg:top-20">
-            <CardContent className="p-6 space-y-4">
-              {/* Organizer Info */}
-              {organizer && (
-                <Link 
-                  to={`/o/${organizer.slug}`}
-                  className="flex items-center gap-3 p-3 -mx-3 rounded-xl hover:bg-muted/50 transition-colors"
-                >
-                  <Avatar className="w-10 h-10 border">
-                    <AvatarImage src={toDisplayUrl(organizer.logo_url, { forceImage: true }) || undefined} alt={organizer.name} />
-                    <AvatarFallback className="bg-primary/10 text-primary">
-                      {organizer.name.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1">
-                      <span className="font-medium truncate">{organizer.name}</span>
-                      {organizer.is_verified && (
-                        <BadgeCheck className="w-4 h-4 text-amber-500 flex-shrink-0" />
+          {/* Sticky wrapper for desktop */}
+          <div className="lg:sticky lg:top-20 space-y-4">
+            {/* Compact Registration Card */}
+            <div className="order-1 lg:order-none">
+              <Card>
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Price</span>
+                    <span className="text-xl font-bold flex items-center">
+                      {event.is_paid ? (<><IndianRupee className="w-4 h-4" />{event.price}</>) : (<Badge variant="secondary">Free</Badge>)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-start gap-2.5 text-sm">
+                    <Calendar className="w-4 h-4 mt-0.5 text-muted-foreground flex-shrink-0" />
+                    <div>
+                      <p className="font-medium">{format(new Date(event.start_date), "EEE, MMM d, yyyy")}</p>
+                      <p className="text-xs text-muted-foreground">{format(new Date(event.start_date), "h:mm a")}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-2.5 text-sm">
+                    <MapPin className="w-4 h-4 mt-0.5 text-muted-foreground flex-shrink-0" />
+                    <div className="min-w-0">
+                      {(event as any).city && (event as any).state && (
+                        <p className="font-medium">{(event as any).city}, {(event as any).state}</p>
+                      )}
+                      {event.is_location_decided ? (
+                        <>
+                          <p className={`truncate ${(event as any).city ? 'text-xs text-muted-foreground' : 'font-medium'}`}>{event.venue_name}</p>
+                          {event.maps_link && (
+                            <a href={event.maps_link} target="_blank" rel="noopener noreferrer" className="text-xs text-primary flex items-center gap-1 hover:underline">
+                              Open in Maps <ExternalLink className="w-3 h-3" />
+                            </a>
+                          )}
+                        </>
+                      ) : !((event as any).city && (event as any).state) && (
+                        <p className="text-muted-foreground">Location TBA</p>
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground">Organizer</p>
                   </div>
-                  <ExternalLink className="w-4 h-4 text-muted-foreground" />
-                </Link>
-              )}
 
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Price</span>
-                <span className="text-2xl font-bold flex items-center">
-                  {event.is_paid ? (<><IndianRupee className="w-5 h-5" />{event.price}</>) : (<Badge variant="secondary" className="text-lg">Free</Badge>)}
-                </span>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <Calendar className="w-5 h-5 mt-0.5 text-muted-foreground" />
-                <div>
-                  <p className="font-medium">{format(new Date(event.start_date), "EEEE, MMMM d, yyyy")}</p>
-                  <p className="text-sm text-muted-foreground">{format(new Date(event.start_date), "h:mm a")}</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <MapPin className="w-5 h-5 mt-0.5 text-muted-foreground" />
-                <div>
-                  {/* City & State */}
-                  {(event as any).city && (event as any).state && (
-                    <p className="font-medium">{(event as any).city}, {(event as any).state}</p>
-                  )}
-                  {event.is_location_decided ? (
-                    <>
-                      <p className={`${(event as any).city ? 'text-sm text-muted-foreground' : 'font-medium'}`}>{event.venue_name}</p>
-                      <p className="text-sm text-muted-foreground">{event.venue_address}</p>
-                      {event.maps_link && (
-                        <a href={event.maps_link} target="_blank" rel="noopener noreferrer" className="text-sm text-primary flex items-center gap-1 mt-1 hover:underline">
-                          Open in Maps <ExternalLink className="w-3 h-3" />
-                        </a>
-                      )}
-                    </>
-                  ) : !((event as any).city && (event as any).state) && (
-                    <p className="text-muted-foreground">Location TBA</p>
-                  )}
-                </div>
-              </div>
-
-              {effectiveCapacity && (
-                <div className="flex items-center gap-3">
-                  <Users className="w-5 h-5 text-muted-foreground" />
-                  <div className="flex-1">
-                    <div className="flex justify-between text-sm mb-1">
-                      <span>{effectiveRegistrations} registered</span>
-                      <span>{effectiveCapacity} spots</span>
+                  {effectiveCapacity && (
+                    <div className="flex items-center gap-2.5 text-sm">
+                      <Users className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                      <div className="flex-1">
+                        <div className="flex justify-between text-xs mb-1">
+                          <span>{effectiveRegistrations} registered</span>
+                          <span>{effectiveCapacity} spots</span>
+                        </div>
+                        <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full transition-all ${isFullNow ? "bg-destructive" : "bg-primary"}`} style={{ width: `${Math.min((effectiveRegistrations / effectiveCapacity) * 100, 100)}%` }} />
+                        </div>
+                        {spotsRemaining !== null && spotsRemaining <= 10 && spotsRemaining > 0 && (
+                          <p className="text-xs text-destructive mt-1">Only {spotsRemaining} spots left!</p>
+                        )}
+                      </div>
                     </div>
-                    <div className="h-2 bg-muted rounded-full overflow-hidden">
-                      <div className={`h-full rounded-full transition-all ${isFullNow ? "bg-destructive" : "bg-primary"}`} style={{ width: `${Math.min((effectiveRegistrations / effectiveCapacity) * 100, 100)}%` }} />
-                    </div>
-                    {spotsRemaining !== null && spotsRemaining <= 10 && spotsRemaining > 0 && (
-                      <p className="text-xs text-destructive mt-1">Only {spotsRemaining} spots left!</p>
-                    )}
-                  </div>
-                </div>
-              )}
+                  )}
 
-              {existingRegistration && (
-                <div className={`p-3 rounded-xl flex items-center gap-2 ${
-                  existingRegistration.payment_status === "approved" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
-                  : existingRegistration.payment_status === "rejected" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
-                  : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300"
-                }`}>
-                  {existingRegistration.payment_status === "approved" ? (<><CheckCircle className="w-5 h-5" /><span>You're registered!</span></>) 
-                  : existingRegistration.payment_status === "rejected" ? (<><AlertCircle className="w-5 h-5" /><span>Registration rejected</span></>)
-                  : (<><Clock className="w-5 h-5" /><span>Payment pending</span></>)}
-                </div>
-              )}
+                  {existingRegistration && (
+                    <div className={`p-2.5 rounded-lg flex items-center gap-2 text-sm ${
+                      existingRegistration.payment_status === "approved" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                      : existingRegistration.payment_status === "rejected" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                      : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300"
+                    }`}>
+                      {existingRegistration.payment_status === "approved" ? (<><CheckCircle className="w-4 h-4" /><span>You're registered!</span></>) 
+                      : existingRegistration.payment_status === "rejected" ? (<><AlertCircle className="w-4 h-4" /><span>Registration rejected</span></>)
+                      : (<><Clock className="w-4 h-4" /><span>Payment pending</span></>)}
+                    </div>
+                  )}
 
                 {!existingRegistration && (
                 <div className="space-y-3">
@@ -731,16 +706,46 @@ const EventDetail = () => {
                   </Dialog>
                 </div>
               )}
-            </CardContent>
-          </Card>
-          </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Separate Organizer Card - Below registration */}
+            {organizer && (
+              <Card>
+                <CardContent className="p-4">
+                  <Link 
+                    to={`/o/${organizer.slug}`}
+                    className="flex items-center gap-3 rounded-lg hover:bg-muted/50 transition-colors -m-1 p-1"
+                  >
+                    <Avatar className="w-10 h-10 border">
+                      <AvatarImage src={toDisplayUrl(organizer.logo_url, { forceImage: true }) || undefined} alt={organizer.name} />
+                      <AvatarFallback className="bg-primary/10 text-primary">
+                        {organizer.name.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1">
+                        <span className="font-medium truncate text-sm">{organizer.name}</span>
+                        {organizer.is_verified && (
+                          <BadgeCheck className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">Event Organizer</p>
+                    </div>
+                    <ExternalLink className="w-4 h-4 text-muted-foreground" />
+                  </Link>
+                </CardContent>
+              </Card>
+            )}
+          </div>{/* End sticky wrapper */}
 
           {/* About section - Mobile shows AFTER registration card (order-2) */}
           <div className="lg:hidden order-2 space-y-4">
             {event.description && (
               <Card>
-                <CardHeader><CardTitle>About this Event</CardTitle></CardHeader>
-                <CardContent>
+                <CardHeader className="pb-3"><CardTitle className="text-lg">About this Event</CardTitle></CardHeader>
+                <CardContent className="pt-0">
                   <div 
                     className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap" 
                     dangerouslySetInnerHTML={{ 
@@ -763,7 +768,7 @@ const EventDetail = () => {
               <Collapsible>
                 <Card>
                   <CollapsibleTrigger asChild>
-                    <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors rounded-t-xl">
+                    <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors rounded-t-xl py-3">
                       <div className="flex items-center justify-between">
                         <CardTitle className="flex items-center gap-2 text-base">
                           <FileText className="w-4 h-4" />
@@ -794,7 +799,7 @@ const EventDetail = () => {
               </Collapsible>
             )}
           </div>
-        </div>
+        </div>{/* End right column */}
       </div>
       </div>
     </div>
