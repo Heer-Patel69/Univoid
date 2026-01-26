@@ -574,9 +574,9 @@ const EventDetail = () => {
       </div>
 
       {/* DESKTOP LAYOUT: Two equal columns - Flyer left, Cards right (sticky) */}
-      <div className="hidden lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start lg:align-start" style={{ alignItems: 'start' }}>
-        {/* Left column - Flyer with 4:5 aspect ratio */}
-        <div className="space-y-5">
+      <div className="hidden lg:flex lg:flex-row lg:gap-6">
+        {/* Left column - Flyer with 4:5 aspect ratio - takes half width, scrolls naturally */}
+        <div className="flex-1 space-y-5">
           {/* Desktop: Hero Flyer - 4:5 aspect ratio, no outer spacing */}
           <div className="relative rounded-2xl overflow-hidden bg-muted aspect-[4/5]">
             {event.flyer_url ? (
@@ -632,9 +632,9 @@ const EventDetail = () => {
           )}
         </div>
 
-        {/* Right column - Sticky content that stays in viewport while scrolling */}
-        <div className="relative" style={{ alignSelf: 'start' }}>
-          <div className="lg:sticky lg:top-20 space-y-4">
+        {/* Right column - Fixed width, self-start prevents stretching, sticky content inside */}
+        <div className="flex-1 self-start">
+          <div className="sticky top-20 space-y-4">
             {/* Desktop: Title */}
             <div className="flex flex-wrap items-start justify-between gap-3">
               <h1 className="font-display text-xl xl:text-2xl font-bold leading-tight">{event.title}</h1>
