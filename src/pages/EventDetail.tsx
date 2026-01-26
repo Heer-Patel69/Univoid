@@ -80,30 +80,7 @@ const EventDetail = () => {
   // Lock body scroll on desktop using the dedicated hook
   useBodyScrollLock(isDesktopView);
 
-  // Capture wheel events and forward to left column on desktop - pure native
-  useEffect(() => {
-    if (!isDesktopView) return;
-
-    const handleGlobalWheel = (e: WheelEvent) => {
-      const leftColumn = leftColumnRef.current;
-      if (!leftColumn) return;
-
-      const { scrollTop, scrollHeight, clientHeight } = leftColumn;
-      const canScrollDown = scrollTop + clientHeight < scrollHeight;
-      const canScrollUp = scrollTop > 0;
-      
-      if ((e.deltaY > 0 && canScrollDown) || (e.deltaY < 0 && canScrollUp)) {
-        e.preventDefault();
-        leftColumn.scrollTop += e.deltaY;
-      }
-    };
-
-    document.addEventListener('wheel', handleGlobalWheel, { passive: false, capture: true });
-    
-    return () => {
-      document.removeEventListener('wheel', handleGlobalWheel, { capture: true });
-    };
-  }, [isDesktopView]);
+  // Native scroll - no JS interception, browser handles all scroll physics naturally
 
   const handlePriceChange = useCallback((price: number, clubId: string | null, memId: string | null) => {
     setSelectedPrice(price);
