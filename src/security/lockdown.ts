@@ -12,8 +12,13 @@ const FORBIDDEN_DOMAINS = [
 ];
 
 export function initSecurityLockdown(): void {
-  // Run only in production
-  if (import.meta.env?.MODE !== 'production') return;
+  // Run only on published production site, NOT in Lovable preview/editor
+  const hostname = window.location.hostname;
+  const isLovablePreview = hostname.includes('id-preview--') || hostname.includes('preview--');
+  const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+  
+  // Skip lockdown in development, localhost, or Lovable preview environments
+  if (import.meta.env?.MODE !== 'production' || isLovablePreview || isLocalhost) return;
 
   blockLovableAsideAtSource();
   killLovableAsideOnInsert();
