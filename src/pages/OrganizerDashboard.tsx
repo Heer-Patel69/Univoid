@@ -159,28 +159,22 @@ const OrganizerDashboard = () => {
         .eq("id", id);
       if (error) throw error;
 
-      let qrCode = null;
-      if (status === "approved") {
-        const { data: ticket } = await supabase
-          .from("event_tickets")
-          .select("qr_code")
-          .eq("registration_id", id)
-          .single();
-        qrCode = ticket?.qr_code;
-      }
-
-      try {
-        await supabase.functions.invoke("send-registration-status-email", {
-          body: {
-            registrationId: id,
-            status,
-            eventId: selectedEvent,
-            userId,
-            qrCode,
-          },
-        });
-      } catch (emailError) {
-        console.error("Failed to send status email:", emailError);
+      // For approvals: The database trigger (create_ticket_on_approval) automatically creates
+      // the ticket, and another trigger (notify_ticket_created) sends the ticket email.
+      // We only need to manually send an email for rejections.
+      if (status === "rejected") {
+        try {
+          await supabase.functions.invoke("send-registration-status-email", {
+            body: {
+              registrationId: id,
+              status,
+              eventId: selectedEvent,
+              userId,
+            },
+          });
+        } catch (emailError) {
+          console.error("Failed to send rejection email:", emailError);
+        }
       }
     },
     onMutate: async ({ id, status }) => {
