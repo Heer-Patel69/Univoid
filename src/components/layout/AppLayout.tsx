@@ -22,7 +22,7 @@ const AppLayout = () => {
   }, []);
 
   return (
-    <div className="min-h-dvh flex flex-col bg-background paper-texture w-full max-w-full overflow-x-hidden relative">
+    <div className="min-h-dvh flex flex-col bg-background paper-texture w-full max-w-full overflow-x-clip relative">
       {/* Global floating doodles background */}
       <FloatingDoodles density="global" className="fixed inset-0" />
       
