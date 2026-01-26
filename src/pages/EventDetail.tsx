@@ -348,7 +348,7 @@ const EventDetail = () => {
   const eventSlug = event.slug || eventId;
 
   return (
-    <div className="w-full max-w-full overflow-x-hidden">
+    <div className="w-full max-w-full">
       <SEOHead
         title={event.title}
         description={seoDescription}
@@ -782,7 +782,7 @@ const EventDetail = () => {
           </div>
         </div>
       </div>
-      </div>
+    </div>
     </div>
   );
 };
