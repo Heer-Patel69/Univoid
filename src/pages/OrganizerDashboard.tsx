@@ -33,6 +33,7 @@ import { EventEmailComposer } from "@/components/organizer/EventEmailComposer";
 import { format } from "date-fns";
 import type { Event } from "@/services/eventsService";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { toDisplayUrl } from "@/lib/storageProxy";
 
 const OrganizerDashboard = () => {
   const { user } = useAuth();
@@ -548,7 +549,7 @@ const OrganizerDashboard = () => {
                               <CardContent className="p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                                 <div className="flex items-center gap-3">
                                   <Avatar className="h-9 w-9">
-                                    <AvatarImage src={reg.profile_photo_url || undefined} />
+                                    <AvatarImage src={toDisplayUrl(reg.profile_photo_url, { forceImage: true }) || undefined} />
                                     <AvatarFallback className="text-xs">
                                       {reg.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
                                     </AvatarFallback>
@@ -564,7 +565,7 @@ const OrganizerDashboard = () => {
                                 </div>
                                 <div className="flex items-center gap-2 w-full sm:w-auto">
                                   {reg.payment_screenshot_url && (
-                                    <a href={reg.payment_screenshot_url} target="_blank" rel="noopener noreferrer">
+                                    <a href={toDisplayUrl(reg.payment_screenshot_url, { forceImage: true }) || '#'} target="_blank" rel="noopener noreferrer">
                                       <Button variant="outline" size="sm" className="text-xs">Screenshot</Button>
                                     </a>
                                   )}
