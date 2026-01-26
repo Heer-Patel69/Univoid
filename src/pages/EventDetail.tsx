@@ -369,23 +369,23 @@ const EventDetail = () => {
       />
 
       {/* Desktop: Large flyer left, Sticky sidebar right. Mobile: Stacked */}
-      <div className="flex flex-col lg:flex-row gap-5 lg:gap-8">
-        {/* Left column: Large Flyer + Description + Terms (scrollable content) */}
+      <div className="flex flex-col lg:flex-row gap-5 lg:gap-8 lg:items-start">
+        {/* Left column: Flyer + Description + Terms (scrollable content) */}
         <div className="flex-1 min-w-0 space-y-5">
-          {/* Flyer - Large, main visual focus */}
-          <div 
-            className="relative rounded-3xl overflow-hidden bg-muted w-full"
-            style={{ aspectRatio: '4/5' }}
-          >
+          {/* Flyer - Full visible, no cut-off on desktop */}
+          <div className="relative rounded-3xl overflow-hidden bg-muted w-full">
             {event.flyer_url ? (
               <img 
                 src={toDisplayUrl(event.flyer_url, { forceImage: true }) || undefined} 
                 alt={event.title} 
-                className="w-full h-full object-cover" 
+                className="w-full h-auto object-contain rounded-3xl" 
                 loading="lazy" 
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/30">
+              <div 
+                className="w-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/30"
+                style={{ aspectRatio: '4/5' }}
+              >
                 <Calendar className="w-24 h-24 text-primary/50" />
               </div>
             )}
@@ -467,16 +467,16 @@ const EventDetail = () => {
           </div>
         </div>
 
-        {/* Right column: Sticky sidebar with Registration + Organizer cards */}
-        <div className="w-full lg:w-[320px] xl:w-[340px] flex-shrink-0 space-y-4 flex flex-col">
+        {/* Right column: Sticky sidebar with Registration + Organizer cards (Desktop only) */}
+        <div className="w-full lg:w-[320px] xl:w-[340px] flex-shrink-0">
           {/* Title - Desktop only */}
-          <div className="hidden lg:flex flex-wrap items-start justify-between gap-3">
+          <div className="hidden lg:flex flex-wrap items-start justify-between gap-3 mb-4">
             <h1 className="font-display text-xl xl:text-2xl font-bold leading-tight">{event.title}</h1>
             <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleShare}><Share2 className="w-4 h-4" /></Button>
           </div>
 
-          {/* Sticky wrapper for desktop */}
-          <div className="lg:sticky lg:top-20 space-y-4">
+          {/* Sticky wrapper for desktop - stays fixed while left content scrolls */}
+          <div className="lg:sticky lg:top-20 lg:self-start space-y-4">
             {/* Compact Registration Card */}
             <div className="order-1 lg:order-none">
               <Card>
