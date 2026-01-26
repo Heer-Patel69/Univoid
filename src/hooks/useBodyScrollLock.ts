@@ -1,14 +1,24 @@
 import { useEffect } from 'react';
 
 /**
- * Hook to lock body scroll on desktop viewports - DISABLED
- * Footer should remain accessible, scroll just prioritizes left column
+ * Hook to lock body scroll on desktop viewports
+ * Prevents body from scrolling while event content is being scrolled
  */
 export const useBodyScrollLock = (enabled: boolean = true) => {
-  // Intentionally empty - we no longer lock body scroll
-  // This allows footer to remain accessible
   useEffect(() => {
-    // No-op: body scroll is allowed, wheel events handle scroll priority
+    if (!enabled) return;
+
+    // Lock body scroll
+    const originalOverflow = document.body.style.overflow;
+    const originalHtmlOverflow = document.documentElement.style.overflow;
+    
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      document.documentElement.style.overflow = originalHtmlOverflow;
+    };
   }, [enabled]);
 };
 
