@@ -80,31 +80,28 @@ const EventDetail = () => {
   // Lock body scroll on desktop using the dedicated hook
   useBodyScrollLock(isDesktopView);
 
-  // Capture wheel events and forward to left column on desktop
+  // Capture wheel events and forward to left column on desktop with natural feel
   useEffect(() => {
     if (!isDesktopView) return;
 
     const handleGlobalWheel = (e: WheelEvent) => {
       const leftColumn = leftColumnRef.current;
-      if (!leftColumn) {
-        e.preventDefault();
-        return;
-      }
+      if (!leftColumn) return;
 
       const { scrollTop, scrollHeight, clientHeight } = leftColumn;
-      const canScrollDown = scrollTop + clientHeight < scrollHeight - 5;
-      const canScrollUp = scrollTop > 5;
+      const canScrollDown = scrollTop + clientHeight < scrollHeight - 2;
+      const canScrollUp = scrollTop > 2;
       
-      // ALWAYS prevent default on desktop - we control all scrolling
-      e.preventDefault();
-      e.stopPropagation();
-      
-      // Forward scroll to left column if it can scroll in that direction
-      if (e.deltaY > 0 && canScrollDown) {
-        leftColumn.scrollTop += e.deltaY;
-      } else if (e.deltaY < 0 && canScrollUp) {
-        leftColumn.scrollTop += e.deltaY;
+      // Only intercept if left column can scroll in that direction
+      if ((e.deltaY > 0 && canScrollDown) || (e.deltaY < 0 && canScrollUp)) {
+        e.preventDefault();
+        // Natural scroll speed - use deltaY directly with smooth behavior
+        leftColumn.scrollBy({
+          top: e.deltaY,
+          behavior: 'auto' // 'auto' for immediate response, feels natural
+        });
       }
+      // If left column can't scroll, let the event bubble naturally to body
     };
 
     // Add at document level with capture phase
