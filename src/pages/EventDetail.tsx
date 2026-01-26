@@ -590,7 +590,14 @@ const EventDetail = () => {
         <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
         
         {/* Left column - Internal scroll, hidden scrollbar */}
-        <div className="flex-1 overflow-y-auto scrollbar-hide pr-2 space-y-5 pb-8" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        <div 
+          className="flex-1 overflow-y-auto scrollbar-hide pr-2 space-y-5 pb-8" 
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          onScroll={(e) => {
+            const scrolled = e.currentTarget.scrollTop > 10;
+            window.dispatchEvent(new CustomEvent('eventDetailScroll', { detail: { scrolled } }));
+          }}
+        >
           {/* Desktop: Hero Flyer - 4:5 aspect ratio, no outer spacing */}
           <div className="relative rounded-2xl overflow-hidden bg-muted aspect-[4/5]">
             {event.flyer_url ? (

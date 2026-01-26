@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { PrefetchLink } from "@/components/common/PrefetchLink";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,29 @@ interface HeaderProps {
 const Header = ({ onAuthClick }: HeaderProps) => {
   const { user, profile, isAdmin, isOrganizer, signOut } = useAuth();
   const location = useLocation();
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  // Listen for scroll events on the page or event detail left column
+  useEffect(() => {
+    const handleScroll = () => {
+      // Check if page is scrolled
+      const scrolled = window.scrollY > 10;
+      setIsScrolled(scrolled);
+    };
+
+    // Also listen for custom scroll events from event detail page
+    const handleCustomScroll = (e: CustomEvent) => {
+      setIsScrolled(e.detail.scrolled);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('eventDetailScroll', handleCustomScroll as EventListener);
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('eventDetailScroll', handleCustomScroll as EventListener);
+    };
+  }, []);
 
   const navLinks = [
     { href: "/materials", label: "Materials", icon: BookOpen },
@@ -49,7 +73,11 @@ const Header = ({ onAuthClick }: HeaderProps) => {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-card border-b border-border">
+    <header className={`sticky top-0 z-50 border-b border-border transition-all duration-300 ${
+      isScrolled 
+        ? 'bg-card/80 backdrop-blur-md supports-[backdrop-filter]:bg-card/60' 
+        : 'bg-card'
+    }`}>
       <div className="container-wide">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
