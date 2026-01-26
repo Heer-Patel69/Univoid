@@ -80,7 +80,7 @@ const EventDetail = () => {
   // Lock body scroll on desktop using the dedicated hook
   useBodyScrollLock(isDesktopView);
 
-  // Capture wheel events and forward to left column on desktop - native speed
+  // Capture wheel events and forward to left column on desktop - slightly faster
   useEffect(() => {
     if (!isDesktopView) return;
 
@@ -95,10 +95,9 @@ const EventDetail = () => {
       // Only intercept if left column can scroll in that direction
       if ((e.deltaY > 0 && canScrollDown) || (e.deltaY < 0 && canScrollUp)) {
         e.preventDefault();
-        // Native scroll speed - direct assignment like browser default
-        leftColumn.scrollTop += e.deltaY;
+        // Slightly faster scroll - 1.4x multiplier
+        leftColumn.scrollTop += e.deltaY * 1.4;
       }
-      // If left column can't scroll, event bubbles to body naturally
     };
 
     document.addEventListener('wheel', handleGlobalWheel, { passive: false, capture: true });
