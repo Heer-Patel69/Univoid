@@ -80,42 +80,7 @@ const EventDetail = () => {
   // Lock body scroll on desktop using the dedicated hook
   useBodyScrollLock(isDesktopView);
 
-  // Pointer-independent scroll: capture all wheel events and forward to left column
-  useEffect(() => {
-    if (!isDesktopView) return;
-
-    const leftColumn = leftColumnRef.current;
-    if (!leftColumn) return;
-
-    // Focus the scroll container so it receives native scroll
-    leftColumn.tabIndex = -1;
-    leftColumn.focus({ preventScroll: true });
-
-    const handleWheel = (e: WheelEvent) => {
-      const { scrollTop, scrollHeight, clientHeight } = leftColumn;
-      const atTop = scrollTop <= 0;
-      const atBottom = scrollTop + clientHeight >= scrollHeight - 1;
-      
-      // If can scroll in the direction, forward the event
-      if ((e.deltaY > 0 && !atBottom) || (e.deltaY < 0 && !atTop)) {
-        // Use native scrollBy for smooth physics
-        leftColumn.scrollBy({
-          top: e.deltaY,
-          left: 0,
-          behavior: 'instant'
-        });
-        e.preventDefault();
-      }
-      // At boundaries, event is blocked (body is locked anyway)
-    };
-
-    // Capture at window level to intercept before any element
-    window.addEventListener('wheel', handleWheel, { passive: false });
-
-    return () => {
-      window.removeEventListener('wheel', handleWheel);
-    };
-  }, [isDesktopView]);
+  // Native scroll - no JS interception, browser handles all scroll physics naturally
 
   const handlePriceChange = useCallback((price: number, clubId: string | null, memId: string | null) => {
     setSelectedPrice(price);
@@ -649,10 +614,11 @@ const EventDetail = () => {
         {/* Left column - THE ONLY scrollable area on desktop */}
         <div 
           ref={leftColumnRef}
-          className="flex-1 overflow-y-auto pr-2 space-y-5 pb-8 outline-none" 
+          className="flex-1 overflow-y-auto pr-2 space-y-5 pb-8" 
           style={{ 
             scrollbarWidth: 'none', 
-            msOverflowStyle: 'none'
+            msOverflowStyle: 'none',
+            scrollBehavior: 'smooth'
           }}
         >
           {/* Desktop: Hero Flyer - 4:5 aspect ratio, no outer spacing */}
