@@ -358,15 +358,8 @@ const EventDetail = () => {
         structuredData={eventStructuredData}
         keywords={[event.category, event.event_type, "college event", "campus event", "student event"]}
       />
-      <div className="container mx-auto px-5 lg:px-10 py-6 pb-24 md:pb-8 max-w-6xl">
+      <div className="container mx-auto px-5 lg:px-10 pt-3 pb-24 md:pb-8 max-w-6xl">
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
-
-      <PageBreadcrumb 
-        items={[
-          { label: "Events", href: "/events" },
-          { label: event.title }
-        ]} 
-      />
 
       {/* MOBILE LAYOUT: Stacked - Registration first, then flyer, then description */}
       <div className="lg:hidden space-y-5">
