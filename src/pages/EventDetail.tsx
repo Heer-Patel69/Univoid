@@ -19,6 +19,7 @@ import { fetchEventById, checkUserRegistration } from "@/services/eventsService"
 import { fetchEventFormFields } from "@/services/eventFormService";
 import { useRegistration } from "@/hooks/useRegistration";
 import { useRealtimeCapacity } from "@/hooks/useRealtimeCapacity";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import AuthModal from "@/components/auth/AuthModal";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb";
 import SEOHead from "@/components/common/SEOHead";
@@ -66,94 +67,53 @@ const EventDetail = () => {
   // Refs for scroll capture system (BookMyShow-style)
   const leftColumnRef = useRef<HTMLDivElement>(null);
   const desktopContainerRef = useRef<HTMLDivElement>(null);
+  const [isDesktopView, setIsDesktopView] = useState(false);
 
-  // BOOKMYSHOW-STYLE SCROLL CONTROL
-  // Lock body scroll and capture ALL wheel events, forward to left column first
+  // Check if desktop on mount and resize
   useEffect(() => {
-    const leftColumn = leftColumnRef.current;
-    if (!leftColumn) return;
+    const checkDesktop = () => setIsDesktopView(window.innerWidth >= 1024);
+    checkDesktop();
+    window.addEventListener('resize', checkDesktop);
+    return () => window.removeEventListener('resize', checkDesktop);
+  }, []);
 
-    // Check if we're on desktop (lg breakpoint = 1024px)
-    const isDesktop = () => window.innerWidth >= 1024;
+  // Lock body scroll on desktop using the dedicated hook
+  useBodyScrollLock(isDesktopView);
 
-    const checkLeftColumnScrollable = () => {
+  // Capture wheel events and forward to left column on desktop
+  useEffect(() => {
+    if (!isDesktopView) return;
+
+    const handleGlobalWheel = (e: WheelEvent) => {
+      const leftColumn = leftColumnRef.current;
+      if (!leftColumn) {
+        e.preventDefault();
+        return;
+      }
+
       const { scrollTop, scrollHeight, clientHeight } = leftColumn;
       const canScrollDown = scrollTop + clientHeight < scrollHeight - 5;
       const canScrollUp = scrollTop > 5;
-      return { canScrollDown, canScrollUp };
-    };
-
-    // Global wheel handler - captures ALL scroll events on the page
-    const handleGlobalWheel = (e: WheelEvent) => {
-      if (!isDesktop()) return; // Only on desktop
-
-      const { canScrollDown, canScrollUp } = checkLeftColumnScrollable();
       
-      // Scrolling down and left column can still scroll down
+      // ALWAYS prevent default on desktop - we control all scrolling
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // Forward scroll to left column if it can scroll in that direction
       if (e.deltaY > 0 && canScrollDown) {
-        e.preventDefault();
-        e.stopPropagation();
-        leftColumn.scrollBy({ top: e.deltaY, behavior: 'auto' });
-        return;
-      }
-      
-      // Scrolling up and left column can still scroll up
-      if (e.deltaY < 0 && canScrollUp) {
-        e.preventDefault();
-        e.stopPropagation();
-        leftColumn.scrollBy({ top: e.deltaY, behavior: 'auto' });
-        return;
-      }
-      
-      // Left column fully scrolled in this direction - allow body scroll naturally
-    };
-
-    // Prevent body scroll via touch on desktop (for trackpads)
-    const handleTouchMove = (e: TouchEvent) => {
-      if (!isDesktop()) return;
-      
-      const { canScrollDown, canScrollUp } = checkLeftColumnScrollable();
-      if (canScrollDown || canScrollUp) {
-        // Only prevent if left column is still scrollable
-        // Touch handling is more complex, so we allow natural behavior
+        leftColumn.scrollTop += e.deltaY;
+      } else if (e.deltaY < 0 && canScrollUp) {
+        leftColumn.scrollTop += e.deltaY;
       }
     };
 
-    // Lock body scroll on desktop when component mounts
-    const lockBodyScroll = () => {
-      if (isDesktop()) {
-        document.body.style.overflow = 'hidden';
-        document.documentElement.style.overflow = 'hidden';
-      }
-    };
-
-    const unlockBodyScroll = () => {
-      document.body.style.overflow = '';
-      document.documentElement.style.overflow = '';
-    };
-
-    // Handle resize - lock/unlock based on viewport
-    const handleResize = () => {
-      if (isDesktop()) {
-        lockBodyScroll();
-      } else {
-        unlockBodyScroll();
-      }
-    };
-
-    // Initial lock
-    lockBodyScroll();
-
-    // Add global listeners
-    window.addEventListener('wheel', handleGlobalWheel, { passive: false, capture: true });
-    window.addEventListener('resize', handleResize);
-
+    // Add at document level with capture phase
+    document.addEventListener('wheel', handleGlobalWheel, { passive: false, capture: true });
+    
     return () => {
-      unlockBodyScroll();
-      window.removeEventListener('wheel', handleGlobalWheel, { capture: true });
-      window.removeEventListener('resize', handleResize);
+      document.removeEventListener('wheel', handleGlobalWheel, { capture: true });
     };
-  }, []);
+  }, [isDesktopView]);
 
   const handlePriceChange = useCallback((price: number, clubId: string | null, memId: string | null) => {
     setSelectedPrice(price);
