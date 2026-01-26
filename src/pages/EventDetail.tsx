@@ -358,7 +358,7 @@ const EventDetail = () => {
         structuredData={eventStructuredData}
         keywords={[event.category, event.event_type, "college event", "campus event", "student event"]}
       />
-      <div className="container mx-auto px-4 py-6 pb-24 md:pb-8 max-w-5xl">
+      <div className="container mx-auto px-3 lg:px-6 py-6 pb-24 md:pb-8 max-w-6xl">
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
 
       <PageBreadcrumb 
@@ -574,28 +574,28 @@ const EventDetail = () => {
       </div>
 
       {/* DESKTOP LAYOUT: Two columns - Left scrolls, Right is STICKY within container */}
-      <div className="hidden lg:flex lg:flex-row lg:gap-6 lg:items-start">
-        {/* Left scrollable content - constrained width */}
+      <div className="hidden lg:flex lg:flex-row lg:gap-5 lg:items-start">
+        {/* Left scrollable content - Hero flyer area */}
         <div className="flex-1 min-w-0 space-y-5">
-          {/* Desktop: Large Flyer - constrained height to fit in viewport */}
-          <div className="relative rounded-3xl overflow-hidden bg-muted w-full">
+          {/* Desktop: Large Hero Flyer - fills left column */}
+          <div className="relative rounded-2xl overflow-hidden bg-muted w-full">
             {event.flyer_url ? (
               <img 
                 src={toDisplayUrl(event.flyer_url, { forceImage: true }) || undefined} 
                 alt={event.title} 
-                className="w-full max-h-[70vh] object-contain rounded-3xl" 
+                className="w-full max-h-[80vh] object-contain rounded-2xl" 
                 loading="eager" 
               />
             ) : (
-              <div className="w-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/30" style={{ aspectRatio: '4/5', maxHeight: '70vh' }}>
+              <div className="w-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/30" style={{ aspectRatio: '4/5', maxHeight: '80vh' }}>
                 <Calendar className="w-24 h-24 text-primary/50" />
               </div>
             )}
-            <div className="absolute top-4 left-4 flex gap-2 flex-wrap">
+            <div className="absolute top-3 left-3 flex gap-2 flex-wrap">
               <Badge>{event.category}</Badge>
               <Badge variant="outline" className="bg-background/80 backdrop-blur">{event.event_type}</Badge>
             </div>
-            <div className="absolute bottom-4 right-4">
+            <div className="absolute bottom-3 right-3">
               <Badge variant="secondary" className="gap-1"><Eye className="w-3 h-3" />{event.views_count} views</Badge>
             </div>
           </div>
@@ -632,22 +632,22 @@ const EventDetail = () => {
           )}
         </div>
 
-        {/* Right STICKY sidebar - stays within container, stops before footer */}
-        <div className="w-[320px] xl:w-[340px] flex-shrink-0">
+        {/* Right STICKY sidebar - larger, more prominent */}
+        <div className="w-[360px] xl:w-[380px] flex-shrink-0">
           <div className="sticky top-20 space-y-4">
             {/* Desktop: Title */}
             <div className="flex flex-wrap items-start justify-between gap-3">
               <h1 className="font-display text-xl xl:text-2xl font-bold leading-tight">{event.title}</h1>
-              <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleShare}><Share2 className="w-4 h-4" /></Button>
+              <Button variant="outline" size="icon" className="h-9 w-9" onClick={handleShare}><Share2 className="w-4 h-4" /></Button>
             </div>
 
-            {/* Desktop: Registration Card */}
-            <Card>
-              <CardContent className="p-4 space-y-3">
-                <div className="flex items-center justify-between">
+            {/* Desktop: Registration Card - larger padding for visual weight */}
+            <Card className="shadow-lg">
+              <CardContent className="p-5 space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b border-border/50">
                   <span className="text-sm text-muted-foreground">Price</span>
-                  <span className="text-xl font-bold flex items-center">
-                    {event.is_paid ? (<><IndianRupee className="w-4 h-4" />{event.price}</>) : (<Badge variant="secondary">Free</Badge>)}
+                  <span className="text-2xl font-bold flex items-center text-primary">
+                    {event.is_paid ? (<><IndianRupee className="w-5 h-5" />{event.price}</>) : (<Badge variant="secondary" className="text-base px-3 py-1">Free</Badge>)}
                   </span>
                 </div>
                 <div className="flex items-start gap-2.5 text-sm">
