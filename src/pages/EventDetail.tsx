@@ -368,18 +368,18 @@ const EventDetail = () => {
         ]} 
       />
 
-      {/* Desktop: Large flyer left, Sticky sidebar right. Mobile: Stacked */}
-      <div className="flex flex-col lg:flex-row gap-5 lg:gap-8 lg:items-start">
-        {/* Left column: Flyer + Description + Terms (scrollable content) */}
+      {/* Desktop: Large flyer left, Fixed sticky sidebar right. Mobile: Stacked */}
+      <div className="flex flex-col lg:flex-row gap-5 lg:gap-8">
+        {/* Left column: Flyer + Description + Terms (scrolls normally) */}
         <div className="flex-1 min-w-0 space-y-5">
-          {/* Flyer - Full visible, no cut-off on desktop */}
-          <div className="relative rounded-3xl overflow-hidden bg-muted w-full">
+          {/* Flyer - Full visible, properly contained, no cut-off on desktop */}
+          <div className="relative rounded-3xl overflow-hidden bg-muted w-full min-h-[200px]">
             {event.flyer_url ? (
               <img 
                 src={toDisplayUrl(event.flyer_url, { forceImage: true }) || undefined} 
                 alt={event.title} 
                 className="w-full h-auto object-contain rounded-3xl" 
-                loading="lazy" 
+                loading="eager" 
               />
             ) : (
               <div 
@@ -467,16 +467,15 @@ const EventDetail = () => {
           </div>
         </div>
 
-        {/* Right column: Sticky sidebar with Registration + Organizer cards (Desktop only) */}
-        <div className="w-full lg:w-[320px] xl:w-[340px] flex-shrink-0">
-          {/* Title - Desktop only */}
-          <div className="hidden lg:flex flex-wrap items-start justify-between gap-3 mb-4">
-            <h1 className="font-display text-xl xl:text-2xl font-bold leading-tight">{event.title}</h1>
-            <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleShare}><Share2 className="w-4 h-4" /></Button>
-          </div>
-
-          {/* Sticky wrapper for desktop - stays fixed while left content scrolls */}
-          <div className="lg:sticky lg:top-20 lg:self-start space-y-4">
+        {/* Right column: FIXED sidebar on desktop - does NOT scroll */}
+        <div className="w-full lg:w-[320px] xl:w-[340px] flex-shrink-0 lg:h-fit">
+          {/* Desktop: Fixed sticky sidebar that stays in place while left content scrolls */}
+          <div className="lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto space-y-4">
+            {/* Title - Desktop only */}
+            <div className="hidden lg:flex flex-wrap items-start justify-between gap-3">
+              <h1 className="font-display text-xl xl:text-2xl font-bold leading-tight">{event.title}</h1>
+              <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleShare}><Share2 className="w-4 h-4" /></Button>
+            </div>
             {/* Compact Registration Card */}
             <div className="order-1 lg:order-none">
               <Card>
