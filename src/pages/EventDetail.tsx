@@ -574,8 +574,15 @@ const EventDetail = () => {
       </div>
 
       {/* DESKTOP LAYOUT: Two equal columns - Flyer left, Cards right (sticky) */}
+      {/* 
+        STICKY ARCHITECTURE:
+        - Container uses items-stretch (default) so right column matches left column height
+        - Right column wrapper stretches to full height of left column
+        - Sticky div inside right column sticks within that tall wrapper
+        - This creates the scroll boundary sticky needs to work
+      */}
       <div className="hidden lg:flex lg:flex-row lg:gap-6">
-        {/* Left column - Flyer with 4:5 aspect ratio - takes half width, scrolls naturally */}
+        {/* Left column - Scrollable content (determines the scroll height) */}
         <div className="flex-1 space-y-5">
           {/* Desktop: Hero Flyer - 4:5 aspect ratio, no outer spacing */}
           <div className="relative rounded-2xl overflow-hidden bg-muted aspect-[4/5]">
@@ -632,8 +639,12 @@ const EventDetail = () => {
           )}
         </div>
 
-        {/* Right column - Fixed width, self-start prevents stretching, sticky content inside */}
-        <div className="flex-1 self-start">
+        {/* 
+          Right column - MUST stretch to match left column height (items-stretch default)
+          The sticky div INSIDE this wrapper will stick within the tall container
+          DO NOT add self-start here - it breaks sticky!
+        */}
+        <div className="flex-1">
           <div className="sticky top-20 space-y-4">
             {/* Desktop: Title */}
             <div className="flex flex-wrap items-start justify-between gap-3">
