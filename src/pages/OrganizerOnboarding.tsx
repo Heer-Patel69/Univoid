@@ -304,9 +304,13 @@ const OrganizerOnboarding = () => {
       // Refresh auth context to pick up new organizer role
       await refreshProfile();
       
-      // Invalidate organizer profile queries
-      queryClient.invalidateQueries({ queryKey: ['hasOrganizerProfile'] });
-      queryClient.invalidateQueries({ queryKey: ['organizerProfile'] });
+      // Invalidate organizer profile queries with specific user ID for precise cache busting
+      await queryClient.invalidateQueries({ queryKey: ['hasOrganizerProfile', user.id] });
+      await queryClient.invalidateQueries({ queryKey: ['organizerProfile', user.id] });
+      // Also invalidate without user ID for any general queries
+      await queryClient.invalidateQueries({ queryKey: ['hasOrganizerProfile'] });
+      await queryClient.invalidateQueries({ queryKey: ['organizerProfile'] });
+      console.log('[OrganizerOnboarding] Profile created, cache invalidated for user:', user.id);
       
       // Show success with confetti
       setCreatedSlug(profile?.slug || null);

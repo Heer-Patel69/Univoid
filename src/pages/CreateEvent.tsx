@@ -40,12 +40,26 @@ const EVENT_TYPES = ["Hackathon", "Party", "Conference", "Workshop", "Competitio
 
 const CreateEvent = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isOrganizer } = useAuth();
   const { toast } = useToast();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const { scanUpiFromFile, isScanning } = useUpiScanner();
-  const { hasProfile, isLoading: checkingProfile } = useOrganizerProfile();
+  const { hasProfile, isLoading: checkingProfile, refetchHasProfile } = useOrganizerProfile();
+  
+  // Combined check: user has organizer profile OR is marked as organizer in auth context
+  const canCreateEvents = hasProfile || isOrganizer;
+  
+  // Debug logging
+  useEffect(() => {
+    console.log('[CreateEvent] Auth state:', { 
+      userId: user?.id, 
+      hasProfile, 
+      isOrganizer, 
+      canCreateEvents,
+      checkingProfile 
+    });
+  }, [user?.id, hasProfile, isOrganizer, canCreateEvents, checkingProfile]);
   
   // Show loading while checking profile
   if (checkingProfile) {
@@ -64,8 +78,8 @@ const CreateEvent = () => {
     );
   }
   
-  // Redirect to organizer onboarding if no profile
-  if (user && !hasProfile) {
+  // Redirect to organizer onboarding if no profile (using combined check)
+  if (user && !canCreateEvents) {
     return (
       <div className="container max-w-4xl mx-auto py-8 px-4">
         <Card className="text-center">
@@ -86,6 +100,18 @@ const CreateEvent = () => {
             >
               <Sparkles className="h-4 w-4" />
               Set Up Organizer Profile
+            </Button>
+            {/* Debug refresh button - helps if cache is stale */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={async () => {
+                await refetchHasProfile();
+                toast({ title: "Refreshing...", description: "Checking your organizer status" });
+              }}
+              className="text-muted-foreground"
+            >
+              Already completed? Click to refresh
             </Button>
           </CardContent>
         </Card>
