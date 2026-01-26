@@ -573,10 +573,10 @@ const EventDetail = () => {
         )}
       </div>
 
-      {/* DESKTOP LAYOUT: Two columns - Flyer fills left, Cards fill right */}
-      <div className="hidden lg:grid lg:grid-cols-[1fr_380px] lg:gap-0 lg:items-start">
-        {/* Left column - Flyer fills entire width with NO gaps */}
-        <div className="space-y-5 pr-5">
+      {/* DESKTOP LAYOUT: Two equal columns - Flyer left, Cards right */}
+      <div className="hidden lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
+        {/* Left column - Flyer with 4:5 aspect ratio */}
+        <div className="space-y-5">
           {/* Desktop: Hero Flyer - 4:5 aspect ratio, no outer spacing */}
           <div className="relative rounded-2xl overflow-hidden bg-muted aspect-[4/5]">
             {event.flyer_url ? (
@@ -632,8 +632,8 @@ const EventDetail = () => {
           )}
         </div>
 
-        {/* Right column - STICKY Registration + Organizer cards */}
-        <div className="pl-5 border-l border-border/30">
+        {/* Right column - STICKY Registration + Organizer cards (equal width) */}
+        <div>
           <div className="sticky top-20 space-y-4 pb-8">
             {/* Desktop: Title */}
             <div className="flex flex-wrap items-start justify-between gap-3">
