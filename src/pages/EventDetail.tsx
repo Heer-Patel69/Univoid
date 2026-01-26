@@ -358,7 +358,7 @@ const EventDetail = () => {
         structuredData={eventStructuredData}
         keywords={[event.category, event.event_type, "college event", "campus event", "student event"]}
       />
-      <div className="container mx-auto px-3 lg:px-6 py-6 pb-24 md:pb-8 max-w-6xl">
+      <div className="container mx-auto px-4 lg:px-8 py-6 pb-24 md:pb-8 max-w-7xl">
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
 
       <PageBreadcrumb 
@@ -573,21 +573,21 @@ const EventDetail = () => {
         )}
       </div>
 
-      {/* DESKTOP LAYOUT: Two columns - Left scrolls, Right is STICKY within container */}
-      <div className="hidden lg:flex lg:flex-row lg:gap-5 lg:items-start">
-        {/* Left scrollable content - Hero flyer area */}
-        <div className="flex-1 min-w-0 space-y-5">
-          {/* Desktop: Large Hero Flyer - fills left column */}
-          <div className="relative rounded-2xl overflow-hidden bg-muted w-full">
+      {/* DESKTOP LAYOUT: Two columns - Flyer fills left, Cards fill right */}
+      <div className="hidden lg:grid lg:grid-cols-[1fr_380px] lg:gap-0 lg:items-start">
+        {/* Left column - Flyer fills entire width with NO gaps */}
+        <div className="space-y-5 pr-5">
+          {/* Desktop: Hero Flyer - fills full column width */}
+          <div className="relative rounded-2xl overflow-hidden bg-muted">
             {event.flyer_url ? (
               <img 
                 src={toDisplayUrl(event.flyer_url, { forceImage: true }) || undefined} 
                 alt={event.title} 
-                className="w-full max-h-[80vh] object-contain rounded-2xl" 
+                className="w-full max-h-[75vh] object-cover rounded-2xl" 
                 loading="eager" 
               />
             ) : (
-              <div className="w-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/30" style={{ aspectRatio: '4/5', maxHeight: '80vh' }}>
+              <div className="w-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/30" style={{ aspectRatio: '4/5', maxHeight: '75vh' }}>
                 <Calendar className="w-24 h-24 text-primary/50" />
               </div>
             )}
@@ -632,9 +632,9 @@ const EventDetail = () => {
           )}
         </div>
 
-        {/* Right STICKY sidebar - larger, more prominent */}
-        <div className="w-[360px] xl:w-[380px] flex-shrink-0">
-          <div className="sticky top-20 space-y-4">
+        {/* Right column - STICKY Registration + Organizer cards */}
+        <div className="pl-5 border-l border-border/30">
+          <div className="sticky top-20 space-y-4 pb-8">
             {/* Desktop: Title */}
             <div className="flex flex-wrap items-start justify-between gap-3">
               <h1 className="font-display text-xl xl:text-2xl font-bold leading-tight">{event.title}</h1>
