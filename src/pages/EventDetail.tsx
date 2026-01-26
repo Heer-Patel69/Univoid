@@ -68,6 +68,7 @@ const EventDetail = () => {
   const leftColumnRef = useRef<HTMLDivElement>(null);
   const desktopContainerRef = useRef<HTMLDivElement>(null);
   const [isDesktopView, setIsDesktopView] = useState(false);
+  const [isContentFullyScrolled, setIsContentFullyScrolled] = useState(false);
 
   // Check if desktop on mount and resize
   useEffect(() => {
@@ -77,43 +78,78 @@ const EventDetail = () => {
     return () => window.removeEventListener('resize', checkDesktop);
   }, []);
 
-  // Lock body scroll on desktop using the dedicated hook
-  useBodyScrollLock(isDesktopView);
+  // Lock body scroll on desktop ONLY when content is not fully scrolled
+  useBodyScrollLock(isDesktopView && !isContentFullyScrolled);
 
-  // Capture wheel events and forward to left column on desktop
+  // Scroll handling: forward wheel to left column, unlock when fully scrolled
   useEffect(() => {
     if (!isDesktopView) return;
 
     const handleGlobalWheel = (e: WheelEvent) => {
       const leftColumn = leftColumnRef.current;
-      if (!leftColumn) {
-        e.preventDefault();
-        return;
-      }
+      if (!leftColumn) return;
 
       const { scrollTop, scrollHeight, clientHeight } = leftColumn;
-      const canScrollDown = scrollTop + clientHeight < scrollHeight - 5;
-      const canScrollUp = scrollTop > 5;
+      const isAtBottom = scrollTop + clientHeight >= scrollHeight - 10;
+      const isAtTop = scrollTop <= 10;
       
-      // ALWAYS prevent default on desktop - we control all scrolling
-      e.preventDefault();
-      e.stopPropagation();
-      
-      // Forward scroll to left column if it can scroll in that direction
-      if (e.deltaY > 0 && canScrollDown) {
-        leftColumn.scrollTop += e.deltaY;
-      } else if (e.deltaY < 0 && canScrollUp) {
-        leftColumn.scrollTop += e.deltaY;
+      // Scrolling down
+      if (e.deltaY > 0) {
+        if (!isAtBottom) {
+          // Still can scroll left column - capture and forward
+          e.preventDefault();
+          // Use native-feeling scroll speed (multiply for responsiveness)
+          leftColumn.scrollTop += e.deltaY * 1.2;
+          setIsContentFullyScrolled(false);
+        } else {
+          // Left column at bottom - unlock body scroll for footer
+          setIsContentFullyScrolled(true);
+          // Don't prevent default - let body scroll naturally
+        }
+      }
+      // Scrolling up
+      else if (e.deltaY < 0) {
+        if (isContentFullyScrolled) {
+          // If we were showing footer area and scrolling up
+          const bodyScrollTop = window.scrollY || document.documentElement.scrollTop;
+          if (bodyScrollTop <= 10) {
+            // Body is at top - re-lock and scroll left column
+            setIsContentFullyScrolled(false);
+            e.preventDefault();
+            leftColumn.scrollTop += e.deltaY * 1.2;
+          }
+          // Otherwise let body scroll up naturally
+        } else if (!isAtTop) {
+          // Scroll left column up
+          e.preventDefault();
+          leftColumn.scrollTop += e.deltaY * 1.2;
+        }
       }
     };
 
-    // Add at document level with capture phase
+    // Track left column scroll to detect when it reaches bottom
+    const handleLeftColumnScroll = () => {
+      const leftColumn = leftColumnRef.current;
+      if (!leftColumn) return;
+      
+      const { scrollTop, scrollHeight, clientHeight } = leftColumn;
+      const isAtBottom = scrollTop + clientHeight >= scrollHeight - 10;
+      
+      if (isAtBottom && !isContentFullyScrolled) {
+        setIsContentFullyScrolled(true);
+      } else if (!isAtBottom && isContentFullyScrolled) {
+        setIsContentFullyScrolled(false);
+      }
+    };
+
     document.addEventListener('wheel', handleGlobalWheel, { passive: false, capture: true });
+    leftColumnRef.current?.addEventListener('scroll', handleLeftColumnScroll);
     
     return () => {
       document.removeEventListener('wheel', handleGlobalWheel, { capture: true });
+      leftColumnRef.current?.removeEventListener('scroll', handleLeftColumnScroll);
     };
-  }, [isDesktopView]);
+  }, [isDesktopView, isContentFullyScrolled]);
 
   const handlePriceChange = useCallback((price: number, clubId: string | null, memId: string | null) => {
     setSelectedPrice(price);
@@ -630,28 +666,27 @@ const EventDetail = () => {
         </div>
       </div>
 
-      {/* DESKTOP LAYOUT: Body scroll locked, left column is the only scrollable area */}
+      {/* DESKTOP LAYOUT: Smart scroll - left column first, then body for footer */}
       {/* 
         BOOKMYSHOW-STYLE SCROLL:
-        - Body scroll is LOCKED on desktop
-        - All wheel events captured globally and forwarded to left column
-        - Container fills entire viewport (no body scroll)
-        - Right column stays fixed in place
+        - Body scroll locked while left column can scroll
+        - When left column reaches bottom, body scroll unlocks for footer
+        - Scroll up from footer re-locks and scrolls left column
       */}
       <div 
         ref={desktopContainerRef}
-        className="hidden lg:flex lg:flex-row lg:gap-6 h-[calc(100vh-5rem)] container mx-auto px-10 max-w-6xl pt-3 overflow-hidden"
+        className="hidden lg:flex lg:flex-row lg:gap-6 min-h-[calc(100vh-5rem)] container mx-auto px-10 max-w-6xl pt-3"
       >
         <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
         
-        {/* Left column - THE ONLY scrollable area on desktop */}
+        {/* Left column - Primary scrollable area */}
         <div 
           ref={leftColumnRef}
           className="flex-1 overflow-y-auto pr-2 space-y-5 pb-8" 
           style={{ 
             scrollbarWidth: 'none', 
             msOverflowStyle: 'none',
-            scrollBehavior: 'smooth'
+            maxHeight: isContentFullyScrolled ? 'none' : 'calc(100vh - 5rem)'
           }}
         >
           {/* Desktop: Hero Flyer - 4:5 aspect ratio, no outer spacing */}
