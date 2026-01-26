@@ -633,8 +633,8 @@ const EventDetail = () => {
         </div>
 
         {/* Right column - STICKY Registration + Organizer cards (equal width) */}
-        <div>
-          <div className="sticky top-20 space-y-4 pb-8">
+        <div className="self-start">
+          <div className="sticky top-20 space-y-4 max-h-[calc(100vh-6rem)] overflow-y-auto scrollbar-hide">
             {/* Desktop: Title */}
             <div className="flex flex-wrap items-start justify-between gap-3">
               <h1 className="font-display text-xl xl:text-2xl font-bold leading-tight">{event.title}</h1>
