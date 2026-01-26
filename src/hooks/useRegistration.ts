@@ -2,14 +2,12 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 import { 
   registerForEventAtomic, 
   uploadPaymentScreenshot,
   getUserFriendlyError,
   type RegistrationResult 
 } from '@/services/registrationService';
-import { sendEventRegistrationEmail } from '@/services/brevoEmailService';
 
 interface UseRegistrationOptions {
   eventId: string;
@@ -126,9 +124,8 @@ export function useRegistration(options: UseRegistrationOptions) {
               },
             }
           );
-          
-          // Send confirmation email in background
-          sendConfirmationEmail(userId, eventId, eventTitle);
+          // Note: Confirmation emails are sent automatically via database trigger
+          // when the ticket is created (send-ticket-email edge function)
         }
         
         // Invalidate queries to refresh data
@@ -174,52 +171,4 @@ export function useRegistration(options: UseRegistrationOptions) {
     error: state.error,
     result: state.result,
   };
-}
-
-/**
- * Send confirmation email in background (fire-and-forget)
- * Uses Brevo SMTP for reliable delivery
- */
-async function sendConfirmationEmail(
-  userId: string, 
-  eventId: string, 
-  eventTitle?: string
-) {
-  try {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('email, full_name')
-      .eq('id', userId)
-      .single();
-    
-    const { data: event } = await supabase
-      .from('events')
-      .select('title, start_date, venue_name, is_paid, price')
-      .eq('id', eventId)
-      .single();
-    
-    if (profile?.email && event) {
-      const eventDate = event.start_date ? new Date(event.start_date).toLocaleDateString('en-IN', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      }) : 'TBA';
-      
-      // Send via Brevo SMTP (fire and forget)
-      sendEventRegistrationEmail(
-        profile.email,
-        profile.full_name || 'Participant',
-        eventTitle || event.title,
-        eventDate,
-        event.venue_name || 'TBA',
-        event.is_paid || false
-      );
-    }
-  } catch (emailError) {
-    console.error('Failed to send confirmation email:', emailError);
-    // Don't throw - email is non-critical
-  }
 }
