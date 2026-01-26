@@ -28,8 +28,8 @@ const AppLayout = () => {
       
       <Header onAuthClick={handleAuthClick} />
       
-      {/* Main content with proper spacing for sticky header */}
-      <main className="flex-1 w-full max-w-full relative z-10" style={{ overflow: 'visible' }}>
+      {/* Main content - overflow must be visible for sticky to work in children */}
+      <main className="flex-1 w-full max-w-full relative z-10 overflow-visible">
         <Suspense fallback={null}>
           <Outlet context={{ onAuthClick: handleAuthClick }} />
         </Suspense>
