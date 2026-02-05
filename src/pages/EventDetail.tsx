@@ -485,10 +485,18 @@ const EventDetail = () => {
                 {!isEventPast && !isFullNow && canShowQuickRegister && (
                   <QuickRegisterButton eventId={eventId!} isPast={isEventPast} isFull={isFullNow} variant="primary" className="w-full" />
                 )}
+                {/* Login button for non-authenticated users - opens auth modal only */}
+                {!user && (
+                  <Button variant={canShowQuickRegister ? "outline" : "default"} className="w-full rounded-full" disabled={isEventPast || isFullNow} onClick={() => setShowAuthModal(true)}>
+                    Already have an account? Login
+                  </Button>
+                )}
+                {/* Registration dialog for authenticated users only */}
+                {user && (
                 <Dialog open={isRegisterOpen} onOpenChange={(open) => { setIsRegisterOpen(open); if (!open) setBookingStep("form"); }}>
                   <DialogTrigger asChild>
-                    <Button variant={canShowQuickRegister ? "outline" : "default"} className="w-full rounded-full" disabled={isEventPast || isFullNow || isSubmitting} onClick={() => !user && setShowAuthModal(true)}>
-                      {!user ? "Already have an account? Login" : isEventPast ? "Event Ended" : isFullNow ? "Event Full" : hasCustomFields ? "Register Now" : "Register with full details"}
+                    <Button variant={canShowQuickRegister ? "outline" : "default"} className="w-full rounded-full" disabled={isEventPast || isFullNow || isSubmitting}>
+                      {isEventPast ? "Event Ended" : isFullNow ? "Event Full" : hasCustomFields ? "Register Now" : "Register with full details"}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-md max-h-[90vh]">
@@ -528,6 +536,7 @@ const EventDetail = () => {
                     </ScrollArea>
                   </DialogContent>
                 </Dialog>
+                )}
               </div>
             )}
           </CardContent>
@@ -763,10 +772,18 @@ const EventDetail = () => {
                     {!isEventPast && !isFullNow && canShowQuickRegister && (
                       <QuickRegisterButton eventId={eventId!} isPast={isEventPast} isFull={isFullNow} variant="primary" className="w-full" />
                     )}
+                    {/* Login button for non-authenticated users - opens auth modal only */}
+                    {!user && (
+                      <Button variant={canShowQuickRegister ? "outline" : "default"} className="w-full rounded-full" disabled={isEventPast || isFullNow} onClick={() => setShowAuthModal(true)}>
+                        Already have an account? Login
+                      </Button>
+                    )}
+                    {/* Registration dialog for authenticated users only */}
+                    {user && (
                     <Dialog open={isRegisterOpen} onOpenChange={(open) => { setIsRegisterOpen(open); if (!open) setBookingStep("form"); }}>
                       <DialogTrigger asChild>
-                        <Button variant={canShowQuickRegister ? "outline" : "default"} className="w-full rounded-full" disabled={isEventPast || isFullNow || isSubmitting} onClick={() => !user && setShowAuthModal(true)}>
-                          {!user ? "Already have an account? Login" : isEventPast ? "Event Ended" : isFullNow ? "Event Full" : hasCustomFields ? "Register Now" : "Register with full details"}
+                        <Button variant={canShowQuickRegister ? "outline" : "default"} className="w-full rounded-full" disabled={isEventPast || isFullNow || isSubmitting}>
+                          {isEventPast ? "Event Ended" : isFullNow ? "Event Full" : hasCustomFields ? "Register Now" : "Register with full details"}
                         </Button>
                       </DialogTrigger>
                       <DialogContent className="max-w-md max-h-[90vh]">
@@ -806,6 +823,7 @@ const EventDetail = () => {
                         </ScrollArea>
                       </DialogContent>
                     </Dialog>
+                    )}
                   </div>
                 )}
               </CardContent>
