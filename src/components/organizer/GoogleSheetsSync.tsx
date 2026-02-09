@@ -214,7 +214,7 @@ export function GoogleSheetsSync({ eventId, eventTitle }: GoogleSheetsSyncProps)
     }
   };
 
-  const downloadCSV = () => {
+  const downloadCSV = async () => {
     if (!registrations || registrations.length === 0) {
       toast({
         title: "No Data",
@@ -224,38 +224,94 @@ export function GoogleSheetsSync({ eventId, eventTitle }: GoogleSheetsSyncProps)
       return;
     }
 
-    // Build dynamic headers: fixed columns + form field labels
-    const fixedHeaders = ["Timestamp", "Registration ID", "Full Name", "Email", "Mobile", "College", "Payment Status", "Club Member", "Club Name", "Club ID"];
+    // Fetch attendees for all registrations
+    const regIds = registrations.map(r => r.registration_id);
+    const { data: allAttendees } = await supabase
+      .from("ticket_attendees")
+      .select("registration_id, attendee_name, attendee_email, attendee_mobile, ticket_category_id")
+      .in("registration_id", regIds);
+
+    // Fetch category names
+    const catIds = [...new Set((allAttendees || []).map(a => a.ticket_category_id).filter(Boolean))];
+    let catNameMap = new Map<string, string>();
+    if (catIds.length > 0) {
+      const { data: cats } = await supabase
+        .from("ticket_categories")
+        .select("id, name")
+        .in("id", catIds);
+      (cats || []).forEach((c: { id: string; name: string }) => catNameMap.set(c.id, c.name));
+    }
+
+    // Group attendees by registration
+    const attendeesMap = new Map<string, Array<{ name: string; email: string; mobile: string; category: string }>>();
+    (allAttendees || []).forEach(att => {
+      const list = attendeesMap.get(att.registration_id) || [];
+      list.push({
+        name: att.attendee_name,
+        email: att.attendee_email,
+        mobile: att.attendee_mobile,
+        category: catNameMap.get(att.ticket_category_id) || "",
+      });
+      attendeesMap.set(att.registration_id, list);
+    });
+
+    // Build headers
+    const fixedHeaders = [
+      "Timestamp", "Registration ID", "Registrant Name", "Email", "Mobile", "College",
+      "Payment Status", "Ticket Categories", "Base Amount (₹)", "Add-ons (₹)", "Total Amount (₹)",
+      "Attendee #", "Total Attendees", "Attendee Name", "Attendee Email", "Attendee Mobile", "Attendee Category",
+      "Club Member", "Club Name", "Club ID",
+    ];
     const dynamicHeaders = (formFields || []).map(f => f.label);
     const headers = [...fixedHeaders, ...dynamicHeaders];
-    
-    const rows = registrations.map((reg) => {
+
+    // Build rows — one per attendee
+    const rows: string[][] = [];
+    for (const reg of registrations) {
       const customData = reg.custom_data || {};
-      
-      // Fixed columns
-      const fixedCols = [
-        new Date(reg.created_at).toLocaleString(),
-        reg.registration_id,
-        reg.full_name || "",
-        reg.email || "",
-        reg.mobile_number || "",
-        reg.college_name || "",
-        reg.payment_status,
-        customData._club_id ? "Yes" : "No",
-        String(customData._club_name || ""),
-        String(customData._club_membership_id || customData._membership_id || ""),
-      ];
-      
-      // Dynamic form field columns
-      const dynamicCols = (formFields || []).map(field => {
-        const value = customData[field.id] || customData[field.label] || customData[field.label.toLowerCase()] || "";
-        if (Array.isArray(value)) return value.join(", ");
-        if (typeof value === "object") return JSON.stringify(value);
-        return String(value);
-      });
-      
-      return [...fixedCols, ...dynamicCols];
-    });
+      const attendees = attendeesMap.get(reg.registration_id) || [];
+      const ticketCats = (customData as Record<string, unknown>)._ticket_categories as Array<{ category_name: string; quantity: number; total: number }> | undefined;
+      const ticketSummary = ticketCats?.map(tc => `${tc.category_name} ×${tc.quantity} (₹${tc.total})`).join("; ") || "";
+
+      const buildRow = (att: { name: string; email: string; mobile: string; category: string } | null, idx: number, total: number) => {
+        const fixedCols = [
+          new Date(reg.created_at).toLocaleString(),
+          reg.registration_id,
+          reg.full_name || "",
+          reg.email || "",
+          reg.mobile_number || "",
+          reg.college_name || "",
+          reg.payment_status,
+          ticketSummary,
+          String((customData as Record<string, unknown>)._applied_price ?? ""),
+          String((customData as Record<string, unknown>)._addons_amount ?? "0"),
+          String((customData as Record<string, unknown>)._total_amount ?? ""),
+          att ? String(idx) : "",
+          att ? String(total) : "",
+          att?.name || "",
+          att?.email || "",
+          att?.mobile || "",
+          att?.category || "",
+          (customData as Record<string, unknown>)._club_id ? "Yes" : "No",
+          String((customData as Record<string, unknown>)._club_name || ""),
+          String((customData as Record<string, unknown>)._club_membership_id || (customData as Record<string, unknown>)._membership_id || ""),
+        ];
+        const dynamicCols = (formFields || []).map(field => {
+          const cd = customData as Record<string, unknown>;
+          const value = cd[field.id] || cd[field.label] || cd[field.label.toLowerCase()] || "";
+          if (Array.isArray(value)) return value.join(", ");
+          if (typeof value === "object") return JSON.stringify(value);
+          return String(value);
+        });
+        return [...fixedCols, ...dynamicCols];
+      };
+
+      if (attendees.length > 0) {
+        attendees.forEach((att, i) => rows.push(buildRow(att, i + 1, attendees.length)));
+      } else {
+        rows.push(buildRow(null, 0, 0));
+      }
+    }
 
     const csvContent = [
       headers.join(","),
@@ -271,10 +327,10 @@ export function GoogleSheetsSync({ eventId, eventTitle }: GoogleSheetsSyncProps)
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
+
     toast({
       title: "CSV Downloaded",
-      description: `Exported ${registrations.length} registrations with ${headers.length} columns`,
+      description: `Exported ${rows.length} rows (attendee-level) with ${headers.length} columns`,
     });
   };
 

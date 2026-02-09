@@ -29,6 +29,8 @@ interface Registration {
   base_amount?: number;
   addons_amount?: number;
   total_amount?: number;
+  payment_screenshot_url?: string | null;
+  reviewed_at?: string | null;
   profile?: {
     full_name?: string;
     email?: string;
@@ -150,10 +152,10 @@ serve(async (req) => {
 
     console.log(`Found ${eventUpsells?.length || 0} event upsells`);
 
-    // Fetch registrations with amount columns
+    // Fetch registrations with amount columns and payment screenshot
     const { data: registrations, error: regError } = await supabase
       .from("event_registrations")
-      .select("id, created_at, payment_status, custom_data, user_id, base_amount, addons_amount, total_amount, group_size, is_group_booking")
+      .select("id, created_at, payment_status, custom_data, user_id, base_amount, addons_amount, total_amount, group_size, is_group_booking, payment_screenshot_url, reviewed_at")
       .eq("event_id", eventId)
       .order("created_at", { ascending: true });
 
@@ -285,12 +287,22 @@ serve(async (req) => {
     // Build dynamic headers with upsells
     const headers = buildDynamicHeaders(formFields || [], event, eventUpsells || []);
 
-    // Build rows with dynamic column mapping
-    const rows = registrationsWithProfiles.map((reg) =>
-      buildDynamicRow(reg, formFields || [], event, eventUpsells || [])
-    );
+    // Build rows - one row per attendee (or one row per registration if no attendees)
+    const rows: string[][] = [];
+    for (const reg of registrationsWithProfiles) {
+      const attendees = reg.attendees || [];
+      if (attendees.length > 0) {
+        // One row per attendee
+        for (let i = 0; i < attendees.length; i++) {
+          rows.push(buildDynamicRow(reg, formFields || [], event, eventUpsells || [], attendees[i], i + 1, attendees.length));
+        }
+      } else {
+        // No attendees - single row for registration
+        rows.push(buildDynamicRow(reg, formFields || [], event, eventUpsells || [], null, 0, 0));
+      }
+    }
 
-    console.log(`Syncing ${rows.length} registrations with ${headers.length} columns`);
+    console.log(`Syncing ${rows.length} rows (attendee-level) with ${headers.length} columns`);
 
     // Clear and update sheet
     await clearSheet(accessToken, spreadsheetId, actualSheetName);
@@ -322,38 +334,48 @@ function buildDynamicHeaders(
   event: { is_paid: boolean; title: string },
   eventUpsells: EventUpsell[]
 ): string[] {
-  // Fixed columns that always appear first
   const fixedHeaders = [
     "Timestamp",
     "Registration ID",
-    "Full Name",
-    "Email",
-    "Mobile",
+    "Registrant Name",
+    "Registrant Email",
+    "Registrant Mobile",
     "College",
     "Payment Status",
+    "Group Entry",
+    "Group Size",
   ];
 
-  // Add group booking columns
-  fixedHeaders.push("Group Entry", "Group Size");
+  // Payment & financial columns (always include for complete visibility)
+  fixedHeaders.push(
+    "Ticket Price (₹)",
+    "Base Amount (₹)",
+    "Add-ons Amount (₹)",
+    "Total Amount (₹)",
+    "Payment Screenshot URL",
+    "Reviewed At",
+  );
 
-  // Add payment amount columns if event is paid
-  if (event.is_paid) {
-    fixedHeaders.push("Base Amount (₹)", "Add-ons Amount (₹)", "Total Amount (₹)");
-  }
+  // Club membership
+  fixedHeaders.push("Club Member", "Club Name", "Club Membership ID");
 
-  // Add club membership columns
-  fixedHeaders.push("Club Member", "Club Name", "Club ID");
+  // Ticket category breakdown
+  fixedHeaders.push("Ticket Categories Summary");
 
-  // Add ticket categories column
-  fixedHeaders.push("Ticket Categories");
+  // Per-attendee columns
+  fixedHeaders.push(
+    "Attendee #",
+    "Total Attendees",
+    "Attendee Name",
+    "Attendee Email",
+    "Attendee Mobile",
+    "Attendee Ticket Category",
+  );
 
-  // Add attendees columns
-  fixedHeaders.push("Attendees (Name | Email | Mobile)");
-
-  // Add dynamic form field columns (in order) - EACH FIELD GETS ITS OWN COLUMN
+  // Dynamic form field columns
   const dynamicHeaders = formFields.map(field => field.label);
 
-  // Add individual upsell/add-on columns - EACH UPSELL GETS ITS OWN COLUMN
+  // Upsell columns
   const upsellHeaders: string[] = [];
   for (const upsell of eventUpsells) {
     if (upsell.upsell_type === 'addon' || upsell.upsell_type === 'custom_addon') {
@@ -369,90 +391,85 @@ function buildDynamicHeaders(
   return [...fixedHeaders, ...dynamicHeaders, ...upsellHeaders];
 }
 
-// Build a row with dynamic column mapping
+// Build a single row — called once per attendee (or once per registration if no attendees)
 function buildDynamicRow(
   reg: Registration,
   formFields: FormField[],
   event: { is_paid: boolean },
-  eventUpsells: EventUpsell[]
+  eventUpsells: EventUpsell[],
+  attendee: TicketAttendee | null,
+  attendeeIndex: number,
+  totalAttendees: number,
 ): string[] {
   const customData = reg.custom_data || {};
   const profile = reg.profile;
   const addons = reg.addons || [];
 
-  // Fixed columns
   const row: string[] = [
-    // Timestamp
     reg.created_at ? new Date(reg.created_at).toLocaleString() : "",
-    // Registration ID
     String(reg.id || ""),
-    // Profile fields
     String(profile?.full_name || ""),
     String(profile?.email || ""),
     String(profile?.mobile_number || ""),
     String(profile?.college_name || ""),
-    // Payment status
     String(reg.payment_status || ""),
+    reg.is_group_booking ? "Yes" : "No",
+    String(reg.group_size || 1),
   ];
 
-  // Group booking columns
-  row.push(reg.is_group_booking ? "Yes" : "No");
-  row.push(String(reg.group_size || 1));
+  // Financial columns
+  const ticketPrice = customData._applied_price ?? customData._amount ?? event.is_paid ? (reg.base_amount ?? "") : "0 (Free)";
+  row.push(String(ticketPrice));
+  row.push(String(reg.base_amount ?? ""));
+  row.push(String(reg.addons_amount ?? "0"));
+  row.push(String(reg.total_amount ?? ""));
+  row.push(String(reg.payment_screenshot_url || ""));
+  row.push(reg.reviewed_at ? new Date(reg.reviewed_at).toLocaleString() : "");
 
-  // Add payment amount if paid event
-  if (event.is_paid) {
-    row.push(String(reg.base_amount ?? customData._applied_price ?? customData._amount ?? ""));
-    row.push(String(reg.addons_amount ?? "0"));
-    row.push(String(reg.total_amount ?? ""));
-  }
-
-  // Club membership columns
+  // Club membership
   const isClubMember = Boolean(customData._club_id || customData._is_club_member);
   row.push(isClubMember ? "Yes" : "No");
   row.push(String(customData._club_name || ""));
   row.push(String(customData._club_membership_id || customData._membership_id || ""));
 
-  // Ticket categories from custom_data
-  const ticketCats = customData._ticket_categories as Array<{ category_name: string; quantity: number; total: number }> | undefined;
+  // Ticket categories summary
+  const ticketCats = customData._ticket_categories as Array<{ category_name: string; quantity: number; price_per: number; total: number }> | undefined;
   if (ticketCats && Array.isArray(ticketCats)) {
-    row.push(ticketCats.map(tc => `${tc.category_name} ×${tc.quantity} (₹${tc.total})`).join("; "));
+    row.push(ticketCats.map(tc => `${tc.category_name} ×${tc.quantity} @₹${tc.price_per ?? 0} = ₹${tc.total}`).join("; "));
   } else {
     row.push("");
   }
 
-  // Attendee details
-  const attendees = reg.attendees || [];
-  if (attendees.length > 0) {
-    row.push(attendees.map(a => `${a.attendee_name} | ${a.attendee_email} | ${a.attendee_mobile}${a.category_name ? ` [${a.category_name}]` : ""}`).join("; "));
+  // Per-attendee columns
+  if (attendee) {
+    row.push(String(attendeeIndex));
+    row.push(String(totalAttendees));
+    row.push(String(attendee.attendee_name || ""));
+    row.push(String(attendee.attendee_email || ""));
+    row.push(String(attendee.attendee_mobile || ""));
+    row.push(String(attendee.category_name || ""));
   } else {
-    row.push("");
+    row.push("", "", "", "", "", "");
   }
 
-  // Add dynamic form field values (in order) - EACH FIELD IN ITS OWN COLUMN
+  // Dynamic form fields
   for (const field of formFields) {
     try {
-      const value = getFieldValue(customData, field);
-      row.push(value);
-    } catch (e) {
-      console.error(`Error extracting field ${field.label}:`, e);
-      row.push(""); // Don't fail entire sync
+      row.push(getFieldValue(customData, field));
+    } catch {
+      row.push("");
     }
   }
 
-  // Add individual upsell values - EACH UPSELL IN ITS OWN COLUMN
+  // Upsell values
   for (const upsell of eventUpsells) {
     const regAddon = addons.find(a => a.upsell_id === upsell.id);
-
     if (upsell.upsell_type === 'addon' || upsell.upsell_type === 'custom_addon') {
-      // Quantity purchased (0 if not selected)
       row.push(regAddon ? String(regAddon.quantity) : "0");
-
-      // If upsell allows custom input, add the input value
       if (upsell.allow_custom_input) {
         row.push(regAddon?.custom_input_value || "");
       }
     } else if (upsell.upsell_type === 'group_offer') {
-      // Show "Applied" if group size matches offer requirements
       row.push(regAddon ? "Applied" : "Not Applied");
     }
   }
