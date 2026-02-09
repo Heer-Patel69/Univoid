@@ -8,10 +8,13 @@ import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { CookieConsent } from "@/components/common/CookieConsent";
 import { GlobalRealtimeProvider } from "@/components/common/GlobalRealtimeProvider";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
-import { PushNotificationPrompt } from "@/components/notifications/PushNotificationPrompt";
-import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
-import { FeatureHints } from "@/components/onboarding/FeatureHints";
+import { lazy, Suspense } from "react";
 import { AnimatedRoutes } from "@/components/common/AnimatedRoutes";
+
+// Defer non-critical overlays
+const PushNotificationPrompt = lazy(() => import("@/components/notifications/PushNotificationPrompt").then(m => ({ default: m.PushNotificationPrompt })));
+const OnboardingTour = lazy(() => import("@/components/onboarding/OnboardingTour").then(m => ({ default: m.OnboardingTour })));
+const FeatureHints = lazy(() => import("@/components/onboarding/FeatureHints").then(m => ({ default: m.FeatureHints })));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,9 +44,11 @@ const App = () => (
                   <AnimatedRoutes />
                 </ErrorBoundary>
                 <CookieConsent />
-                <PushNotificationPrompt />
-                <OnboardingTour />
-                <FeatureHints />
+                <Suspense fallback={null}>
+                  <PushNotificationPrompt />
+                  <OnboardingTour />
+                  <FeatureHints />
+                </Suspense>
               </GlobalRealtimeProvider>
             </AuthProvider>
           </BrowserRouter>
