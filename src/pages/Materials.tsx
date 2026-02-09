@@ -168,60 +168,9 @@ const Materials = () => {
     return result.data;
   }, [batchSize, setSessionCache]);
 
-  // Initial fetch + real-time subscription
+  // Initial fetch only - no realtime subscription (React Query cache handles freshness)
   useEffect(() => {
     fetchMaterials();
-
-    // Real-time subscription for instant updates
-    const channel = supabase
-      .channel('materials-page-realtime')
-      .on(
-        'postgres_changes' as any,
-        { event: '*', schema: 'public', table: 'materials' },
-        (payload: any) => {
-          const newData = payload.new as Material;
-          const oldData = payload.old as Material | null;
-          
-          if (payload.eventType === 'INSERT' && newData?.status === 'approved') {
-            // New approved material inserted
-            setAllMaterials(prev => {
-              if (prev.some(m => m.id === newData.id)) return prev;
-              return [newData, ...prev];
-            });
-          } else if (payload.eventType === 'UPDATE') {
-            // Check if material was just approved (status changed from pending to approved)
-            const wasJustApproved = newData?.status === 'approved' && 
-              (oldData?.status === 'pending' || oldData?.status === 'rejected');
-            
-            if (wasJustApproved) {
-              // Add newly approved material to the list
-              setAllMaterials(prev => {
-                if (prev.some(m => m.id === newData.id)) {
-                  // Already exists, update it
-                  return prev.map(m => m.id === newData.id ? { ...m, ...newData } : m);
-                }
-                // Add to top of list
-                return [newData, ...prev];
-              });
-            } else if (newData?.status === 'approved') {
-              // Update existing approved material
-              setAllMaterials(prev => prev.map(m => 
-                m.id === newData.id ? { ...m, ...newData } : m
-              ));
-            } else {
-              // Material was un-approved (rejected or back to pending), remove from list
-              setAllMaterials(prev => prev.filter(m => m.id !== newData.id));
-            }
-          } else if (payload.eventType === 'DELETE') {
-            setAllMaterials(prev => prev.filter(m => m.id !== payload.old?.id));
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, [fetchMaterials]);
 
   const applyFilters = useCallback(async (newFilters: MaterialFiltersState) => {
