@@ -67,6 +67,8 @@ const preloadCriticalPages = () => {
   import("@/pages/Dashboard");
   import("@/pages/Materials");
   import("@/pages/Events");
+  import("@/pages/EventDetail");
+  import("@/pages/Books");
 };
 
 // Memoized skeleton wrappers for route-specific loading
