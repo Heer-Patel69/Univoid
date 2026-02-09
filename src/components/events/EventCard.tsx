@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import type { Event } from "@/services/eventsService";
 import { getOrganizerProfileByUserId } from "@/services/organizerService";
+import { fetchTicketCategories } from "@/services/ticketCategoryService";
 import { toDisplayUrl } from "@/lib/storageProxy";
 
 interface EventCardProps {
@@ -21,6 +22,15 @@ export const EventCard = ({ event }: EventCardProps) => {
     enabled: !!event.organizer_id,
     staleTime: 1000 * 60 * 10, // Cache for 10 mins
   });
+  
+  // Fetch ticket categories to show category-based pricing
+  const { data: ticketCategories = [] } = useQuery({
+    queryKey: ['ticket-categories-card', event.id],
+    queryFn: () => fetchTicketCategories(event.id),
+    enabled: !!event.id && event.is_paid,
+    staleTime: 1000 * 60 * 10,
+  });
+
   const isEventPast = isPast(new Date(event.start_date));
   const daysUntil = differenceInDays(new Date(event.start_date), new Date());
   
@@ -72,7 +82,11 @@ export const EventCard = ({ event }: EventCardProps) => {
               {event.is_paid ? (
                 <span className="flex items-center gap-0.5">
                   <IndianRupee className="w-3 h-3" />
-                  {event.price}
+                  {ticketCategories.length > 0 
+                    ? (Math.min(...ticketCategories.map(c => c.price)) === Math.max(...ticketCategories.map(c => c.price))
+                      ? ticketCategories[0].price
+                      : `${Math.min(...ticketCategories.map(c => c.price))}+`)
+                    : event.price}
                 </span>
               ) : (
                 "Free"
