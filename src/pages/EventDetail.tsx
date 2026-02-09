@@ -368,7 +368,7 @@ const EventDetail = () => {
   // Club membership section for paid events
   const clubSection = event.is_paid ? (
     <ClubMembershipCheck
-      eventId={eventId!}
+      eventId={event.id}
       standardPrice={event.price}
       onPriceChange={handlePriceChange}
     />
@@ -579,7 +579,7 @@ const EventDetail = () => {
             {!existingRegistration && (
               <div className="space-y-3">
                 {!isEventPast && !isFullNow && canShowQuickRegister && (
-                  <QuickRegisterButton eventId={eventId!} isPast={isEventPast} isFull={isFullNow} variant="primary" className="w-full" />
+                  <QuickRegisterButton eventId={event.id} isPast={isEventPast} isFull={isFullNow} variant="primary" className="w-full" />
                 )}
                 {/* Login button for non-authenticated users - opens auth modal only */}
                 {!user && (
@@ -613,7 +613,7 @@ const EventDetail = () => {
                                 isPaidEvent={event.is_paid}
                               />
                             )}
-                            <DynamicRegistrationForm eventId={eventId!} onSubmit={handleRegister} isSubmitting={isSubmitting || isUploading} isPaidEvent={event.is_paid} paymentSection={!upsellSettings?.upsell_enabled ? paymentSection : undefined} termsSection={!upsellSettings?.upsell_enabled ? termsSection : undefined} submitDisabled={!upsellSettings?.upsell_enabled && ((event.is_paid && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms)) || (hasTicketCategories && (categorySelections.length === 0 || categorySelections.some(s => s.attendees.some(a => !a.name || !a.email || !a.mobile))))} submitLabel={isSubmitting ? "Processing..." : upsellSettings?.upsell_enabled && upsells.length > 0 ? "Continue" : event.is_paid ? "Submit Registration" : "Confirm Registration"} />
+                            <DynamicRegistrationForm eventId={event.id} onSubmit={handleRegister} isSubmitting={isSubmitting || isUploading} isPaidEvent={event.is_paid} paymentSection={!upsellSettings?.upsell_enabled ? paymentSection : undefined} termsSection={!upsellSettings?.upsell_enabled ? termsSection : undefined} submitDisabled={!upsellSettings?.upsell_enabled && ((event.is_paid && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms)) || (hasTicketCategories && (categorySelections.length === 0 || categorySelections.some(s => s.attendees.some(a => !a.name || !a.email || !a.mobile))))} submitLabel={isSubmitting ? "Processing..." : upsellSettings?.upsell_enabled && upsells.length > 0 ? "Continue" : event.is_paid ? "Submit Registration" : "Confirm Registration"} />
                           </>
                         )}
                         {bookingStep === "upsells" && (
@@ -899,7 +899,7 @@ const EventDetail = () => {
                 {!existingRegistration && (
                   <div className="space-y-3">
                     {!isEventPast && !isFullNow && canShowQuickRegister && (
-                      <QuickRegisterButton eventId={eventId!} isPast={isEventPast} isFull={isFullNow} variant="primary" className="w-full" />
+                      <QuickRegisterButton eventId={event.id} isPast={isEventPast} isFull={isFullNow} variant="primary" className="w-full" />
                     )}
                     {/* Login button for non-authenticated users - opens auth modal only */}
                     {!user && (
@@ -933,7 +933,7 @@ const EventDetail = () => {
                                     isPaidEvent={event.is_paid}
                                   />
                                 )}
-                                <DynamicRegistrationForm eventId={eventId!} onSubmit={handleRegister} isSubmitting={isSubmitting || isUploading} isPaidEvent={event.is_paid} paymentSection={!upsellSettings?.upsell_enabled ? paymentSection : undefined} termsSection={!upsellSettings?.upsell_enabled ? termsSection : undefined} submitDisabled={!upsellSettings?.upsell_enabled && ((event.is_paid && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms)) || (hasTicketCategories && (categorySelections.length === 0 || categorySelections.some(s => s.attendees.some(a => !a.name || !a.email || !a.mobile))))} submitLabel={isSubmitting ? "Processing..." : upsellSettings?.upsell_enabled && upsells.length > 0 ? "Continue" : event.is_paid ? "Submit Registration" : "Confirm Registration"} />
+                                <DynamicRegistrationForm eventId={event.id} onSubmit={handleRegister} isSubmitting={isSubmitting || isUploading} isPaidEvent={event.is_paid} paymentSection={!upsellSettings?.upsell_enabled ? paymentSection : undefined} termsSection={!upsellSettings?.upsell_enabled ? termsSection : undefined} submitDisabled={!upsellSettings?.upsell_enabled && ((event.is_paid && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms)) || (hasTicketCategories && (categorySelections.length === 0 || categorySelections.some(s => s.attendees.some(a => !a.name || !a.email || !a.mobile))))} submitLabel={isSubmitting ? "Processing..." : upsellSettings?.upsell_enabled && upsells.length > 0 ? "Continue" : event.is_paid ? "Submit Registration" : "Confirm Registration"} />
                               </>
                             )}
                             {bookingStep === "upsells" && (
