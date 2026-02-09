@@ -17,6 +17,14 @@ interface TicketCategorySelectorProps {
 const TicketCategorySelector = ({ categories, selections, onChange, isPaidEvent }: TicketCategorySelectorProps) => {
   const [expandedAttendees, setExpandedAttendees] = useState<string | null>(null);
 
+  // Auto-expand attendee details when first ticket is added
+  useEffect(() => {
+    if (selections.length > 0 && !expandedAttendees) {
+      const firstWithQty = selections.find(s => s.quantity >= 1);
+      if (firstWithQty) setExpandedAttendees(firstWithQty.category.id);
+    }
+  }, [selections]);
+
   // Total tickets across all categories
   const totalTickets = useMemo(
     () => selections.reduce((sum, s) => sum + s.quantity, 0),
@@ -129,8 +137,8 @@ const TicketCategorySelector = ({ categories, selections, onChange, isPaidEvent 
                 {cat.max_total && <span>• {cat.max_total} total available</span>}
               </div>
 
-              {/* Attendee details (required when qty >= 2) */}
-              {qty >= 2 && (
+              {/* Attendee details (required for ALL tickets) */}
+              {qty >= 1 && (
                 <div>
                   <Button
                     variant="ghost"
@@ -140,7 +148,7 @@ const TicketCategorySelector = ({ categories, selections, onChange, isPaidEvent 
                   >
                     <span className="flex items-center gap-1.5">
                       <Users className="w-3.5 h-3.5" />
-                      Attendee Details ({qty} required)
+                      Attendee Details ({qty} required) *
                     </span>
                     {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                   </Button>

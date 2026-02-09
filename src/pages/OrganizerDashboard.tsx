@@ -35,6 +35,7 @@ import { format } from "date-fns";
 import type { Event } from "@/services/eventsService";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toDisplayUrl } from "@/lib/storageProxy";
+import { fetchRegistrationAttendees } from "@/services/ticketCategoryService";
 
 const OrganizerDashboard = () => {
   const { user } = useAuth();
@@ -622,13 +623,32 @@ const OrganizerDashboard = () => {
                                       </div>
                                     )}
 
-                                    {/* Ticket categories */}
+                                     {/* Ticket categories */}
                                     {Array.isArray((reg.custom_data as Record<string, unknown>)?._ticket_categories) && (
                                       <div className="text-xs text-muted-foreground">
-                                        {((reg.custom_data as Record<string, unknown>)._ticket_categories as Array<{category_name: string; quantity: number; total: number}>).map((tc, i) => (
-                                          <span key={i} className="mr-2">
-                                            {tc.category_name} ×{tc.quantity} (₹{tc.total})
-                                          </span>
+                                        {((reg.custom_data as Record<string, unknown>)._ticket_categories as Array<{category_name: string; quantity: number; total: number; attendees?: Array<{name: string; email: string; mobile: string}>}>).map((tc, i) => (
+                                          <div key={i} className="mb-1">
+                                            <span className="mr-2">
+                                              {tc.category_name} ×{tc.quantity} (₹{tc.total})
+                                            </span>
+                                            {/* Show attendee details from custom_data */}
+                                            {tc.attendees && tc.attendees.length > 0 && (
+                                              <details className="ml-2 mt-0.5">
+                                                <summary className="cursor-pointer text-muted-foreground hover:text-foreground text-xs">
+                                                  Attendees ({tc.attendees.length})
+                                                </summary>
+                                                <div className="mt-1 space-y-1 pl-2 border-l-2 border-muted">
+                                                  {tc.attendees.map((att, j) => (
+                                                    <div key={j} className="text-xs">
+                                                      <span className="font-medium">{att.name}</span>
+                                                      <span className="text-muted-foreground"> • {att.email}</span>
+                                                      {att.mobile && <span className="text-muted-foreground"> • {att.mobile}</span>}
+                                                    </div>
+                                                  ))}
+                                                </div>
+                                              </details>
+                                            )}
+                                          </div>
                                         ))}
                                       </div>
                                     )}

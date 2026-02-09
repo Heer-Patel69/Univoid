@@ -248,11 +248,11 @@ const EventDetail = () => {
     const effectiveGroupSize = hasTicketCategories ? totalCategoryTickets : groupSize;
     const result = await register(enhancedCustomData, paymentScreenshot, effectiveGroupSize, effectiveGroupSize > 1);
     
-    // Save attendee details if ticket categories with multiple tickets
+    // Save attendee details for ALL ticket categories (mandatory from 1st ticket)
     if (result?.success && result.registration_id && hasTicketCategories) {
       const allAttendees = categorySelections.flatMap(s =>
         s.attendees
-          .filter(a => a.name && a.email)
+          .filter(a => a.name && a.email && a.mobile)
           .map(a => ({
             ticket_category_id: s.category.id,
             attendee_name: a.name,
@@ -525,8 +525,8 @@ const EventDetail = () => {
                 : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300"
               }`}>
                 {existingRegistration.payment_status === "approved" ? (<><CheckCircle className="w-4 h-4" /><span>You're registered!</span></>) 
-                : existingRegistration.payment_status === "rejected" ? (<><AlertCircle className="w-4 h-4" /><span>Registration rejected</span></>)
-                : (<><Clock className="w-4 h-4" /><span>Payment pending</span></>)}
+                : existingRegistration.payment_status === "rejected" ? (<><AlertCircle className="w-4 h-4" /><span>Registration rejected. You cannot re-apply.</span></>)
+                : (<><Clock className="w-4 h-4" /><span>Payment pending verification</span></>)}
               </div>
             )}
             {!existingRegistration && (
@@ -566,7 +566,7 @@ const EventDetail = () => {
                                 isPaidEvent={event.is_paid}
                               />
                             )}
-                            <DynamicRegistrationForm eventId={eventId!} onSubmit={handleRegister} isSubmitting={isSubmitting || isUploading} isPaidEvent={event.is_paid} paymentSection={!upsellSettings?.upsell_enabled ? paymentSection : undefined} termsSection={!upsellSettings?.upsell_enabled ? termsSection : undefined} submitDisabled={!upsellSettings?.upsell_enabled && ((event.is_paid && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms)) || (hasTicketCategories && categorySelections.length === 0)} submitLabel={isSubmitting ? "Processing..." : upsellSettings?.upsell_enabled && upsells.length > 0 ? "Continue" : event.is_paid ? "Submit Registration" : "Confirm Registration"} />
+                            <DynamicRegistrationForm eventId={eventId!} onSubmit={handleRegister} isSubmitting={isSubmitting || isUploading} isPaidEvent={event.is_paid} paymentSection={!upsellSettings?.upsell_enabled ? paymentSection : undefined} termsSection={!upsellSettings?.upsell_enabled ? termsSection : undefined} submitDisabled={!upsellSettings?.upsell_enabled && ((event.is_paid && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms)) || (hasTicketCategories && (categorySelections.length === 0 || categorySelections.some(s => s.attendees.some(a => !a.name || !a.email || !a.mobile))))} submitLabel={isSubmitting ? "Processing..." : upsellSettings?.upsell_enabled && upsells.length > 0 ? "Continue" : event.is_paid ? "Submit Registration" : "Confirm Registration"} />
                           </>
                         )}
                         {bookingStep === "upsells" && (
@@ -820,8 +820,8 @@ const EventDetail = () => {
                     : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300"
                   }`}>
                     {existingRegistration.payment_status === "approved" ? (<><CheckCircle className="w-4 h-4" /><span>You're registered!</span></>) 
-                    : existingRegistration.payment_status === "rejected" ? (<><AlertCircle className="w-4 h-4" /><span>Registration rejected</span></>)
-                    : (<><Clock className="w-4 h-4" /><span>Payment pending</span></>)}
+                    : existingRegistration.payment_status === "rejected" ? (<><AlertCircle className="w-4 h-4" /><span>Registration rejected. You cannot re-apply.</span></>)
+                    : (<><Clock className="w-4 h-4" /><span>Payment pending verification</span></>)}
                   </div>
                 )}
                 {!existingRegistration && (
@@ -861,7 +861,7 @@ const EventDetail = () => {
                                     isPaidEvent={event.is_paid}
                                   />
                                 )}
-                                <DynamicRegistrationForm eventId={eventId!} onSubmit={handleRegister} isSubmitting={isSubmitting || isUploading} isPaidEvent={event.is_paid} paymentSection={!upsellSettings?.upsell_enabled ? paymentSection : undefined} termsSection={!upsellSettings?.upsell_enabled ? termsSection : undefined} submitDisabled={!upsellSettings?.upsell_enabled && ((event.is_paid && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms)) || (hasTicketCategories && categorySelections.length === 0)} submitLabel={isSubmitting ? "Processing..." : upsellSettings?.upsell_enabled && upsells.length > 0 ? "Continue" : event.is_paid ? "Submit Registration" : "Confirm Registration"} />
+                                <DynamicRegistrationForm eventId={eventId!} onSubmit={handleRegister} isSubmitting={isSubmitting || isUploading} isPaidEvent={event.is_paid} paymentSection={!upsellSettings?.upsell_enabled ? paymentSection : undefined} termsSection={!upsellSettings?.upsell_enabled ? termsSection : undefined} submitDisabled={!upsellSettings?.upsell_enabled && ((event.is_paid && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms)) || (hasTicketCategories && (categorySelections.length === 0 || categorySelections.some(s => s.attendees.some(a => !a.name || !a.email || !a.mobile))))} submitLabel={isSubmitting ? "Processing..." : upsellSettings?.upsell_enabled && upsells.length > 0 ? "Continue" : event.is_paid ? "Submit Registration" : "Confirm Registration"} />
                               </>
                             )}
                             {bookingStep === "upsells" && (

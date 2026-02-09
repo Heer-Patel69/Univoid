@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   registerForEventAtomic, 
   uploadPaymentScreenshot,
@@ -124,8 +125,23 @@ export function useRegistration(options: UseRegistrationOptions) {
               },
             }
           );
-          // Note: Confirmation emails are sent automatically via database trigger
-          // when the ticket is created (send-ticket-email edge function)
+          
+          // Send registration confirmation email (pending for paid, confirmed for free)
+          try {
+            await supabase.functions.invoke('send-registration-email', {
+              body: {
+                userEmail: (await supabase.auth.getUser()).data.user?.email,
+                userName: (await supabase.from('profiles').select('full_name').eq('id', userId).single()).data?.full_name || 'User',
+                eventTitle: eventTitle || 'Event',
+                eventDate: new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+                eventLocation: 'See event page for details',
+                isPaid: isPaidEvent || false,
+                ticketPrice: customData._total_amount || customData._applied_price || 0,
+              },
+            });
+          } catch (emailError) {
+            console.error('Failed to send registration email:', emailError);
+          }
         }
         
         // Invalidate queries to refresh data

@@ -26,6 +26,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   EVENT_FULL: "Sorry, this event is full. No spots available.",
   CONCURRENT_REQUEST: "High traffic detected. Please try again in a moment.",
   ALREADY_REGISTERED: "You're already registered for this event!",
+  REGISTRATION_REJECTED: "Your registration for this event was rejected. You cannot re-apply.",
   INVALID_INPUT: "Invalid event or user ID. Please refresh and try again.",
 
   // Network errors
@@ -216,6 +217,14 @@ async function registerForEventFallback(
       .maybeSingle();
 
     if (existingReg) {
+      // Block re-registration if previously rejected
+      if (existingReg.payment_status === 'rejected') {
+        return {
+          success: false,
+          error: 'REGISTRATION_REJECTED',
+          message: ERROR_MESSAGES.REGISTRATION_REJECTED,
+        };
+      }
       // Already registered - return success (idempotent)
       return {
         success: true,
