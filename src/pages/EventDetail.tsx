@@ -177,10 +177,17 @@ const EventDetail = () => {
     [upsells]
   );
 
+  const totalCategoryTickets = categorySelections.reduce((sum, s) => sum + s.quantity, 0);
+  const totalCategoryPrice = categorySelections.reduce((sum, s) => sum + s.category.price * s.quantity, 0);
+
   const priceCalculation = useMemo(() => {
+    if (hasTicketCategories && categorySelections.length > 0) {
+      // Use ticket category total as the base price, with quantity=1 since it's already summed
+      return calculateTotalWithUpsells(totalCategoryPrice, 1, selectedUpsells, groupOffers);
+    }
     const basePrice = selectedPrice !== null ? selectedPrice : (event?.price || 0);
     return calculateTotalWithUpsells(basePrice, groupSize, selectedUpsells, groupOffers);
-  }, [selectedPrice, event?.price, groupSize, selectedUpsells, groupOffers]);
+  }, [selectedPrice, event?.price, groupSize, selectedUpsells, groupOffers, hasTicketCategories, categorySelections, totalCategoryPrice]);
 
   // Robust registration with debouncing and error handling - use event.id for DB operations
   const { 
@@ -214,8 +221,6 @@ const EventDetail = () => {
     }
 
     // Include club membership + upsell + category info in custom_data
-    const totalCategoryTickets = categorySelections.reduce((sum, s) => sum + s.quantity, 0);
-    const totalCategoryPrice = categorySelections.reduce((sum, s) => sum + s.category.price * s.quantity, 0);
     
     const enhancedCustomData = {
       ...customData,
@@ -612,15 +617,28 @@ const EventDetail = () => {
                           </>
                         )}
                         {bookingStep === "upsells" && (
-                          <UpsellScreen upsells={upsells} basePrice={selectedPrice !== null ? selectedPrice : (event.price || 0)} groupSize={groupSize} onGroupSizeChange={setGroupSize} selectedUpsells={selectedUpsells} onUpsellsChange={setSelectedUpsells} onContinue={handleUpsellContinue} onSkip={handleUpsellSkip} />
+                          <UpsellScreen upsells={upsells} basePrice={hasTicketCategories ? totalCategoryPrice : (selectedPrice !== null ? selectedPrice : (event.price || 0))} groupSize={hasTicketCategories ? 1 : groupSize} onGroupSizeChange={setGroupSize} selectedUpsells={selectedUpsells} onUpsellsChange={setSelectedUpsells} onContinue={handleUpsellContinue} onSkip={handleUpsellSkip} />
                         )}
                         {bookingStep === "payment" && (
                           <>
                             <Card className="bg-muted/50">
                               <CardContent className="py-4 space-y-2">
-                                {selectedPrice !== null && selectedPrice < event.price && (<div className="flex justify-between text-sm"><span>Original Price ({groupSize} × ₹{event.price})</span><span className="line-through text-muted-foreground">₹{groupSize * event.price}</span></div>)}
-                                {selectedPrice !== null && selectedPrice < event.price && (<div className="flex justify-between text-sm text-green-600 font-medium"><span>🎉 Club Member Discount</span><span>-₹{(event.price - selectedPrice) * groupSize}</span></div>)}
-                                <div className="flex justify-between text-sm"><span>Tickets ({groupSize} × ₹{selectedPrice !== null ? selectedPrice : event.price})</span><span>₹{priceCalculation.baseTotal}</span></div>
+                                {hasTicketCategories && categorySelections.length > 0 ? (
+                                  <>
+                                    {categorySelections.map(s => (
+                                      <div key={s.category.id} className="flex justify-between text-sm">
+                                        <span>{s.category.name} ({s.quantity} × ₹{s.category.price})</span>
+                                        <span>₹{s.category.price * s.quantity}</span>
+                                      </div>
+                                    ))}
+                                  </>
+                                ) : (
+                                  <>
+                                    {selectedPrice !== null && selectedPrice < event.price && (<div className="flex justify-between text-sm"><span>Original Price ({groupSize} × ₹{event.price})</span><span className="line-through text-muted-foreground">₹{groupSize * event.price}</span></div>)}
+                                    {selectedPrice !== null && selectedPrice < event.price && (<div className="flex justify-between text-sm text-green-600 font-medium"><span>🎉 Club Member Discount</span><span>-₹{(event.price - selectedPrice) * groupSize}</span></div>)}
+                                    <div className="flex justify-between text-sm"><span>Tickets ({groupSize} × ₹{selectedPrice !== null ? selectedPrice : event.price})</span><span>₹{priceCalculation.baseTotal}</span></div>
+                                  </>
+                                )}
                                 {priceCalculation.discounts > 0 && (<div className="flex justify-between text-sm text-green-600"><span>Group Discount</span><span>-₹{priceCalculation.discounts}</span></div>)}
                                 {priceCalculation.addonsTotal > 0 && (<div className="flex justify-between text-sm"><span>Add-ons</span><span>+₹{priceCalculation.addonsTotal}</span></div>)}
                                 <div className="flex justify-between font-bold text-lg pt-2 border-t"><span>Total Payable</span><span className="text-primary">₹{priceCalculation.finalTotal}</span></div>
@@ -919,15 +937,28 @@ const EventDetail = () => {
                               </>
                             )}
                             {bookingStep === "upsells" && (
-                              <UpsellScreen upsells={upsells} basePrice={selectedPrice !== null ? selectedPrice : (event.price || 0)} groupSize={groupSize} onGroupSizeChange={setGroupSize} selectedUpsells={selectedUpsells} onUpsellsChange={setSelectedUpsells} onContinue={handleUpsellContinue} onSkip={handleUpsellSkip} />
+                              <UpsellScreen upsells={upsells} basePrice={hasTicketCategories ? totalCategoryPrice : (selectedPrice !== null ? selectedPrice : (event.price || 0))} groupSize={hasTicketCategories ? 1 : groupSize} onGroupSizeChange={setGroupSize} selectedUpsells={selectedUpsells} onUpsellsChange={setSelectedUpsells} onContinue={handleUpsellContinue} onSkip={handleUpsellSkip} />
                             )}
                             {bookingStep === "payment" && (
                               <>
                                 <Card className="bg-muted/50">
                                   <CardContent className="py-4 space-y-2">
-                                    {selectedPrice !== null && selectedPrice < event.price && (<div className="flex justify-between text-sm"><span>Original Price ({groupSize} × ₹{event.price})</span><span className="line-through text-muted-foreground">₹{groupSize * event.price}</span></div>)}
-                                    {selectedPrice !== null && selectedPrice < event.price && (<div className="flex justify-between text-sm text-green-600 font-medium"><span>🎉 Club Member Discount</span><span>-₹{(event.price - selectedPrice) * groupSize}</span></div>)}
-                                    <div className="flex justify-between text-sm"><span>Tickets ({groupSize} × ₹{selectedPrice !== null ? selectedPrice : event.price})</span><span>₹{priceCalculation.baseTotal}</span></div>
+                                    {hasTicketCategories && categorySelections.length > 0 ? (
+                                      <>
+                                        {categorySelections.map(s => (
+                                          <div key={s.category.id} className="flex justify-between text-sm">
+                                            <span>{s.category.name} ({s.quantity} × ₹{s.category.price})</span>
+                                            <span>₹{s.category.price * s.quantity}</span>
+                                          </div>
+                                        ))}
+                                      </>
+                                    ) : (
+                                      <>
+                                        {selectedPrice !== null && selectedPrice < event.price && (<div className="flex justify-between text-sm"><span>Original Price ({groupSize} × ₹{event.price})</span><span className="line-through text-muted-foreground">₹{groupSize * event.price}</span></div>)}
+                                        {selectedPrice !== null && selectedPrice < event.price && (<div className="flex justify-between text-sm text-green-600 font-medium"><span>🎉 Club Member Discount</span><span>-₹{(event.price - selectedPrice) * groupSize}</span></div>)}
+                                        <div className="flex justify-between text-sm"><span>Tickets ({groupSize} × ₹{selectedPrice !== null ? selectedPrice : event.price})</span><span>₹{priceCalculation.baseTotal}</span></div>
+                                      </>
+                                    )}
                                     {priceCalculation.discounts > 0 && (<div className="flex justify-between text-sm text-green-600"><span>Group Discount</span><span>-₹{priceCalculation.discounts}</span></div>)}
                                     {priceCalculation.addonsTotal > 0 && (<div className="flex justify-between text-sm"><span>Add-ons</span><span>+₹{priceCalculation.addonsTotal}</span></div>)}
                                     <div className="flex justify-between font-bold text-lg pt-2 border-t"><span>Total Payable</span><span className="text-primary">₹{priceCalculation.finalTotal}</span></div>
