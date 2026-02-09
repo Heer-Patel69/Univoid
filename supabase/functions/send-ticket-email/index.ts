@@ -12,7 +12,7 @@ interface TicketEmailRequest {
   eventId: string;
   userId: string;
   qrCode: string;
-  attendeesOnly?: boolean; // If true, only send emails to guest attendees (skip primary user)
+  attendeesOnly?: boolean;
 }
 
 // Generate QR code PNG using external API and upload to storage
@@ -166,6 +166,49 @@ function buildQrHtml(qrImageUrl: string | null, ticketId: string): string {
 </div></div>`;
 }
 
+// Create a real event_ticket record for a guest attendee
+async function createGuestTicket(
+  supabase: any,
+  attendeeId: string,
+  registrationId: string,
+  eventId: string,
+  userId: string
+): Promise<{ ticketId: string; qrCode: string } | null> {
+  try {
+    // Generate a unique QR code for this guest attendee
+    const qrCode = `${eventId}:attendee:${attendeeId}:${crypto.randomUUID().slice(0, 8)}`;
+
+    const { data: ticket, error } = await supabase
+      .from("event_tickets")
+      .insert({
+        registration_id: registrationId,
+        event_id: eventId,
+        user_id: userId, // Link to the buyer's user_id for RLS
+        qr_code: qrCode,
+        is_used: false,
+        is_group_booking: true,
+      })
+      .select("id")
+      .single();
+
+    if (error) {
+      console.error("Failed to create guest ticket:", error);
+      return null;
+    }
+
+    // Link the ticket to the attendee record
+    await supabase
+      .from("ticket_attendees")
+      .update({ ticket_id: ticket.id, qr_code: qrCode })
+      .eq("id", attendeeId);
+
+    return { ticketId: ticket.id, qrCode };
+  } catch (err) {
+    console.error("Error creating guest ticket:", err);
+    return null;
+  }
+}
+
 const handler = async (req: Request): Promise<Response> => {
   if (isCorsPreflightRequest(req)) return handleCorsPreflightRequest(req);
   const corsHeaders = getCorsHeaders(req);
@@ -228,7 +271,7 @@ const handler = async (req: Request): Promise<Response> => {
     try {
       const { data: attendees } = await supabase
         .from("ticket_attendees")
-        .select("id, attendee_name, attendee_email, attendee_mobile, ticket_category_id")
+        .select("id, attendee_name, attendee_email, attendee_mobile, ticket_category_id, ticket_id, qr_code")
         .eq("registration_id", registrationId);
 
       if (attendees && attendees.length > 0) {
@@ -239,10 +282,25 @@ const handler = async (req: Request): Promise<Response> => {
 
         for (const attendee of guestAttendees) {
           try {
-            // Generate a unique guest QR code using attendee ID
-            const guestQrData = `guest-${attendee.id}-${eventId}`;
-            const guestQrUrl = await generateAndUploadQRCode(supabase, `guest-${attendee.id}`, guestQrData);
-            const guestQrHtml = buildQrHtml(guestQrUrl, `guest-${attendee.id}`);
+            let guestTicketId = attendee.ticket_id;
+            let guestQrCode = attendee.qr_code;
+
+            // Create a real ticket record if the attendee doesn't have one yet
+            if (!guestTicketId) {
+              const ticketResult = await createGuestTicket(supabase, attendee.id, registrationId, eventId, userId);
+              if (ticketResult) {
+                guestTicketId = ticketResult.ticketId;
+                guestQrCode = ticketResult.qrCode;
+              } else {
+                // Fallback: use attendee ID but log the issue
+                console.error(`Could not create ticket for attendee ${attendee.id}, skipping email`);
+                continue;
+              }
+            }
+
+            // Generate QR code image from the real QR code data
+            const guestQrUrl = await generateAndUploadQRCode(supabase, guestTicketId, guestQrCode);
+            const guestQrHtml = buildQrHtml(guestQrUrl, guestTicketId);
             const guestHtml = buildTicketEmailHtml(
               attendee.attendee_name, event.title, eventDate, locationText, organizerName, guestQrHtml, true
             );
@@ -256,10 +314,6 @@ const handler = async (req: Request): Promise<Response> => {
 
             if (guestResult.success) {
               guestEmailsSent++;
-              // Update attendee record with QR data
-              await supabase.from("ticket_attendees")
-                .update({ qr_code: guestQrData })
-                .eq("id", attendee.id);
             }
             console.log(`Guest email ${guestResult.success ? "sent" : "failed"}: ${attendee.attendee_email}`);
           } catch (guestError) {
