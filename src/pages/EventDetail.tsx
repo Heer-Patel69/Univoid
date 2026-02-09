@@ -29,6 +29,7 @@ import QuickRegisterButton from "@/components/events/QuickRegisterButton";
 import UpsellScreen from "@/components/events/UpsellScreen";
 import TicketCategorySelector from "@/components/events/TicketCategorySelector";
 import { fetchTicketCategories, saveTicketAttendees, type TicketCategorySelection } from "@/services/ticketCategoryService";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   fetchEventUpsells, 
   fetchUpsellSettings,
@@ -263,12 +264,34 @@ const EventDetail = () => {
       if (allAttendees.length > 0) {
         try {
           await saveTicketAttendees(result.registration_id, allAttendees);
+          console.log("✅ Attendee details saved, sending guest emails...");
+          
+          // Now explicitly invoke send-ticket-email for guest attendees
+          // The DB trigger already sent the primary user's email, so use attendeesOnly mode
+          const { data: ticketData } = await supabase
+            .from('event_tickets')
+            .select('id, qr_code')
+            .eq('registration_id', result.registration_id)
+            .maybeSingle();
+          
+          if (ticketData) {
+            await supabase.functions.invoke('send-ticket-email', {
+              body: {
+                ticketId: ticketData.id,
+                registrationId: result.registration_id,
+                eventId: event.id,
+                userId: user.id,
+                qrCode: ticketData.qr_code,
+                attendeesOnly: true,
+              },
+            });
+          }
         } catch (e) {
-          console.error("Failed to save attendee details:", e);
+          console.error("Failed to save attendee details or send guest emails:", e);
         }
       }
     }
-  }, [user, event, selectedClubId, membershipId, selectedPrice, register, paymentScreenshot, upsellSettings, upsells, hasSeenUpsells, groupSize, priceCalculation, selectedUpsells]);
+  }, [user, event, selectedClubId, membershipId, selectedPrice, register, paymentScreenshot, upsellSettings, upsells, hasSeenUpsells, groupSize, priceCalculation, selectedUpsells, categorySelections, hasTicketCategories]);
 
   const handleUpsellContinue = () => {
     setBookingStep("payment");
