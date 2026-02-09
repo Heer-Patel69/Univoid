@@ -16,6 +16,8 @@ import AuthModal from "@/components/auth/AuthModal";
 import { FormBuilder, type FormBuilderField } from "@/components/events/FormBuilder";
 import ClubPricingSection, { type EventClubConfig } from "@/components/events/ClubPricingSection";
 import { UpsellConfigSection, type DraftUpsell } from "@/components/events/UpsellConfigSection";
+import TicketCategoryBuilder from "@/components/events/TicketCategoryBuilder";
+import { createTicketCategories, type DraftTicketCategory } from "@/services/ticketCategoryService";
 import { createFormFields } from "@/services/eventFormService";
 import { addClubToEvent } from "@/services/clubService";
 import { createEventUpsellsBulk, updateUpsellSettings } from "@/services/upsellService";
@@ -153,6 +155,7 @@ const CreateEvent = () => {
   // Upsell configs
   const [draftUpsells, setDraftUpsells] = useState<DraftUpsell[]>([]);
   const [upsellEnabled, setUpsellEnabled] = useState(false);
+  const [ticketCategories, setTicketCategories] = useState<DraftTicketCategory[]>([]);
 
   const [flyerFile, setFlyerFile] = useState<File | null>(null);
   const [flyerError, setFlyerError] = useState<string | null>(null);
@@ -339,6 +342,12 @@ const CreateEvent = () => {
           console.log("[CreateEvent] Saving upsells...");
           await createEventUpsellsBulk(data.id, draftUpsells);
           await updateUpsellSettings(data.id, { upsell_enabled: upsellEnabled });
+        }
+
+        // Save ticket categories if any
+        if (ticketCategories.length > 0) {
+          console.log("[CreateEvent] Saving ticket categories...");
+          await createTicketCategories(data.id, ticketCategories);
         }
 
         // Auto-assign organizer role to the user (silently, no UI interruption)
@@ -659,6 +668,13 @@ const CreateEvent = () => {
                   <Input type="number" value={formData.max_capacity} onChange={(e) => updateForm("max_capacity", e.target.value)} placeholder="100" />
                   <p className="text-xs text-muted-foreground">Leave empty for unlimited</p>
                 </div>
+
+                {/* Ticket Categories */}
+                <TicketCategoryBuilder
+                  categories={ticketCategories}
+                  onChange={setTicketCategories}
+                  isPaidEvent={formData.is_paid}
+                />
               </>
             )}
 

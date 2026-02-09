@@ -540,51 +540,114 @@ const OrganizerDashboard = () => {
                         ) : (
                           registrations?.filter(r => r.payment_status === status).map(reg => (
                             <Card key={reg.registration_id} className="border">
-                              <CardContent className="p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                                <div className="flex items-center gap-3">
-                                  <Avatar className="h-9 w-9">
-                                    <AvatarImage src={toDisplayUrl(reg.profile_photo_url, { forceImage: true }) || undefined} />
-                                    <AvatarFallback className="text-xs">
-                                      {reg.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <div>
-                                    <p className="font-medium text-sm">{reg.full_name || 'Unknown User'}</p>
-                                    <p className="text-xs text-muted-foreground">{reg.email || 'No email'}</p>
-                                    {reg.mobile_number && (
-                                      <p className="text-xs text-muted-foreground">{reg.mobile_number}</p>
+                              <CardContent className="p-3 sm:p-4 space-y-2">
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                  <div className="flex items-center gap-3">
+                                    <Avatar className="h-9 w-9">
+                                      <AvatarImage src={toDisplayUrl(reg.profile_photo_url, { forceImage: true }) || undefined} />
+                                      <AvatarFallback className="text-xs">
+                                        {reg.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                      <p className="font-medium text-sm">{reg.full_name || 'Unknown User'}</p>
+                                      <p className="text-xs text-muted-foreground">{reg.email || 'No email'}</p>
+                                      {reg.mobile_number && (
+                                        <p className="text-xs text-muted-foreground">{reg.mobile_number}</p>
+                                      )}
+                                      <p className="text-xs text-muted-foreground/70">{format(new Date(reg.created_at), "MMM d, h:mm a")}</p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                                    {reg.payment_screenshot_url && (
+                                      <a href={toDisplayUrl(reg.payment_screenshot_url, { forceImage: true }) || '#'} target="_blank" rel="noopener noreferrer">
+                                        <Button variant="outline" size="sm" className="text-xs">Screenshot</Button>
+                                      </a>
                                     )}
-                                    <p className="text-xs text-muted-foreground/70">{format(new Date(reg.created_at), "MMM d, h:mm a")}</p>
+                                    {status === "pending" && (
+                                      <>
+                                        <Button 
+                                          size="sm" 
+                                          className="flex-1 sm:flex-none text-xs" 
+                                          onClick={() => updateStatusMutation.mutate({ id: reg.registration_id, status: "approved", userId: reg.user_id })}
+                                          disabled={updateStatusMutation.isPending}
+                                        >
+                                          <CheckCircle className="w-3 h-3 mr-1" /> Approve
+                                        </Button>
+                                        <Button 
+                                          size="sm" 
+                                          variant="destructive" 
+                                          className="flex-1 sm:flex-none text-xs" 
+                                          onClick={() => updateStatusMutation.mutate({ id: reg.registration_id, status: "rejected", userId: reg.user_id })}
+                                          disabled={updateStatusMutation.isPending}
+                                        >
+                                          <XCircle className="w-3 h-3 mr-1" /> Reject
+                                        </Button>
+                                      </>
+                                    )}
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-2 w-full sm:w-auto">
-                                  {reg.payment_screenshot_url && (
-                                    <a href={toDisplayUrl(reg.payment_screenshot_url, { forceImage: true }) || '#'} target="_blank" rel="noopener noreferrer">
-                                      <Button variant="outline" size="sm" className="text-xs">Screenshot</Button>
-                                    </a>
-                                  )}
-                                  {status === "pending" && (
-                                    <>
-                                      <Button 
-                                        size="sm" 
-                                        className="flex-1 sm:flex-none text-xs" 
-                                        onClick={() => updateStatusMutation.mutate({ id: reg.registration_id, status: "approved", userId: reg.user_id })}
-                                        disabled={updateStatusMutation.isPending}
-                                      >
-                                        <CheckCircle className="w-3 h-3 mr-1" /> Approve
-                                      </Button>
-                                      <Button 
-                                        size="sm" 
-                                        variant="destructive" 
-                                        className="flex-1 sm:flex-none text-xs" 
-                                        onClick={() => updateStatusMutation.mutate({ id: reg.registration_id, status: "rejected", userId: reg.user_id })}
-                                        disabled={updateStatusMutation.isPending}
-                                      >
-                                        <XCircle className="w-3 h-3 mr-1" /> Reject
-                                      </Button>
-                                    </>
-                                  )}
-                                </div>
+
+                                {/* Payment details */}
+                                {reg.custom_data && (
+                                  <div className="space-y-1.5">
+                                    {/* Payment amounts */}
+                                    {(reg.custom_data as Record<string, unknown>)?._total_amount && (
+                                      <div className="flex flex-wrap gap-2 text-xs">
+                                        <Badge variant="outline">
+                                          Total: ₹{String((reg.custom_data as Record<string, unknown>)._total_amount)}
+                                        </Badge>
+                                        {(reg.custom_data as Record<string, unknown>)?._base_amount && (
+                                          <Badge variant="secondary">
+                                            Base: ₹{String((reg.custom_data as Record<string, unknown>)._base_amount)}
+                                          </Badge>
+                                        )}
+                                        {Number((reg.custom_data as Record<string, unknown>)?._addons_amount) > 0 && (
+                                          <Badge variant="secondary">
+                                            Add-ons: ₹{String((reg.custom_data as Record<string, unknown>)._addons_amount)}
+                                          </Badge>
+                                        )}
+                                        {Number((reg.custom_data as Record<string, unknown>)?._group_size) > 1 && (
+                                          <Badge variant="secondary">
+                                            Group: {String((reg.custom_data as Record<string, unknown>)._group_size)}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {/* Ticket categories */}
+                                    {Array.isArray((reg.custom_data as Record<string, unknown>)?._ticket_categories) && (
+                                      <div className="text-xs text-muted-foreground">
+                                        {((reg.custom_data as Record<string, unknown>)._ticket_categories as Array<{category_name: string; quantity: number; total: number}>).map((tc, i) => (
+                                          <span key={i} className="mr-2">
+                                            {tc.category_name} ×{tc.quantity} (₹{tc.total})
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+
+                                    {/* Custom form responses - filter out internal fields */}
+                                    {Object.entries(reg.custom_data as Record<string, unknown>)
+                                      .filter(([key]) => !key.startsWith('_'))
+                                      .length > 0 && (
+                                      <details className="text-xs">
+                                        <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                                          Custom Form Responses
+                                        </summary>
+                                        <div className="mt-1 p-2 bg-muted rounded-lg space-y-1">
+                                          {Object.entries(reg.custom_data as Record<string, unknown>)
+                                            .filter(([key]) => !key.startsWith('_'))
+                                            .map(([key, value]) => (
+                                              <div key={key} className="flex justify-between">
+                                                <span className="font-medium">{key}:</span>
+                                                <span className="text-muted-foreground">{String(value)}</span>
+                                              </div>
+                                            ))}
+                                        </div>
+                                      </details>
+                                    )}
+                                  </div>
+                                )}
                               </CardContent>
                             </Card>
                           ))
