@@ -33,11 +33,10 @@ const ProfileCompletionBanner = () => {
     return null;
   }
 
-  // Only show for quick registration users who haven't completed onboarding
-  const isQuickUser = profile.profile_type === 'quick';
-  const isIncomplete = profile.onboarding_status !== 'complete';
+  // Show for ANY user whose profile is not marked complete
+  const isIncomplete = profile.onboarding_status !== 'complete' && profile.profile_complete !== true;
   
-  if (!isQuickUser || !isIncomplete) {
+  if (!isIncomplete) {
     return null;
   }
 

@@ -48,26 +48,8 @@ const ProtectedRoute = ({ children, skipOnboarding = false }: ProtectedRouteProp
     );
   }
 
-  // Check if profile needs full onboarding
-  // CRITICAL: Quick registration users (profile_type='quick') should NEVER be forced to onboarding
-  // Only full signup users need to complete onboarding
-  if (!skipOnboarding) {
-    const profileType = profile.profile_type || 'full'; // Default to 'full' for legacy profiles
-    const onboardingStatus = profile.onboarding_status || 'none';
-    const profileComplete = profile.profile_complete === true;
-    
-    // Only redirect to onboarding if:
-    // 1. Profile type is 'full' (normal signup, not quick registration)
-    // 2. Onboarding is not complete
-    // 3. Profile is not marked as complete (legacy check)
-    const needsOnboarding = profileType === 'full' && 
-                            onboardingStatus !== 'complete' && 
-                            !profileComplete;
-    
-    if (needsOnboarding) {
-      return <Navigate to="/onboarding" replace />;
-    }
-  }
+  // Onboarding is no longer a forced redirect — users see a dismissable
+  // "Complete your profile" banner on the dashboard instead (ProfileCompletionBanner).
 
   return <>{children}</>;
 };
