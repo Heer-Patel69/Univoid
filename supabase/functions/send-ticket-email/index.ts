@@ -12,6 +12,7 @@ interface TicketEmailRequest {
   eventId: string;
   userId: string;
   qrCode: string;
+  attendeesOnly?: boolean; // If true, only send emails to guest attendees (skip primary user)
 }
 
 // Generate QR code PNG using external API and upload to storage
@@ -172,8 +173,8 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     if (!BREVO_API_KEY) throw new Error("Email service not configured");
 
-    const { ticketId, registrationId, eventId, userId, qrCode }: TicketEmailRequest = await req.json();
-    console.log("Processing ticket email:", { ticketId, registrationId, eventId, userId });
+    const { ticketId, registrationId, eventId, userId, qrCode, attendeesOnly }: TicketEmailRequest = await req.json();
+    console.log("Processing ticket email:", { ticketId, registrationId, eventId, userId, attendeesOnly });
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -204,18 +205,23 @@ const handler = async (req: Request): Promise<Response> => {
 
     const organizerName = organizer?.name || null;
 
-    // --- Send primary ticket email to the registered user ---
-    const qrImageUrl = await generateAndUploadQRCode(supabase, ticketId, qrCode);
-    const qrHtml = buildQrHtml(qrImageUrl, ticketId);
-    const emailHtml = buildTicketEmailHtml(profile.full_name, event.title, eventDate, locationText, organizerName, qrHtml, false);
+    // --- Send primary ticket email to the registered user (skip if attendeesOnly) ---
+    let result = { success: true, messageId: "" };
+    if (!attendeesOnly) {
+      const qrImageUrl = await generateAndUploadQRCode(supabase, ticketId, qrCode);
+      const qrHtml = buildQrHtml(qrImageUrl, ticketId);
+      const emailHtml = buildTicketEmailHtml(profile.full_name, event.title, eventDate, locationText, organizerName, qrHtml, false);
 
-    const result = await sendEmailViaBrevo(
-      profile.email, profile.full_name,
-      `Your Ticket Confirmation - ${event.title}`, emailHtml
-    );
+      result = await sendEmailViaBrevo(
+        profile.email, profile.full_name,
+        `Your Ticket Confirmation - ${event.title}`, emailHtml
+      );
 
-    if (!result.success) throw new Error(`Email delivery failed: ${result.error}`);
-    console.log("✅ Primary ticket email sent to:", profile.email);
+      if (!result.success) throw new Error(`Email delivery failed: ${result.error}`);
+      console.log("✅ Primary ticket email sent to:", profile.email);
+    } else {
+      console.log("⏭️ Skipping primary user email (attendeesOnly mode)");
+    }
 
     // --- Send individual QR emails to guest attendees ---
     let guestEmailsSent = 0;
