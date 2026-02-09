@@ -431,8 +431,8 @@ const CreateEvent = () => {
         return "Terms & Conditions are required";
       }
     }
-    if (currentStep === 4 && formData.is_paid && formData.price <= 0) {
-      return "Please enter a valid ticket price greater than ₹0";
+    if (currentStep === 4 && formData.is_paid && formData.price <= 0 && ticketCategories.length === 0) {
+      return "Please add at least one ticket category with a valid price";
     }
     return null;
   };
@@ -648,12 +648,6 @@ const CreateEvent = () => {
 
                 {formData.is_paid && (
                   <>
-                    <div className="space-y-2">
-                      <Label>Standard Ticket Price (₹) *</Label>
-                      <Input type="number" value={formData.price} onChange={(e) => updateForm("price", parseFloat(e.target.value) || 0)} placeholder="500" />
-                      <p className="text-xs text-muted-foreground">This is the price for non-members</p>
-                    </div>
-
                     {/* Club Pricing Section */}
                     <ClubPricingSection
                       clubs={clubConfigs}

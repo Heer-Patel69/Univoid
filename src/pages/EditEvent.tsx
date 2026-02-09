@@ -438,10 +438,6 @@ const EditEvent = () => {
               {formData.is_paid && (
                 <>
                   <div className="space-y-2">
-                    <Label>Ticket Price (₹) *</Label>
-                    <Input type="number" value={formData.price} onChange={(e) => updateForm("price", parseFloat(e.target.value) || 0)} />
-                  </div>
-                  <div className="space-y-2">
                     <Label>UPI QR Code (Optional)</Label>
                     <p className="text-xs text-muted-foreground mb-2">
                       Upload the <strong>original QR image</strong> from your payment app. Screenshots or WhatsApp images may not work.
