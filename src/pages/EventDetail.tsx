@@ -579,7 +579,7 @@ const EventDetail = () => {
                 {/* Login button for non-authenticated users - opens auth modal only */}
                 {!user && (
                   <Button variant={canShowQuickRegister ? "outline" : "default"} className="w-full rounded-full" disabled={isEventPast || isFullNow} onClick={() => setShowAuthModal(true)}>
-                    Already have an account? Login
+                    Register Now
                   </Button>
                 )}
                 {/* Registration dialog for authenticated users only */}
@@ -886,7 +886,7 @@ const EventDetail = () => {
                     {/* Login button for non-authenticated users - opens auth modal only */}
                     {!user && (
                       <Button variant={canShowQuickRegister ? "outline" : "default"} className="w-full rounded-full" disabled={isEventPast || isFullNow} onClick={() => setShowAuthModal(true)}>
-                        Already have an account? Login
+                        Register Now
                       </Button>
                     )}
                     {/* Registration dialog for authenticated users only */}
