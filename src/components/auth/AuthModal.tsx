@@ -17,6 +17,7 @@ interface AuthModalProps {
   onClose: () => void;
   onSuccess?: () => void;
   message?: string;
+  returnTo?: string;
 }
 
 const GoogleIcon = () => (
@@ -44,7 +45,7 @@ import { useRateLimiter } from "@/hooks/useRateLimiter";
 
 // ... existing code ...
 
-const AuthModal = ({ isOpen, onClose, onSuccess, message }: AuthModalProps) => {
+const AuthModal = ({ isOpen, onClose, onSuccess, message, returnTo }: AuthModalProps) => {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -70,8 +71,10 @@ const AuthModal = ({ isOpen, onClose, onSuccess, message }: AuthModalProps) => {
     if (!checkLimit()) return;
     setIsGoogleLoading(true);
     try {
-      // Use a dedicated auth callback route to handle OAuth properly
-      const redirectUrl = `${window.location.origin}/`;
+      // If returnTo is provided, redirect back there after OAuth; otherwise go to root
+      const redirectUrl = returnTo 
+        ? `${window.location.origin}${returnTo}` 
+        : `${window.location.origin}/`;
       
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',

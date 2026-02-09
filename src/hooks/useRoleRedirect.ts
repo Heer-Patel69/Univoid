@@ -43,7 +43,10 @@ export function useRoleRedirect() {
       currentPath === '/auth' ||
       currentPath.startsWith('/auth/');
 
-    if (!shouldAutoRedirect) return;
+    // Never redirect away from event detail pages (user may be registering)
+    const isEventPage = currentPath.startsWith('/events/');
+
+    if (!shouldAutoRedirect || isEventPage) return;
 
     // Determine redirect path based on role
     let redirectPath = '/dashboard';
