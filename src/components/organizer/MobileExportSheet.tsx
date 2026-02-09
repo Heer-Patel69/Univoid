@@ -150,7 +150,7 @@ export function MobileExportSheet({ eventId, eventTitle, trigger }: MobileExport
 
     try {
       // Build headers
-      const fixedHeaders = ["Timestamp", "Registration ID", "Full Name", "Email", "Mobile", "College", "Payment Status", "Group Size", "Base Amount", "Add-ons Amount", "Total Amount", "Club Member", "Ticket Categories"];
+      const fixedHeaders = ["Timestamp", "Registration ID", "Full Name", "Email", "Mobile", "College", "Payment Status", "Group Size", "Base Amount", "Add-ons Amount", "Total Amount", "Club Member", "Ticket Categories", "Attendees"];
       const dynamicHeaders = (formFields || []).map(f => f.label);
       const headers = [...fixedHeaders, ...dynamicHeaders];
       
@@ -163,6 +163,13 @@ export function MobileExportSheet({ eventId, eventTitle, trigger }: MobileExport
         const ticketCats = Array.isArray(customData._ticket_categories)
           ? (customData._ticket_categories as Array<{category_name: string; quantity: number; total: number}>)
               .map(tc => `${tc.category_name} ×${tc.quantity} (₹${tc.total})`)
+              .join("; ")
+          : "";
+
+        // Attendees summary
+        const attendeesList = Array.isArray(customData._attendees)
+          ? (customData._attendees as Array<{name: string; email: string; mobile: string}>)
+              .map(a => `${a.name} | ${a.email} | ${a.mobile}`)
               .join("; ")
           : "";
         
@@ -180,6 +187,7 @@ export function MobileExportSheet({ eventId, eventTitle, trigger }: MobileExport
           String(customData._total_amount || ""),
           customData._club_id ? "Yes" : "No",
           ticketCats,
+          attendeesList,
         ];
         
         const dynamicCols = (formFields || []).map(field => {

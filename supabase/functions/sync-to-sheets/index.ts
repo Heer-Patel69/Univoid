@@ -36,6 +36,7 @@ interface Registration {
     college_name?: string;
   } | null;
   addons?: RegistrationAddon[];
+  attendees?: TicketAttendee[];
 }
 
 interface RegistrationAddon {
@@ -50,6 +51,13 @@ interface RegistrationAddon {
     upsell_type: string;
     allow_custom_input?: boolean;
   };
+}
+
+interface TicketAttendee {
+  attendee_name: string;
+  attendee_email: string;
+  attendee_mobile: string;
+  category_name?: string;
 }
 
 interface EventUpsell {
@@ -195,13 +203,49 @@ serve(async (req) => {
       }
     }
 
+    // Fetch ticket attendees for all registrations
+    let attendeesMap = new Map<string, TicketAttendee[]>();
+    if (regIds.length > 0) {
+      const { data: allAttendees, error: attendeesError } = await supabase
+        .from("ticket_attendees")
+        .select("registration_id, attendee_name, attendee_email, attendee_mobile, ticket_category_id")
+        .in("registration_id", regIds);
+
+      if (attendeesError) {
+        console.error("Error fetching attendees:", attendeesError);
+      } else {
+        // Fetch category names
+        const catIds = [...new Set((allAttendees || []).map(a => a.ticket_category_id).filter(Boolean))];
+        let catNameMap = new Map<string, string>();
+        if (catIds.length > 0) {
+          const { data: cats } = await supabase
+            .from("ticket_categories")
+            .select("id, name")
+            .in("id", catIds);
+          (cats || []).forEach(c => catNameMap.set(c.id, c.name));
+        }
+
+        (allAttendees || []).forEach(att => {
+          const regAtts = attendeesMap.get(att.registration_id) || [];
+          regAtts.push({
+            attendee_name: att.attendee_name,
+            attendee_email: att.attendee_email,
+            attendee_mobile: att.attendee_mobile,
+            category_name: catNameMap.get(att.ticket_category_id) || "",
+          });
+          attendeesMap.set(att.registration_id, regAtts);
+        });
+      }
+    }
+
     console.log(`Found ${registrations?.length || 0} registrations, ${profileMap.size} profiles`);
 
-    // Attach profiles and addons to registrations
+    // Attach profiles, addons, and attendees to registrations
     const registrationsWithProfiles = (registrations || []).map(reg => ({
       ...reg,
       profile: profileMap.get(reg.user_id) || null,
-      addons: addonsMap.get(reg.id) || []
+      addons: addonsMap.get(reg.id) || [],
+      attendees: attendeesMap.get(reg.id) || [],
     })) as Registration[];
 
     // Parse service account key
@@ -300,6 +344,12 @@ function buildDynamicHeaders(
   // Add club membership columns
   fixedHeaders.push("Club Member", "Club Name", "Club ID");
 
+  // Add ticket categories column
+  fixedHeaders.push("Ticket Categories");
+
+  // Add attendees columns
+  fixedHeaders.push("Attendees (Name | Email | Mobile)");
+
   // Add dynamic form field columns (in order) - EACH FIELD GETS ITS OWN COLUMN
   const dynamicHeaders = formFields.map(field => field.label);
 
@@ -308,7 +358,6 @@ function buildDynamicHeaders(
   for (const upsell of eventUpsells) {
     if (upsell.upsell_type === 'addon' || upsell.upsell_type === 'custom_addon') {
       upsellHeaders.push(`Add-on: ${upsell.name}`);
-      // If the upsell allows custom input, add a separate column for it
       if (upsell.allow_custom_input) {
         upsellHeaders.push(`${upsell.name} (Input)`);
       }
@@ -362,6 +411,22 @@ function buildDynamicRow(
   row.push(isClubMember ? "Yes" : "No");
   row.push(String(customData._club_name || ""));
   row.push(String(customData._club_membership_id || customData._membership_id || ""));
+
+  // Ticket categories from custom_data
+  const ticketCats = customData._ticket_categories as Array<{ category_name: string; quantity: number; total: number }> | undefined;
+  if (ticketCats && Array.isArray(ticketCats)) {
+    row.push(ticketCats.map(tc => `${tc.category_name} ×${tc.quantity} (₹${tc.total})`).join("; "));
+  } else {
+    row.push("");
+  }
+
+  // Attendee details
+  const attendees = reg.attendees || [];
+  if (attendees.length > 0) {
+    row.push(attendees.map(a => `${a.attendee_name} | ${a.attendee_email} | ${a.attendee_mobile}${a.category_name ? ` [${a.category_name}]` : ""}`).join("; "));
+  } else {
+    row.push("");
+  }
 
   // Add dynamic form field values (in order) - EACH FIELD IN ITS OWN COLUMN
   for (const field of formFields) {
