@@ -60,6 +60,7 @@ interface TicketAttendee {
   attendee_email: string;
   attendee_mobile: string;
   category_name?: string;
+  category_price?: number;
 }
 
 interface EventUpsell {
@@ -218,22 +219,24 @@ serve(async (req) => {
       } else {
         // Fetch category names
         const catIds = [...new Set((allAttendees || []).map(a => a.ticket_category_id).filter(Boolean))];
-        let catNameMap = new Map<string, string>();
+        let catMap = new Map<string, { name: string; price: number }>();
         if (catIds.length > 0) {
           const { data: cats } = await supabase
             .from("ticket_categories")
-            .select("id, name")
+            .select("id, name, price")
             .in("id", catIds);
-          (cats || []).forEach(c => catNameMap.set(c.id, c.name));
+          (cats || []).forEach(c => catMap.set(c.id, { name: c.name, price: c.price }));
         }
 
         (allAttendees || []).forEach(att => {
           const regAtts = attendeesMap.get(att.registration_id) || [];
+          const cat = catMap.get(att.ticket_category_id);
           regAtts.push({
             attendee_name: att.attendee_name,
             attendee_email: att.attendee_email,
             attendee_mobile: att.attendee_mobile,
-            category_name: catNameMap.get(att.ticket_category_id) || "",
+            category_name: cat?.name || "",
+            category_price: cat?.price ?? 0,
           });
           attendeesMap.set(att.registration_id, regAtts);
         });
@@ -346,9 +349,8 @@ function buildDynamicHeaders(
     "Group Size",
   ];
 
-  // Payment & financial columns (always include for complete visibility)
+  // Payment & financial columns
   fixedHeaders.push(
-    "Ticket Price (₹)",
     "Base Amount (₹)",
     "Add-ons Amount (₹)",
     "Total Amount (₹)",
@@ -370,6 +372,7 @@ function buildDynamicHeaders(
     "Attendee Email",
     "Attendee Mobile",
     "Attendee Ticket Category",
+    "Attendee Ticket Price (₹)",
   );
 
   // Dynamic form field columns
@@ -417,9 +420,7 @@ function buildDynamicRow(
     String(reg.group_size || 1),
   ];
 
-  // Financial columns
-  const ticketPrice = customData._applied_price ?? customData._amount ?? event.is_paid ? (reg.base_amount ?? "") : "0 (Free)";
-  row.push(String(ticketPrice));
+  // Financial columns (no more separate "Ticket Price" — price comes from attendee's category)
   row.push(String(reg.base_amount ?? ""));
   row.push(String(reg.addons_amount ?? "0"));
   row.push(String(reg.total_amount ?? ""));
@@ -448,8 +449,9 @@ function buildDynamicRow(
     row.push(String(attendee.attendee_email || ""));
     row.push(String(attendee.attendee_mobile || ""));
     row.push(String(attendee.category_name || ""));
+    row.push(String(attendee.category_price ?? ""));
   } else {
-    row.push("", "", "", "", "", "");
+    row.push("", "", "", "", "", "", "");
   }
 
   // Dynamic form fields
