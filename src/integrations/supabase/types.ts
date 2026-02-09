@@ -2144,6 +2144,111 @@ export type Database = {
         }
         Relationships: []
       }
+      ticket_attendees: {
+        Row: {
+          attendee_email: string
+          attendee_mobile: string | null
+          attendee_name: string
+          created_at: string
+          id: string
+          registration_id: string
+          ticket_category_id: string
+          ticket_id: string | null
+        }
+        Insert: {
+          attendee_email: string
+          attendee_mobile?: string | null
+          attendee_name: string
+          created_at?: string
+          id?: string
+          registration_id: string
+          ticket_category_id: string
+          ticket_id?: string | null
+        }
+        Update: {
+          attendee_email?: string
+          attendee_mobile?: string | null
+          attendee_name?: string
+          created_at?: string
+          id?: string
+          registration_id?: string
+          ticket_category_id?: string
+          ticket_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_attendees_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "event_registrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_attendees_ticket_category_id_fkey"
+            columns: ["ticket_category_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_attendees_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "event_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number
+          event_id: string
+          id: string
+          is_active: boolean
+          max_per_user: number
+          max_total: number | null
+          name: string
+          price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          event_id: string
+          id?: string
+          is_active?: boolean
+          max_per_user?: number
+          max_total?: number | null
+          name: string
+          price?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          event_id?: string
+          id?: string
+          is_active?: boolean
+          max_per_user?: number
+          max_total?: number | null
+          name?: string
+          price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_categories_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string

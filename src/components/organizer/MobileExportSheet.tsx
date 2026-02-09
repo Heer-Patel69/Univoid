@@ -150,14 +150,22 @@ export function MobileExportSheet({ eventId, eventTitle, trigger }: MobileExport
 
     try {
       // Build headers
-      const fixedHeaders = ["Timestamp", "Registration ID", "Full Name", "Email", "Mobile", "College", "Payment Status", "Club Member", "Club Name", "Club ID"];
+      const fixedHeaders = ["Timestamp", "Registration ID", "Full Name", "Email", "Mobile", "College", "Payment Status", "Group Size", "Base Amount", "Add-ons Amount", "Total Amount", "Club Member", "Ticket Categories"];
       const dynamicHeaders = (formFields || []).map(f => f.label);
       const headers = [...fixedHeaders, ...dynamicHeaders];
       
       setExportProgress(30);
       
       const rows = registrations.map((reg) => {
-        const customData = reg.custom_data || {};
+        const customData = (reg.custom_data || {}) as Record<string, unknown>;
+        
+        // Ticket categories summary
+        const ticketCats = Array.isArray(customData._ticket_categories)
+          ? (customData._ticket_categories as Array<{category_name: string; quantity: number; total: number}>)
+              .map(tc => `${tc.category_name} ×${tc.quantity} (₹${tc.total})`)
+              .join("; ")
+          : "";
+        
         const fixedCols = [
           new Date(reg.created_at).toLocaleString(),
           reg.registration_id,
@@ -166,9 +174,12 @@ export function MobileExportSheet({ eventId, eventTitle, trigger }: MobileExport
           reg.mobile_number || "",
           reg.college_name || "",
           reg.payment_status,
+          String(customData._group_size || 1),
+          String(customData._base_amount || ""),
+          String(customData._addons_amount || ""),
+          String(customData._total_amount || ""),
           customData._club_id ? "Yes" : "No",
-          String(customData._club_name || ""),
-          String(customData._club_membership_id || customData._membership_id || ""),
+          ticketCats,
         ];
         
         const dynamicCols = (formFields || []).map(field => {

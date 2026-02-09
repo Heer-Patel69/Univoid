@@ -27,6 +27,8 @@ import DynamicRegistrationForm from "@/components/events/DynamicRegistrationForm
 import ClubMembershipCheck from "@/components/events/ClubMembershipCheck";
 import QuickRegisterButton from "@/components/events/QuickRegisterButton";
 import UpsellScreen from "@/components/events/UpsellScreen";
+import TicketCategorySelector from "@/components/events/TicketCategorySelector";
+import { fetchTicketCategories, saveTicketAttendees, type TicketCategorySelection } from "@/services/ticketCategoryService";
 import { 
   fetchEventUpsells, 
   fetchUpsellSettings,
@@ -55,6 +57,9 @@ const EventDetail = () => {
   const [groupSize, setGroupSize] = useState(1);
   const [selectedUpsells, setSelectedUpsells] = useState<SelectedUpsell[]>([]);
   const [hasSeenUpsells, setHasSeenUpsells] = useState(false);
+  
+  // Ticket category selections
+  const [categorySelections, setCategorySelections] = useState<TicketCategorySelection[]>([]);
   
   // Club membership state
   const [selectedPrice, setSelectedPrice] = useState<number | null>(null);
@@ -152,9 +157,18 @@ const EventDetail = () => {
     staleTime: 10 * 60 * 1000,
   });
 
+  // Fetch ticket categories for this event
+  const { data: ticketCategories = [] } = useQuery({
+    queryKey: ["ticket-categories", event?.id],
+    queryFn: () => fetchTicketCategories(event!.id),
+    enabled: !!event?.id,
+    staleTime: 10 * 60 * 1000,
+  });
+
   // Quick Register is only available if NO custom fields exist
   const hasCustomFields = customFormFields.length > 0;
-  const canShowQuickRegister = !hasCustomFields && (event as any)?.enable_quick_register !== false;
+  const hasTicketCategories = ticketCategories.length > 0;
+  const canShowQuickRegister = !hasCustomFields && !hasTicketCategories && (event as any)?.enable_quick_register !== false;
 
   // Calculate final price with upsells
   const groupOffers = useMemo(() => 
@@ -198,7 +212,10 @@ const EventDetail = () => {
       return;
     }
 
-    // Include club membership + upsell info in custom_data
+    // Include club membership + upsell + category info in custom_data
+    const totalCategoryTickets = categorySelections.reduce((sum, s) => sum + s.quantity, 0);
+    const totalCategoryPrice = categorySelections.reduce((sum, s) => sum + s.category.price * s.quantity, 0);
+    
     const enhancedCustomData = {
       ...customData,
       ...(selectedClubId && {
@@ -207,18 +224,50 @@ const EventDetail = () => {
         _membership_id: membershipId,
         _applied_price: selectedPrice,
       }),
-      _group_size: groupSize,
-      _base_amount: priceCalculation.baseTotal,
+      _group_size: hasTicketCategories ? totalCategoryTickets : groupSize,
+      _base_amount: hasTicketCategories ? totalCategoryPrice : priceCalculation.baseTotal,
       _addons_amount: priceCalculation.addonsTotal,
-      _total_amount: priceCalculation.finalTotal,
+      _total_amount: hasTicketCategories ? totalCategoryPrice + priceCalculation.addonsTotal : priceCalculation.finalTotal,
       _selected_addons: selectedUpsells.map(u => ({
         name: u.upsell.name,
         quantity: u.quantity,
         price: u.totalPrice,
       })),
+      ...(hasTicketCategories && {
+        _ticket_categories: categorySelections.map(s => ({
+          category_name: s.category.name,
+          category_id: s.category.id,
+          quantity: s.quantity,
+          unit_price: s.category.price,
+          total: s.category.price * s.quantity,
+          attendees: s.attendees,
+        })),
+      }),
     };
 
-    await register(enhancedCustomData, paymentScreenshot, groupSize, groupSize > 1);
+    const effectiveGroupSize = hasTicketCategories ? totalCategoryTickets : groupSize;
+    const result = await register(enhancedCustomData, paymentScreenshot, effectiveGroupSize, effectiveGroupSize > 1);
+    
+    // Save attendee details if ticket categories with multiple tickets
+    if (result?.success && result.registration_id && hasTicketCategories) {
+      const allAttendees = categorySelections.flatMap(s =>
+        s.attendees
+          .filter(a => a.name && a.email)
+          .map(a => ({
+            ticket_category_id: s.category.id,
+            attendee_name: a.name,
+            attendee_email: a.email,
+            attendee_mobile: a.mobile,
+          }))
+      );
+      if (allAttendees.length > 0) {
+        try {
+          await saveTicketAttendees(result.registration_id, allAttendees);
+        } catch (e) {
+          console.error("Failed to save attendee details:", e);
+        }
+      }
+    }
   }, [user, event, selectedClubId, membershipId, selectedPrice, register, paymentScreenshot, upsellSettings, upsells, hasSeenUpsells, groupSize, priceCalculation, selectedUpsells]);
 
   const handleUpsellContinue = () => {
@@ -509,7 +558,15 @@ const EventDetail = () => {
                         {bookingStep === "form" && (
                           <>
                             {clubSection}
-                            <DynamicRegistrationForm eventId={eventId!} onSubmit={handleRegister} isSubmitting={isSubmitting || isUploading} isPaidEvent={event.is_paid} paymentSection={!upsellSettings?.upsell_enabled ? paymentSection : undefined} termsSection={!upsellSettings?.upsell_enabled ? termsSection : undefined} submitDisabled={!upsellSettings?.upsell_enabled && ((event.is_paid && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms))} submitLabel={isSubmitting ? "Processing..." : upsellSettings?.upsell_enabled && upsells.length > 0 ? "Continue" : event.is_paid ? "Submit Registration" : "Confirm Registration"} />
+                            {hasTicketCategories && (
+                              <TicketCategorySelector
+                                categories={ticketCategories}
+                                selections={categorySelections}
+                                onChange={setCategorySelections}
+                                isPaidEvent={event.is_paid}
+                              />
+                            )}
+                            <DynamicRegistrationForm eventId={eventId!} onSubmit={handleRegister} isSubmitting={isSubmitting || isUploading} isPaidEvent={event.is_paid} paymentSection={!upsellSettings?.upsell_enabled ? paymentSection : undefined} termsSection={!upsellSettings?.upsell_enabled ? termsSection : undefined} submitDisabled={!upsellSettings?.upsell_enabled && ((event.is_paid && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms)) || (hasTicketCategories && categorySelections.length === 0)} submitLabel={isSubmitting ? "Processing..." : upsellSettings?.upsell_enabled && upsells.length > 0 ? "Continue" : event.is_paid ? "Submit Registration" : "Confirm Registration"} />
                           </>
                         )}
                         {bookingStep === "upsells" && (
@@ -796,7 +853,15 @@ const EventDetail = () => {
                             {bookingStep === "form" && (
                               <>
                                 {clubSection}
-                                <DynamicRegistrationForm eventId={eventId!} onSubmit={handleRegister} isSubmitting={isSubmitting || isUploading} isPaidEvent={event.is_paid} paymentSection={!upsellSettings?.upsell_enabled ? paymentSection : undefined} termsSection={!upsellSettings?.upsell_enabled ? termsSection : undefined} submitDisabled={!upsellSettings?.upsell_enabled && ((event.is_paid && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms))} submitLabel={isSubmitting ? "Processing..." : upsellSettings?.upsell_enabled && upsells.length > 0 ? "Continue" : event.is_paid ? "Submit Registration" : "Confirm Registration"} />
+                                {hasTicketCategories && (
+                                  <TicketCategorySelector
+                                    categories={ticketCategories}
+                                    selections={categorySelections}
+                                    onChange={setCategorySelections}
+                                    isPaidEvent={event.is_paid}
+                                  />
+                                )}
+                                <DynamicRegistrationForm eventId={eventId!} onSubmit={handleRegister} isSubmitting={isSubmitting || isUploading} isPaidEvent={event.is_paid} paymentSection={!upsellSettings?.upsell_enabled ? paymentSection : undefined} termsSection={!upsellSettings?.upsell_enabled ? termsSection : undefined} submitDisabled={!upsellSettings?.upsell_enabled && ((event.is_paid && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms)) || (hasTicketCategories && categorySelections.length === 0)} submitLabel={isSubmitting ? "Processing..." : upsellSettings?.upsell_enabled && upsells.length > 0 ? "Continue" : event.is_paid ? "Submit Registration" : "Confirm Registration"} />
                               </>
                             )}
                             {bookingStep === "upsells" && (

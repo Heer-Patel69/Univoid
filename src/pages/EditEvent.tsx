@@ -16,6 +16,7 @@ import { fetchEventById } from "@/services/eventsService";
 import { toDisplayUrl } from "@/lib/storageProxy";
 import AuthModal from "@/components/auth/AuthModal";
 import { UpsellManager } from "@/components/organizer/UpsellManager";
+import { TicketCategoriesManager } from "@/components/organizer/TicketCategoriesManager";
 import { DeleteEventDialog } from "@/components/organizer/DeleteEventDialog";
 import { ArrowLeft, Save, Image, Loader2, Sparkles, Clock } from "lucide-react";
 import { useUpiScanner } from "@/hooks/useUpiScanner";
@@ -506,7 +507,8 @@ const EditEvent = () => {
             </Card>
           )}
 
-          {/* Danger Zone */}
+          {/* Ticket Categories Section */}
+          <TicketCategoriesManager eventId={eventId!} isPaidEvent={formData.is_paid} />
           <Card className="border-destructive/50">
             <CardHeader>
               <CardTitle className="text-destructive">Danger Zone</CardTitle>
