@@ -415,7 +415,7 @@ const CreateEvent = () => {
       case 1: return formData.title && formData.category && formData.event_type && formData.start_date && formData.state && formData.city;
       case 2: return formData.description.length >= 50 && formData.terms_conditions.length >= 10;
       case 3: return true; // Custom form is optional
-      case 4: return !formData.is_paid || formData.price > 0; // Price required for paid events
+      case 4: return !formData.is_paid || formData.price > 0 || ticketCategories.some(tc => tc.price > 0); // Price via manual or ticket categories
       case 5: return true; // Upsells are optional
       case 6: return !formData.is_paid || (formData.upi_vpa || qrFile);
       default: return true;
