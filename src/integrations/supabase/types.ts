@@ -2151,6 +2151,7 @@ export type Database = {
           attendee_name: string
           created_at: string
           id: string
+          qr_code: string | null
           registration_id: string
           ticket_category_id: string
           ticket_id: string | null
@@ -2161,6 +2162,7 @@ export type Database = {
           attendee_name: string
           created_at?: string
           id?: string
+          qr_code?: string | null
           registration_id: string
           ticket_category_id: string
           ticket_id?: string | null
@@ -2171,6 +2173,7 @@ export type Database = {
           attendee_name?: string
           created_at?: string
           id?: string
+          qr_code?: string | null
           registration_id?: string
           ticket_category_id?: string
           ticket_id?: string | null

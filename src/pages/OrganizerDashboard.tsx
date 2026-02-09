@@ -24,10 +24,11 @@ import { OrganizerSidebar } from "@/components/organizer/OrganizerSidebar";
 import { OrganizerBottomNav } from "@/components/organizer/OrganizerBottomNav";
 import { OrganizerDashboardSkeleton, RegistrationListSkeleton } from "@/components/organizer/OrganizerSkeleton";
 import { DeleteEventDialog } from "@/components/organizer/DeleteEventDialog";
+import { PaymentReconciliation } from "@/components/organizer/PaymentReconciliation";
 import { 
   Plus, Calendar, Users, CheckCircle, XCircle, Eye, 
   ScanLine, Pencil, TicketCheck, Clock, FileSpreadsheet, 
-  UserPlus, BarChart3, Shield, ChevronLeft, Gift, Sparkles, Mail
+  UserPlus, BarChart3, Shield, ChevronLeft, Gift, Sparkles, Mail, IndianRupee
 } from "lucide-react";
 import { EventEmailComposer } from "@/components/organizer/EventEmailComposer";
 import { format } from "date-fns";
@@ -509,6 +510,12 @@ const OrganizerDashboard = () => {
                   <Gift className="w-4 h-4" /> 
                   <span className="hidden sm:inline">Upsells</span>
                 </TabsTrigger>
+                {selectedEventData?.is_paid && (
+                  <TabsTrigger value="payments" className="gap-1.5">
+                    <IndianRupee className="w-4 h-4" /> 
+                    <span className="hidden sm:inline">Payments</span>
+                  </TabsTrigger>
+                )}
                 <TabsTrigger value="sheets" className="gap-1.5">
                   <FileSpreadsheet className="w-4 h-4" /> 
                   <span className="hidden sm:inline">Export</span>
@@ -682,6 +689,12 @@ const OrganizerDashboard = () => {
                   organizerId={user.id} 
                 />
               </TabsContent>
+
+              {selectedEventData?.is_paid && (
+                <TabsContent value="payments">
+                  <PaymentReconciliation eventId={selectedEvent!} />
+                </TabsContent>
+              )}
 
               <TabsContent value="sheets">
                 {isMobile ? (
