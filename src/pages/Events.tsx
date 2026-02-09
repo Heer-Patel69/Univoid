@@ -1,6 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link, useOutletContext, useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { EventCard } from "@/components/events/EventCard";
 import { EventCardSkeleton } from "@/components/events/EventCardSkeleton";
@@ -10,9 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { fetchEvents, Event } from "@/services/eventsService";
 import { useAuth } from "@/contexts/AuthContext";
 import { Plus, Calendar } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import SEOHead from "@/components/common/SEOHead";
 import AuthModal from "@/components/auth/AuthModal";
-import { useDebounce } from "@/hooks/useDebounce";
 
 interface LayoutContext {
   onAuthClick?: () => void;
@@ -30,9 +29,8 @@ const Events = () => {
   const [priceFilter, setPriceFilter] = useState("all");
   const [stateFilter, setStateFilter] = useState("all");
   const [cityFilter, setCityFilter] = useState("all");
-
-  // Debounce search to prevent fetching on every keystroke
-  const debouncedSearch = useDebounce(search, 400);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Dynamic SEO based on category filter
   const seoData = useMemo(() => {
@@ -50,19 +48,74 @@ const Events = () => {
     };
   }, [urlCategory]);
 
-  // Use React Query for caching + deduplication
-  const { data: events = [], isLoading } = useQuery({
-    queryKey: ["events-list", category, priceFilter, debouncedSearch, stateFilter, cityFilter],
-    queryFn: () => fetchEvents({
-      category: category !== "all" ? category : undefined,
-      is_paid: priceFilter === "all" ? undefined : priceFilter === "paid",
-      search: debouncedSearch || undefined,
-      state: stateFilter !== "all" ? stateFilter : undefined,
-      city: cityFilter !== "all" ? cityFilter : undefined,
-    }),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000,
-  });
+  // Fetch events with filters - use useQuery for better caching
+  const loadEvents = async () => {
+    setIsLoading(true);
+    try {
+      const data = await fetchEvents({
+        category: category !== "all" ? category : undefined,
+        is_paid: priceFilter === "all" ? undefined : priceFilter === "paid",
+        search: search || undefined,
+        state: stateFilter !== "all" ? stateFilter : undefined,
+        city: cityFilter !== "all" ? cityFilter : undefined,
+      });
+      setEvents(data);
+    } catch (error) {
+      console.error('Failed to fetch events:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadEvents();
+  }, [category, priceFilter, search, stateFilter, cityFilter]);
+
+  // REMOVED: Focus refetch was causing unnecessary slow reloads
+
+  // Real-time subscription for instant updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('events-page-realtime')
+      .on(
+        'postgres_changes' as any,
+        { event: '*', schema: 'public', table: 'events' },
+        (payload: any) => {
+          if (payload.eventType === 'INSERT' && payload.new?.status === 'published') {
+            setEvents(prev => {
+              if (prev.some(e => e.id === payload.new.id)) return prev;
+              const newEvent = payload.new as Event;
+              return [...prev, newEvent].sort((a, b) => 
+                new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
+              );
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            const updated = payload.new as Event;
+            setEvents(prev => {
+              // If status changed to published, add it
+              if (updated.status === 'published' && !prev.some(e => e.id === updated.id)) {
+                return [...prev, updated].sort((a, b) => 
+                  new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
+                );
+              }
+              // If no longer published, remove
+              if (updated.status !== 'published') {
+                return prev.filter(e => e.id !== updated.id);
+              }
+              // Otherwise update
+              return prev.map(e => e.id === updated.id ? { ...e, ...updated } : e);
+            });
+          } else if (payload.eventType === 'DELETE') {
+            setEvents(prev => prev.filter(e => e.id !== payload.old?.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const clearFilters = () => {
     setSearch("");
