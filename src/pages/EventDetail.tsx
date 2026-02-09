@@ -455,7 +455,7 @@ const EventDetail = () => {
       {/* Mobile: Regular scrollable layout */}
       <div className="lg:hidden">
         <div className="container mx-auto px-5 pt-3 pb-24 max-w-6xl space-y-5">
-          <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+          <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} returnTo={`/events/${eventId}`} />
         {/* Mobile: Flyer first */}
         <div className="relative rounded-3xl overflow-hidden bg-muted w-full">
           {event.flyer_url ? (
@@ -698,7 +698,7 @@ const EventDetail = () => {
         ref={desktopContainerRef}
         className="hidden lg:flex lg:flex-row lg:gap-6 h-[calc(100vh-5rem)] container mx-auto px-10 max-w-6xl pt-3 overflow-hidden"
       >
-        <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+        <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} returnTo={`/events/${eventId}`} />
         
         {/* Left column - THE ONLY scrollable area on desktop */}
         <div 
