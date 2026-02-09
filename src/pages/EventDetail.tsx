@@ -350,8 +350,15 @@ const EventDetail = () => {
     );
   }
 
-  // Determine the price to display
-  const displayPrice = selectedPrice !== null ? selectedPrice : event.price;
+  // Determine the price to display — prefer ticket category range over base price
+  const categoryMinPrice = ticketCategories.length > 0 
+    ? Math.min(...ticketCategories.map(c => c.price)) 
+    : null;
+  const categoryMaxPrice = ticketCategories.length > 0 
+    ? Math.max(...ticketCategories.map(c => c.price)) 
+    : null;
+  const hasMultiplePrices = categoryMinPrice !== null && categoryMaxPrice !== null && categoryMinPrice !== categoryMaxPrice;
+  const displayPrice = selectedPrice !== null ? selectedPrice : (categoryMinPrice ?? event.price);
 
   // Club membership section for paid events
   const clubSection = event.is_paid ? (
@@ -423,7 +430,7 @@ const EventDetail = () => {
     },
     offers: event.is_paid ? {
       "@type": "Offer",
-      price: event.price,
+      price: categoryMinPrice ?? event.price,
       priceCurrency: "INR",
       availability: isFullNow ? "https://schema.org/SoldOut" : "https://schema.org/InStock",
     } : {
@@ -436,7 +443,7 @@ const EventDetail = () => {
 
   const seoDescription = event.description 
     ? DOMPurify.sanitize(event.description, { ALLOWED_TAGS: [] }).substring(0, 155) 
-    : `${event.title} - ${event.category} event on ${format(new Date(event.start_date), "MMMM d, yyyy")}. ${event.is_paid ? `Entry: ₹${event.price}` : "Free entry"}.`;
+    : `${event.title} - ${event.category} event on ${format(new Date(event.start_date), "MMMM d, yyyy")}. ${event.is_paid ? `Entry: ₹${categoryMinPrice ?? event.price}` : "Free entry"}.`;
 
   // Use slug for canonical URL
   const eventSlug = event.slug || eventId;
@@ -494,7 +501,19 @@ const EventDetail = () => {
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Price</span>
               <span className="text-xl font-bold flex items-center">
-                {event.is_paid ? (<><IndianRupee className="w-4 h-4" />{event.price}</>) : (<Badge variant="secondary">Free</Badge>)}
+                {event.is_paid ? (
+                  ticketCategories.length > 0 ? (
+                    hasMultiplePrices ? (
+                      <span className="flex items-center gap-0.5">
+                        <IndianRupee className="w-4 h-4" />{categoryMinPrice} – {categoryMaxPrice}
+                      </span>
+                    ) : (
+                      <><IndianRupee className="w-4 h-4" />{categoryMinPrice}</>
+                    )
+                  ) : (
+                    <><IndianRupee className="w-4 h-4" />{event.price}</>
+                  )
+                ) : (<Badge variant="secondary">Free</Badge>)}
               </span>
             </div>
             <div className="flex items-start gap-2.5 text-sm">
@@ -789,7 +808,19 @@ const EventDetail = () => {
                 <div className="flex items-center justify-between pb-2 border-b border-border/50">
                   <span className="text-sm text-muted-foreground">Price</span>
                   <span className="text-2xl font-bold flex items-center text-primary">
-                    {event.is_paid ? (<><IndianRupee className="w-5 h-5" />{event.price}</>) : (<Badge variant="secondary" className="text-base px-3 py-1">Free</Badge>)}
+                    {event.is_paid ? (
+                      ticketCategories.length > 0 ? (
+                        hasMultiplePrices ? (
+                          <span className="flex items-center gap-0.5">
+                            <IndianRupee className="w-5 h-5" />{categoryMinPrice} – {categoryMaxPrice}
+                          </span>
+                        ) : (
+                          <><IndianRupee className="w-5 h-5" />{categoryMinPrice}</>
+                        )
+                      ) : (
+                        <><IndianRupee className="w-5 h-5" />{event.price}</>
+                      )
+                    ) : (<Badge variant="secondary" className="text-base px-3 py-1">Free</Badge>)}
                   </span>
                 </div>
                 <div className="flex items-start gap-2.5 text-sm">
