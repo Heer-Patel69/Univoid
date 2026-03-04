@@ -36,6 +36,7 @@ interface UseRazorpayOptions {
   eventTitle: string;
   onSuccess: (paymentId: string) => void;
   onError?: (error: string) => void;
+  onCancel?: () => void;
 }
 
 function loadRazorpayScript(): Promise<boolean> {
@@ -52,7 +53,7 @@ function loadRazorpayScript(): Promise<boolean> {
   });
 }
 
-export function useRazorpay({ eventTitle, onSuccess, onError }: UseRazorpayOptions) {
+export function useRazorpay({ eventTitle, onSuccess, onError, onCancel }: UseRazorpayOptions) {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const initiatePayment = useCallback(async (
@@ -68,15 +69,21 @@ export function useRazorpay({ eventTitle, onSuccess, onError }: UseRazorpayOptio
       // Load Razorpay SDK
       const loaded = await loadRazorpayScript();
       if (!loaded) {
-        throw new Error('Failed to load payment gateway. Please check your internet connection.');
+        throw new Error('Failed to load payment gateway. Please check your internet connection and try again.');
       }
 
       // Create order via edge function
       const { data, error } = await supabase.functions.invoke('create-razorpay-order', {
-        body: { amount, eventId, userId },
+        body: { amount, eventId, userId, registrationId },
       });
 
-      if (error || !data?.orderId) {
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error('Failed to create payment order. Please try again.');
+      }
+      
+      if (!data?.orderId) {
+        console.error('No orderId in response:', data);
         throw new Error(data?.error || 'Failed to create payment order');
       }
 
@@ -119,7 +126,8 @@ export function useRazorpay({ eventTitle, onSuccess, onError }: UseRazorpayOptio
         modal: {
           ondismiss: () => {
             setIsProcessing(false);
-            toast.info('Payment cancelled');
+            toast.info('Payment cancelled. Your registration is saved as pending.');
+            onCancel?.();
           },
         },
       };
@@ -138,7 +146,7 @@ export function useRazorpay({ eventTitle, onSuccess, onError }: UseRazorpayOptio
       toast.error(msg);
       onError?.(msg);
     }
-  }, [eventTitle, onSuccess, onError]);
+  }, [eventTitle, onSuccess, onError, onCancel]);
 
   return { initiatePayment, isProcessing };
 }

@@ -34,9 +34,10 @@ serve(async (req) => {
   }
 
   try {
+    const RAZORPAY_KEY_ID = Deno.env.get('RAZORPAY_KEY_ID');
     const RAZORPAY_KEY_SECRET = Deno.env.get('RAZORPAY_KEY_SECRET');
-    if (!RAZORPAY_KEY_SECRET) {
-      throw new Error('Razorpay secret not configured');
+    if (!RAZORPAY_KEY_SECRET || !RAZORPAY_KEY_ID) {
+      throw new Error('Razorpay credentials not configured');
     }
 
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, registration_id } = await req.json();
@@ -57,11 +58,52 @@ serve(async (req) => {
     );
 
     if (!isValid) {
-      console.error('Invalid Razorpay signature');
+      console.error('Invalid Razorpay signature for order:', razorpay_order_id);
       return new Response(JSON.stringify({ error: 'Payment verification failed', verified: false }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    // Fetch full payment details from Razorpay API
+    const auth = btoa(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`);
+    let paymentDetails: Record<string, unknown> = {};
+    
+    try {
+      const paymentRes = await fetch(`https://api.razorpay.com/v1/payments/${razorpay_payment_id}`, {
+        headers: { 'Authorization': `Basic ${auth}` },
+      });
+      
+      if (paymentRes.ok) {
+        const paymentData = await paymentRes.json();
+        paymentDetails = {
+          method: paymentData.method, // upi, card, netbanking, wallet
+          vpa: paymentData.vpa, // UPI ID if UPI
+          bank: paymentData.bank,
+          wallet: paymentData.wallet,
+          card_id: paymentData.card_id,
+          card_last4: paymentData.card?.last4,
+          card_network: paymentData.card?.network,
+          email: paymentData.email,
+          contact: paymentData.contact,
+          fee: paymentData.fee, // Razorpay fee in paise
+          tax: paymentData.tax,
+          amount: paymentData.amount,
+          currency: paymentData.currency,
+          status: paymentData.status,
+          captured: paymentData.captured,
+          created_at: paymentData.created_at,
+          description: paymentData.description,
+          error_code: paymentData.error_code,
+          error_description: paymentData.error_description,
+          international: paymentData.international,
+          acquirer_data: paymentData.acquirer_data, // Contains UPI transaction ID etc.
+        };
+      } else {
+        console.warn('Failed to fetch payment details from Razorpay:', await paymentRes.text());
+      }
+    } catch (fetchErr) {
+      console.warn('Error fetching Razorpay payment details:', fetchErr);
     }
 
     // Update registration with payment details and auto-approve
@@ -78,6 +120,12 @@ serve(async (req) => {
         razorpay_payment_id,
         payment_status: 'approved',
         reviewed_at: new Date().toISOString(),
+        razorpay_payment_method: (paymentDetails.method as string) || null,
+        razorpay_payment_status: (paymentDetails.status as string) || 'captured',
+        razorpay_paid_at: paymentDetails.created_at 
+          ? new Date((paymentDetails.created_at as number) * 1000).toISOString()
+          : new Date().toISOString(),
+        razorpay_payment_details: paymentDetails,
       })
       .eq('id', registration_id);
 
@@ -89,7 +137,13 @@ serve(async (req) => {
       });
     }
 
-    return new Response(JSON.stringify({ verified: true, message: 'Payment verified and registration approved' }), {
+    console.log('Payment verified and registration approved:', registration_id, 'method:', paymentDetails.method);
+
+    return new Response(JSON.stringify({ 
+      verified: true, 
+      message: 'Payment verified and registration approved',
+      payment_method: paymentDetails.method,
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {

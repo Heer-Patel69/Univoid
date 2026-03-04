@@ -659,7 +659,11 @@ export type Database = {
           payment_screenshot_url: string | null
           payment_status: Database["public"]["Enums"]["ticket_status"]
           razorpay_order_id: string | null
+          razorpay_paid_at: string | null
+          razorpay_payment_details: Json | null
           razorpay_payment_id: string | null
+          razorpay_payment_method: string | null
+          razorpay_payment_status: string | null
           reviewed_at: string | null
           team_id: string | null
           total_amount: number | null
@@ -678,7 +682,11 @@ export type Database = {
           payment_screenshot_url?: string | null
           payment_status?: Database["public"]["Enums"]["ticket_status"]
           razorpay_order_id?: string | null
+          razorpay_paid_at?: string | null
+          razorpay_payment_details?: Json | null
           razorpay_payment_id?: string | null
+          razorpay_payment_method?: string | null
+          razorpay_payment_status?: string | null
           reviewed_at?: string | null
           team_id?: string | null
           total_amount?: number | null
@@ -697,7 +705,11 @@ export type Database = {
           payment_screenshot_url?: string | null
           payment_status?: Database["public"]["Enums"]["ticket_status"]
           razorpay_order_id?: string | null
+          razorpay_paid_at?: string | null
+          razorpay_payment_details?: Json | null
           razorpay_payment_id?: string | null
+          razorpay_payment_method?: string | null
+          razorpay_payment_status?: string | null
           reviewed_at?: string | null
           team_id?: string | null
           total_amount?: number | null
