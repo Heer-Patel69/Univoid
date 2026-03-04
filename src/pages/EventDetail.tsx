@@ -213,10 +213,14 @@ const EventDetail = () => {
     },
   });
 
+  // Track pending Razorpay registration for cleanup
+  const [pendingRazorpayRegId, setPendingRazorpayRegId] = useState<string | null>(null);
+
   // Razorpay payment hook
   const { initiatePayment: initiateRazorpay, isProcessing: isRazorpayProcessing } = useRazorpay({
     eventTitle: event?.title || 'Event',
     onSuccess: () => {
+      setPendingRazorpayRegId(null);
       setIsRegisterOpen(false);
       setPaymentScreenshot(null);
       setAgreedToTerms(false);
@@ -225,8 +229,26 @@ const EventDetail = () => {
       setGroupSize(1);
       setHasSeenUpsells(false);
       setPaymentMethod("razorpay");
-      // Refresh queries
-      // (handled by useRegistration's invalidation)
+    },
+    onError: async (error) => {
+      // Payment failed - delete the pending registration so user can retry
+      if (pendingRazorpayRegId) {
+        try {
+          await supabase
+            .from('event_registrations')
+            .delete()
+            .eq('id', pendingRazorpayRegId)
+            .eq('payment_status', 'pending');
+          console.log('Cleaned up failed Razorpay registration:', pendingRazorpayRegId);
+        } catch (e) {
+          console.error('Failed to cleanup registration:', e);
+        }
+        setPendingRazorpayRegId(null);
+      }
+    },
+    onCancel: async () => {
+      // User cancelled - keep registration as pending, they can pay later or it can be cleaned up
+      setPendingRazorpayRegId(null);
     },
   });
 
@@ -285,7 +307,8 @@ const EventDetail = () => {
     
     // If Razorpay and registration succeeded, initiate payment
     if (isRazorpayPayment && result?.success && result.registration_id && !result.already_registered) {
-      const totalAmount = hasTicketCategories 
+      setPendingRazorpayRegId(result.registration_id);
+      const totalAmount = hasTicketCategories
         ? totalCategoryPrice + priceCalculation.addonsTotal 
         : priceCalculation.finalTotal;
       
