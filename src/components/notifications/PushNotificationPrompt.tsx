@@ -64,7 +64,9 @@ export const PushNotificationPrompt = () => {
       const registration = await navigator.serviceWorker.ready;
       
       // Check if already subscribed
-      let subscription = await registration.pushManager.getSubscription();
+      const pushManager = (registration as any).pushManager;
+      if (!pushManager) return;
+      let subscription = await pushManager.getSubscription();
       
       if (!subscription) {
         // Get VAPID public key from environment
@@ -75,7 +77,7 @@ export const PushNotificationPrompt = () => {
         }
         
         // Subscribe to push
-        subscription = await registration.pushManager.subscribe({
+        subscription = await pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: vapidPublicKey,
         });
