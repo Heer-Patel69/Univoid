@@ -280,6 +280,7 @@ const EventDetail = () => {
       isRazorpayPayment ? null : paymentScreenshot, // No screenshot for Razorpay
       effectiveGroupSize, 
       effectiveGroupSize > 1,
+      isRazorpayPayment, // Skip success callback for Razorpay - we handle it after payment
     );
     
     // If Razorpay and registration succeeded, initiate payment
