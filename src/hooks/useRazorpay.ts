@@ -45,12 +45,39 @@ function loadRazorpayScript(): Promise<boolean> {
       resolve(true);
       return;
     }
+
+    const existingScript = document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]') as HTMLScriptElement | null;
+    if (existingScript) {
+      existingScript.addEventListener('load', () => resolve(true));
+      existingScript.addEventListener('error', () => resolve(false));
+      return;
+    }
+
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
     script.onload = () => resolve(true);
     script.onerror = () => resolve(false);
     document.body.appendChild(script);
   });
+}
+
+async function trackPaymentFailure(registrationId: string, details: Record<string, unknown>) {
+  try {
+    await supabase
+      .from('event_registrations')
+      .update({
+        razorpay_payment_status: 'failed',
+        razorpay_payment_details: {
+          ...details,
+          failed_at: new Date().toISOString(),
+        },
+      })
+      .eq('id', registrationId)
+      .eq('payment_status', 'pending');
+  } catch (error) {
+    console.error('Failed to track Razorpay failure details:', error);
+  }
 }
 
 export function useRazorpay({ eventTitle, onSuccess, onError, onCancel }: UseRazorpayOptions) {
@@ -66,28 +93,31 @@ export function useRazorpay({ eventTitle, onSuccess, onError, onCancel }: UseRaz
     setIsProcessing(true);
 
     try {
-      // Load Razorpay SDK
       const loaded = await loadRazorpayScript();
       if (!loaded) {
-        throw new Error('Failed to load payment gateway. Please check your internet connection and try again.');
+        const msg = 'Failed to load payment gateway. Please disable ad-blocker/VPN and try again.';
+        await trackPaymentFailure(registrationId, { phase: 'sdk_load', message: msg });
+        throw new Error(msg);
       }
 
-      // Create order via edge function
       const { data, error } = await supabase.functions.invoke('create-razorpay-order', {
         body: { amount, eventId, userId, registrationId },
       });
 
       if (error) {
-        console.error('Edge function error:', error);
+        await trackPaymentFailure(registrationId, { phase: 'order_create', message: error.message });
         throw new Error('Failed to create payment order. Please try again.');
       }
-      
+
       if (!data?.orderId) {
-        console.error('No orderId in response:', data);
+        await trackPaymentFailure(registrationId, {
+          phase: 'order_create',
+          message: data?.error || 'No order ID returned',
+          response: data,
+        });
         throw new Error(data?.error || 'Failed to create payment order');
       }
 
-      // Open Razorpay checkout
       const options: RazorpayOptions = {
         key: data.keyId,
         amount: data.amount,
@@ -97,7 +127,6 @@ export function useRazorpay({ eventTitle, onSuccess, onError, onCancel }: UseRaz
         order_id: data.orderId,
         handler: async (response: RazorpayResponse) => {
           try {
-            // Verify payment on backend
             const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-razorpay-payment', {
               body: {
                 razorpay_order_id: response.razorpay_order_id,
@@ -108,6 +137,12 @@ export function useRazorpay({ eventTitle, onSuccess, onError, onCancel }: UseRaz
             });
 
             if (verifyError || !verifyData?.verified) {
+              await trackPaymentFailure(registrationId, {
+                phase: 'verification',
+                message: verifyData?.error || verifyError?.message || 'Payment verification failed',
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+              });
               throw new Error(verifyData?.error || 'Payment verification failed');
             }
 
@@ -126,19 +161,44 @@ export function useRazorpay({ eventTitle, onSuccess, onError, onCancel }: UseRaz
         modal: {
           ondismiss: () => {
             setIsProcessing(false);
-            toast.info('Payment cancelled. Your registration is saved as pending.');
+            toast.info('Payment cancelled. You can retry from the same registration.');
             onCancel?.();
           },
         },
       };
 
       const razorpay = new window.Razorpay(options);
-      razorpay.on('payment.failed', (response: unknown) => {
+      razorpay.on('payment.failed', async (response: unknown) => {
         setIsProcessing(false);
-        const errMsg = (response as { error?: { description?: string } })?.error?.description || 'Payment failed';
+
+        const failed = response as {
+          error?: {
+            code?: string;
+            description?: string;
+            source?: string;
+            step?: string;
+            reason?: string;
+            metadata?: { order_id?: string; payment_id?: string };
+          };
+        };
+
+        const errMsg = failed.error?.description || 'Payment failed';
+
+        await trackPaymentFailure(registrationId, {
+          phase: 'checkout',
+          message: errMsg,
+          code: failed.error?.code,
+          source: failed.error?.source,
+          step: failed.error?.step,
+          reason: failed.error?.reason,
+          razorpay_order_id: failed.error?.metadata?.order_id || data.orderId,
+          razorpay_payment_id: failed.error?.metadata?.payment_id,
+        });
+
         toast.error(errMsg);
         onError?.(errMsg);
       });
+
       razorpay.open();
     } catch (err) {
       setIsProcessing(false);
