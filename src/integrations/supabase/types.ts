@@ -658,6 +658,8 @@ export type Database = {
           is_group_booking: boolean | null
           payment_screenshot_url: string | null
           payment_status: Database["public"]["Enums"]["ticket_status"]
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
           reviewed_at: string | null
           team_id: string | null
           total_amount: number | null
@@ -675,6 +677,8 @@ export type Database = {
           is_group_booking?: boolean | null
           payment_screenshot_url?: string | null
           payment_status?: Database["public"]["Enums"]["ticket_status"]
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
           reviewed_at?: string | null
           team_id?: string | null
           total_amount?: number | null
@@ -692,6 +696,8 @@ export type Database = {
           is_group_booking?: boolean | null
           payment_screenshot_url?: string | null
           payment_status?: Database["public"]["Enums"]["ticket_status"]
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
           reviewed_at?: string | null
           team_id?: string | null
           total_amount?: number | null
