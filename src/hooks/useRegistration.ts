@@ -152,9 +152,7 @@ export function useRegistration(options: UseRegistrationOptions) {
         queryClient.invalidateQueries({ queryKey: ['event', eventId] });
         queryClient.invalidateQueries({ queryKey: ['my-tickets'] });
         
-        if (!skipSuccessCallback) {
-          onSuccess?.(result);
-        }
+        onSuccess?.(result);
       } else {
         const errorMessage = result.message || 'Registration failed';
         setState(prev => ({ ...prev, error: errorMessage }));
