@@ -384,66 +384,24 @@ const EventDetail = () => {
   // Payment section to pass to DynamicRegistrationForm
   const paymentSection = event.is_paid ? (
     <div className="space-y-4 p-4 bg-muted rounded-xl">
-      <p className="font-medium">Payment Method</p>
-      
-      {/* Payment method toggle */}
-      <div className="grid grid-cols-2 gap-2">
-        <button
-          type="button"
-          onClick={() => setPaymentMethod("razorpay")}
-          className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all ${
-            paymentMethod === "razorpay" 
-              ? "border-primary bg-primary/10 text-primary" 
-              : "border-border bg-background text-muted-foreground hover:border-primary/50"
-          }`}
-        >
-          <CreditCard className="w-4 h-4" />
-          <span className="text-sm font-medium">Pay Online</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setPaymentMethod("screenshot")}
-          className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all ${
-            paymentMethod === "screenshot" 
-              ? "border-primary bg-primary/10 text-primary" 
-              : "border-border bg-background text-muted-foreground hover:border-primary/50"
-          }`}
-        >
-          <Image className="w-4 h-4" />
-          <span className="text-sm font-medium">UPI Screenshot</span>
-        </button>
-      </div>
-
-      {paymentMethod === "razorpay" ? (
-        <div className="text-center space-y-2">
-          <p className="text-sm text-muted-foreground">
-            Pay ₹{displayPrice} securely via Razorpay. Your ticket will be confirmed instantly.
-          </p>
-          {isRazorpayProcessing && (
-            <p className="text-xs text-primary animate-pulse">Processing payment...</p>
-          )}
+      <p className="font-medium">Payment</p>
+      <p className="text-sm text-muted-foreground">Pay ₹{displayPrice} using UPI, then upload screenshot.</p>
+      {event.upi_qr_url && (
+        <div className="bg-background p-4 rounded-xl w-fit mx-auto">
+          <img src={toDisplayUrl(event.upi_qr_url, { forceImage: true }) || undefined} alt="UPI QR" className="w-48 h-48 object-contain" loading="lazy" />
         </div>
-      ) : (
-        <>
-          <p className="text-sm text-muted-foreground">Pay ₹{displayPrice} using UPI, then upload screenshot.</p>
-          {event.upi_qr_url && (
-            <div className="bg-background p-4 rounded-xl w-fit mx-auto">
-              <img src={toDisplayUrl(event.upi_qr_url, { forceImage: true }) || undefined} alt="UPI QR" className="w-48 h-48 object-contain" loading="lazy" />
-            </div>
-          )}
-          {event.upi_vpa && <p className="text-center text-sm">UPI ID: <code className="bg-background px-2 py-1 rounded">{event.upi_vpa}</code></p>}
-          <div className="space-y-2">
-            <Label>Upload Payment Screenshot *</Label>
-            <div className="border-2 border-dashed rounded-xl p-4 text-center">
-              <Input type="file" accept="image/*" onChange={(e) => setPaymentScreenshot(e.target.files?.[0] || null)} className="hidden" id="payment-screenshot" />
-              <label htmlFor="payment-screenshot" className="cursor-pointer flex flex-col items-center gap-2">
-                <Upload className="w-8 h-8 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">{paymentScreenshot ? paymentScreenshot.name : "Click to upload"}</span>
-              </label>
-            </div>
-          </div>
-        </>
       )}
+      {event.upi_vpa && <p className="text-center text-sm">UPI ID: <code className="bg-background px-2 py-1 rounded">{event.upi_vpa}</code></p>}
+      <div className="space-y-2">
+        <Label>Upload Payment Screenshot *</Label>
+        <div className="border-2 border-dashed rounded-xl p-4 text-center">
+          <Input type="file" accept="image/*" onChange={(e) => setPaymentScreenshot(e.target.files?.[0] || null)} className="hidden" id="payment-screenshot" />
+          <label htmlFor="payment-screenshot" className="cursor-pointer flex flex-col items-center gap-2">
+            <Upload className="w-8 h-8 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">{paymentScreenshot ? paymentScreenshot.name : "Click to upload"}</span>
+          </label>
+        </div>
+      </div>
     </div>
   ) : null;
 
