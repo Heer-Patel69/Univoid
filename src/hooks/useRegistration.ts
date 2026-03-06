@@ -58,7 +58,6 @@ export function useRegistration(options: UseRegistrationOptions) {
     paymentFile?: File | null,
     groupSize?: number,
     isGroupBooking?: boolean,
-    skipSuccessCallback?: boolean,
   ) => {
     // Prevent double submissions
     if (isSubmittingRef.current) {
@@ -109,15 +108,13 @@ export function useRegistration(options: UseRegistrationOptions) {
       if (result.success) {
         // Show appropriate toast with action to view ticket
         if (result.already_registered) {
-          if (!skipSuccessCallback) {
-            toast.info(result.message, {
-              action: {
-                label: 'View Ticket',
-                onClick: () => navigate('/my-tickets'),
-              },
-            });
-          }
-        } else if (!skipSuccessCallback) {
+          toast.info(result.message, {
+            action: {
+              label: 'View Ticket',
+              onClick: () => navigate('/my-tickets'),
+            },
+          });
+        } else {
           toast.success(isPaidEvent 
             ? 'Registration submitted! Payment pending verification.' 
             : 'Registration confirmed!',
@@ -155,9 +152,7 @@ export function useRegistration(options: UseRegistrationOptions) {
         queryClient.invalidateQueries({ queryKey: ['event', eventId] });
         queryClient.invalidateQueries({ queryKey: ['my-tickets'] });
         
-        if (!skipSuccessCallback) {
-          onSuccess?.(result);
-        }
+        onSuccess?.(result);
       } else {
         const errorMessage = result.message || 'Registration failed';
         setState(prev => ({ ...prev, error: errorMessage }));

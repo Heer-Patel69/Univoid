@@ -39,8 +39,7 @@ import {
 import { getOrganizerProfileByUserId, type OrganizerProfile } from "@/services/organizerService";
 import { toDisplayUrl } from "@/lib/storageProxy";
 import { formatRichText } from "@/lib/formatRichText";
-import { useRazorpay } from "@/hooks/useRazorpay";
-import { Calendar, MapPin, Users, IndianRupee, ExternalLink, Clock, Share2, CheckCircle, AlertCircle, Upload, Eye, BadgeCheck, ChevronDown, FileText, CreditCard, Image } from "lucide-react";
+import { Calendar, MapPin, Users, IndianRupee, ExternalLink, Clock, Share2, CheckCircle, AlertCircle, Upload, Eye, BadgeCheck, ChevronDown, FileText, Image } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const EventDetail = () => {
@@ -53,7 +52,7 @@ const EventDetail = () => {
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [paymentScreenshot, setPaymentScreenshot] = useState<File | null>(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<"razorpay" | "screenshot">("razorpay");
+  
   
   // Upsell flow state
   const [bookingStep, setBookingStep] = useState<"form" | "upsells" | "payment">("form");
@@ -209,22 +208,6 @@ const EventDetail = () => {
       setSelectedUpsells([]);
       setGroupSize(1);
       setHasSeenUpsells(false);
-      setPaymentMethod("razorpay");
-    },
-  });
-
-  // Razorpay payment hook
-  const { initiatePayment: initiateRazorpay, isProcessing: isRazorpayProcessing } = useRazorpay({
-    eventTitle: event?.title || 'Event',
-    onSuccess: () => {
-      setIsRegisterOpen(false);
-      setPaymentScreenshot(null);
-      setAgreedToTerms(false);
-      setBookingStep("form");
-      setSelectedUpsells([]);
-      setGroupSize(1);
-      setHasSeenUpsells(false);
-      setPaymentMethod("razorpay");
     },
   });
 
@@ -271,47 +254,12 @@ const EventDetail = () => {
 
     const effectiveGroupSize = hasTicketCategories ? totalCategoryTickets : groupSize;
     
-    // For Razorpay: register first (as pending), then initiate payment
-    const isRazorpayPayment = event.is_paid && paymentMethod === 'razorpay';
     const result = await register(
       enhancedCustomData, 
-      isRazorpayPayment ? null : paymentScreenshot, // No screenshot for Razorpay
+      paymentScreenshot,
       effectiveGroupSize, 
       effectiveGroupSize > 1,
-      isRazorpayPayment, // Skip success callback for Razorpay - we handle it after payment
     );
-    
-    const shouldStartRazorpay =
-      isRazorpayPayment &&
-      result?.success &&
-      !!result.registration_id &&
-      (!result.already_registered || result.payment_status === 'pending');
-
-    // For new and pending registrations, initiate Razorpay checkout
-    if (shouldStartRazorpay) {
-      const totalAmount = hasTicketCategories
-        ? totalCategoryPrice + priceCalculation.addonsTotal 
-        : priceCalculation.finalTotal;
-      
-      // Get user info for prefill
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('full_name, email, mobile_number')
-        .eq('id', user.id)
-        .maybeSingle();
-      
-      await initiateRazorpay(
-        totalAmount,
-        event.id,
-        user.id,
-        result.registration_id,
-        {
-          name: profile?.full_name || '',
-          email: profile?.email || user.email || '',
-          contact: profile?.mobile_number || '',
-        },
-      );
-    }
     
     // Save attendee details for ALL ticket categories (mandatory from 1st ticket)
     if (result?.success && result.registration_id && hasTicketCategories) {
@@ -355,7 +303,7 @@ const EventDetail = () => {
         }
       }
     }
-  }, [user, event, selectedClubId, membershipId, selectedPrice, register, paymentScreenshot, paymentMethod, upsellSettings, upsells, hasSeenUpsells, groupSize, priceCalculation, selectedUpsells, categorySelections, hasTicketCategories, initiateRazorpay]);
+  }, [user, event, selectedClubId, membershipId, selectedPrice, register, paymentScreenshot, upsellSettings, upsells, hasSeenUpsells, groupSize, priceCalculation, selectedUpsells, categorySelections, hasTicketCategories]);
 
   const handleUpsellContinue = () => {
     setBookingStep("payment");
@@ -436,66 +384,24 @@ const EventDetail = () => {
   // Payment section to pass to DynamicRegistrationForm
   const paymentSection = event.is_paid ? (
     <div className="space-y-4 p-4 bg-muted rounded-xl">
-      <p className="font-medium">Payment Method</p>
-      
-      {/* Payment method toggle */}
-      <div className="grid grid-cols-2 gap-2">
-        <button
-          type="button"
-          onClick={() => setPaymentMethod("razorpay")}
-          className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all ${
-            paymentMethod === "razorpay" 
-              ? "border-primary bg-primary/10 text-primary" 
-              : "border-border bg-background text-muted-foreground hover:border-primary/50"
-          }`}
-        >
-          <CreditCard className="w-4 h-4" />
-          <span className="text-sm font-medium">Pay Online</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setPaymentMethod("screenshot")}
-          className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all ${
-            paymentMethod === "screenshot" 
-              ? "border-primary bg-primary/10 text-primary" 
-              : "border-border bg-background text-muted-foreground hover:border-primary/50"
-          }`}
-        >
-          <Image className="w-4 h-4" />
-          <span className="text-sm font-medium">UPI Screenshot</span>
-        </button>
-      </div>
-
-      {paymentMethod === "razorpay" ? (
-        <div className="text-center space-y-2">
-          <p className="text-sm text-muted-foreground">
-            Pay ₹{displayPrice} securely via Razorpay. Your ticket will be confirmed instantly.
-          </p>
-          {isRazorpayProcessing && (
-            <p className="text-xs text-primary animate-pulse">Processing payment...</p>
-          )}
+      <p className="font-medium">Payment</p>
+      <p className="text-sm text-muted-foreground">Pay ₹{displayPrice} using UPI, then upload screenshot.</p>
+      {event.upi_qr_url && (
+        <div className="bg-background p-4 rounded-xl w-fit mx-auto">
+          <img src={toDisplayUrl(event.upi_qr_url, { forceImage: true }) || undefined} alt="UPI QR" className="w-48 h-48 object-contain" loading="lazy" />
         </div>
-      ) : (
-        <>
-          <p className="text-sm text-muted-foreground">Pay ₹{displayPrice} using UPI, then upload screenshot.</p>
-          {event.upi_qr_url && (
-            <div className="bg-background p-4 rounded-xl w-fit mx-auto">
-              <img src={toDisplayUrl(event.upi_qr_url, { forceImage: true }) || undefined} alt="UPI QR" className="w-48 h-48 object-contain" loading="lazy" />
-            </div>
-          )}
-          {event.upi_vpa && <p className="text-center text-sm">UPI ID: <code className="bg-background px-2 py-1 rounded">{event.upi_vpa}</code></p>}
-          <div className="space-y-2">
-            <Label>Upload Payment Screenshot *</Label>
-            <div className="border-2 border-dashed rounded-xl p-4 text-center">
-              <Input type="file" accept="image/*" onChange={(e) => setPaymentScreenshot(e.target.files?.[0] || null)} className="hidden" id="payment-screenshot" />
-              <label htmlFor="payment-screenshot" className="cursor-pointer flex flex-col items-center gap-2">
-                <Upload className="w-8 h-8 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">{paymentScreenshot ? paymentScreenshot.name : "Click to upload"}</span>
-              </label>
-            </div>
-          </div>
-        </>
       )}
+      {event.upi_vpa && <p className="text-center text-sm">UPI ID: <code className="bg-background px-2 py-1 rounded">{event.upi_vpa}</code></p>}
+      <div className="space-y-2">
+        <Label>Upload Payment Screenshot *</Label>
+        <div className="border-2 border-dashed rounded-xl p-4 text-center">
+          <Input type="file" accept="image/*" onChange={(e) => setPaymentScreenshot(e.target.files?.[0] || null)} className="hidden" id="payment-screenshot" />
+          <label htmlFor="payment-screenshot" className="cursor-pointer flex flex-col items-center gap-2">
+            <Upload className="w-8 h-8 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">{paymentScreenshot ? paymentScreenshot.name : "Click to upload"}</span>
+          </label>
+        </div>
+      </div>
     </div>
   ) : null;
 
@@ -714,7 +620,7 @@ const EventDetail = () => {
                                 isPaidEvent={event.is_paid}
                               />
                             )}
-                            <DynamicRegistrationForm eventId={event.id} onSubmit={handleRegister} isSubmitting={isSubmitting || isUploading || isRazorpayProcessing} isPaidEvent={event.is_paid} paymentSection={!upsellSettings?.upsell_enabled ? paymentSection : undefined} termsSection={!upsellSettings?.upsell_enabled ? termsSection : undefined} submitDisabled={!upsellSettings?.upsell_enabled && ((event.is_paid && paymentMethod === 'screenshot' && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms)) || (hasTicketCategories && (categorySelections.length === 0 || categorySelections.some(s => s.attendees.some(a => !a.name || !a.email || !a.mobile))))} submitLabel={isSubmitting || isRazorpayProcessing ? "Processing..." : upsellSettings?.upsell_enabled && upsells.length > 0 ? "Continue" : event.is_paid && paymentMethod === 'razorpay' ? "Pay & Register" : event.is_paid ? "Submit Registration" : "Confirm Registration"} />
+                            <DynamicRegistrationForm eventId={event.id} onSubmit={handleRegister} isSubmitting={isSubmitting || isUploading} isPaidEvent={event.is_paid} paymentSection={!upsellSettings?.upsell_enabled ? paymentSection : undefined} termsSection={!upsellSettings?.upsell_enabled ? termsSection : undefined} submitDisabled={!upsellSettings?.upsell_enabled && ((event.is_paid && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms)) || (hasTicketCategories && (categorySelections.length === 0 || categorySelections.some(s => s.attendees.some(a => !a.name || !a.email || !a.mobile))))} submitLabel={isSubmitting ? "Processing..." : upsellSettings?.upsell_enabled && upsells.length > 0 ? "Continue" : event.is_paid ? "Submit Registration" : "Confirm Registration"} />
                           </>
                         )}
                         {bookingStep === "upsells" && (
@@ -747,7 +653,7 @@ const EventDetail = () => {
                             </Card>
                             {paymentSection}
                             {termsSection}
-                            <Button onClick={() => handleRegister({})} disabled={isSubmitting || isUploading || isRazorpayProcessing || (event.is_paid && paymentMethod === 'screenshot' && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms)} className="w-full">{isSubmitting || isRazorpayProcessing ? "Processing..." : event.is_paid && paymentMethod === 'razorpay' ? "Pay & Complete" : "Complete Registration"}</Button>
+                            <Button onClick={() => handleRegister({})} disabled={isSubmitting || isUploading || (event.is_paid && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms)} className="w-full">{isSubmitting ? "Processing..." : "Complete Registration"}</Button>
                           </>
                         )}
                       </div>
@@ -1034,7 +940,7 @@ const EventDetail = () => {
                                     isPaidEvent={event.is_paid}
                                   />
                                 )}
-                                <DynamicRegistrationForm eventId={event.id} onSubmit={handleRegister} isSubmitting={isSubmitting || isUploading || isRazorpayProcessing} isPaidEvent={event.is_paid} paymentSection={!upsellSettings?.upsell_enabled ? paymentSection : undefined} termsSection={!upsellSettings?.upsell_enabled ? termsSection : undefined} submitDisabled={!upsellSettings?.upsell_enabled && ((event.is_paid && paymentMethod === 'screenshot' && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms)) || (hasTicketCategories && (categorySelections.length === 0 || categorySelections.some(s => s.attendees.some(a => !a.name || !a.email || !a.mobile))))} submitLabel={isSubmitting || isRazorpayProcessing ? "Processing..." : upsellSettings?.upsell_enabled && upsells.length > 0 ? "Continue" : event.is_paid && paymentMethod === 'razorpay' ? "Pay & Register" : event.is_paid ? "Submit Registration" : "Confirm Registration"} />
+                                <DynamicRegistrationForm eventId={event.id} onSubmit={handleRegister} isSubmitting={isSubmitting || isUploading} isPaidEvent={event.is_paid} paymentSection={!upsellSettings?.upsell_enabled ? paymentSection : undefined} termsSection={!upsellSettings?.upsell_enabled ? termsSection : undefined} submitDisabled={!upsellSettings?.upsell_enabled && ((event.is_paid && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms)) || (hasTicketCategories && (categorySelections.length === 0 || categorySelections.some(s => s.attendees.some(a => !a.name || !a.email || !a.mobile))))} submitLabel={isSubmitting ? "Processing..." : upsellSettings?.upsell_enabled && upsells.length > 0 ? "Continue" : event.is_paid ? "Submit Registration" : "Confirm Registration"} />
                               </>
                             )}
                             {bookingStep === "upsells" && (
@@ -1067,7 +973,7 @@ const EventDetail = () => {
                                 </Card>
                                 {paymentSection}
                                 {termsSection}
-                                <Button onClick={() => handleRegister({})} disabled={isSubmitting || isUploading || isRazorpayProcessing || (event.is_paid && paymentMethod === 'screenshot' && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms)} className="w-full">{isSubmitting || isRazorpayProcessing ? "Processing..." : event.is_paid && paymentMethod === 'razorpay' ? "Pay & Complete" : "Complete Registration"}</Button>
+                                <Button onClick={() => handleRegister({})} disabled={isSubmitting || isUploading || (event.is_paid && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms)} className="w-full">{isSubmitting ? "Processing..." : "Complete Registration"}</Button>
                               </>
                             )}
                           </div>
