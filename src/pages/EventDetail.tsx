@@ -254,47 +254,12 @@ const EventDetail = () => {
 
     const effectiveGroupSize = hasTicketCategories ? totalCategoryTickets : groupSize;
     
-    // For Razorpay: register first (as pending), then initiate payment
-    const isRazorpayPayment = event.is_paid && paymentMethod === 'razorpay';
     const result = await register(
       enhancedCustomData, 
-      isRazorpayPayment ? null : paymentScreenshot, // No screenshot for Razorpay
+      paymentScreenshot,
       effectiveGroupSize, 
       effectiveGroupSize > 1,
-      isRazorpayPayment, // Skip success callback for Razorpay - we handle it after payment
     );
-    
-    const shouldStartRazorpay =
-      isRazorpayPayment &&
-      result?.success &&
-      !!result.registration_id &&
-      (!result.already_registered || result.payment_status === 'pending');
-
-    // For new and pending registrations, initiate Razorpay checkout
-    if (shouldStartRazorpay) {
-      const totalAmount = hasTicketCategories
-        ? totalCategoryPrice + priceCalculation.addonsTotal 
-        : priceCalculation.finalTotal;
-      
-      // Get user info for prefill
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('full_name, email, mobile_number')
-        .eq('id', user.id)
-        .maybeSingle();
-      
-      await initiateRazorpay(
-        totalAmount,
-        event.id,
-        user.id,
-        result.registration_id,
-        {
-          name: profile?.full_name || '',
-          email: profile?.email || user.email || '',
-          contact: profile?.mobile_number || '',
-        },
-      );
-    }
     
     // Save attendee details for ALL ticket categories (mandatory from 1st ticket)
     if (result?.success && result.registration_id && hasTicketCategories) {
