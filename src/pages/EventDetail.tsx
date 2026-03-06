@@ -303,7 +303,7 @@ const EventDetail = () => {
         }
       }
     }
-  }, [user, event, selectedClubId, membershipId, selectedPrice, register, paymentScreenshot, paymentMethod, upsellSettings, upsells, hasSeenUpsells, groupSize, priceCalculation, selectedUpsells, categorySelections, hasTicketCategories, initiateRazorpay]);
+  }, [user, event, selectedClubId, membershipId, selectedPrice, register, paymentScreenshot, upsellSettings, upsells, hasSeenUpsells, groupSize, priceCalculation, selectedUpsells, categorySelections, hasTicketCategories]);
 
   const handleUpsellContinue = () => {
     setBookingStep("payment");
