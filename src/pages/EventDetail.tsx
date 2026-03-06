@@ -52,7 +52,7 @@ const EventDetail = () => {
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [paymentScreenshot, setPaymentScreenshot] = useState<File | null>(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<"razorpay" | "screenshot">("razorpay");
+  
   
   // Upsell flow state
   const [bookingStep, setBookingStep] = useState<"form" | "upsells" | "payment">("form");
