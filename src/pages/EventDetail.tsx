@@ -973,7 +973,7 @@ const EventDetail = () => {
                                 </Card>
                                 {paymentSection}
                                 {termsSection}
-                                <Button onClick={() => handleRegister({})} disabled={isSubmitting || isUploading || isRazorpayProcessing || (event.is_paid && paymentMethod === 'screenshot' && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms)} className="w-full">{isSubmitting || isRazorpayProcessing ? "Processing..." : event.is_paid && paymentMethod === 'razorpay' ? "Pay & Complete" : "Complete Registration"}</Button>
+                                <Button onClick={() => handleRegister({})} disabled={isSubmitting || isUploading || (event.is_paid && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms)} className="w-full">{isSubmitting ? "Processing..." : "Complete Registration"}</Button>
                               </>
                             )}
                           </div>
