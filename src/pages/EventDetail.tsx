@@ -208,22 +208,6 @@ const EventDetail = () => {
       setSelectedUpsells([]);
       setGroupSize(1);
       setHasSeenUpsells(false);
-      setPaymentMethod("razorpay");
-    },
-  });
-
-  // Razorpay payment hook
-  const { initiatePayment: initiateRazorpay, isProcessing: isRazorpayProcessing } = useRazorpay({
-    eventTitle: event?.title || 'Event',
-    onSuccess: () => {
-      setIsRegisterOpen(false);
-      setPaymentScreenshot(null);
-      setAgreedToTerms(false);
-      setBookingStep("form");
-      setSelectedUpsells([]);
-      setGroupSize(1);
-      setHasSeenUpsells(false);
-      setPaymentMethod("razorpay");
     },
   });
 
