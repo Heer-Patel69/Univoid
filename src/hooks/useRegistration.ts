@@ -58,7 +58,6 @@ export function useRegistration(options: UseRegistrationOptions) {
     paymentFile?: File | null,
     groupSize?: number,
     isGroupBooking?: boolean,
-    skipSuccessCallback?: boolean,
   ) => {
     // Prevent double submissions
     if (isSubmittingRef.current) {
