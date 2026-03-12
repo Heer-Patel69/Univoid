@@ -1001,6 +1001,7 @@ export type Database = {
       events: {
         Row: {
           allow_audience_members: boolean
+          artist_free_entry: boolean
           category: string
           city: string | null
           created_at: string
@@ -1035,6 +1036,7 @@ export type Database = {
         }
         Insert: {
           allow_audience_members?: boolean
+          artist_free_entry?: boolean
           category: string
           city?: string | null
           created_at?: string
@@ -1069,6 +1071,7 @@ export type Database = {
         }
         Update: {
           allow_audience_members?: boolean
+          artist_free_entry?: boolean
           category?: string
           city?: string | null
           created_at?: string
@@ -2648,6 +2651,7 @@ export type Database = {
         Args: { p_identifier: string }
         Returns: {
           allow_audience_members: boolean
+          artist_free_entry: boolean
           category: string
           city: string | null
           created_at: string

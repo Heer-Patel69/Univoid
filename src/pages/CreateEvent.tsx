@@ -145,6 +145,7 @@ const CreateEvent = () => {
     upi_vpa: "",
     enable_quick_register: true,
     allow_audience_members: false,
+    artist_free_entry: false,
   });
 
   // Custom form fields
@@ -304,6 +305,7 @@ const CreateEvent = () => {
           upi_vpa: formData.is_paid ? formData.upi_vpa : null,
           enable_quick_register: formData.enable_quick_register,
           allow_audience_members: formData.allow_audience_members,
+          artist_free_entry: formData.artist_free_entry,
           status: "published",
         }).select().single();
 
@@ -683,6 +685,19 @@ const CreateEvent = () => {
                     onCheckedChange={(c) => updateForm("allow_audience_members", c)} 
                   />
                 </div>
+
+                {formData.allow_audience_members && (
+                  <div className="flex items-center justify-between p-4 bg-muted rounded-xl ml-4 border-l-2 border-primary/30">
+                    <div>
+                      <Label className="text-base">Artist Free Entry</Label>
+                      <p className="text-sm text-muted-foreground">Artist doesn't pay for their own ticket — only audience members are charged</p>
+                    </div>
+                    <Switch 
+                      checked={formData.artist_free_entry} 
+                      onCheckedChange={(c) => updateForm("artist_free_entry", c)} 
+                    />
+                  </div>
+                )}
               </>
             )}
 

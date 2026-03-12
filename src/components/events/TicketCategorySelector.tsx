@@ -13,9 +13,10 @@ interface TicketCategorySelectorProps {
   onChange: (selections: TicketCategorySelection[]) => void;
   isPaidEvent: boolean;
   allowAudienceMembers?: boolean;
+  artistFreeEntry?: boolean;
 }
 
-const TicketCategorySelector = ({ categories, selections, onChange, isPaidEvent, allowAudienceMembers = false }: TicketCategorySelectorProps) => {
+const TicketCategorySelector = ({ categories, selections, onChange, isPaidEvent, allowAudienceMembers = false, artistFreeEntry = false }: TicketCategorySelectorProps) => {
   const [expandedAttendees, setExpandedAttendees] = useState<string | null>(null);
 
   // Auto-expand attendee details when first ticket is added
@@ -38,10 +39,15 @@ const TicketCategorySelector = ({ categories, selections, onChange, isPaidEvent,
     [selections]
   );
 
-  // Total price (includes audience)
+  // Total price: if artistFreeEntry, only charge for audience; otherwise charge for artist + audience
   const totalPrice = useMemo(
-    () => selections.reduce((sum, s) => sum + s.category.price * (s.quantity + (s.audienceCount || 0)), 0),
-    [selections]
+    () => selections.reduce((sum, s) => {
+      if (artistFreeEntry && allowAudienceMembers) {
+        return sum + s.category.price * (s.audienceCount || 0);
+      }
+      return sum + s.category.price * (s.quantity + (s.audienceCount || 0));
+    }, 0),
+    [selections, artistFreeEntry, allowAudienceMembers]
   );
 
   const updateQuantity = (categoryId: string, delta: number) => {
@@ -235,9 +241,14 @@ const TicketCategorySelector = ({ categories, selections, onChange, isPaidEvent,
                           <Plus className="w-3 h-3" />
                         </Button>
                       </div>
-                      {isPaidEvent && audienceCount > 0 && (
+      {isPaidEvent && audienceCount > 0 && (
                         <p className="text-xs text-muted-foreground">
                           Audience cost: {audienceCount} × ₹{cat.price} = <span className="font-medium text-foreground">₹{audienceCount * cat.price}</span>
+                        </p>
+                      )}
+                      {isPaidEvent && artistFreeEntry && qty > 0 && (
+                        <p className="text-xs text-green-600 dark:text-green-400 font-medium">
+                          ✓ Artist entry is free
                         </p>
                       )}
                     </div>
@@ -253,7 +264,7 @@ const TicketCategorySelector = ({ categories, selections, onChange, isPaidEvent,
       {totalTickets > 0 && (
         <div className="p-3 bg-primary/5 rounded-xl space-y-1">
           <div className="flex justify-between text-sm">
-            <span>Your Tickets</span>
+            <span>Your Tickets{artistFreeEntry ? ' (Free)' : ''}</span>
             <Badge variant="secondary">{totalTickets}</Badge>
           </div>
           {totalAudience > 0 && (

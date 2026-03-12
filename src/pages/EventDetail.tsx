@@ -200,7 +200,13 @@ const EventDetail = () => {
 
   const totalCategoryTickets = categorySelections.reduce((sum, s) => sum + s.quantity, 0);
   const totalCategoryAudience = categorySelections.reduce((sum, s) => sum + (s.audienceCount || 0), 0);
-  const totalCategoryPrice = categorySelections.reduce((sum, s) => sum + s.category.price * (s.quantity + (s.audienceCount || 0)), 0);
+  const isArtistFreeEntry = (event as any)?.artist_free_entry && (event as any)?.allow_audience_members;
+  const totalCategoryPrice = categorySelections.reduce((sum, s) => {
+    if (isArtistFreeEntry) {
+      return sum + s.category.price * (s.audienceCount || 0);
+    }
+    return sum + s.category.price * (s.quantity + (s.audienceCount || 0));
+  }, 0);
 
   const priceCalculation = useMemo(() => {
     if (hasTicketCategories && categorySelections.length > 0) {
@@ -268,7 +274,7 @@ const EventDetail = () => {
           quantity: s.quantity,
           audience_count: s.audienceCount || 0,
           unit_price: s.category.price,
-          total: s.category.price * (s.quantity + (s.audienceCount || 0)),
+          total: isArtistFreeEntry ? s.category.price * (s.audienceCount || 0) : s.category.price * (s.quantity + (s.audienceCount || 0)),
           attendees: s.attendees,
         })),
       }),
@@ -954,13 +960,14 @@ const EventDetail = () => {
                             {bookingStep === "form" && (
                               <>
                                 {clubSection}
-                                {hasTicketCategories && (
+                                 {hasTicketCategories && (
                                   <TicketCategorySelector
                                     categories={ticketCategories}
                                     selections={categorySelections}
                                     onChange={setCategorySelections}
                                     isPaidEvent={event.is_paid}
                                     allowAudienceMembers={(event as any).allow_audience_members || false}
+                                    artistFreeEntry={(event as any).artist_free_entry || false}
                                   />
                                 )}
                                 <DynamicRegistrationForm eventId={event.id} onSubmit={handleRegister} isSubmitting={isSubmitting || isUploading} isPaidEvent={event.is_paid} paymentSection={!upsellSettings?.upsell_enabled ? paymentSection : undefined} termsSection={!upsellSettings?.upsell_enabled ? termsSection : undefined} submitDisabled={!upsellSettings?.upsell_enabled && ((event.is_paid && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms)) || (hasTicketCategories && (categorySelections.length === 0 || categorySelections.some(s => s.attendees.some(a => !a.name || !a.email || !a.mobile))))} submitLabel={isSubmitting ? "Processing..." : upsellSettings?.upsell_enabled && upsells.length > 0 ? "Continue" : event.is_paid ? "Submit Registration" : "Confirm Registration"} />
@@ -979,7 +986,7 @@ const EventDetail = () => {
                                           <div key={s.category.id} className="space-y-1">
                                             <div className="flex justify-between text-sm">
                                               <span>{s.category.name} ({s.quantity} × ₹{s.category.price})</span>
-                                              <span>₹{s.category.price * s.quantity}</span>
+                                              <span>{isArtistFreeEntry ? <span className="text-green-600 dark:text-green-400">Free</span> : `₹${s.category.price * s.quantity}`}</span>
                                             </div>
                                             {(s.audienceCount || 0) > 0 && (
                                               <div className="flex justify-between text-sm text-muted-foreground">
