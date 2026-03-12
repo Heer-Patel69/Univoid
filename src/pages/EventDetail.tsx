@@ -199,7 +199,8 @@ const EventDetail = () => {
   );
 
   const totalCategoryTickets = categorySelections.reduce((sum, s) => sum + s.quantity, 0);
-  const totalCategoryPrice = categorySelections.reduce((sum, s) => sum + s.category.price * s.quantity, 0);
+  const totalCategoryAudience = categorySelections.reduce((sum, s) => sum + (s.audienceCount || 0), 0);
+  const totalCategoryPrice = categorySelections.reduce((sum, s) => sum + s.category.price * (s.quantity + (s.audienceCount || 0)), 0);
 
   const priceCalculation = useMemo(() => {
     if (hasTicketCategories && categorySelections.length > 0) {
