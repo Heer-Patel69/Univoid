@@ -199,47 +199,49 @@ const TicketCategorySelector = ({ categories, selections, onChange, isPaidEvent,
                     )}
                   </div>
 
-                  {/* Audience members input */}
-                  <div className="p-3 bg-accent/30 rounded-lg space-y-2">
-                    <Label className="text-xs font-medium flex items-center gap-1.5">
-                      <Users className="w-3.5 h-3.5" />
-                      Number of Audience Members
-                    </Label>
-                    <p className="text-xs text-muted-foreground">
-                      Bringing audience? They don't need to register separately.
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => updateAudienceCount(cat.id, audienceCount - 1)}
-                        disabled={audienceCount <= 0}
-                      >
-                        <Minus className="w-3 h-3" />
-                      </Button>
-                      <Input
-                        type="number"
-                        value={audienceCount}
-                        onChange={(e) => updateAudienceCount(cat.id, parseInt(e.target.value) || 0)}
-                        className="h-8 w-20 text-center text-sm"
-                        min={0}
-                      />
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => updateAudienceCount(cat.id, audienceCount + 1)}
-                      >
-                        <Plus className="w-3 h-3" />
-                      </Button>
-                    </div>
-                    {isPaidEvent && audienceCount > 0 && (
+                  {/* Audience members input - only if organizer enabled it */}
+                  {allowAudienceMembers && (
+                    <div className="p-3 bg-accent/30 rounded-lg space-y-2">
+                      <Label className="text-xs font-medium flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5" />
+                        Number of Audience Members
+                      </Label>
                       <p className="text-xs text-muted-foreground">
-                        Audience cost: {audienceCount} × ₹{cat.price} = <span className="font-medium text-foreground">₹{audienceCount * cat.price}</span>
+                        Bringing audience? They don't need to register separately.
                       </p>
-                    )}
-                  </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => updateAudienceCount(cat.id, audienceCount - 1)}
+                          disabled={audienceCount <= 0}
+                        >
+                          <Minus className="w-3 h-3" />
+                        </Button>
+                        <Input
+                          type="number"
+                          value={audienceCount}
+                          onChange={(e) => updateAudienceCount(cat.id, parseInt(e.target.value) || 0)}
+                          className="h-8 w-20 text-center text-sm"
+                          min={0}
+                        />
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => updateAudienceCount(cat.id, audienceCount + 1)}
+                        >
+                          <Plus className="w-3 h-3" />
+                        </Button>
+                      </div>
+                      {isPaidEvent && audienceCount > 0 && (
+                        <p className="text-xs text-muted-foreground">
+                          Audience cost: {audienceCount} × ₹{cat.price} = <span className="font-medium text-foreground">₹{audienceCount * cat.price}</span>
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </>
               )}
             </CardContent>
