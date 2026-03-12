@@ -627,15 +627,15 @@ const EventDetail = () => {
                 <Dialog open={isRegisterOpen} onOpenChange={(open) => { setIsRegisterOpen(open); if (!open) setBookingStep("form"); }}>
                   <DialogTrigger asChild>
                     <Button variant={canShowQuickRegister ? "outline" : "default"} className="w-full rounded-full" disabled={isEventPast || isFullNow || isSubmitting}>
-                      {isEventPast ? "Event Ended" : isFullNow ? "Event Full" : hasCustomFields ? "Register Now" : "Register with full details"}
+                      {isEventPast ? "Event Ended" : isFullNow ? "Event Full" : "Register Now"}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-md max-h-[90vh]">
                     <DialogHeader>
-                      <DialogTitle>{bookingStep === "upsells" ? "Enhance Your Experience" : `Register for ${event.title}`}</DialogTitle>
-                      <DialogDescription>{bookingStep === "upsells" ? "Add extras to your booking" : bookingStep === "payment" ? `Total: ₹${priceCalculation.finalTotal}` : event.is_paid ? `Pay ₹${displayPrice} and complete the form` : "Complete your registration"}</DialogDescription>
+                      <DialogTitle>{bookingStep === "upsells" ? "Add Extras" : bookingStep === "payment" ? "Complete Payment" : "Register"}</DialogTitle>
+                      <DialogDescription>{bookingStep === "upsells" ? "Optional add-ons for your booking" : bookingStep === "payment" ? "Review and pay to confirm" : event.is_paid ? "Select tickets and fill in your details" : "Fill in your details to confirm"}</DialogDescription>
                     </DialogHeader>
-                    <ScrollArea className="max-h-[60vh] pr-4">
+                    <ScrollArea className="max-h-[65vh] pr-4">
                       <div className="py-4 space-y-4">
                         {bookingStep === "form" && (
                           <>
@@ -646,9 +646,11 @@ const EventDetail = () => {
                                 selections={categorySelections}
                                 onChange={setCategorySelections}
                                 isPaidEvent={event.is_paid}
+                                allowAudienceMembers={(event as any).allow_audience_members || false}
+                                artistFreeEntry={(event as any).artist_free_entry || false}
                               />
                             )}
-                            <DynamicRegistrationForm eventId={event.id} onSubmit={handleRegister} isSubmitting={isSubmitting || isUploading} isPaidEvent={event.is_paid} paymentSection={!upsellSettings?.upsell_enabled ? paymentSection : undefined} termsSection={!upsellSettings?.upsell_enabled ? termsSection : undefined} submitDisabled={!upsellSettings?.upsell_enabled && ((event.is_paid && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms)) || (hasTicketCategories && (categorySelections.length === 0 || categorySelections.some(s => s.attendees.some(a => !a.name || !a.email || !a.mobile))))} submitLabel={isSubmitting ? "Processing..." : upsellSettings?.upsell_enabled && upsells.length > 0 ? "Continue" : event.is_paid ? "Submit Registration" : "Confirm Registration"} />
+                            <DynamicRegistrationForm eventId={event.id} onSubmit={handleRegister} isSubmitting={isSubmitting || isUploading} isPaidEvent={event.is_paid} paymentSection={!upsellSettings?.upsell_enabled ? paymentSection : undefined} termsSection={!upsellSettings?.upsell_enabled ? termsSection : undefined} submitDisabled={!upsellSettings?.upsell_enabled && ((event.is_paid && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms)) || (hasTicketCategories && (categorySelections.length === 0 || categorySelections.some(s => s.attendees.some(a => !a.name || !a.email || !a.mobile))))} submitLabel={isSubmitting ? "Processing..." : upsellSettings?.upsell_enabled && upsells.length > 0 ? "Continue" : event.is_paid ? "Submit & Pay" : "Confirm Registration"} />
                           </>
                         )}
                         {bookingStep === "upsells" && (
