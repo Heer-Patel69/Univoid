@@ -50,6 +50,7 @@ const EventDetail = () => {
   
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const [pendingAutoRegister, setPendingAutoRegister] = useState(false);
   const [paymentScreenshot, setPaymentScreenshot] = useState<File | null>(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   
