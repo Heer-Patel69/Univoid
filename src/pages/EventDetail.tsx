@@ -200,7 +200,13 @@ const EventDetail = () => {
 
   const totalCategoryTickets = categorySelections.reduce((sum, s) => sum + s.quantity, 0);
   const totalCategoryAudience = categorySelections.reduce((sum, s) => sum + (s.audienceCount || 0), 0);
-  const totalCategoryPrice = categorySelections.reduce((sum, s) => sum + s.category.price * (s.quantity + (s.audienceCount || 0)), 0);
+  const isArtistFreeEntry = (event as any)?.artist_free_entry && (event as any)?.allow_audience_members;
+  const totalCategoryPrice = categorySelections.reduce((sum, s) => {
+    if (isArtistFreeEntry) {
+      return sum + s.category.price * (s.audienceCount || 0);
+    }
+    return sum + s.category.price * (s.quantity + (s.audienceCount || 0));
+  }, 0);
 
   const priceCalculation = useMemo(() => {
     if (hasTicketCategories && categorySelections.length > 0) {
