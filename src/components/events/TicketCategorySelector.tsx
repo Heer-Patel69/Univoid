@@ -264,7 +264,7 @@ const TicketCategorySelector = ({ categories, selections, onChange, isPaidEvent,
       {totalTickets > 0 && (
         <div className="p-3 bg-primary/5 rounded-xl space-y-1">
           <div className="flex justify-between text-sm">
-            <span>Your Tickets</span>
+            <span>Your Tickets{artistFreeEntry ? ' (Free)' : ''}</span>
             <Badge variant="secondary">{totalTickets}</Badge>
           </div>
           {totalAudience > 0 && (

@@ -452,6 +452,19 @@ const EditEvent = () => {
                 />
               </div>
 
+              {formData.allow_audience_members && (
+                <div className="flex items-center justify-between p-4 bg-muted rounded-xl ml-4 border-l-2 border-primary/30">
+                  <div>
+                    <Label className="text-base">Artist Free Entry</Label>
+                    <p className="text-sm text-muted-foreground">Artist doesn't pay for their own ticket — only audience members are charged</p>
+                  </div>
+                  <Switch 
+                    checked={formData.artist_free_entry} 
+                    onCheckedChange={(c) => updateForm("artist_free_entry", c)} 
+                  />
+                </div>
+              )}
+
               {formData.is_paid && (
                 <>
                   <div className="space-y-2">
