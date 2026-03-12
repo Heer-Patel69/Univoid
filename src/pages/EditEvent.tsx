@@ -165,6 +165,7 @@ const EditEvent = () => {
           upi_qr_url: formData.is_paid ? upiQrUrl : null,
           upi_vpa: formData.is_paid ? formData.upi_vpa : null,
           enable_quick_register: formData.enable_quick_register,
+          allow_audience_members: formData.allow_audience_members,
         })
         .eq("id", eventId!);
 
