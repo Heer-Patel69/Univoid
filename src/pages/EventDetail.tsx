@@ -252,7 +252,7 @@ const EventDetail = () => {
         _membership_id: membershipId,
         _applied_price: selectedPrice,
       }),
-      _group_size: hasTicketCategories ? totalCategoryTickets : groupSize,
+      _group_size: hasTicketCategories ? (totalCategoryTickets + totalCategoryAudience) : groupSize,
       _base_amount: hasTicketCategories ? totalCategoryPrice : priceCalculation.baseTotal,
       _addons_amount: priceCalculation.addonsTotal,
       _total_amount: hasTicketCategories ? totalCategoryPrice + priceCalculation.addonsTotal : priceCalculation.finalTotal,
