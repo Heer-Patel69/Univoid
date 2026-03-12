@@ -144,6 +144,7 @@ const CreateEvent = () => {
     upi_qr_url: "",
     upi_vpa: "",
     enable_quick_register: true,
+    allow_audience_members: false,
   });
 
   // Custom form fields
