@@ -1000,6 +1000,7 @@ export type Database = {
       }
       events: {
         Row: {
+          allow_audience_members: boolean
           category: string
           city: string | null
           created_at: string
@@ -1033,6 +1034,7 @@ export type Database = {
           views_count: number
         }
         Insert: {
+          allow_audience_members?: boolean
           category: string
           city?: string | null
           created_at?: string
@@ -1066,6 +1068,7 @@ export type Database = {
           views_count?: number
         }
         Update: {
+          allow_audience_members?: boolean
           category?: string
           city?: string | null
           created_at?: string
@@ -2644,6 +2647,7 @@ export type Database = {
       get_event_by_id_or_slug: {
         Args: { p_identifier: string }
         Returns: {
+          allow_audience_members: boolean
           category: string
           city: string | null
           created_at: string
