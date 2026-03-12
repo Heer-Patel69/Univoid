@@ -25,15 +25,21 @@ const TicketCategorySelector = ({ categories, selections, onChange, isPaidEvent 
     }
   }, [selections]);
 
-  // Total tickets across all categories
+  // Total tickets across all categories (artist tickets only, audience is separate)
   const totalTickets = useMemo(
     () => selections.reduce((sum, s) => sum + s.quantity, 0),
     [selections]
   );
 
-  // Total price
+  // Total audience across all categories
+  const totalAudience = useMemo(
+    () => selections.reduce((sum, s) => sum + (s.audienceCount || 0), 0),
+    [selections]
+  );
+
+  // Total price (includes audience)
   const totalPrice = useMemo(
-    () => selections.reduce((sum, s) => sum + s.category.price * s.quantity, 0),
+    () => selections.reduce((sum, s) => sum + s.category.price * (s.quantity + (s.audienceCount || 0)), 0),
     [selections]
   );
 
@@ -54,7 +60,6 @@ const TicketCategorySelector = ({ categories, selections, onChange, isPaidEvent 
       // Adjust attendees array
       let attendees = [...existing.attendees];
       if (newQty > attendees.length) {
-        // Add empty attendees
         for (let i = attendees.length; i < newQty; i++) {
           attendees.push({ name: "", email: "", mobile: "" });
         }
@@ -68,8 +73,15 @@ const TicketCategorySelector = ({ categories, selections, onChange, isPaidEvent 
       const attendees: AttendeeInfo[] = Array.from({ length: newQty }, () => ({
         name: "", email: "", mobile: "",
       }));
-      onChange([...selections, { category, quantity: newQty, attendees }]);
+      onChange([...selections, { category, quantity: newQty, attendees, audienceCount: 0 }]);
     }
+  };
+
+  const updateAudienceCount = (categoryId: string, count: number) => {
+    const safeCount = Math.max(0, Math.floor(count) || 0);
+    onChange(selections.map(s =>
+      s.category.id === categoryId ? { ...s, audienceCount: safeCount } : s
+    ));
   };
 
   const updateAttendee = (categoryId: string, attendeeIndex: number, field: keyof AttendeeInfo, value: string) => {
@@ -88,6 +100,7 @@ const TicketCategorySelector = ({ categories, selections, onChange, isPaidEvent 
       {categories.map(cat => {
         const selection = selections.find(s => s.category.id === cat.id);
         const qty = selection?.quantity || 0;
+        const audienceCount = selection?.audienceCount || 0;
         const isExpanded = expandedAttendees === cat.id;
 
         return (
@@ -137,52 +150,96 @@ const TicketCategorySelector = ({ categories, selections, onChange, isPaidEvent 
                 {cat.max_total && <span>• {cat.max_total} total available</span>}
               </div>
 
-              {/* Attendee details (required for ALL tickets) */}
+              {/* Attendee details (only for the registrant, not audience) */}
               {qty >= 1 && (
-                <div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-between text-xs"
-                    onClick={() => setExpandedAttendees(isExpanded ? null : cat.id)}
-                  >
-                    <span className="flex items-center gap-1.5">
-                      <Users className="w-3.5 h-3.5" />
-                      Attendee Details ({qty} required) *
-                    </span>
-                    {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                  </Button>
+                <>
+                  <div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full justify-between text-xs"
+                      onClick={() => setExpandedAttendees(isExpanded ? null : cat.id)}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5" />
+                        Your Details ({qty} attendee{qty > 1 ? 's' : ''}) *
+                      </span>
+                      {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                    </Button>
 
-                  {isExpanded && selection && (
-                    <div className="space-y-3 mt-2">
-                      {selection.attendees.map((attendee, idx) => (
-                        <div key={idx} className="p-3 bg-muted rounded-lg space-y-2">
-                          <p className="text-xs font-medium">Attendee {idx + 1}</p>
-                          <Input
-                            placeholder="Full Name *"
-                            value={attendee.name}
-                            onChange={(e) => updateAttendee(cat.id, idx, "name", e.target.value)}
-                            className="h-8 text-sm"
-                          />
-                          <Input
-                            type="email"
-                            placeholder="Email *"
-                            value={attendee.email}
-                            onChange={(e) => updateAttendee(cat.id, idx, "email", e.target.value)}
-                            className="h-8 text-sm"
-                          />
-                          <Input
-                            type="tel"
-                            placeholder="Mobile *"
-                            value={attendee.mobile}
-                            onChange={(e) => updateAttendee(cat.id, idx, "mobile", e.target.value)}
-                            className="h-8 text-sm"
-                          />
-                        </div>
-                      ))}
+                    {isExpanded && selection && (
+                      <div className="space-y-3 mt-2">
+                        {selection.attendees.map((attendee, idx) => (
+                          <div key={idx} className="p-3 bg-muted rounded-lg space-y-2">
+                            <p className="text-xs font-medium">Attendee {idx + 1}</p>
+                            <Input
+                              placeholder="Full Name *"
+                              value={attendee.name}
+                              onChange={(e) => updateAttendee(cat.id, idx, "name", e.target.value)}
+                              className="h-8 text-sm"
+                            />
+                            <Input
+                              type="email"
+                              placeholder="Email *"
+                              value={attendee.email}
+                              onChange={(e) => updateAttendee(cat.id, idx, "email", e.target.value)}
+                              className="h-8 text-sm"
+                            />
+                            <Input
+                              type="tel"
+                              placeholder="Mobile *"
+                              value={attendee.mobile}
+                              onChange={(e) => updateAttendee(cat.id, idx, "mobile", e.target.value)}
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Audience members input */}
+                  <div className="p-3 bg-accent/30 rounded-lg space-y-2">
+                    <Label className="text-xs font-medium flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5" />
+                      Number of Audience Members
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Bringing audience? They don't need to register separately.
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => updateAudienceCount(cat.id, audienceCount - 1)}
+                        disabled={audienceCount <= 0}
+                      >
+                        <Minus className="w-3 h-3" />
+                      </Button>
+                      <Input
+                        type="number"
+                        value={audienceCount}
+                        onChange={(e) => updateAudienceCount(cat.id, parseInt(e.target.value) || 0)}
+                        className="h-8 w-20 text-center text-sm"
+                        min={0}
+                      />
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => updateAudienceCount(cat.id, audienceCount + 1)}
+                      >
+                        <Plus className="w-3 h-3" />
+                      </Button>
                     </div>
-                  )}
-                </div>
+                    {isPaidEvent && audienceCount > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        Audience cost: {audienceCount} × ₹{cat.price} = <span className="font-medium text-foreground">₹{audienceCount * cat.price}</span>
+                      </p>
+                    )}
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>
@@ -193,11 +250,21 @@ const TicketCategorySelector = ({ categories, selections, onChange, isPaidEvent 
       {totalTickets > 0 && (
         <div className="p-3 bg-primary/5 rounded-xl space-y-1">
           <div className="flex justify-between text-sm">
-            <span>Total Tickets</span>
+            <span>Your Tickets</span>
             <Badge variant="secondary">{totalTickets}</Badge>
           </div>
+          {totalAudience > 0 && (
+            <div className="flex justify-between text-sm">
+              <span>Audience Members</span>
+              <Badge variant="secondary">{totalAudience}</Badge>
+            </div>
+          )}
+          <div className="flex justify-between text-sm text-muted-foreground">
+            <span>Total People</span>
+            <span>{totalTickets + totalAudience}</span>
+          </div>
           {isPaidEvent && (
-            <div className="flex justify-between text-sm font-semibold">
+            <div className="flex justify-between text-sm font-semibold pt-1 border-t border-border/50">
               <span>Total Amount</span>
               <span className="flex items-center"><IndianRupee className="w-3.5 h-3.5" />{totalPrice}</span>
             </div>

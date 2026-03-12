@@ -199,7 +199,8 @@ const EventDetail = () => {
   );
 
   const totalCategoryTickets = categorySelections.reduce((sum, s) => sum + s.quantity, 0);
-  const totalCategoryPrice = categorySelections.reduce((sum, s) => sum + s.category.price * s.quantity, 0);
+  const totalCategoryAudience = categorySelections.reduce((sum, s) => sum + (s.audienceCount || 0), 0);
+  const totalCategoryPrice = categorySelections.reduce((sum, s) => sum + s.category.price * (s.quantity + (s.audienceCount || 0)), 0);
 
   const priceCalculation = useMemo(() => {
     if (hasTicketCategories && categorySelections.length > 0) {
@@ -251,7 +252,7 @@ const EventDetail = () => {
         _membership_id: membershipId,
         _applied_price: selectedPrice,
       }),
-      _group_size: hasTicketCategories ? totalCategoryTickets : groupSize,
+      _group_size: hasTicketCategories ? (totalCategoryTickets + totalCategoryAudience) : groupSize,
       _base_amount: hasTicketCategories ? totalCategoryPrice : priceCalculation.baseTotal,
       _addons_amount: priceCalculation.addonsTotal,
       _total_amount: hasTicketCategories ? totalCategoryPrice + priceCalculation.addonsTotal : priceCalculation.finalTotal,
@@ -265,14 +266,15 @@ const EventDetail = () => {
           category_name: s.category.name,
           category_id: s.category.id,
           quantity: s.quantity,
+          audience_count: s.audienceCount || 0,
           unit_price: s.category.price,
-          total: s.category.price * s.quantity,
+          total: s.category.price * (s.quantity + (s.audienceCount || 0)),
           attendees: s.attendees,
         })),
       }),
     };
 
-    const effectiveGroupSize = hasTicketCategories ? totalCategoryTickets : groupSize;
+    const effectiveGroupSize = hasTicketCategories ? (totalCategoryTickets + totalCategoryAudience) : groupSize;
     
     const result = await register(
       enhancedCustomData, 
@@ -973,9 +975,17 @@ const EventDetail = () => {
                                     {hasTicketCategories && categorySelections.length > 0 ? (
                                       <>
                                         {categorySelections.map(s => (
-                                          <div key={s.category.id} className="flex justify-between text-sm">
-                                            <span>{s.category.name} ({s.quantity} × ₹{s.category.price})</span>
-                                            <span>₹{s.category.price * s.quantity}</span>
+                                          <div key={s.category.id} className="space-y-1">
+                                            <div className="flex justify-between text-sm">
+                                              <span>{s.category.name} ({s.quantity} × ₹{s.category.price})</span>
+                                              <span>₹{s.category.price * s.quantity}</span>
+                                            </div>
+                                            {(s.audienceCount || 0) > 0 && (
+                                              <div className="flex justify-between text-sm text-muted-foreground">
+                                                <span>  + Audience ({s.audienceCount} × ₹{s.category.price})</span>
+                                                <span>₹{s.category.price * s.audienceCount}</span>
+                                              </div>
+                                            )}
                                           </div>
                                         ))}
                                       </>
