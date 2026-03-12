@@ -98,20 +98,20 @@ interface FloatingDoodlesProps {
   section?: "hero" | "content" | "full";
 }
 
-// Desktop density counts - REDUCED for performance
+// Desktop density counts
 const densityCount = {
-  low: 6,
-  medium: 10,
-  high: 14,
-  global: 18,
+  low: 10,
+  medium: 18,
+  high: 26,
+  global: 35,
 };
 
-// Mobile density counts - MINIMAL for performance
+// Mobile density counts
 const mobileDensityCount = {
-  low: 2,
-  medium: 4,
-  high: 5,
-  global: 6,
+  low: 4,
+  medium: 8,
+  high: 10,
+  global: 14,
 };
 
 export const FloatingDoodles = ({
