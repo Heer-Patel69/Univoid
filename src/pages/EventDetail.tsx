@@ -132,7 +132,25 @@ const EventDetail = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Real-time capacity updates - use event.id for DB subscriptions
+  // Auto-open registration dialog after OAuth redirect from event page
+  useEffect(() => {
+    if (user && eventId) {
+      const pendingEventId = localStorage.getItem('pending_event_registration');
+      if (pendingEventId && (pendingEventId === eventId || pendingEventId === event?.id || pendingEventId === event?.slug)) {
+        localStorage.removeItem('pending_event_registration');
+        setPendingAutoRegister(true);
+      }
+    }
+  }, [user, eventId, event?.id, event?.slug]);
+
+  // Once data is loaded and pending auto-register is set, open the dialog
+  useEffect(() => {
+    if (pendingAutoRegister && event && user && !existingRegistration) {
+      setIsRegisterOpen(true);
+      setPendingAutoRegister(false);
+    }
+  }, [pendingAutoRegister, event, user, existingRegistration]);
+
   const { 
     registrationsCount, 
     maxCapacity, 
