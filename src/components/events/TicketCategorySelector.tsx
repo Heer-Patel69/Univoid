@@ -13,9 +13,10 @@ interface TicketCategorySelectorProps {
   onChange: (selections: TicketCategorySelection[]) => void;
   isPaidEvent: boolean;
   allowAudienceMembers?: boolean;
+  artistFreeEntry?: boolean;
 }
 
-const TicketCategorySelector = ({ categories, selections, onChange, isPaidEvent, allowAudienceMembers = false }: TicketCategorySelectorProps) => {
+const TicketCategorySelector = ({ categories, selections, onChange, isPaidEvent, allowAudienceMembers = false, artistFreeEntry = false }: TicketCategorySelectorProps) => {
   const [expandedAttendees, setExpandedAttendees] = useState<string | null>(null);
 
   // Auto-expand attendee details when first ticket is added
