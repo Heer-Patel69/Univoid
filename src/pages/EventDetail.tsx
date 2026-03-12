@@ -50,6 +50,7 @@ const EventDetail = () => {
   
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const [pendingAutoRegister, setPendingAutoRegister] = useState(false);
   const [paymentScreenshot, setPaymentScreenshot] = useState<File | null>(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   
@@ -84,7 +85,8 @@ const EventDetail = () => {
     return () => window.removeEventListener('resize', checkDesktop);
   }, []);
 
-  // Lock body scroll on desktop using the dedicated hook
+
+
   useBodyScrollLock(isDesktopView);
 
   // Native scroll - no JS interception, browser handles all scroll physics naturally
@@ -130,7 +132,25 @@ const EventDetail = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Real-time capacity updates - use event.id for DB subscriptions
+  // Auto-open registration dialog after OAuth redirect from event page
+  useEffect(() => {
+    if (user && eventId) {
+      const pendingEventId = localStorage.getItem('pending_event_registration');
+      if (pendingEventId && (pendingEventId === eventId || pendingEventId === event?.id || pendingEventId === event?.slug)) {
+        localStorage.removeItem('pending_event_registration');
+        setPendingAutoRegister(true);
+      }
+    }
+  }, [user, eventId, event?.id, event?.slug]);
+
+  // Once data is loaded and pending auto-register is set, open the dialog
+  useEffect(() => {
+    if (pendingAutoRegister && event && user && !existingRegistration) {
+      setIsRegisterOpen(true);
+      setPendingAutoRegister(false);
+    }
+  }, [pendingAutoRegister, event, user, existingRegistration]);
+
   const { 
     registrationsCount, 
     maxCapacity, 
@@ -590,7 +610,7 @@ const EventDetail = () => {
                 )}
                 {/* Login button for non-authenticated users - opens auth modal only */}
                 {!user && (
-                  <Button variant={canShowQuickRegister ? "outline" : "default"} className="w-full rounded-full" disabled={isEventPast || isFullNow} onClick={() => setShowAuthModal(true)}>
+                  <Button variant={canShowQuickRegister ? "outline" : "default"} className="w-full rounded-full" disabled={isEventPast || isFullNow} onClick={() => { localStorage.setItem('pending_event_registration', eventId || ''); setShowAuthModal(true); }}>
                     Register Now
                   </Button>
                 )}
@@ -910,7 +930,7 @@ const EventDetail = () => {
                     )}
                     {/* Login button for non-authenticated users - opens auth modal only */}
                     {!user && (
-                      <Button variant={canShowQuickRegister ? "outline" : "default"} className="w-full rounded-full" disabled={isEventPast || isFullNow} onClick={() => setShowAuthModal(true)}>
+                      <Button variant={canShowQuickRegister ? "outline" : "default"} className="w-full rounded-full" disabled={isEventPast || isFullNow} onClick={() => { localStorage.setItem('pending_event_registration', eventId || ''); setShowAuthModal(true); }}>
                         Register Now
                       </Button>
                     )}
