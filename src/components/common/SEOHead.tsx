@@ -166,11 +166,16 @@ export const SEOHead = ({
       
       {/* Product specific OG tags */}
       {type === "product" && price !== undefined && (
-        <>
-          <meta property="product:price:amount" content={String(price)} />
-          <meta property="product:price:currency" content={currency} />
-          {availability && <meta property="product:availability" content={availability === "InStock" ? "in stock" : availability === "OutOfStock" ? "out of stock" : "preorder"} />}
-        </>
+        <meta property="product:price:amount" content={String(price)} />
+      )}
+      {type === "product" && price !== undefined && (
+        <meta property="product:price:currency" content={currency} />
+      )}
+      {type === "product" && price !== undefined && availability && (
+        <meta
+          property="product:availability"
+          content={availability === "InStock" ? "in stock" : availability === "OutOfStock" ? "out of stock" : "preorder"}
+        />
       )}
       
       {/* Twitter Card */}
