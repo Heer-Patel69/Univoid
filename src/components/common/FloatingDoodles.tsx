@@ -180,7 +180,7 @@ export const FloatingDoodles = ({
             height: `${doodle.size}px`,
             animationDelay: `${doodle.animationDelay}s`,
             animationDuration: `${doodle.animationDuration}s`,
-            color: `hsl(var(--foreground) / 0.5)`,
+            color: `hsl(var(--foreground) / 0.85)`,
             contain: "layout style paint", // CSS containment for perf
           }}
         >
