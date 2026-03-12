@@ -986,7 +986,7 @@ const EventDetail = () => {
                                           <div key={s.category.id} className="space-y-1">
                                             <div className="flex justify-between text-sm">
                                               <span>{s.category.name} ({s.quantity} × ₹{s.category.price})</span>
-                                              <span>₹{s.category.price * s.quantity}</span>
+                                              <span>{isArtistFreeEntry ? <span className="text-green-600 dark:text-green-400">Free</span> : `₹${s.category.price * s.quantity}`}</span>
                                             </div>
                                             {(s.audienceCount || 0) > 0 && (
                                               <div className="flex justify-between text-sm text-muted-foreground">
