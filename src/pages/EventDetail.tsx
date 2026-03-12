@@ -975,9 +975,17 @@ const EventDetail = () => {
                                     {hasTicketCategories && categorySelections.length > 0 ? (
                                       <>
                                         {categorySelections.map(s => (
-                                          <div key={s.category.id} className="flex justify-between text-sm">
-                                            <span>{s.category.name} ({s.quantity} × ₹{s.category.price})</span>
-                                            <span>₹{s.category.price * s.quantity}</span>
+                                          <div key={s.category.id} className="space-y-1">
+                                            <div className="flex justify-between text-sm">
+                                              <span>{s.category.name} ({s.quantity} × ₹{s.category.price})</span>
+                                              <span>₹{s.category.price * s.quantity}</span>
+                                            </div>
+                                            {(s.audienceCount || 0) > 0 && (
+                                              <div className="flex justify-between text-sm text-muted-foreground">
+                                                <span>  + Audience ({s.audienceCount} × ₹{s.category.price})</span>
+                                                <span>₹{s.category.price * s.audienceCount}</span>
+                                              </div>
+                                            )}
                                           </div>
                                         ))}
                                       </>
