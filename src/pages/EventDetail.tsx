@@ -85,25 +85,8 @@ const EventDetail = () => {
     return () => window.removeEventListener('resize', checkDesktop);
   }, []);
 
-  // Auto-open registration dialog after OAuth redirect
-  useEffect(() => {
-    if (user && eventId && !pendingAutoRegister) {
-      const pendingEventId = localStorage.getItem('pending_event_registration');
-      if (pendingEventId && (pendingEventId === eventId || pendingEventId === event?.id || pendingEventId === event?.slug)) {
-        localStorage.removeItem('pending_event_registration');
-        setPendingAutoRegister(true);
-      }
-    }
-  }, [user, eventId, event?.id, event?.slug, pendingAutoRegister]);
 
-  // Once data is loaded and pending auto-register is set, open the dialog
-  useEffect(() => {
-    if (pendingAutoRegister && event && user && !existingRegistration) {
-      setIsRegisterOpen(true);
-      setPendingAutoRegister(false);
-    }
-  }, [pendingAutoRegister, event, user, existingRegistration]);
-  // Lock body scroll on desktop using the dedicated hook
+
   useBodyScrollLock(isDesktopView);
 
   // Native scroll - no JS interception, browser handles all scroll physics naturally
