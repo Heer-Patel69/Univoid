@@ -92,8 +92,6 @@ const Index = () => {
     description: "Discover campus events, workshops, and hackathons."
   }, {
     icon: Puzzle,
-  }, {
-    icon: Puzzle,
     title: "Projects Partner",
     description: "Collaborate on real projects or find teammates."
   }, {
