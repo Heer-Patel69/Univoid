@@ -39,10 +39,15 @@ const TicketCategorySelector = ({ categories, selections, onChange, isPaidEvent,
     [selections]
   );
 
-  // Total price (includes audience)
+  // Total price: if artistFreeEntry, only charge for audience; otherwise charge for artist + audience
   const totalPrice = useMemo(
-    () => selections.reduce((sum, s) => sum + s.category.price * (s.quantity + (s.audienceCount || 0)), 0),
-    [selections]
+    () => selections.reduce((sum, s) => {
+      if (artistFreeEntry && allowAudienceMembers) {
+        return sum + s.category.price * (s.audienceCount || 0);
+      }
+      return sum + s.category.price * (s.quantity + (s.audienceCount || 0));
+    }, 0),
+    [selections, artistFreeEntry, allowAudienceMembers]
   );
 
   const updateQuantity = (categoryId: string, delta: number) => {
