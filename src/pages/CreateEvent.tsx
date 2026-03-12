@@ -145,6 +145,7 @@ const CreateEvent = () => {
     upi_vpa: "",
     enable_quick_register: true,
     allow_audience_members: false,
+    artist_free_entry: false,
   });
 
   // Custom form fields
