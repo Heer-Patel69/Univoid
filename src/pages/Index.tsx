@@ -160,7 +160,6 @@ const Index = () => {
     <main className="flex-1">
       {/* Hero Section with Parallax */}
       <section ref={heroRef} className="py-16 md:py-24 lg:py-32 relative overflow-hidden z-10">
-        </Suspense>
 
         {/* Parallax Background Elements */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
