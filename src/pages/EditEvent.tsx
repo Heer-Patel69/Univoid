@@ -57,6 +57,7 @@ const EditEvent = () => {
     max_capacity: "",
     upi_vpa: "",
     enable_quick_register: true,
+    allow_audience_members: false,
   });
 
   const [flyerFile, setFlyerFile] = useState<File | null>(null);
@@ -102,6 +103,7 @@ const EditEvent = () => {
         max_capacity: event.max_capacity?.toString() || "",
         upi_vpa: event.upi_vpa || "",
         enable_quick_register: (event as any).enable_quick_register !== false,
+        allow_audience_members: (event as any).allow_audience_members || false,
       });
     }
   }, [event]);
@@ -163,6 +165,7 @@ const EditEvent = () => {
           upi_qr_url: formData.is_paid ? upiQrUrl : null,
           upi_vpa: formData.is_paid ? formData.upi_vpa : null,
           enable_quick_register: formData.enable_quick_register,
+          allow_audience_members: formData.allow_audience_members,
         })
         .eq("id", eventId!);
 
@@ -432,6 +435,17 @@ const EditEvent = () => {
                 <Switch 
                   checked={formData.enable_quick_register} 
                   onCheckedChange={(c) => updateForm("enable_quick_register", c)} 
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-muted rounded-xl">
+                <div>
+                  <Label className="text-base">Allow Audience Members</Label>
+                  <p className="text-sm text-muted-foreground">Let registrants bring additional audience members with their ticket</p>
+                </div>
+                <Switch 
+                  checked={formData.allow_audience_members} 
+                  onCheckedChange={(c) => updateForm("allow_audience_members", c)} 
                 />
               </div>
 

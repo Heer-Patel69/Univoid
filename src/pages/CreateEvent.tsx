@@ -144,6 +144,7 @@ const CreateEvent = () => {
     upi_qr_url: "",
     upi_vpa: "",
     enable_quick_register: true,
+    allow_audience_members: false,
   });
 
   // Custom form fields
@@ -302,6 +303,7 @@ const CreateEvent = () => {
           upi_qr_url: formData.is_paid ? upiQrUrl : null,
           upi_vpa: formData.is_paid ? formData.upi_vpa : null,
           enable_quick_register: formData.enable_quick_register,
+          allow_audience_members: formData.allow_audience_members,
           status: "published",
         }).select().single();
 
@@ -669,6 +671,18 @@ const CreateEvent = () => {
                   onChange={setTicketCategories}
                   isPaidEvent={formData.is_paid}
                 />
+
+                {/* Allow Audience Members toggle */}
+                <div className="flex items-center justify-between p-4 bg-muted rounded-xl">
+                  <div>
+                    <Label className="text-base">Allow Audience Members</Label>
+                    <p className="text-sm text-muted-foreground">Let registrants bring additional audience members with their ticket</p>
+                  </div>
+                  <Switch 
+                    checked={formData.allow_audience_members} 
+                    onCheckedChange={(c) => updateForm("allow_audience_members", c)} 
+                  />
+                </div>
               </>
             )}
 
