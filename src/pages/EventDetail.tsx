@@ -274,7 +274,7 @@ const EventDetail = () => {
           quantity: s.quantity,
           audience_count: s.audienceCount || 0,
           unit_price: s.category.price,
-          total: s.category.price * (s.quantity + (s.audienceCount || 0)),
+          total: isArtistFreeEntry ? s.category.price * (s.audienceCount || 0) : s.category.price * (s.quantity + (s.audienceCount || 0)),
           attendees: s.attendees,
         })),
       }),
