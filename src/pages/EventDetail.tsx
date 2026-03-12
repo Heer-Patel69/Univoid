@@ -274,7 +274,7 @@ const EventDetail = () => {
       }),
     };
 
-    const effectiveGroupSize = hasTicketCategories ? totalCategoryTickets : groupSize;
+    const effectiveGroupSize = hasTicketCategories ? (totalCategoryTickets + totalCategoryAudience) : groupSize;
     
     const result = await register(
       enhancedCustomData, 
