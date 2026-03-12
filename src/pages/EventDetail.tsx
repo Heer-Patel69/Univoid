@@ -960,13 +960,14 @@ const EventDetail = () => {
                             {bookingStep === "form" && (
                               <>
                                 {clubSection}
-                                {hasTicketCategories && (
+                                 {hasTicketCategories && (
                                   <TicketCategorySelector
                                     categories={ticketCategories}
                                     selections={categorySelections}
                                     onChange={setCategorySelections}
                                     isPaidEvent={event.is_paid}
                                     allowAudienceMembers={(event as any).allow_audience_members || false}
+                                    artistFreeEntry={(event as any).artist_free_entry || false}
                                   />
                                 )}
                                 <DynamicRegistrationForm eventId={event.id} onSubmit={handleRegister} isSubmitting={isSubmitting || isUploading} isPaidEvent={event.is_paid} paymentSection={!upsellSettings?.upsell_enabled ? paymentSection : undefined} termsSection={!upsellSettings?.upsell_enabled ? termsSection : undefined} submitDisabled={!upsellSettings?.upsell_enabled && ((event.is_paid && !paymentScreenshot) || (!!event.terms_conditions && !agreedToTerms)) || (hasTicketCategories && (categorySelections.length === 0 || categorySelections.some(s => s.attendees.some(a => !a.name || !a.email || !a.mobile))))} submitLabel={isSubmitting ? "Processing..." : upsellSettings?.upsell_enabled && upsells.length > 0 ? "Continue" : event.is_paid ? "Submit Registration" : "Confirm Registration"} />
