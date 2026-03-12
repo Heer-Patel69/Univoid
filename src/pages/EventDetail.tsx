@@ -930,7 +930,7 @@ const EventDetail = () => {
                     )}
                     {/* Login button for non-authenticated users - opens auth modal only */}
                     {!user && (
-                      <Button variant={canShowQuickRegister ? "outline" : "default"} className="w-full rounded-full" disabled={isEventPast || isFullNow} onClick={() => setShowAuthModal(true)}>
+                      <Button variant={canShowQuickRegister ? "outline" : "default"} className="w-full rounded-full" disabled={isEventPast || isFullNow} onClick={() => { localStorage.setItem('pending_event_registration', eventId || ''); setShowAuthModal(true); }}>
                         Register Now
                       </Button>
                     )}
