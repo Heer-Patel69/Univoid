@@ -103,6 +103,7 @@ const EditEvent = () => {
         max_capacity: event.max_capacity?.toString() || "",
         upi_vpa: event.upi_vpa || "",
         enable_quick_register: (event as any).enable_quick_register !== false,
+        allow_audience_members: (event as any).allow_audience_members || false,
       });
     }
   }, [event]);
