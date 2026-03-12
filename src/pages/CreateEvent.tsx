@@ -305,6 +305,7 @@ const CreateEvent = () => {
           upi_vpa: formData.is_paid ? formData.upi_vpa : null,
           enable_quick_register: formData.enable_quick_register,
           allow_audience_members: formData.allow_audience_members,
+          artist_free_entry: formData.artist_free_entry,
           status: "published",
         }).select().single();
 
