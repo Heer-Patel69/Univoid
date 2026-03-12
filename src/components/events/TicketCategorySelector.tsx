@@ -241,9 +241,14 @@ const TicketCategorySelector = ({ categories, selections, onChange, isPaidEvent,
                           <Plus className="w-3 h-3" />
                         </Button>
                       </div>
-                      {isPaidEvent && audienceCount > 0 && (
+      {isPaidEvent && audienceCount > 0 && (
                         <p className="text-xs text-muted-foreground">
                           Audience cost: {audienceCount} × ₹{cat.price} = <span className="font-medium text-foreground">₹{audienceCount * cat.price}</span>
+                        </p>
+                      )}
+                      {isPaidEvent && artistFreeEntry && qty > 0 && (
+                        <p className="text-xs text-green-600 dark:text-green-400 font-medium">
+                          ✓ Artist entry is free
                         </p>
                       )}
                     </div>
