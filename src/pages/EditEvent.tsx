@@ -438,6 +438,17 @@ const EditEvent = () => {
                 />
               </div>
 
+              <div className="flex items-center justify-between p-4 bg-muted rounded-xl">
+                <div>
+                  <Label className="text-base">Allow Audience Members</Label>
+                  <p className="text-sm text-muted-foreground">Let registrants bring additional audience members with their ticket</p>
+                </div>
+                <Switch 
+                  checked={formData.allow_audience_members} 
+                  onCheckedChange={(c) => updateForm("allow_audience_members", c)} 
+                />
+              </div>
+
               {formData.is_paid && (
                 <>
                   <div className="space-y-2">
