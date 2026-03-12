@@ -26,6 +26,7 @@ export interface TicketCategorySelection {
   category: TicketCategory;
   quantity: number;
   attendees: AttendeeInfo[];
+  audienceCount: number;
 }
 
 export interface AttendeeInfo {
