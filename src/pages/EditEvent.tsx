@@ -58,6 +58,7 @@ const EditEvent = () => {
     upi_vpa: "",
     enable_quick_register: true,
     allow_audience_members: false,
+    artist_free_entry: false,
   });
 
   const [flyerFile, setFlyerFile] = useState<File | null>(null);
