@@ -133,7 +133,11 @@ const Index = () => {
     q: "Is profile completion mandatory?",
     a: "Yes. It helps personalize content for you."
   }];
-  return <div className="min-h-screen flex flex-col bg-sketch pb-20 md:pb-0 paper-texture">
+  return <div className="min-h-screen flex flex-col bg-sketch pb-20 md:pb-0 paper-texture relative">
+      {/* Global floating doodles across entire landing page */}
+      <Suspense fallback={null}>
+        <FloatingDoodles density="global" section="full" className="fixed inset-0 z-0" />
+      </Suspense>
     <SEOHead
       title="UniVoid - Everything a College Student Needs"
       description="Study materials, events, projects, tasks, and book exchange — all personalized for Indian students. Access notes, find teammates, and explore opportunities."
@@ -155,11 +159,7 @@ const Index = () => {
 
     <main className="flex-1">
       {/* Hero Section with Parallax */}
-      <section ref={heroRef} className="py-16 md:py-24 lg:py-32 relative overflow-hidden">
-        {/* Floating Doodles Background - lazy loaded */}
-        <Suspense fallback={null}>
-          <FloatingDoodles density="low" section="hero" />
-        </Suspense>
+      <section ref={heroRef} className="py-16 md:py-24 lg:py-32 relative overflow-hidden z-10">
 
         {/* Parallax Background Elements */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
