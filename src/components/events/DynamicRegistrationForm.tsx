@@ -404,7 +404,7 @@ const DynamicRegistrationForm = ({
       {hasCustomFields && (
         <div className="space-y-4">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            Additional Information
+            A Few More Details
           </p>
           {formFields.map(renderField)}
         </div>
