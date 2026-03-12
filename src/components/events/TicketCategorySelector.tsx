@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Minus, Plus, IndianRupee, Users, ChevronDown, ChevronUp } from "lucide-react";
+import { Minus, Plus, IndianRupee, Users, Ticket, UserPlus } from "lucide-react";
 import type { TicketCategory, TicketCategorySelection, AttendeeInfo } from "@/services/ticketCategoryService";
 
 interface TicketCategorySelectorProps {
@@ -17,17 +17,7 @@ interface TicketCategorySelectorProps {
 }
 
 const TicketCategorySelector = ({ categories, selections, onChange, isPaidEvent, allowAudienceMembers = false, artistFreeEntry = false }: TicketCategorySelectorProps) => {
-  const [expandedAttendees, setExpandedAttendees] = useState<string | null>(null);
-
-  // Auto-expand attendee details when first ticket is added
-  useEffect(() => {
-    if (selections.length > 0 && !expandedAttendees) {
-      const firstWithQty = selections.find(s => s.quantity >= 1);
-      if (firstWithQty) setExpandedAttendees(firstWithQty.category.id);
-    }
-  }, [selections]);
-
-  // Total tickets across all categories (artist tickets only, audience is separate)
+  // Total tickets across all categories
   const totalTickets = useMemo(
     () => selections.reduce((sum, s) => sum + s.quantity, 0),
     [selections]
@@ -39,7 +29,7 @@ const TicketCategorySelector = ({ categories, selections, onChange, isPaidEvent,
     [selections]
   );
 
-  // Total price: if artistFreeEntry, only charge for audience; otherwise charge for artist + audience
+  // Total price: if artistFreeEntry, only charge for audience
   const totalPrice = useMemo(
     () => selections.reduce((sum, s) => {
       if (artistFreeEntry && allowAudienceMembers) {
@@ -64,7 +54,6 @@ const TicketCategorySelector = ({ categories, selections, onChange, isPaidEvent,
     }
 
     if (existing) {
-      // Adjust attendees array
       let attendees = [...existing.attendees];
       if (newQty > attendees.length) {
         for (let i = attendees.length; i < newQty; i++) {
@@ -102,188 +91,209 @@ const TicketCategorySelector = ({ categories, selections, onChange, isPaidEvent,
 
   return (
     <div className="space-y-4">
-      <Label className="text-base font-semibold">Select Tickets</Label>
+      {/* Step 1: Choose ticket type */}
+      <div className="space-y-1">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">1</div>
+          <Label className="text-base font-semibold">Choose your ticket</Label>
+        </div>
+        <p className="text-xs text-muted-foreground ml-8">Tap + to select a ticket type</p>
+      </div>
 
       {categories.map(cat => {
         const selection = selections.find(s => s.category.id === cat.id);
         const qty = selection?.quantity || 0;
-        const audienceCount = selection?.audienceCount || 0;
-        const isExpanded = expandedAttendees === cat.id;
 
         return (
-          <Card key={cat.id} className={qty > 0 ? "border-primary/50" : ""}>
-            <CardContent className="p-4 space-y-3">
-              {/* Category header */}
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1">
-                  <p className="font-medium">{cat.name}</p>
+          <Card key={cat.id} className={`transition-all ${qty > 0 ? "border-primary ring-1 ring-primary/20" : "hover:border-muted-foreground/30"}`}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <Ticket className="w-4 h-4 text-primary flex-shrink-0" />
+                    <p className="font-medium truncate">{cat.name}</p>
+                  </div>
                   {cat.description && (
-                    <p className="text-xs text-muted-foreground mt-0.5">{cat.description}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 ml-6">{cat.description}</p>
                   )}
                   {isPaidEvent && (
-                    <p className="text-sm font-semibold mt-1 flex items-center">
+                    <p className="text-sm font-bold mt-1 ml-6 flex items-center text-primary">
                       <IndianRupee className="w-3.5 h-3.5" />{cat.price}
+                      {artistFreeEntry && allowAudienceMembers && (
+                        <Badge variant="secondary" className="ml-2 text-[10px]">Your entry free</Badge>
+                      )}
                     </p>
                   )}
                 </div>
 
-                {/* Quantity controls */}
-                <div className="flex items-center gap-2">
+                {/* Simple +/- controls */}
+                <div className="flex items-center gap-1.5">
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-9 w-9 rounded-full"
                     onClick={() => updateQuantity(cat.id, -1)}
                     disabled={qty === 0}
                   >
-                    <Minus className="w-3 h-3" />
+                    <Minus className="w-4 h-4" />
                   </Button>
-                  <span className="w-8 text-center font-medium">{qty}</span>
+                  <span className="w-8 text-center font-bold text-lg">{qty}</span>
                   <Button
-                    variant="outline"
+                    variant={qty === 0 ? "default" : "outline"}
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-9 w-9 rounded-full"
                     onClick={() => updateQuantity(cat.id, 1)}
                     disabled={qty >= cat.max_per_user}
                   >
-                    <Plus className="w-3 h-3" />
+                    <Plus className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
-
-              {/* Max info */}
-              <div className="flex gap-2 text-xs text-muted-foreground">
-                <span>Max {cat.max_per_user} per person</span>
-                {cat.max_total && <span>• {cat.max_total} total available</span>}
-              </div>
-
-              {/* Attendee details (only for the registrant, not audience) */}
-              {qty >= 1 && (
-                <>
-                  <div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full justify-between text-xs"
-                      onClick={() => setExpandedAttendees(isExpanded ? null : cat.id)}
-                    >
-                      <span className="flex items-center gap-1.5">
-                        <Users className="w-3.5 h-3.5" />
-                        Your Details ({qty} attendee{qty > 1 ? 's' : ''}) *
-                      </span>
-                      {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                    </Button>
-
-                    {isExpanded && selection && (
-                      <div className="space-y-3 mt-2">
-                        {selection.attendees.map((attendee, idx) => (
-                          <div key={idx} className="p-3 bg-muted rounded-lg space-y-2">
-                            <p className="text-xs font-medium">Attendee {idx + 1}</p>
-                            <Input
-                              placeholder="Full Name *"
-                              value={attendee.name}
-                              onChange={(e) => updateAttendee(cat.id, idx, "name", e.target.value)}
-                              className="h-8 text-sm"
-                            />
-                            <Input
-                              type="email"
-                              placeholder="Email *"
-                              value={attendee.email}
-                              onChange={(e) => updateAttendee(cat.id, idx, "email", e.target.value)}
-                              className="h-8 text-sm"
-                            />
-                            <Input
-                              type="tel"
-                              placeholder="Mobile *"
-                              value={attendee.mobile}
-                              onChange={(e) => updateAttendee(cat.id, idx, "mobile", e.target.value)}
-                              className="h-8 text-sm"
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Audience members input - only if organizer enabled it */}
-                  {allowAudienceMembers && (
-                    <div className="p-3 bg-accent/30 rounded-lg space-y-2">
-                      <Label className="text-xs font-medium flex items-center gap-1.5">
-                        <Users className="w-3.5 h-3.5" />
-                        Number of Audience Members
-                      </Label>
-                      <p className="text-xs text-muted-foreground">
-                        Bringing audience? They don't need to register separately.
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => updateAudienceCount(cat.id, audienceCount - 1)}
-                          disabled={audienceCount <= 0}
-                        >
-                          <Minus className="w-3 h-3" />
-                        </Button>
-                        <Input
-                          type="number"
-                          value={audienceCount}
-                          onChange={(e) => updateAudienceCount(cat.id, parseInt(e.target.value) || 0)}
-                          className="h-8 w-20 text-center text-sm"
-                          min={0}
-                        />
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => updateAudienceCount(cat.id, audienceCount + 1)}
-                        >
-                          <Plus className="w-3 h-3" />
-                        </Button>
-                      </div>
-      {isPaidEvent && audienceCount > 0 && (
-                        <p className="text-xs text-muted-foreground">
-                          Audience cost: {audienceCount} × ₹{cat.price} = <span className="font-medium text-foreground">₹{audienceCount * cat.price}</span>
-                        </p>
-                      )}
-                      {isPaidEvent && artistFreeEntry && qty > 0 && (
-                        <p className="text-xs text-green-600 dark:text-green-400 font-medium">
-                          ✓ Artist entry is free
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </>
-              )}
             </CardContent>
           </Card>
         );
       })}
 
-      {/* Summary */}
+      {/* Step 2: Fill in your details — always visible when tickets selected */}
       {totalTickets > 0 && (
-        <div className="p-3 bg-primary/5 rounded-xl space-y-1">
-          <div className="flex justify-between text-sm">
-            <span>Your Tickets{artistFreeEntry ? ' (Free)' : ''}</span>
-            <Badge variant="secondary">{totalTickets}</Badge>
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">2</div>
+            <Label className="text-base font-semibold">Fill in your details</Label>
           </div>
-          {totalAudience > 0 && (
-            <div className="flex justify-between text-sm">
-              <span>Audience Members</span>
-              <Badge variant="secondary">{totalAudience}</Badge>
+
+          {selections.filter(s => s.quantity >= 1).map(selection => (
+            <div key={selection.category.id} className="space-y-3">
+              {selection.attendees.map((attendee, idx) => (
+                <Card key={idx} className="border-dashed">
+                  <CardContent className="p-3 space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5" />
+                      {selection.quantity > 1 ? `Attendee ${idx + 1}` : "Your Details"} — {selection.category.name}
+                    </p>
+                    <Input
+                      placeholder="Full Name"
+                      value={attendee.name}
+                      onChange={(e) => updateAttendee(selection.category.id, idx, "name", e.target.value)}
+                      className="h-10"
+                    />
+                    <Input
+                      type="email"
+                      placeholder="Email Address"
+                      value={attendee.email}
+                      onChange={(e) => updateAttendee(selection.category.id, idx, "email", e.target.value)}
+                      className="h-10"
+                    />
+                    <Input
+                      type="tel"
+                      placeholder="Mobile Number"
+                      value={attendee.mobile}
+                      onChange={(e) => updateAttendee(selection.category.id, idx, "mobile", e.target.value)}
+                      className="h-10"
+                    />
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-          )}
-          <div className="flex justify-between text-sm text-muted-foreground">
-            <span>Total People</span>
-            <span>{totalTickets + totalAudience}</span>
-          </div>
-          {isPaidEvent && (
-            <div className="flex justify-between text-sm font-semibold pt-1 border-t border-border/50">
-              <span>Total Amount</span>
-              <span className="flex items-center"><IndianRupee className="w-3.5 h-3.5" />{totalPrice}</span>
-            </div>
-          )}
+          ))}
         </div>
+      )}
+
+      {/* Step 3 (optional): Audience members */}
+      {totalTickets > 0 && allowAudienceMembers && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">
+              {3}
+            </div>
+            <Label className="text-base font-semibold">Bringing audience?</Label>
+            <Badge variant="outline" className="text-[10px]">Optional</Badge>
+          </div>
+          <p className="text-xs text-muted-foreground ml-8">
+            Add audience members — they don't need to register separately.
+          </p>
+
+          {selections.filter(s => s.quantity >= 1).map(selection => {
+            const audienceCount = selection.audienceCount || 0;
+            return (
+              <Card key={selection.category.id} className="bg-accent/20 border-dashed">
+                <CardContent className="p-3 space-y-2">
+                  <p className="text-xs font-medium flex items-center gap-1.5">
+                    <UserPlus className="w-3.5 h-3.5 text-primary" />
+                    Audience for {selection.category.name}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-9 w-9 rounded-full"
+                      onClick={() => updateAudienceCount(selection.category.id, audienceCount - 1)}
+                      disabled={audienceCount <= 0}
+                    >
+                      <Minus className="w-4 h-4" />
+                    </Button>
+                    <Input
+                      type="number"
+                      value={audienceCount}
+                      onChange={(e) => updateAudienceCount(selection.category.id, parseInt(e.target.value) || 0)}
+                      className="h-9 w-20 text-center font-bold text-lg"
+                      min={0}
+                    />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-9 w-9 rounded-full"
+                      onClick={() => updateAudienceCount(selection.category.id, audienceCount + 1)}
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  {isPaidEvent && audienceCount > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      {audienceCount} × ₹{selection.category.price} = <span className="font-semibold text-foreground">₹{audienceCount * selection.category.price}</span>
+                    </p>
+                  )}
+                  {isPaidEvent && artistFreeEntry && (
+                    <p className="text-xs font-medium text-primary">
+                      ✓ Your entry is free — only audience is charged
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Order Summary — clear and bold */}
+      {totalTickets > 0 && (
+        <Card className="bg-primary/5 border-primary/20">
+          <CardContent className="p-4 space-y-2">
+            <p className="text-sm font-semibold">Order Summary</p>
+            <div className="flex justify-between text-sm">
+              <span>{artistFreeEntry && allowAudienceMembers ? 'Your Ticket (Free)' : `Your Ticket${totalTickets > 1 ? 's' : ''}`}</span>
+              <span className="font-medium">{totalTickets}</span>
+            </div>
+            {totalAudience > 0 && (
+              <div className="flex justify-between text-sm">
+                <span>Audience Members</span>
+                <span className="font-medium">{totalAudience}</span>
+              </div>
+            )}
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>Total People Entering</span>
+              <span>{totalTickets + totalAudience}</span>
+            </div>
+            {isPaidEvent && (
+              <div className="flex justify-between text-base font-bold pt-2 border-t border-border/50">
+                <span>Amount to Pay</span>
+                <span className="flex items-center text-primary">
+                  {totalPrice === 0 ? 'Free' : <><IndianRupee className="w-4 h-4" />{totalPrice}</>}
+                </span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
     </div>
   );
