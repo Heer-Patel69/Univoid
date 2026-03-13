@@ -497,7 +497,7 @@ const EventDetail = () => {
         url={`/events/${eventSlug}`}
         type="event"
         structuredData={eventStructuredData}
-        keywords={[event.category, event.event_type, "college event", "campus event", "student event"]}
+        keywords={[...event.category.split(",").map((c: string) => c.trim()), ...event.event_type.split(",").map((t: string) => t.trim()), "college event", "campus event", "student event"]}
       />
       {/* Mobile: Regular scrollable layout */}
       <div className="lg:hidden">
