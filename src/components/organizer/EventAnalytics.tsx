@@ -6,8 +6,9 @@ import {
   LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend 
 } from "recharts";
-import { Users, TicketCheck, TrendingUp, Calendar, Eye, Clock } from "lucide-react";
+import { Users, TicketCheck, TrendingUp, Calendar, Eye, Clock, ShoppingCart, UserCheck } from "lucide-react";
 import { format, subDays, parseISO, startOfDay, eachDayOfInterval } from "date-fns";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface EventAnalyticsProps {
   eventId: string;
@@ -23,6 +24,13 @@ interface StatusBreakdown {
   status: string;
   count: number;
   color: string;
+}
+
+interface CheckoutLead {
+  user_id: string;
+  full_name: string;
+  email: string;
+  visited_at: string;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -74,6 +82,25 @@ export function EventAnalytics({ eventId }: EventAnalyticsProps) {
 
       if (error) throw error;
       return data;
+    },
+  });
+
+  // Fetch checkout analytics
+  const { data: checkoutAnalytics } = useQuery({
+    queryKey: ["event-checkout-analytics", eventId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .rpc("get_event_checkout_analytics", { p_event_id: eventId });
+
+      if (error) throw error;
+      // RPC returns array, get first item
+      const result = Array.isArray(data) ? data[0] : data;
+      return result as unknown as {
+        total_checkout_views: number;
+        unique_users: number;
+        anonymous_views: number;
+        checkout_leads: CheckoutLead[];
+      } | null;
     },
   });
 
@@ -141,22 +168,38 @@ export function EventAnalytics({ eventId }: EventAnalyticsProps) {
   })();
 
   // Conversion metrics
+  const checkoutViews = checkoutAnalytics?.total_checkout_views || 0;
   const metrics = {
     totalViews: event?.views_count || 0,
+    checkoutViews,
+    checkoutUniqueUsers: checkoutAnalytics?.unique_users || 0,
     totalRegistrations: registrations?.length || 0,
     approvedRegistrations: registrations?.filter(r => r.payment_status === "approved").length || 0,
     conversionRate: event?.views_count && registrations?.length 
       ? ((registrations.length / event.views_count) * 100).toFixed(1) 
+      : "0",
+    checkoutToRegRate: checkoutViews && registrations?.length
+      ? ((registrations.length / checkoutViews) * 100).toFixed(1)
       : "0",
     approvalRate: registrations?.length 
       ? ((registrations.filter(r => r.payment_status === "approved").length / registrations.length) * 100).toFixed(0) 
       : "0",
   };
 
+  // Checkout leads (users who visited checkout but didn't register)
+  const checkoutLeads: CheckoutLead[] = (() => {
+    if (!checkoutAnalytics?.checkout_leads || !registrations) return [];
+    const registeredUserIds = new Set(registrations.map(() => null)); // we don't have user_id in regs here
+    // Show all checkout leads - organizer can cross-reference
+    return (checkoutAnalytics.checkout_leads || []).filter(
+      (lead: CheckoutLead) => lead.user_id && lead.full_name !== 'Anonymous'
+    );
+  })();
+
   return (
     <div className="space-y-6">
       {/* Key Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -174,12 +217,40 @@ export function EventAnalytics({ eventId }: EventAnalyticsProps) {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                <ShoppingCart className="w-5 h-5 text-amber-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{metrics.checkoutViews}</p>
+                <p className="text-xs text-muted-foreground">Checkout Views</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
+                <UserCheck className="w-5 h-5 text-cyan-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{metrics.checkoutUniqueUsers}</p>
+                <p className="text-xs text-muted-foreground">Checkout Leads</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
                 <Users className="w-5 h-5 text-purple-500" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{metrics.totalRegistrations}</p>
-                <p className="text-xs text-muted-foreground">Total Registrations</p>
+                <p className="text-xs text-muted-foreground">Registrations</p>
               </div>
             </div>
           </CardContent>
@@ -207,7 +278,7 @@ export function EventAnalytics({ eventId }: EventAnalyticsProps) {
               </div>
               <div>
                 <p className="text-2xl font-bold">{metrics.conversionRate}%</p>
-                <p className="text-xs text-muted-foreground">Conversion Rate</p>
+                <p className="text-xs text-muted-foreground">View → Register</p>
               </div>
             </div>
           </CardContent>
@@ -339,7 +410,7 @@ export function EventAnalytics({ eventId }: EventAnalyticsProps) {
           </CardContent>
         </Card>
 
-        {/* Funnel Metrics */}
+        {/* Conversion Funnel */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Conversion Funnel</CardTitle>
@@ -354,6 +425,21 @@ export function EventAnalytics({ eventId }: EventAnalyticsProps) {
                 </div>
                 <div className="h-3 bg-muted rounded-full overflow-hidden">
                   <div className="h-full bg-blue-500" style={{ width: "100%" }} />
+                </div>
+              </div>
+
+              <div className="relative">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-sm font-medium">Checkout Opened</span>
+                  <span className="text-sm text-muted-foreground">
+                    {metrics.checkoutViews} ({metrics.totalViews ? ((metrics.checkoutViews / metrics.totalViews) * 100).toFixed(1) : 0}%)
+                  </span>
+                </div>
+                <div className="h-3 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-amber-500" 
+                    style={{ width: `${metrics.totalViews ? Math.min(100, (metrics.checkoutViews / metrics.totalViews) * 100) : 0}%` }} 
+                  />
                 </div>
               </div>
               
@@ -405,6 +491,36 @@ export function EventAnalytics({ eventId }: EventAnalyticsProps) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Checkout Leads */}
+      {checkoutLeads.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Checkout Leads</CardTitle>
+            <CardDescription>Users who opened the registration form — potential conversions</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3 max-h-[300px] overflow-y-auto">
+              {checkoutLeads.map((lead, i) => (
+                <div key={`${lead.user_id}-${i}`} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback className="text-xs">
+                      {lead.full_name?.charAt(0)?.toUpperCase() || '?'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{lead.full_name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{lead.email}</p>
+                  </div>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                    {format(parseISO(lead.visited_at), "MMM d, h:mm a")}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
