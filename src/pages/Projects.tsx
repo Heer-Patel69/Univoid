@@ -246,7 +246,7 @@ const Projects = () => {
         </div>
       </div>
 
-      <BottomNav />
+      
     </div>
   );
 };
