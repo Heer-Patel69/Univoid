@@ -186,14 +186,14 @@ const Index = () => {
 
         <div className="container-wide relative z-10">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="font-display text-foreground mb-6 text-balance text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight">
+            <h1 className="font-display text-foreground mb-4 md:mb-6 text-balance text-3xl md:text-5xl lg:text-6xl font-extrabold leading-tight">
               Everything a College Student Needs — In One Place
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-base md:text-xl text-muted-foreground mb-8 md:mb-10 max-w-3xl mx-auto leading-relaxed">
               Study materials, events, projects, tasks, and book exchange — personalized for Indian students.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" onClick={() => setAuthOpen(true)} className="btn-sketch btn-sketch-primary font-semibold text-base h-14 px-8">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+              <Button size="lg" onClick={() => setAuthOpen(true)} className="btn-sketch btn-sketch-primary font-semibold text-base h-12 md:h-14 px-6 md:px-8 w-full sm:w-auto">
                 <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                   <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                   <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
@@ -202,8 +202,8 @@ const Index = () => {
                 </svg>
                 Get Started with Google
               </Button>
-              <Link to="/materials">
-                <Button variant="outline" size="lg" className="btn-sketch btn-sketch-secondary font-semibold text-base h-14 px-8 w-full sm:w-auto">
+              <Link to="/materials" className="w-full sm:w-auto">
+                <Button variant="outline" size="lg" className="btn-sketch btn-sketch-secondary font-semibold text-base h-12 md:h-14 px-6 md:px-8 w-full">
                   Explore Features
                   <ArrowRight className="w-5 h-5 ml-2" strokeWidth={2} />
                 </Button>
