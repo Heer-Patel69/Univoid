@@ -211,7 +211,7 @@ const Events = () => {
               <h2 className="font-display text-xl font-semibold">Upcoming Events</h2>
               <Badge variant="secondary">{upcomingEvents.length}</Badge>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch staggered-grid-fast">
               {upcomingEvents.map((event) => (
                 <EventCard key={event.id} event={event} />
               ))}
