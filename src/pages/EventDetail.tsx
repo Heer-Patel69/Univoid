@@ -810,7 +810,7 @@ const EventDetail = () => {
           }}
         >
           {/* Desktop: Hero Flyer - 4:5 aspect ratio, no outer spacing */}
-          <div className="relative rounded-2xl overflow-hidden bg-muted aspect-[4/5] max-h-[70vh]">
+          <div className="relative rounded-2xl overflow-hidden bg-muted aspect-[4/5]">
             {event.flyer_url ? (
               <img 
                 src={toDisplayUrl(event.flyer_url, { forceImage: true }) || undefined} 
