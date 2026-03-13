@@ -201,8 +201,10 @@ const DynamicRegistrationForm = ({
       'aria-describedby': error ? `${field.id}-error` : undefined,
     };
 
+    const isFullWidth = ['textarea', 'file', 'checkbox', 'radio'].includes(field.field_type);
+
     return (
-      <div key={field.id} className="space-y-2">
+      <div key={field.id} className={`space-y-2 ${isFullWidth ? 'sm:col-span-2' : ''}`}>
         <Label htmlFor={field.id} className="flex items-center gap-1">
           {field.label}
           {field.is_required && <span className="text-destructive">*</span>}
