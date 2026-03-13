@@ -160,6 +160,17 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  /* Global smooth transitions for all interactive elements */
+  a, button, input, select, textarea,
+  [role="button"], [tabindex] {
+    @apply transition-all duration-200 ease-out;
+  }
+
+  /* Better global focus ring */
+  :focus-visible {
+    @apply outline-none ring-2 ring-foreground/20 ring-offset-2 ring-offset-background;
+  }
+
   /* Global subtle paper texture overlay - applied to body */
   body::before {
     content: '';
