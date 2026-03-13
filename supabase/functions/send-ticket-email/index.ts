@@ -262,17 +262,17 @@ const handler = async (req: Request): Promise<Response> => {
 
       const qrHtml = qrSections.join("\n");
       const emailHtml = buildTicketEmailHtml(
-        profile.full_name, event.title, eventDate, locationText, organizerName,
+        recipientName, event.title, eventDate, locationText, organizerName,
         qrHtml, ticketsToEmail.length, false
       );
 
       result = await sendEmailViaBrevo(
-        profile.email, profile.full_name,
+        recipientEmail, recipientName,
         `Your Ticket Confirmation - ${event.title}`, emailHtml
       );
 
       if (!result.success) throw new Error(`Email delivery failed: ${result.error}`);
-      console.log(`✅ Primary ticket email sent to: ${profile.email} (${ticketsToEmail.length} QR codes)`);
+      console.log(`✅ Primary ticket email sent to: ${recipientEmail} (${ticketsToEmail.length} QR codes)`);
     } else if (!attendeesOnly) {
       console.log("⚠️ No tickets found for registration, skipping primary email");
     } else {
