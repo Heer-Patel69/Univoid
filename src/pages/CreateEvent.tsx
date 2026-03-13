@@ -37,8 +37,8 @@ const STEPS = [
   { id: 6, title: "Payment", icon: CreditCard },
 ];
 
-const CATEGORIES = ["Tech", "Cultural", "Sports", "Academic", "Workshop", "Seminar"];
-const EVENT_TYPES = ["Hackathon", "Party", "Conference", "Workshop", "Competition", "Meetup", "Festival"];
+import MultiSelectPicker from "@/components/events/MultiSelectPicker";
+import { parseMultiValue, joinMultiValue } from "@/constants/eventOptions";
 
 const CreateEvent = () => {
   const navigate = useNavigate();

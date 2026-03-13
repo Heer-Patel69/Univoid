@@ -22,8 +22,8 @@ import { ArrowLeft, Save, Image, Loader2, Sparkles, Clock } from "lucide-react";
 import { useUpiScanner } from "@/hooks/useUpiScanner";
 import StateCitySelect from "@/components/common/StateCitySelect";
 
-const CATEGORIES = ["Tech", "Cultural", "Sports", "Academic", "Workshop", "Seminar"];
-const EVENT_TYPES = ["Hackathon", "Party", "Conference", "Workshop", "Competition", "Meetup", "Festival"];
+import MultiSelectPicker from "@/components/events/MultiSelectPicker";
+import { parseMultiValue, joinMultiValue } from "@/constants/eventOptions";
 const STATUSES = ["draft", "published", "cancelled", "completed"];
 
 const EditEvent = () => {
