@@ -243,25 +243,17 @@ const EditEvent = () => {
                 <Input value={formData.title} onChange={(e) => updateForm("title", e.target.value)} />
               </div>
               
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label>Category *</Label>
-                  <Select value={formData.category} onValueChange={(v) => updateForm("category", v)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {CATEGORIES.map(c => <SelectItem key={c} value={c.toLowerCase()}>{c}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Event Type *</Label>
-                  <Select value={formData.event_type} onValueChange={(v) => updateForm("event_type", v)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {EVENT_TYPES.map(t => <SelectItem key={t} value={t.toLowerCase()}>{t}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <MultiSelectPicker
+                  type="category"
+                  selected={parseMultiValue(formData.category)}
+                  onChange={(vals) => updateForm("category", joinMultiValue(vals))}
+                />
+                <MultiSelectPicker
+                  type="event_type"
+                  selected={parseMultiValue(formData.event_type)}
+                  onChange={(vals) => updateForm("event_type", joinMultiValue(vals))}
+                />
                 <div className="space-y-2">
                   <Label>Status</Label>
                   <Select value={formData.status} onValueChange={(v) => updateForm("status", v)}>
