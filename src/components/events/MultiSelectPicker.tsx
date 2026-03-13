@@ -131,7 +131,7 @@ export default function MultiSelectPicker({ type, selected, onChange }: MultiSel
                 <p className="text-sm text-muted-foreground text-center py-4">No matches found</p>
               )}
             </div>
-          </ScrollArea>
+          </div>
         </div>
       )}
     </div>
