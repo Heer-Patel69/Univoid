@@ -210,7 +210,7 @@ const Books = () => {
   }, [allBooks, searchQuery, selectedCategory, selectedListingType, sortBy]);
 
   return (
-    <div className="pb-20 md:pb-0 page-enter">
+    <div className="page-enter">
       <SEOHead
         title="Book Exchange - Buy, Sell, Rent Textbooks | UniVoid"
         description="Buy, sell, rent, or exchange textbooks with fellow students. Find affordable academic books, competitive exam guides, and more."

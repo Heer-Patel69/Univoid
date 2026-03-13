@@ -101,7 +101,7 @@ const Projects = () => {
   );
 
   return (
-    <div className="pb-20 md:pb-0">
+    <div>
       <SEOHead
         title="Project Partner - Find Your Team"
         description="Find teammates for hackathons, projects, and startups. Collaborate with students who have the skills you need. Join open projects or create your own."
