@@ -626,6 +626,7 @@ const OrganizerDashboard = () => {
                                       >
                                         <Send className="w-3 h-3" /> Resend Ticket
                                       </Button>
+                                    )}
                                   </div>
                                 </div>
 
