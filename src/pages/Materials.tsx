@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, memo, useEffect } from "react";
 import { useNavigate, useOutletContext, useSearchParams } from "react-router-dom";
-import { BottomNav } from "@/components/layout/BottomNav";
+
 import EnhancedMaterialPreview from "@/components/materials/EnhancedMaterialPreview";
 import MaterialCard from "@/components/materials/MaterialCard";
 import MaterialCardSkeleton from "@/components/materials/MaterialCardSkeleton";
@@ -455,7 +455,7 @@ const Materials = () => {
   }, [previewMaterial, handleDownload]);
 
   return (
-    <div className="pb-20 md:pb-0 page-enter">
+    <div className="page-enter">
       <SEOHead
         title={seoData.title}
         description={seoData.description}
@@ -543,7 +543,7 @@ const Materials = () => {
         </div>
       </main>
 
-      <BottomNav />
+      
 
       <EnhancedMaterialPreview
         material={previewModalData}

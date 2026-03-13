@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { useNavigate, Link, useOutletContext, useSearchParams } from "react-router-dom";
-import { BottomNav } from "@/components/layout/BottomNav";
+
 import ReportButton from "@/components/reports/ReportButton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -210,7 +210,7 @@ const Books = () => {
   }, [allBooks, searchQuery, selectedCategory, selectedListingType, sortBy]);
 
   return (
-    <div className="pb-20 md:pb-0 page-enter">
+    <div className="page-enter">
       <SEOHead
         title="Book Exchange - Buy, Sell, Rent Textbooks | UniVoid"
         description="Buy, sell, rent, or exchange textbooks with fellow students. Find affordable academic books, competitive exam guides, and more."
@@ -407,7 +407,7 @@ const Books = () => {
         </div>
       </main>
 
-      <BottomNav />
+      
     </div>
   );
 };

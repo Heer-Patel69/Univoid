@@ -2,6 +2,7 @@ import { Outlet } from "react-router-dom";
 import { Suspense } from "react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import { BottomNav } from "@/components/layout/BottomNav";
 import { useState, useCallback } from "react";
 import AuthModal from "@/components/auth/AuthModal";
 import { FloatingDoodles } from "@/components/common/FloatingDoodles";
@@ -29,13 +30,14 @@ const AppLayout = () => {
       <Header onAuthClick={handleAuthClick} />
       
       {/* Main content - overflow must be visible for sticky to work in children */}
-      <main className="flex-1 w-full max-w-full relative z-10 overflow-visible">
+      <main className="flex-1 w-full max-w-full relative z-10 overflow-visible pb-20 md:pb-0">
         <Suspense fallback={null}>
           <Outlet context={{ onAuthClick: handleAuthClick }} />
         </Suspense>
       </main>
 
       <Footer />
+      <BottomNav />
       
       <AuthModal 
         isOpen={showAuthModal} 

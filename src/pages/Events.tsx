@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link, useOutletContext, useSearchParams } from "react-router-dom";
-import { BottomNav } from "@/components/layout/BottomNav";
+
 import { EventCard } from "@/components/events/EventCard";
 import { EventCardSkeleton } from "@/components/events/EventCardSkeleton";
 import { EventFilters } from "@/components/events/EventFilters";
@@ -135,7 +135,7 @@ const Events = () => {
   }, [events]);
 
   return (
-    <div className="pb-20 md:pb-0 page-enter">
+    <div className="page-enter">
       <SEOHead
         title={seoData.title}
         description={seoData.description}
@@ -231,7 +231,7 @@ const Events = () => {
         </div>
       </main>
 
-      <BottomNav />
+      
       
       <AuthModal 
         isOpen={showAuthModal} 

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useOutletContext } from "react-router-dom";
-import { BottomNav } from "@/components/layout/BottomNav";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Trophy, Medal, Award, User, ArrowRight, Crown, Loader2 } from "lucide-react";
@@ -48,7 +48,7 @@ const Leaderboard = () => {
   const topThree = leaderboard.slice(0, 3);
 
   return (
-    <div className="pb-20 md:pb-0">
+    <div>
       <SEOHead
         title="Leaderboard - Top Contributors"
         description="See the top contributors on UniVoid. Earn XP by sharing study materials, news, and helping fellow students. Climb the leaderboard and get recognized."
@@ -215,7 +215,7 @@ const Leaderboard = () => {
         </div>
       </main>
 
-      <BottomNav />
+      
     </div>
   );
 };
