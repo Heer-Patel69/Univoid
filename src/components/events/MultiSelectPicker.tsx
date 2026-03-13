@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { Input } from "@/components/ui/input";
 import { Check, ChevronDown, ChevronUp, Search, X } from "lucide-react";
 import {
@@ -92,7 +92,7 @@ export default function MultiSelectPicker({ type, selected, onChange }: MultiSel
               />
             </div>
           </div>
-          <ScrollArea className="max-h-[280px]">
+          <div className="max-h-[280px] overflow-y-auto">
             <div className="p-2 space-y-3">
               {filteredGroups.map((group) => (
                 <div key={group.label}>
@@ -131,7 +131,7 @@ export default function MultiSelectPicker({ type, selected, onChange }: MultiSel
                 <p className="text-sm text-muted-foreground text-center py-4">No matches found</p>
               )}
             </div>
-          </ScrollArea>
+          </div>
         </div>
       )}
     </div>
