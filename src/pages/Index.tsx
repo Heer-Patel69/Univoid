@@ -133,10 +133,10 @@ const Index = () => {
     q: "Is profile completion mandatory?",
     a: "Yes. It helps personalize content for you."
   }];
-  return <div className="min-h-screen flex flex-col bg-sketch pb-20 md:pb-0 paper-texture relative">
-      {/* Global floating doodles across entire landing page */}
+  return <div className="min-h-screen flex flex-col bg-sketch pb-24 md:pb-0 paper-texture relative overflow-x-hidden">
+      {/* Global floating doodles - hidden on mobile to prevent overlap */}
       <Suspense fallback={null}>
-        <FloatingDoodles density="global" section="full" className="fixed inset-0 z-0" />
+        <FloatingDoodles density="global" section="full" className="fixed inset-0 z-0 hidden md:block" />
       </Suspense>
     <SEOHead
       title="UniVoid - Everything a College Student Needs"
