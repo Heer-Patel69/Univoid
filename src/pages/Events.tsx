@@ -135,7 +135,7 @@ const Events = () => {
   }, [events]);
 
   return (
-    <div className="pb-20 md:pb-0">
+    <div className="pb-20 md:pb-0 page-enter">
       <SEOHead
         title={seoData.title}
         description={seoData.description}
