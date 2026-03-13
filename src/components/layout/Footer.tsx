@@ -23,7 +23,7 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="border-t border-border bg-card relative z-10">
+    <footer className="border-t border-border bg-card/80 backdrop-blur-sm relative z-10">
       <div className="container-wide py-10">
         {/* Brand and Social */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">

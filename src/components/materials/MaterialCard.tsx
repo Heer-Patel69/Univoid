@@ -86,7 +86,7 @@ const MaterialCard = memo(function MaterialCard({
   const fileType = getFileTypeDisplay(material.file_type);
 
   return (
-    <Card className="group overflow-hidden h-full flex flex-col border-border-strong/10 transform-gpu transition-transform duration-300 hover:-translate-y-1 hover:scale-[1.01]">
+    <Card className="group overflow-hidden h-full flex flex-col border-border transform-gpu transition-all duration-300 hover:-translate-y-1.5 hover:shadow-soft-lg">
       <CardContent className="p-0 flex flex-col h-full">
         {/* Top Section - Grows to fill space */}
         <div 
