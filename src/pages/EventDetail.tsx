@@ -521,8 +521,12 @@ const EventDetail = () => {
             </div>
           )}
           <div className="absolute top-4 left-4 flex gap-2 flex-wrap">
-            <Badge>{event.category}</Badge>
-            <Badge variant="outline" className="bg-background/80 backdrop-blur">{event.event_type}</Badge>
+            {event.category.split(",").map((c: string) => c.trim()).filter(Boolean).map((c: string) => (
+              <Badge key={c} className="capitalize">{c}</Badge>
+            ))}
+            {event.event_type.split(",").map((t: string) => t.trim()).filter(Boolean).map((t: string) => (
+              <Badge key={t} variant="outline" className="bg-background/80 backdrop-blur capitalize">{t}</Badge>
+            ))}
           </div>
           <div className="absolute bottom-4 right-4">
             <Badge variant="secondary" className="gap-1"><Eye className="w-3 h-3" />{event.views_count} views</Badge>
