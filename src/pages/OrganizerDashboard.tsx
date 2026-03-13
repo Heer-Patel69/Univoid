@@ -614,8 +614,18 @@ const OrganizerDashboard = () => {
                                         >
                                           <XCircle className="w-3 h-3 mr-1" /> Reject
                                         </Button>
-                                      </>
+                                    </>
                                     )}
+                                    {status === "approved" && (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="text-xs gap-1"
+                                        onClick={() => resendTicketMutation.mutate({ registrationId: reg.registration_id, userId: reg.user_id })}
+                                        disabled={resendTicketMutation.isPending}
+                                      >
+                                        <Send className="w-3 h-3" /> Resend Ticket
+                                      </Button>
                                   </div>
                                 </div>
 
