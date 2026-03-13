@@ -923,6 +923,27 @@
     @apply transition-all duration-200 ease-out;
   }
 
+  /* Page enter animation */
+  .page-enter {
+    animation: page-fade-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  @keyframes page-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Fill mode forwards for CSS animations */
+  .fill-mode-forwards {
+    animation-fill-mode: forwards;
+  }
+
   /* Text balance */
   .text-balance {
     text-wrap: balance;
