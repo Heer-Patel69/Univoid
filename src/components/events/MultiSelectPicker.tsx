@@ -92,7 +92,7 @@ export default function MultiSelectPicker({ type, selected, onChange }: MultiSel
               />
             </div>
           </div>
-          <ScrollArea className="max-h-[280px]">
+          <div className="max-h-[280px] overflow-y-auto">
             <div className="p-2 space-y-3">
               {filteredGroups.map((group) => (
                 <div key={group.label}>
