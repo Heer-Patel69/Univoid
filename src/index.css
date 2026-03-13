@@ -246,13 +246,18 @@
   .card-sketch {
     @apply bg-card rounded-xl p-6;
     border: 1px solid hsl(var(--sketch-border));
-    box-shadow: 4px 4px 0px hsl(var(--sketch-border));
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 3px 3px 0px hsl(var(--sketch-border));
+    transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .card-sketch:hover {
     transform: translate(-2px, -2px);
-    box-shadow: 6px 6px 0px hsl(var(--sketch-border));
+    box-shadow: 5px 5px 0px hsl(var(--sketch-border));
+  }
+
+  .card-sketch:active {
+    transform: translate(0, 0);
+    box-shadow: 1px 1px 0px hsl(var(--sketch-border));
   }
 
   /* Sketch border utility */
