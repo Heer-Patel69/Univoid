@@ -71,92 +71,87 @@ export const EventFilters = ({
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row gap-3">
-        {/* Search */}
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search events..."
-            value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-
-        {/* Category Filter */}
-        <Select value={category} onValueChange={onCategoryChange}>
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <Filter className="w-4 h-4 mr-2" />
-            <SelectValue placeholder="Category" />
-          </SelectTrigger>
-          <SelectContent className="bg-background border shadow-lg z-50">
-            {EVENT_CATEGORIES.map((cat) => (
-              <SelectItem key={cat.value} value={cat.value}>
-                {cat.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* Price Filter */}
-        <Select value={priceFilter} onValueChange={onPriceFilterChange}>
-          <SelectTrigger className="w-full sm:w-[140px]">
-            <SelectValue placeholder="Price" />
-          </SelectTrigger>
-          <SelectContent className="bg-background border shadow-lg z-50">
-            {PRICE_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* Clear Filters */}
-        {hasActiveFilters && (
-          <Button variant="ghost" size="icon" onClick={onClear}>
-            <X className="w-4 h-4" />
-          </Button>
-        )}
+    <div className="flex flex-col sm:flex-row flex-wrap gap-3 mb-8">
+      {/* Search */}
+      <div className="relative flex-1 min-w-[200px]">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input
+          placeholder="Search events..."
+          value={search}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="pl-10"
+        />
       </div>
 
-      {/* Location Filters Row */}
-      {onStateChange && (
-        <div className="flex flex-col sm:flex-row gap-3">
-          {/* State Filter */}
-          <Select value={state} onValueChange={handleStateChange}>
-            <SelectTrigger className="w-full sm:w-[200px]">
-              <MapPin className="w-4 h-4 mr-2" />
-              <SelectValue placeholder="All States" />
-            </SelectTrigger>
-            <SelectContent className="bg-background border shadow-lg z-50 max-h-[300px]">
-              <SelectItem value="all">All States</SelectItem>
-              {INDIAN_STATES.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {s}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      {/* Category Filter */}
+      <Select value={category} onValueChange={onCategoryChange}>
+        <SelectTrigger className="w-full sm:w-[160px]">
+          <Filter className="w-4 h-4 mr-2" />
+          <SelectValue placeholder="Category" />
+        </SelectTrigger>
+        <SelectContent className="bg-background border shadow-lg z-50">
+          {EVENT_CATEGORIES.map((cat) => (
+            <SelectItem key={cat.value} value={cat.value}>
+              {cat.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
-          {/* City Filter - only show if state is selected */}
-          {state && state !== "all" && cities.length > 0 && onCityChange && (
-            <Select value={city} onValueChange={onCityChange}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="All Cities" />
-              </SelectTrigger>
-              <SelectContent className="bg-background border shadow-lg z-50 max-h-[300px]">
-                <SelectItem value="all">All Cities</SelectItem>
-                {cities.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        </div>
+      {/* Price Filter */}
+      <Select value={priceFilter} onValueChange={onPriceFilterChange}>
+        <SelectTrigger className="w-full sm:w-[130px]">
+          <SelectValue placeholder="Price" />
+        </SelectTrigger>
+        <SelectContent className="bg-background border shadow-lg z-50">
+          {PRICE_OPTIONS.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {/* State Filter */}
+      {onStateChange && (
+        <Select value={state} onValueChange={handleStateChange}>
+          <SelectTrigger className="w-full sm:w-[160px]">
+            <MapPin className="w-4 h-4 mr-2" />
+            <SelectValue placeholder="All States" />
+          </SelectTrigger>
+          <SelectContent className="bg-background border shadow-lg z-50 max-h-[300px]">
+            <SelectItem value="all">All States</SelectItem>
+            {INDIAN_STATES.map((s) => (
+              <SelectItem key={s} value={s}>
+                {s}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
+
+      {/* City Filter */}
+      {state && state !== "all" && cities.length > 0 && onCityChange && (
+        <Select value={city} onValueChange={onCityChange}>
+          <SelectTrigger className="w-full sm:w-[150px]">
+            <SelectValue placeholder="All Cities" />
+          </SelectTrigger>
+          <SelectContent className="bg-background border shadow-lg z-50 max-h-[300px]">
+            <SelectItem value="all">All Cities</SelectItem>
+            {cities.map((c) => (
+              <SelectItem key={c} value={c}>
+                {c}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
+
+      {/* Clear Filters */}
+      {hasActiveFilters && (
+        <Button variant="ghost" size="icon" onClick={onClear}>
+          <X className="w-4 h-4" />
+        </Button>
       )}
     </div>
   );
