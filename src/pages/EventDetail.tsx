@@ -86,28 +86,6 @@ const EventDetail = () => {
   }, []);
 
 
-  // Increment event views once per session
-  useEffect(() => {
-    if (!event?.id) return;
-    const viewKey = `event_viewed_${event.id}`;
-    if (sessionStorage.getItem(viewKey)) return;
-    sessionStorage.setItem(viewKey, '1');
-    supabase.rpc('increment_event_views', { p_event_id: event.id }).then(({ error }) => {
-      if (error) console.warn('Failed to increment event views:', error);
-    });
-  }, [event?.id]);
-
-  // Track checkout visit when registration dialog opens
-  useEffect(() => {
-    if (!isRegisterOpen || !event?.id) return;
-    const checkoutKey = `checkout_tracked_${event.id}`;
-    if (sessionStorage.getItem(checkoutKey)) return;
-    sessionStorage.setItem(checkoutKey, '1');
-    supabase.rpc('record_checkout_visit', { p_event_id: event.id }).then(({ error }) => {
-      if (error) console.warn('Failed to record checkout visit:', error);
-    });
-  }, [isRegisterOpen, event?.id]);
-
   useBodyScrollLock(isDesktopView);
 
   // Native scroll - no JS interception, browser handles all scroll physics naturally
