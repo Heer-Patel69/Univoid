@@ -220,16 +220,16 @@ const Books = () => {
       <main className="py-10 md:py-14">
         <div className="container-wide">
           {/* Header */}
-          <div className="mb-10">
+          <div className="mb-6 md:mb-10">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-accent rounded-xl flex items-center justify-center">
-                <BookOpen className="w-6 h-6 text-accent-foreground" />
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-accent rounded-xl flex items-center justify-center flex-shrink-0">
+                <BookOpen className="w-5 h-5 md:w-6 md:h-6 text-accent-foreground" />
               </div>
               <div>
-                <h1 className="font-display text-2xl md:text-3xl text-foreground">
+                <h1 className="font-display text-xl md:text-3xl text-foreground">
                   Book Exchange
                 </h1>
-                <p className="text-muted-foreground">
+                <p className="text-sm md:text-base text-muted-foreground">
                   Buy, sell, or exchange textbooks with other students
                 </p>
               </div>
@@ -237,53 +237,57 @@ const Books = () => {
           </div>
 
           {/* Search & Filters */}
-          <div className="flex flex-col sm:flex-row flex-wrap gap-3 mb-8 items-center">
-            <div className="relative flex-1 min-w-[200px]">
+          <div className="flex flex-col gap-3 mb-6 md:mb-8">
+            {/* Search - full width */}
+            <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Search by title or description..."
-                className="pl-10"
+                className="pl-10 w-full"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-full sm:w-[140px]">
-                <ArrowUpDown className="w-4 h-4 mr-2 text-muted-foreground" />
-                <SelectValue placeholder="Sort" />
-              </SelectTrigger>
-              <SelectContent>
-                {SORT_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={selectedListingType} onValueChange={setSelectedListingType}>
-              <SelectTrigger className="w-full sm:w-[140px]">
-                <SelectValue placeholder="Type" />
-              </SelectTrigger>
-              <SelectContent>
-                {LISTING_TYPE_FILTERS.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-full sm:w-[140px]">
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                {BOOK_CATEGORIES.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Filter row - 2 per row on mobile */}
+            <div className="grid grid-cols-2 sm:flex sm:flex-row gap-2 sm:gap-3">
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-full sm:w-[140px]">
+                  <ArrowUpDown className="w-4 h-4 mr-2 text-muted-foreground flex-shrink-0" />
+                  <SelectValue placeholder="Sort" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SORT_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={selectedListingType} onValueChange={setSelectedListingType}>
+                <SelectTrigger className="w-full sm:w-[140px]">
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {LISTING_TYPE_FILTERS.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-full sm:w-[140px] col-span-2 sm:col-span-1">
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {BOOK_CATEGORIES.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Content */}

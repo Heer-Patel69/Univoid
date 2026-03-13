@@ -23,9 +23,9 @@ const AppLayout = () => {
   }, []);
 
   return (
-    <div className="min-h-dvh flex flex-col bg-background paper-texture w-full max-w-full relative">
-      {/* Global floating doodles background */}
-      <FloatingDoodles density="global" className="fixed inset-0" />
+    <div className="min-h-dvh flex flex-col bg-background paper-texture w-full max-w-full relative overflow-x-hidden">
+      {/* Global floating doodles background - hidden on mobile to prevent overlap */}
+      <FloatingDoodles density="global" className="fixed inset-0 hidden md:block" />
       
       <Header onAuthClick={handleAuthClick} />
       
