@@ -952,12 +952,12 @@ const EventDetail = () => {
                           {isEventPast ? "Event Ended" : isFullNow ? "Event Full" : "Register Now"}
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="max-w-md sm:max-w-2xl max-h-[90vh]">
+                      <DialogContent className="max-w-[95vw] sm:max-w-3xl lg:max-w-4xl max-h-[90vh]">
                         <DialogHeader>
                           <DialogTitle>{bookingStep === "upsells" ? "Add Extras" : bookingStep === "payment" ? "Complete Payment" : "Register"}</DialogTitle>
                           <DialogDescription>{bookingStep === "upsells" ? "Optional add-ons for your booking" : bookingStep === "payment" ? "Review and pay to confirm" : event.is_paid ? "Select tickets and fill in your details" : "Fill in your details to confirm"}</DialogDescription>
                         </DialogHeader>
-                        <ScrollArea className="max-h-[65vh] sm:max-h-[70vh] pr-4">
+                        <ScrollArea className="max-h-[70vh] sm:max-h-[72vh] pr-4">
                           <div className="py-4 space-y-4">
                             {bookingStep === "form" && (
                               <>

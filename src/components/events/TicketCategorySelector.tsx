@@ -17,19 +17,16 @@ interface TicketCategorySelectorProps {
 }
 
 const TicketCategorySelector = ({ categories, selections, onChange, isPaidEvent, allowAudienceMembers = false, artistFreeEntry = false }: TicketCategorySelectorProps) => {
-  // Total tickets across all categories
   const totalTickets = useMemo(
     () => selections.reduce((sum, s) => sum + s.quantity, 0),
     [selections]
   );
 
-  // Total audience across all categories
   const totalAudience = useMemo(
     () => selections.reduce((sum, s) => sum + (s.audienceCount || 0), 0),
     [selections]
   );
 
-  // Total price: if artistFreeEntry, only charge for audience
   const totalPrice = useMemo(
     () => selections.reduce((sum, s) => {
       if (artistFreeEntry && allowAudienceMembers) {
@@ -89,16 +86,14 @@ const TicketCategorySelector = ({ categories, selections, onChange, isPaidEvent,
     }));
   };
 
-  return (
-    <div className="space-y-4">
-      {/* Step 1: Choose ticket type */}
-      <div className="space-y-1">
-        <div className="flex items-center gap-2">
-          <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">1</div>
-          <Label className="text-base font-semibold">Choose your ticket</Label>
-        </div>
-        <p className="text-xs text-muted-foreground ml-8">Tap + to select a ticket type</p>
+  /* ── Left column: ticket cards ── */
+  const ticketSelectionSection = (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">1</div>
+        <Label className="text-base font-semibold">Choose your ticket</Label>
       </div>
+      <p className="text-xs text-muted-foreground ml-8">Tap + to select a ticket type</p>
 
       {categories.map(cat => {
         const selection = selections.find(s => s.category.id === cat.id);
@@ -106,18 +101,18 @@ const TicketCategorySelector = ({ categories, selections, onChange, isPaidEvent,
 
         return (
           <Card key={cat.id} className={`transition-all ${qty > 0 ? "border-primary ring-1 ring-primary/20" : "hover:border-muted-foreground/30"}`}>
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <Ticket className="w-4 h-4 text-primary flex-shrink-0" />
-                    <p className="font-medium truncate">{cat.name}</p>
+                    <p className="font-medium truncate text-sm">{cat.name}</p>
                   </div>
                   {cat.description && (
                     <p className="text-xs text-muted-foreground mt-0.5 ml-6">{cat.description}</p>
                   )}
                   {isPaidEvent && (
-                    <p className="text-sm font-bold mt-1 ml-6 flex items-center text-primary">
+                    <p className="text-sm font-bold mt-0.5 ml-6 flex items-center text-primary">
                       <IndianRupee className="w-3.5 h-3.5" />{cat.price}
                       {artistFreeEntry && allowAudienceMembers && (
                         <Badge variant="secondary" className="ml-2 text-[10px]">Your entry free</Badge>
@@ -125,27 +120,13 @@ const TicketCategorySelector = ({ categories, selections, onChange, isPaidEvent,
                     </p>
                   )}
                 </div>
-
-                {/* Simple +/- controls */}
                 <div className="flex items-center gap-1.5">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-9 w-9 rounded-full"
-                    onClick={() => updateQuantity(cat.id, -1)}
-                    disabled={qty === 0}
-                  >
-                    <Minus className="w-4 h-4" />
+                  <Button variant="outline" size="icon" className="h-8 w-8 rounded-full" onClick={() => updateQuantity(cat.id, -1)} disabled={qty === 0}>
+                    <Minus className="w-3.5 h-3.5" />
                   </Button>
-                  <span className="w-8 text-center font-bold text-lg">{qty}</span>
-                  <Button
-                    variant={qty === 0 ? "default" : "outline"}
-                    size="icon"
-                    className="h-9 w-9 rounded-full"
-                    onClick={() => updateQuantity(cat.id, 1)}
-                    disabled={qty >= cat.max_per_user}
-                  >
-                    <Plus className="w-4 h-4" />
+                  <span className="w-7 text-center font-bold text-base">{qty}</span>
+                  <Button variant={qty === 0 ? "default" : "outline"} size="icon" className="h-8 w-8 rounded-full" onClick={() => updateQuantity(cat.id, 1)} disabled={qty >= cat.max_per_user}>
+                    <Plus className="w-3.5 h-3.5" />
                   </Button>
                 </div>
               </div>
@@ -154,98 +135,29 @@ const TicketCategorySelector = ({ categories, selections, onChange, isPaidEvent,
         );
       })}
 
-      {/* Step 2: Fill in your details — always visible when tickets selected */}
-      {totalTickets > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">2</div>
-            <Label className="text-base font-semibold">Fill in your details</Label>
-          </div>
-
-          {selections.filter(s => s.quantity >= 1).map(selection => (
-            <div key={selection.category.id} className="space-y-3">
-              {selection.attendees.map((attendee, idx) => (
-                <Card key={idx} className="border-dashed">
-                  <CardContent className="p-3 space-y-2">
-                    <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                      <Users className="w-3.5 h-3.5" />
-                      {selection.quantity > 1 ? `Attendee ${idx + 1}` : "Your Details"} — {selection.category.name}
-                    </p>
-                    <Input
-                      placeholder="Full Name"
-                      value={attendee.name}
-                      onChange={(e) => updateAttendee(selection.category.id, idx, "name", e.target.value)}
-                      className="h-10"
-                    />
-                    <Input
-                      type="email"
-                      placeholder="Email Address"
-                      value={attendee.email}
-                      onChange={(e) => updateAttendee(selection.category.id, idx, "email", e.target.value)}
-                      className="h-10"
-                    />
-                    <Input
-                      type="tel"
-                      placeholder="Mobile Number"
-                      value={attendee.mobile}
-                      onChange={(e) => updateAttendee(selection.category.id, idx, "mobile", e.target.value)}
-                      className="h-10"
-                    />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Step 3 (optional): Audience members */}
+      {/* Audience section inline with tickets on desktop */}
       {totalTickets > 0 && allowAudienceMembers && (
-        <div className="space-y-3">
+        <div className="space-y-2 pt-2">
           <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">
-              {3}
-            </div>
-            <Label className="text-base font-semibold">Bringing audience?</Label>
+            <UserPlus className="w-4 h-4 text-primary" />
+            <Label className="text-sm font-semibold">Bringing audience?</Label>
             <Badge variant="outline" className="text-[10px]">Optional</Badge>
           </div>
-          <p className="text-xs text-muted-foreground ml-8">
-            Add audience members — they don't need to register separately.
-          </p>
-
           {selections.filter(s => s.quantity >= 1).map(selection => {
             const audienceCount = selection.audienceCount || 0;
             return (
               <Card key={selection.category.id} className="bg-accent/20 border-dashed">
-                <CardContent className="p-3 space-y-2">
+                <CardContent className="p-3 space-y-1.5">
                   <p className="text-xs font-medium flex items-center gap-1.5">
-                    <UserPlus className="w-3.5 h-3.5 text-primary" />
                     Audience for {selection.category.name}
                   </p>
                   <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-9 w-9 rounded-full"
-                      onClick={() => updateAudienceCount(selection.category.id, audienceCount - 1)}
-                      disabled={audienceCount <= 0}
-                    >
-                      <Minus className="w-4 h-4" />
+                    <Button variant="outline" size="icon" className="h-8 w-8 rounded-full" onClick={() => updateAudienceCount(selection.category.id, audienceCount - 1)} disabled={audienceCount <= 0}>
+                      <Minus className="w-3.5 h-3.5" />
                     </Button>
-                    <Input
-                      type="number"
-                      value={audienceCount}
-                      onChange={(e) => updateAudienceCount(selection.category.id, parseInt(e.target.value) || 0)}
-                      className="h-9 w-20 text-center font-bold text-lg"
-                      min={0}
-                    />
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-9 w-9 rounded-full"
-                      onClick={() => updateAudienceCount(selection.category.id, audienceCount + 1)}
-                    >
-                      <Plus className="w-4 h-4" />
+                    <Input type="number" value={audienceCount} onChange={(e) => updateAudienceCount(selection.category.id, parseInt(e.target.value) || 0)} className="h-8 w-16 text-center font-bold" min={0} />
+                    <Button variant="outline" size="icon" className="h-8 w-8 rounded-full" onClick={() => updateAudienceCount(selection.category.id, audienceCount + 1)}>
+                      <Plus className="w-3.5 h-3.5" />
                     </Button>
                   </div>
                   {isPaidEvent && audienceCount > 0 && (
@@ -254,9 +166,7 @@ const TicketCategorySelector = ({ categories, selections, onChange, isPaidEvent,
                     </p>
                   )}
                   {isPaidEvent && artistFreeEntry && (
-                    <p className="text-xs font-medium text-primary">
-                      ✓ Your entry is free — only audience is charged
-                    </p>
+                    <p className="text-xs font-medium text-primary">✓ Your entry is free — only audience is charged</p>
                   )}
                 </CardContent>
               </Card>
@@ -265,10 +175,10 @@ const TicketCategorySelector = ({ categories, selections, onChange, isPaidEvent,
         </div>
       )}
 
-      {/* Order Summary — clear and bold */}
+      {/* Order Summary */}
       {totalTickets > 0 && (
         <Card className="bg-primary/5 border-primary/20">
-          <CardContent className="p-4 space-y-2">
+          <CardContent className="p-3 space-y-1.5">
             <p className="text-sm font-semibold">Order Summary</p>
             <div className="flex justify-between text-sm">
               <span>{artistFreeEntry && allowAudienceMembers ? 'Your Ticket (Free)' : `Your Ticket${totalTickets > 1 ? 's' : ''}`}</span>
@@ -280,12 +190,12 @@ const TicketCategorySelector = ({ categories, selections, onChange, isPaidEvent,
                 <span className="font-medium">{totalAudience}</span>
               </div>
             )}
-            <div className="flex justify-between text-sm text-muted-foreground">
+            <div className="flex justify-between text-xs text-muted-foreground">
               <span>Total People Entering</span>
               <span>{totalTickets + totalAudience}</span>
             </div>
             {isPaidEvent && (
-              <div className="flex justify-between text-base font-bold pt-2 border-t border-border/50">
+              <div className="flex justify-between text-base font-bold pt-1.5 border-t border-border/50">
                 <span>Amount to Pay</span>
                 <span className="flex items-center text-primary">
                   {totalPrice === 0 ? 'Free' : <><IndianRupee className="w-4 h-4" />{totalPrice}</>}
@@ -295,6 +205,54 @@ const TicketCategorySelector = ({ categories, selections, onChange, isPaidEvent,
           </CardContent>
         </Card>
       )}
+    </div>
+  );
+
+  /* ── Right column: attendee details ── */
+  const attendeeDetailsSection = totalTickets > 0 ? (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">2</div>
+        <Label className="text-base font-semibold">Fill in your details</Label>
+      </div>
+
+      {selections.filter(s => s.quantity >= 1).map(selection => (
+        <div key={selection.category.id} className="space-y-2">
+          {selection.attendees.map((attendee, idx) => (
+            <Card key={idx} className="border-dashed">
+              <CardContent className="p-3 space-y-2">
+                <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5" />
+                  {selection.quantity > 1 ? `Attendee ${idx + 1}` : "Your Details"} — {selection.category.name}
+                </p>
+                <Input placeholder="Full Name" value={attendee.name} onChange={(e) => updateAttendee(selection.category.id, idx, "name", e.target.value)} className="h-9" />
+                <Input type="email" placeholder="Email Address" value={attendee.email} onChange={(e) => updateAttendee(selection.category.id, idx, "email", e.target.value)} className="h-9" />
+                <Input type="tel" placeholder="Mobile Number" value={attendee.mobile} onChange={(e) => updateAttendee(selection.category.id, idx, "mobile", e.target.value)} className="h-9" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ))}
+    </div>
+  ) : null;
+
+  return (
+    <div className="space-y-4">
+      {/* Desktop: two-column side-by-side layout */}
+      <div className="hidden sm:grid sm:grid-cols-2 sm:gap-6">
+        <div>{ticketSelectionSection}</div>
+        <div>{attendeeDetailsSection || (
+          <div className="flex items-center justify-center h-full text-sm text-muted-foreground border border-dashed rounded-xl p-6">
+            Select a ticket to fill in details
+          </div>
+        )}</div>
+      </div>
+
+      {/* Mobile: stacked layout */}
+      <div className="sm:hidden space-y-4">
+        {ticketSelectionSection}
+        {attendeeDetailsSection}
+      </div>
     </div>
   );
 };
