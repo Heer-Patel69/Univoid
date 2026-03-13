@@ -202,6 +202,29 @@ const OrganizerDashboard = () => {
     },
   });
 
+  // Resend ticket email mutation
+  const resendTicketMutation = useMutation({
+    mutationFn: async ({ registrationId, userId }: { registrationId: string; userId: string }) => {
+      const { data, error } = await supabase.functions.invoke("send-ticket-email", {
+        body: {
+          registrationId,
+          eventId: selectedEvent,
+          userId,
+          resend: true,
+        },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || "Failed to send email");
+      return data;
+    },
+    onSuccess: (data) => {
+      toast({ title: `✅ Ticket email resent! (${data.ticketCount || 1} QR codes)` });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Failed to resend", description: error.message, variant: "destructive" });
+    },
+  });
+
   // QR Check-in mutation - explicit column selection
   const TICKET_COLUMNS = 'id, registration_id, event_id, user_id, qr_code, is_used, used_at, created_at';
   
