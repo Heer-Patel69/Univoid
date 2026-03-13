@@ -28,7 +28,7 @@ import { PaymentReconciliation } from "@/components/organizer/PaymentReconciliat
 import { 
   Plus, Calendar, Users, CheckCircle, XCircle, Eye, 
   ScanLine, Pencil, TicketCheck, Clock, FileSpreadsheet, 
-  UserPlus, BarChart3, Shield, ChevronLeft, Gift, Sparkles, Mail, IndianRupee
+  UserPlus, BarChart3, Shield, ChevronLeft, Gift, Sparkles, Mail, IndianRupee, Send
 } from "lucide-react";
 import { EventEmailComposer } from "@/components/organizer/EventEmailComposer";
 import { format } from "date-fns";
