@@ -95,7 +95,7 @@ export function EventAnalytics({ eventId }: EventAnalyticsProps) {
       if (error) throw error;
       // RPC returns array, get first item
       const result = Array.isArray(data) ? data[0] : data;
-      return result as {
+      return result as unknown as {
         total_checkout_views: number;
         unique_users: number;
         anonymous_views: number;
