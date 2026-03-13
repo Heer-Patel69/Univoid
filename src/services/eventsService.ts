@@ -108,7 +108,7 @@ export async function fetchEventsWithCursor(
 
   // Apply filters
   if (filters?.category) {
-    query = query.eq('category', filters.category);
+    query = query.ilike('category', `%${filters.category}%`);
   }
   if (filters?.is_paid !== undefined) {
     query = query.eq('is_paid', filters.is_paid);
