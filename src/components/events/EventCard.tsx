@@ -49,7 +49,7 @@ export const EventCard = ({ event }: EventCardProps) => {
 
   return (
     <Link to={eventUrl} className="block h-full">
-      <Card className="group h-full overflow-hidden hover:shadow-soft-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer">
+      <Card className="group h-full overflow-hidden hover:shadow-soft-lg hover:-translate-y-1.5 transition-all duration-300 cursor-pointer border-border">
         {/* Flyer Image - Respects poster_ratio from DB */}
         <div 
           className="relative overflow-hidden bg-muted"

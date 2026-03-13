@@ -160,6 +160,17 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  /* Global smooth transitions for all interactive elements */
+  a, button, input, select, textarea,
+  [role="button"], [tabindex] {
+    @apply transition-all duration-200 ease-out;
+  }
+
+  /* Better global focus ring */
+  :focus-visible {
+    @apply outline-none ring-2 ring-foreground/20 ring-offset-2 ring-offset-background;
+  }
+
   /* Global subtle paper texture overlay - applied to body */
   body::before {
     content: '';
@@ -235,13 +246,18 @@
   .card-sketch {
     @apply bg-card rounded-xl p-6;
     border: 1px solid hsl(var(--sketch-border));
-    box-shadow: 4px 4px 0px hsl(var(--sketch-border));
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 3px 3px 0px hsl(var(--sketch-border));
+    transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .card-sketch:hover {
     transform: translate(-2px, -2px);
-    box-shadow: 6px 6px 0px hsl(var(--sketch-border));
+    box-shadow: 5px 5px 0px hsl(var(--sketch-border));
+  }
+
+  .card-sketch:active {
+    transform: translate(0, 0);
+    box-shadow: 1px 1px 0px hsl(var(--sketch-border));
   }
 
   /* Sketch border utility */
@@ -658,20 +674,20 @@
     animation: float-doodle 6s ease-in-out infinite;
   }
 
-  /* ===== Card Sketch Hover Animation ===== */
+  /* Card Sketch Hover Animation */
   .card-sketch-hover {
     @apply bg-card rounded-xl border-2 border-sketch-border shadow-sketch p-6;
-    transition: all 0.2s ease-out;
+    transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .card-sketch-hover:hover {
     transform: translate(-3px, -3px);
-    box-shadow: 6px 6px 0px hsl(var(--sketch-border));
+    box-shadow: 5px 5px 0px hsl(var(--sketch-border));
   }
 
   .card-sketch-hover:active {
     transform: translate(0, 0);
-    box-shadow: 2px 2px 0px hsl(var(--sketch-border));
+    box-shadow: 1px 1px 0px hsl(var(--sketch-border));
   }
 
   /* Bento Grid Card Variants */
@@ -905,6 +921,27 @@
   /* Smooth transitions */
   .transition-smooth {
     @apply transition-all duration-200 ease-out;
+  }
+
+  /* Page enter animation */
+  .page-enter {
+    animation: page-fade-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  @keyframes page-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Fill mode forwards for CSS animations */
+  .fill-mode-forwards {
+    animation-fill-mode: forwards;
   }
 
   /* Text balance */

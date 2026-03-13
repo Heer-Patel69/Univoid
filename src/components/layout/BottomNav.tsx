@@ -33,7 +33,7 @@ export function BottomNav() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden safe-bottom">
       <div className="mx-3 mb-3">
-        <div className="bg-card/95 backdrop-blur-xl rounded-2xl border border-border shadow-lg flex items-center justify-around py-2 px-1">
+        <div className="bg-card/90 backdrop-blur-xl rounded-2xl border border-border shadow-soft-lg flex items-center justify-around py-2.5 px-1">
           {navItems.map((item) => {
             const isActive = location.pathname === item.href || 
               (item.href !== "/" && location.pathname.startsWith(item.href));

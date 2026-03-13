@@ -49,19 +49,19 @@ const Header = ({ onAuthClick }: HeaderProps) => {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-card border-b border-border">
+    <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border">
       <div className="container-wide">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <PrefetchLink to="/" className="flex items-center gap-2.5 group">
-            <div className="w-10 h-10 bg-primary border border-border rounded-xl flex items-center justify-center transition-all group-hover:translate-x-[-2px] group-hover:translate-y-[-2px] group-hover:shadow-sketch shadow-sketch-sm">
+            <div className="w-10 h-10 bg-primary border border-border rounded-xl flex items-center justify-center shadow-sketch-sm group-hover:-translate-x-0.5 group-hover:-translate-y-0.5 group-hover:shadow-sketch transition-all duration-200">
               <span className="text-primary-foreground font-extrabold text-lg font-display">U</span>
             </div>
             <span className="font-extrabold text-xl text-foreground font-display">UniVoid</span>
           </PrefetchLink>
 
           {/* Desktop Navigation - Sketch Style */}
-          <nav className="hidden md:flex items-center gap-1 bg-card rounded-xl px-2 py-1.5 border border-border shadow-sketch-sm">
+          <nav className="hidden md:flex items-center gap-0.5 bg-card rounded-xl px-1.5 py-1.5 border border-border shadow-sketch-sm">
             {navLinks.map((link) => {
               const Icon = link.icon;
               const navId = `nav-${link.href.replace('/', '')}`;
@@ -70,13 +70,13 @@ const Header = ({ onAuthClick }: HeaderProps) => {
                   key={link.href}
                   id={navId}
                   to={link.href}
-                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-150 flex items-center gap-2 ${
+                  className={`px-3.5 py-2 text-sm font-semibold rounded-lg flex items-center gap-2 ${
                     isActiveLink(link.href)
-                      ? 'bg-secondary font-bold'
+                      ? 'bg-secondary font-bold text-foreground'
                       : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
                   }`}
                 >
-                  <Icon className="w-4 h-4" strokeWidth={2} />
+                  <Icon className="w-4 h-4" strokeWidth={2.5} />
                   <span className="hidden lg:inline">{link.label}</span>
                 </PrefetchLink>
               );
