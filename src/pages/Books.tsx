@@ -237,7 +237,7 @@ const Books = () => {
           </div>
 
           {/* Search & Filters */}
-          <div className="flex flex-col sm:flex-row flex-wrap gap-3 mb-8">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-3 mb-8 items-center">
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
@@ -248,7 +248,7 @@ const Books = () => {
               />
             </div>
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-full sm:w-40">
+              <SelectTrigger className="w-full sm:w-[140px]">
                 <ArrowUpDown className="w-4 h-4 mr-2 text-muted-foreground" />
                 <SelectValue placeholder="Sort" />
               </SelectTrigger>
@@ -261,7 +261,7 @@ const Books = () => {
               </SelectContent>
             </Select>
             <Select value={selectedListingType} onValueChange={setSelectedListingType}>
-              <SelectTrigger className="w-full sm:w-36">
+              <SelectTrigger className="w-full sm:w-[140px]">
                 <SelectValue placeholder="Type" />
               </SelectTrigger>
               <SelectContent>
@@ -273,8 +273,7 @@ const Books = () => {
               </SelectContent>
             </Select>
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-full sm:w-40">
-                <Filter className="w-4 h-4 mr-2 text-muted-foreground" />
+              <SelectTrigger className="w-full sm:w-[140px]">
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
