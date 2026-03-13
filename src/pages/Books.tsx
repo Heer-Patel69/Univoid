@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, BookOpen, User, ArrowRight, Images, Filter, ArrowUpDown } from "lucide-react";
+import { Search, BookOpen, User, ArrowRight, Images, ArrowUpDown } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getBooksPaginated } from "@/services/paginatedService";
 import { SectionLoader, EmptyState, LoadMoreButton } from "@/components/common/SectionLoader";
