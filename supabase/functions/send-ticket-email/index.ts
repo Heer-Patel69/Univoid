@@ -189,10 +189,26 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Fetch user profile
+    // Fetch user profile - fall back to auth.users if profile doesn't exist yet
     const { data: profile, error: profileError } = await supabase
       .from("profiles").select("full_name, email").eq("id", userId).single();
-    if (profileError || !profile) throw new Error("User profile not found");
+    
+    let recipientEmail: string;
+    let recipientName: string;
+    
+    if (profile && !profileError) {
+      recipientEmail = profile.email;
+      recipientName = profile.full_name;
+    } else {
+      // Profile not found — try auth.users (e.g., user signed up but hasn't completed onboarding)
+      const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(userId);
+      if (authError || !authUser?.user) {
+        throw new Error("User not found in profiles or auth");
+      }
+      recipientEmail = authUser.user.email!;
+      recipientName = authUser.user.user_metadata?.full_name || authUser.user.email!.split("@")[0];
+      console.log(`⚠️ Profile not found, using auth user: ${recipientEmail}`);
+    }
 
     // Fetch event details
     const { data: event, error: eventError } = await supabase
