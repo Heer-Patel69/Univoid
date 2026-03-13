@@ -447,6 +447,38 @@ export type Database = {
         }
         Relationships: []
       }
+      event_checkout_visits: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          session_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_checkout_visits_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_clubs: {
         Row: {
           club_id: string
@@ -2691,6 +2723,15 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_event_checkout_analytics: {
+        Args: { p_event_id: string }
+        Returns: {
+          anonymous_views: number
+          checkout_leads: Json
+          total_checkout_views: number
+          unique_users: number
+        }[]
+      }
       get_event_registrations_with_profiles: {
         Args: { p_event_id: string }
         Returns: {
@@ -2758,6 +2799,10 @@ export type Database = {
         Returns: boolean
       }
       increment_book_views: { Args: { book_id: string }; Returns: undefined }
+      increment_event_views: {
+        Args: { p_event_id: string }
+        Returns: undefined
+      }
       increment_material_downloads: {
         Args: { material_id: string }
         Returns: undefined
@@ -2781,6 +2826,10 @@ export type Database = {
       permanently_delete_user_admin: {
         Args: { target_user_id: string }
         Returns: boolean
+      }
+      record_checkout_visit: {
+        Args: { p_event_id: string; p_session_id?: string }
+        Returns: undefined
       }
       register_for_event_atomic: {
         Args: {
