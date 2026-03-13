@@ -674,20 +674,20 @@
     animation: float-doodle 6s ease-in-out infinite;
   }
 
-  /* ===== Card Sketch Hover Animation ===== */
+  /* Card Sketch Hover Animation */
   .card-sketch-hover {
     @apply bg-card rounded-xl border-2 border-sketch-border shadow-sketch p-6;
-    transition: all 0.2s ease-out;
+    transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .card-sketch-hover:hover {
     transform: translate(-3px, -3px);
-    box-shadow: 6px 6px 0px hsl(var(--sketch-border));
+    box-shadow: 5px 5px 0px hsl(var(--sketch-border));
   }
 
   .card-sketch-hover:active {
     transform: translate(0, 0);
-    box-shadow: 2px 2px 0px hsl(var(--sketch-border));
+    box-shadow: 1px 1px 0px hsl(var(--sketch-border));
   }
 
   /* Bento Grid Card Variants */
