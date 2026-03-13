@@ -353,7 +353,7 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(JSON.stringify({
       success: true,
       messageId: result.messageId,
-      recipient: profile.email,
+      recipient: recipientEmail,
       ticketCount: ticketsToEmail.length,
       guestEmailsSent,
     }), {
