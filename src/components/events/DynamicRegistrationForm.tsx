@@ -406,7 +406,9 @@ const DynamicRegistrationForm = ({
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
             A Few More Details
           </p>
-          {formFields.map(renderField)}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {formFields.map(renderField)}
+          </div>
         </div>
       )}
 
