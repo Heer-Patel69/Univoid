@@ -135,45 +135,52 @@ const Events = () => {
   }, [events]);
 
   return (
-    <div className="pb-24 md:pb-8 w-full overflow-x-hidden">
+    <div className="pb-20 md:pb-0">
       <SEOHead
         title={seoData.title}
         description={seoData.description}
         url="/events"
         keywords={seoData.keywords}
       />
-      <main className="container mx-auto px-4 py-6 max-w-5xl">
-        <div className="mb-8">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-            <div>
-              <h1 className="font-display text-3xl md:text-4xl font-bold mb-2 flex items-center gap-3">
-                <Calendar className="w-8 h-8 text-primary" />
-                Events
-              </h1>
-              <p className="text-muted-foreground">
-                Discover hackathons, workshops, cultural fests & more
-              </p>
-            </div>
+      <main className="py-10 md:py-14">
+        <div className="container-wide">
+          {/* Header */}
+          <div className="mb-10">
+            <div className="flex items-center justify-between gap-4 mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-accent rounded-xl flex items-center justify-center">
+                  <Calendar className="w-6 h-6 text-accent-foreground" />
+                </div>
+                <div>
+                  <h1 className="font-display text-2xl md:text-3xl text-foreground">
+                    Events
+                  </h1>
+                  <p className="text-muted-foreground">
+                    Discover hackathons, workshops, cultural fests & more
+                  </p>
+                </div>
+              </div>
 
-            {user ? (
-              <Link to="/organizer/create-event">
-                <Button className="rounded-full gap-2">
+              {user ? (
+                <Link to="/organizer/create-event">
+                  <Button className="rounded-full gap-2">
+                    <Plus className="w-4 h-4" />
+                    Create Event
+                  </Button>
+                </Link>
+              ) : (
+                <Button className="rounded-full gap-2" onClick={() => {
+                  if (context?.onAuthClick) {
+                    context.onAuthClick();
+                  } else {
+                    setShowAuthModal(true);
+                  }
+                }}>
                   <Plus className="w-4 h-4" />
                   Create Event
                 </Button>
-              </Link>
-            ) : (
-              <Button className="rounded-full gap-2" onClick={() => {
-                if (context?.onAuthClick) {
-                  context.onAuthClick();
-                } else {
-                  setShowAuthModal(true);
-                }
-              }}>
-                <Plus className="w-4 h-4" />
-                Create Event
-              </Button>
-            )}
+              )}
+            </div>
           </div>
 
           <EventFilters
@@ -189,7 +196,6 @@ const Events = () => {
             onCityChange={setCityFilter}
             onClear={clearFilters}
           />
-        </div>
 
         {isLoading && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
@@ -222,6 +228,7 @@ const Events = () => {
             <p className="text-muted-foreground mb-6">Check back later for upcoming events!</p>
           </div>
         )}
+        </div>
       </main>
 
       <BottomNav />
