@@ -84,65 +84,89 @@ const RichTextarea = ({
   };
 
   const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
-    // Get HTML content if available
-    const html = e.clipboardData.getData('text/html');
     const plainText = e.clipboardData.getData('text/plain');
-    
-    if (html) {
+    const html = e.clipboardData.getData('text/html');
+
+    // Always prefer plain text to preserve original spacing and line breaks.
+    // Only fall back to HTML conversion when there's no plain text available.
+    if (plainText) {
       e.preventDefault();
-      
-      // Parse HTML and convert to simple formatted text
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-      
-      const convertToText = (element: Element | ChildNode): string => {
-        let result = '';
-        
-        element.childNodes.forEach((node) => {
-          if (node.nodeType === Node.TEXT_NODE) {
-            result += node.textContent;
-          } else if (node.nodeType === Node.ELEMENT_NODE) {
-            const el = node as Element;
-            const tagName = el.tagName.toLowerCase();
-            
-            if (tagName === 'strong' || tagName === 'b') {
-              result += `**${convertToText(el)}**`;
-            } else if (tagName === 'em' || tagName === 'i') {
-              result += `*${convertToText(el)}*`;
-            } else if (tagName === 'li') {
-              const parent = el.parentElement;
-              if (parent?.tagName.toLowerCase() === 'ol') {
-                const index = Array.from(parent.children).indexOf(el) + 1;
-                result += `${index}. ${convertToText(el)}\n`;
-              } else {
-                result += `• ${convertToText(el)}\n`;
+
+      // Enrich plain text with markdown markers from HTML if available
+      let textToInsert = plainText;
+
+      if (html) {
+        try {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+
+          const convertToText = (element: Element | ChildNode): string => {
+            let result = '';
+            element.childNodes.forEach((node) => {
+              if (node.nodeType === Node.TEXT_NODE) {
+                result += node.textContent;
+              } else if (node.nodeType === Node.ELEMENT_NODE) {
+                const el = node as Element;
+                const tag = el.tagName.toLowerCase();
+
+                if (tag === 'strong' || tag === 'b') {
+                  result += `**${convertToText(el)}**`;
+                } else if (tag === 'em' || tag === 'i') {
+                  result += `*${convertToText(el)}*`;
+                } else if (tag === 'li') {
+                  const parent = el.parentElement;
+                  if (parent?.tagName.toLowerCase() === 'ol') {
+                    const idx = Array.from(parent.children).indexOf(el) + 1;
+                    result += `${idx}. ${convertToText(el)}\n`;
+                  } else {
+                    result += `• ${convertToText(el)}\n`;
+                  }
+                } else if (tag === 'br') {
+                  result += '\n';
+                } else if (tag === 'p' || tag === 'div' || tag === 'h1' || tag === 'h2' || tag === 'h3' || tag === 'h4') {
+                  const inner = convertToText(el);
+                  result += inner + '\n\n';
+                } else if (tag === 'ul' || tag === 'ol') {
+                  result += convertToText(el) + '\n';
+                } else {
+                  result += convertToText(el);
+                }
               }
-            } else if (tagName === 'br') {
-              result += '\n';
-            } else if (tagName === 'p' || tagName === 'div') {
-              result += convertToText(el) + '\n';
-            } else if (tagName === 'ul' || tagName === 'ol') {
-              result += convertToText(el);
-            } else {
-              result += convertToText(el);
-            }
+            });
+            return result;
+          };
+
+          const richConverted = convertToText(doc.body)
+            .replace(/\n{3,}/g, '\n\n') // collapse excessive blank lines
+            .trim();
+
+          // Only use HTML-converted version if it contains markdown markers
+          // that the plain text doesn't have; otherwise keep plain text as-is
+          const hasMarkdown = /\*\*.+?\*\*|\*.+?\*|^• |^\d+\. /m.test(richConverted);
+          if (hasMarkdown) {
+            textToInsert = richConverted;
           }
-        });
-        
-        return result;
-      };
-      
-      const formattedText = convertToText(doc.body).trim();
-      
+        } catch {
+          // Conversion failed, stick with plain text
+        }
+      }
+
       const textarea = textareaRef.current;
       if (textarea) {
         const start = textarea.selectionStart;
         const end = textarea.selectionEnd;
-        const newText = value.substring(0, start) + formattedText + value.substring(end);
+        const newText = value.substring(0, start) + textToInsert + value.substring(end);
         onChange(newText);
+
+        setTimeout(() => {
+          textarea.focus();
+          const newCursor = start + textToInsert.length;
+          textarea.setSelectionRange(newCursor, newCursor);
+        }, 0);
       }
+      return;
     }
-    // If no HTML, let default paste behavior handle plain text
+    // No plain text available — let browser default handle it
   };
 
   const isValidLength = !minLength || value.length >= minLength;
