@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link, useOutletContext, useSearchParams } from "react-router-dom";
-import { BottomNav } from "@/components/layout/BottomNav";
+
 import { EventCard } from "@/components/events/EventCard";
 import { EventCardSkeleton } from "@/components/events/EventCardSkeleton";
 import { EventFilters } from "@/components/events/EventFilters";

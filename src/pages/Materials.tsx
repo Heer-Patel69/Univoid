@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, memo, useEffect } from "react";
 import { useNavigate, useOutletContext, useSearchParams } from "react-router-dom";
-import { BottomNav } from "@/components/layout/BottomNav";
+
 import EnhancedMaterialPreview from "@/components/materials/EnhancedMaterialPreview";
 import MaterialCard from "@/components/materials/MaterialCard";
 import MaterialCardSkeleton from "@/components/materials/MaterialCardSkeleton";
