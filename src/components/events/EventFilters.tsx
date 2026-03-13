@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/select";
 import { Search, X, MapPin } from "lucide-react";
 import { INDIAN_STATES, getCitiesForState } from "@/constants/indianLocations";
+import { CATEGORY_GROUPS } from "@/constants/eventOptions";
 
 interface EventFiltersProps {
   search: string;
@@ -27,12 +28,10 @@ interface EventFiltersProps {
 
 const EVENT_CATEGORIES = [
   { value: "all", label: "All Categories" },
-  { value: "tech", label: "Tech & Innovation" },
-  { value: "cultural", label: "Cultural" },
-  { value: "sports", label: "Sports" },
-  { value: "academic", label: "Academic" },
-  { value: "workshop", label: "Workshop" },
-  { value: "seminar", label: "Seminar" },
+  ...CATEGORY_GROUPS.map(g => ({
+    value: g.items[0].toLowerCase(),
+    label: `${g.emoji} ${g.label}`,
+  })),
 ];
 
 const PRICE_OPTIONS = [
