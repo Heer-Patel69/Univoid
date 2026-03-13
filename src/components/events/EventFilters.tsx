@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, X, Filter, MapPin } from "lucide-react";
+import { Search, X, MapPin } from "lucide-react";
 import { INDIAN_STATES, getCitiesForState } from "@/constants/indianLocations";
 
 interface EventFiltersProps {
