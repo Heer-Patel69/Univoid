@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, X, Filter, MapPin } from "lucide-react";
+import { Search, X, MapPin } from "lucide-react";
 import { INDIAN_STATES, getCitiesForState } from "@/constants/indianLocations";
 
 interface EventFiltersProps {
@@ -71,7 +71,7 @@ export const EventFilters = ({
   };
 
   return (
-    <div className="flex flex-col sm:flex-row flex-wrap gap-3 mb-8">
+    <div className="flex flex-col sm:flex-row flex-wrap gap-3 mb-8 items-center">
       {/* Search */}
       <div className="relative flex-1 min-w-[200px]">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -86,7 +86,6 @@ export const EventFilters = ({
       {/* Category Filter */}
       <Select value={category} onValueChange={onCategoryChange}>
         <SelectTrigger className="w-full sm:w-[160px]">
-          <Filter className="w-4 h-4 mr-2" />
           <SelectValue placeholder="Category" />
         </SelectTrigger>
         <SelectContent className="bg-background border shadow-lg z-50">
@@ -116,7 +115,7 @@ export const EventFilters = ({
       {onStateChange && (
         <Select value={state} onValueChange={handleStateChange}>
           <SelectTrigger className="w-full sm:w-[160px]">
-            <MapPin className="w-4 h-4 mr-2" />
+            <MapPin className="w-4 h-4 mr-2 text-muted-foreground" />
             <SelectValue placeholder="All States" />
           </SelectTrigger>
           <SelectContent className="bg-background border shadow-lg z-50 max-h-[300px]">
