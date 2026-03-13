@@ -133,10 +133,10 @@ const Index = () => {
     q: "Is profile completion mandatory?",
     a: "Yes. It helps personalize content for you."
   }];
-  return <div className="min-h-screen flex flex-col bg-sketch pb-20 md:pb-0 paper-texture relative">
-      {/* Global floating doodles across entire landing page */}
+  return <div className="min-h-screen flex flex-col bg-sketch pb-24 md:pb-0 paper-texture relative overflow-x-hidden">
+      {/* Global floating doodles - hidden on mobile to prevent overlap */}
       <Suspense fallback={null}>
-        <FloatingDoodles density="global" section="full" className="fixed inset-0 z-0" />
+        <FloatingDoodles density="global" section="full" className="fixed inset-0 z-0 hidden md:block" />
       </Suspense>
     <SEOHead
       title="UniVoid - Everything a College Student Needs"
@@ -159,11 +159,10 @@ const Index = () => {
 
     <main className="flex-1">
       {/* Hero Section with Parallax */}
-      <section ref={heroRef} className="py-16 md:py-24 lg:py-32 relative overflow-hidden z-10">
+      <section ref={heroRef} className="py-10 md:py-24 lg:py-32 relative overflow-hidden z-10 px-4 md:px-0">
 
-        {/* Parallax Background Elements */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {/* Floating shapes that move at different speeds */}
+        {/* Parallax Background Elements - desktop only */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden hidden md:block">
           <div className="absolute -top-20 -left-20 w-64 h-64 rounded-full bg-primary/10 blur-3xl" style={{
             transform: `translateY(${scrollY * 0.3}px)`
           }} />
@@ -173,8 +172,6 @@ const Index = () => {
           <div className="absolute bottom-0 left-1/4 w-48 h-48 rounded-full bg-pastel-purple/30 blur-2xl" style={{
             transform: `translateY(${scrollY * 0.4}px)`
           }} />
-
-          {/* Decorative sketch elements */}
           <svg className="absolute top-20 left-10 w-16 h-16 text-foreground/5" style={{
             transform: `translateY(${scrollY * 0.15}px) rotate(${scrollY * 0.02}deg)`
           }} viewBox="0 0 100 100">
@@ -185,23 +182,18 @@ const Index = () => {
           }} viewBox="0 0 100 100">
             <rect x="20" y="20" width="60" height="60" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="10 5" />
           </svg>
-          <svg className="absolute bottom-32 left-1/3 w-12 h-12 text-foreground/5" style={{
-            transform: `translateY(${scrollY * 0.35}px)`
-          }} viewBox="0 0 100 100">
-            <polygon points="50,10 90,90 10,90" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="6 3" />
-          </svg>
         </div>
 
         <div className="container-wide relative z-10">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="font-display text-foreground mb-6 text-balance text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight">
+            <h1 className="font-display text-foreground mb-4 md:mb-6 text-balance text-3xl md:text-5xl lg:text-6xl font-extrabold leading-tight">
               Everything a College Student Needs — In One Place
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-base md:text-xl text-muted-foreground mb-8 md:mb-10 max-w-3xl mx-auto leading-relaxed">
               Study materials, events, projects, tasks, and book exchange — personalized for Indian students.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" onClick={() => setAuthOpen(true)} className="btn-sketch btn-sketch-primary font-semibold text-base h-14 px-8">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+              <Button size="lg" onClick={() => setAuthOpen(true)} className="btn-sketch btn-sketch-primary font-semibold text-base h-12 md:h-14 px-6 md:px-8 w-full sm:w-auto">
                 <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                   <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                   <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
@@ -210,8 +202,8 @@ const Index = () => {
                 </svg>
                 Get Started with Google
               </Button>
-              <Link to="/materials">
-                <Button variant="outline" size="lg" className="btn-sketch btn-sketch-secondary font-semibold text-base h-14 px-8 w-full sm:w-auto">
+              <Link to="/materials" className="w-full sm:w-auto">
+                <Button variant="outline" size="lg" className="btn-sketch btn-sketch-secondary font-semibold text-base h-12 md:h-14 px-6 md:px-8 w-full">
                   Explore Features
                   <ArrowRight className="w-5 h-5 ml-2" strokeWidth={2} />
                 </Button>

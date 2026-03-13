@@ -145,17 +145,17 @@ const Events = () => {
       <main className="py-10 md:py-14">
         <div className="container-wide">
           {/* Header */}
-          <div className="mb-10">
-            <div className="flex items-center justify-between gap-4 mb-4">
+          <div className="mb-6 md:mb-10">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-accent rounded-xl flex items-center justify-center">
-                  <Calendar className="w-6 h-6 text-accent-foreground" />
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-accent rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Calendar className="w-5 h-5 md:w-6 md:h-6 text-accent-foreground" />
                 </div>
                 <div>
-                  <h1 className="font-display text-2xl md:text-3xl text-foreground">
+                  <h1 className="font-display text-xl md:text-3xl text-foreground">
                     Events
                   </h1>
-                  <p className="text-muted-foreground">
+                  <p className="text-sm md:text-base text-muted-foreground">
                     Discover hackathons, workshops, cultural fests & more
                   </p>
                 </div>
@@ -163,13 +163,13 @@ const Events = () => {
 
               {user ? (
                 <Link to="/organizer/create-event">
-                  <Button className="rounded-full gap-2">
+                  <Button className="rounded-full gap-2 w-full sm:w-auto">
                     <Plus className="w-4 h-4" />
                     Create Event
                   </Button>
                 </Link>
               ) : (
-                <Button className="rounded-full gap-2" onClick={() => {
+                <Button className="rounded-full gap-2 w-full sm:w-auto" onClick={() => {
                   if (context?.onAuthClick) {
                     context.onAuthClick();
                   } else {
