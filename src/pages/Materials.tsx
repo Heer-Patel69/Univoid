@@ -543,7 +543,7 @@ const Materials = () => {
         </div>
       </main>
 
-      <BottomNav />
+      
 
       <EnhancedMaterialPreview
         material={previewModalData}

@@ -407,7 +407,7 @@ const Books = () => {
         </div>
       </main>
 
-      <BottomNav />
+      
     </div>
   );
 };

@@ -215,7 +215,7 @@ const Leaderboard = () => {
         </div>
       </main>
 
-      <BottomNav />
+      
     </div>
   );
 };

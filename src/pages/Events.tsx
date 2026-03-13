@@ -231,7 +231,7 @@ const Events = () => {
         </div>
       </main>
 
-      <BottomNav />
+      
       
       <AuthModal 
         isOpen={showAuthModal} 
