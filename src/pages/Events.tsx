@@ -228,6 +228,7 @@ const Events = () => {
             <p className="text-muted-foreground mb-6">Check back later for upcoming events!</p>
           </div>
         )}
+        </div>
       </main>
 
       <BottomNav />
