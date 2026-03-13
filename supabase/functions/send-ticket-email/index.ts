@@ -290,7 +290,7 @@ const handler = async (req: Request): Promise<Response> => {
       if (attendees && attendees.length > 0) {
         // Filter out the primary user's own email to avoid duplicate
         const guestAttendees = attendees.filter(
-          (a: any) => a.attendee_email && a.attendee_email.toLowerCase() !== profile.email.toLowerCase()
+          (a: any) => a.attendee_email && a.attendee_email.toLowerCase() !== recipientEmail.toLowerCase()
         );
 
         for (const attendee of guestAttendees) {
