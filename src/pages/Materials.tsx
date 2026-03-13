@@ -29,16 +29,16 @@ interface LayoutContext {
 // Memoized header component to prevent re-renders
 const MaterialsHeader = memo(function MaterialsHeader() {
   return (
-    <div className="mb-10">
+    <div className="mb-6 md:mb-10">
       <div className="flex items-center gap-3 mb-4">
-        <div className="w-12 h-12 bg-accent rounded-xl flex items-center justify-center">
-          <BookOpen className="w-6 h-6 text-accent-foreground" />
+        <div className="w-10 h-10 md:w-12 md:h-12 bg-accent rounded-xl flex items-center justify-center flex-shrink-0">
+          <BookOpen className="w-5 h-5 md:w-6 md:h-6 text-accent-foreground" />
         </div>
         <div>
-          <h1 className="font-display text-2xl md:text-3xl text-foreground">
+          <h1 className="font-display text-xl md:text-3xl text-foreground">
             Study Materials
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-sm md:text-base text-muted-foreground">
             Notes, past papers, and resources shared by students
           </p>
         </div>
