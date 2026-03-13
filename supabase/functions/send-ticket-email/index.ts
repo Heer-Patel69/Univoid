@@ -7,12 +7,13 @@ const SENDER_NAME = "UniVoid";
 const SENDER_EMAIL = "heerpatel1032@gmail.com";
 
 interface TicketEmailRequest {
-  ticketId: string;
+  ticketId?: string;
   registrationId: string;
   eventId: string;
   userId: string;
-  qrCode: string;
+  qrCode?: string;
   attendeesOnly?: boolean;
+  resend?: boolean;
 }
 
 // Generate QR code PNG using external API and upload to storage
@@ -84,19 +85,51 @@ async function sendEmailViaBrevo(
   }
 }
 
-// Build ticket email HTML
+// Build QR code HTML block for a single ticket
+function buildSingleQrHtml(qrImageUrl: string | null, ticketId: string, label?: string): string {
+  const manualEntryCode = ticketId;
+  const labelHtml = label ? `<p style="color: #374151; font-size: 12px; font-weight: 600; margin: 0 0 8px 0;">${label}</p>` : "";
+  
+  if (qrImageUrl) {
+    return `<div style="display: inline-block; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin: 8px; vertical-align: top;">
+${labelHtml}
+<div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; display: inline-block;">
+<img src="${qrImageUrl}" alt="Entry QR Code" width="140" height="140" style="display: block;" />
+</div>
+<div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+<p style="color: #6b7280; font-size: 10px; margin: 0 0 4px 0;">Ticket ID:</p>
+<p style="color: #1a1a1a; font-size: 9px; font-weight: 600; margin: 0; font-family: monospace; word-break: break-all; background: #f3f4f6; padding: 6px; border-radius: 4px;">${manualEntryCode}</p>
+</div>
+</div>`;
+  }
+  return `<div style="display: inline-block; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin: 8px; vertical-align: top;">
+${labelHtml}
+<div style="padding: 12px; background: #f3f4f6; border-radius: 6px;">
+<p style="color: #6b7280; font-size: 10px; margin: 0 0 4px 0;">Ticket ID:</p>
+<p style="color: #1a1a1a; font-size: 9px; font-weight: 600; margin: 0; font-family: monospace; word-break: break-all;">${manualEntryCode}</p>
+</div>
+</div>`;
+}
+
+// Build ticket email HTML with multiple QR codes
 function buildTicketEmailHtml(
   recipientName: string,
   eventTitle: string,
   eventDate: string,
   locationText: string,
   organizerName: string | null,
-  qrCodeImageHtml: string,
+  qrCodeSectionsHtml: string,
+  ticketCount: number,
   isGuest: boolean
 ): string {
   const guestNote = isGuest
     ? `<p style="color: #6b7280; font-size: 13px; line-height: 1.6; margin: 0 0 16px 0; font-style: italic;">This ticket was purchased on your behalf. You do not need an account to use it.</p>`
     : "";
+
+  const ticketLabel = ticketCount > 1 ? `${ticketCount} Entry Passes` : "Entry Pass";
+  const ticketInstruction = ticketCount > 1
+    ? `<p style="color: #6b7280; font-size: 12px; margin: 12px 0 0 0;">Each QR code is a separate entry pass. Present one per person at the venue.</p>`
+    : `<p style="color: #6b7280; font-size: 12px; margin: 12px 0 0 0;">Present this QR code at the venue.</p>`;
 
   return `<!DOCTYPE html>
 <html>
@@ -104,16 +137,20 @@ function buildTicketEmailHtml(
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f9fafb; margin: 0; padding: 0;">
 <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f9fafb;">
 <tr><td style="padding: 40px 16px;">
-<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width: 520px; margin: 0 auto;">
+<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; margin: 0 auto;">
 <tr><td align="center" style="padding-bottom: 24px;"><span style="color: #1a1a1a; font-size: 20px; font-weight: 700;">UniVoid</span></td></tr>
 <tr><td>
 <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
 <tr><td style="background: #1a1a1a; padding: 24px; text-align: center;"><h1 style="color: #ffffff; margin: 0; font-size: 20px; font-weight: 600;">Registration Confirmed</h1></td></tr>
 <tr><td style="padding: 24px;">
 <p style="color: #374151; font-size: 15px; line-height: 1.6; margin: 0 0 16px 0;">Hi ${recipientName},</p>
-<p style="color: #374151; font-size: 15px; line-height: 1.6; margin: 0 0 24px 0;">Your registration for <strong>${eventTitle}</strong> is confirmed. Below is your entry pass.</p>
+<p style="color: #374151; font-size: 15px; line-height: 1.6; margin: 0 0 24px 0;">Your registration for <strong>${eventTitle}</strong> is confirmed. Below ${ticketCount > 1 ? 'are your entry passes' : 'is your entry pass'}.</p>
 ${guestNote}
-${qrCodeImageHtml}
+<div style="text-align: center; margin: 24px 0;">
+<p style="color: #1a1a1a; font-weight: 600; margin: 0 0 16px 0; font-size: 14px;">${ticketLabel}</p>
+${qrCodeSectionsHtml}
+${ticketInstruction}
+</div>
 <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; margin: 24px 0;">
 <tr><td style="padding: 16px;">
 <p style="margin: 0 0 12px 0; color: #1a1a1a; font-weight: 600; font-size: 14px;">Event Details</p>
@@ -127,7 +164,7 @@ ${organizerName ? `<tr><td style="padding: 4px 0; color: #6b7280; font-size: 13p
 <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin: 24px 0;">
 <tr><td align="center"><a href="https://univoid.tech/my-events" target="_blank" style="display: inline-block; padding: 12px 24px; background-color: #1a1a1a; color: #ffffff; font-size: 14px; font-weight: 600; text-decoration: none; border-radius: 6px;">View Your Ticket</a></td></tr>
 </table>
-<p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 16px 0 0 0;">Please keep this QR code private and do not share it with others.</p>
+<p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 16px 0 0 0;">Please keep ${ticketCount > 1 ? 'these QR codes' : 'this QR code'} private and do not share ${ticketCount > 1 ? 'them' : 'it'} with others.</p>
 </td></tr>
 <tr><td style="background: #f9fafb; padding: 16px 24px; text-align: center; border-top: 1px solid #e5e7eb;">
 <p style="color: #9ca3af; font-size: 11px; margin: 0;">This is a transactional email from UniVoid regarding your event registration.</p>
@@ -138,77 +175,6 @@ ${organizerName ? `<tr><td style="padding: 4px 0; color: #6b7280; font-size: 13p
 </body></html>`;
 }
 
-// Build QR code HTML block
-function buildQrHtml(qrImageUrl: string | null, ticketId: string): string {
-  const manualEntryCode = ticketId;
-  if (qrImageUrl) {
-    return `<div style="text-align: center; margin: 24px 0;">
-<div style="display: inline-block; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px;">
-<p style="color: #1a1a1a; font-weight: 600; margin: 0 0 16px 0; font-size: 14px;">Entry Pass</p>
-<div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; display: inline-block;">
-<img src="${qrImageUrl}" alt="Entry QR Code" width="160" height="160" style="display: block;" />
-</div>
-<p style="color: #6b7280; font-size: 12px; margin: 16px 0 0 0;">Present this QR code at the venue</p>
-<div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #e5e7eb;">
-<p style="color: #6b7280; font-size: 11px; margin: 0 0 6px 0;">Ticket ID (backup):</p>
-<p style="color: #1a1a1a; font-size: 10px; font-weight: 600; margin: 0; font-family: monospace; word-break: break-all; background: #f3f4f6; padding: 8px; border-radius: 4px;">${manualEntryCode}</p>
-</div>
-</div></div>`;
-  }
-  return `<div style="text-align: center; margin: 24px 0;">
-<div style="display: inline-block; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px;">
-<p style="color: #1a1a1a; font-weight: 600; margin: 0 0 12px 0; font-size: 14px;">Entry Pass</p>
-<div style="padding: 12px; background: #f3f4f6; border-radius: 6px;">
-<p style="color: #6b7280; font-size: 11px; margin: 0 0 6px 0;">Ticket ID:</p>
-<p style="color: #1a1a1a; font-size: 10px; font-weight: 600; margin: 0; font-family: monospace; word-break: break-all;">${manualEntryCode}</p>
-</div>
-<p style="color: #6b7280; font-size: 12px; margin: 12px 0 0 0;">Present this ID at the venue</p>
-</div></div>`;
-}
-
-// Create a real event_ticket record for a guest attendee
-async function createGuestTicket(
-  supabase: any,
-  attendeeId: string,
-  registrationId: string,
-  eventId: string,
-  userId: string
-): Promise<{ ticketId: string; qrCode: string } | null> {
-  try {
-    // Generate a unique QR code for this guest attendee
-    const qrCode = `${eventId}:attendee:${attendeeId}:${crypto.randomUUID().slice(0, 8)}`;
-
-    const { data: ticket, error } = await supabase
-      .from("event_tickets")
-      .insert({
-        registration_id: registrationId,
-        event_id: eventId,
-        user_id: userId, // Link to the buyer's user_id for RLS
-        qr_code: qrCode,
-        is_used: false,
-        is_group_booking: true,
-      })
-      .select("id")
-      .single();
-
-    if (error) {
-      console.error("Failed to create guest ticket:", error);
-      return null;
-    }
-
-    // Link the ticket to the attendee record
-    await supabase
-      .from("ticket_attendees")
-      .update({ ticket_id: ticket.id, qr_code: qrCode })
-      .eq("id", attendeeId);
-
-    return { ticketId: ticket.id, qrCode };
-  } catch (err) {
-    console.error("Error creating guest ticket:", err);
-    return null;
-  }
-}
-
 const handler = async (req: Request): Promise<Response> => {
   if (isCorsPreflightRequest(req)) return handleCorsPreflightRequest(req);
   const corsHeaders = getCorsHeaders(req);
@@ -216,8 +182,8 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     if (!BREVO_API_KEY) throw new Error("Email service not configured");
 
-    const { ticketId, registrationId, eventId, userId, qrCode, attendeesOnly }: TicketEmailRequest = await req.json();
-    console.log("Processing ticket email:", { ticketId, registrationId, eventId, userId, attendeesOnly });
+    const { ticketId, registrationId, eventId, userId, qrCode, attendeesOnly, resend }: TicketEmailRequest = await req.json();
+    console.log("Processing ticket email:", { ticketId, registrationId, eventId, userId, attendeesOnly, resend });
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -248,12 +214,41 @@ const handler = async (req: Request): Promise<Response> => {
 
     const organizerName = organizer?.name || null;
 
+    // --- Collect ALL tickets for this registration ---
+    const { data: allTickets } = await supabase
+      .from("event_tickets")
+      .select("id, qr_code")
+      .eq("registration_id", registrationId)
+      .eq("event_id", eventId);
+
+    const tickets = allTickets || [];
+    
+    // If triggered by notify_ticket_created (single ticket insert) but more tickets exist,
+    // collect them all. For resend, we always use all tickets.
+    let ticketsToEmail = tickets;
+    
+    // If only one ticket and we have the ticketId/qrCode from trigger, use it
+    if (tickets.length === 0 && ticketId && qrCode) {
+      ticketsToEmail = [{ id: ticketId, qr_code: qrCode }];
+    }
+
     // --- Send primary ticket email to the registered user (skip if attendeesOnly) ---
     let result = { success: true, messageId: "" };
-    if (!attendeesOnly) {
-      const qrImageUrl = await generateAndUploadQRCode(supabase, ticketId, qrCode);
-      const qrHtml = buildQrHtml(qrImageUrl, ticketId);
-      const emailHtml = buildTicketEmailHtml(profile.full_name, event.title, eventDate, locationText, organizerName, qrHtml, false);
+    if (!attendeesOnly && ticketsToEmail.length > 0) {
+      // Generate QR codes for all tickets
+      const qrSections: string[] = [];
+      for (let i = 0; i < ticketsToEmail.length; i++) {
+        const t = ticketsToEmail[i];
+        const qrImageUrl = await generateAndUploadQRCode(supabase, t.id, t.qr_code);
+        const label = ticketsToEmail.length > 1 ? `Pass ${i + 1}` : undefined;
+        qrSections.push(buildSingleQrHtml(qrImageUrl, t.id, label));
+      }
+
+      const qrHtml = qrSections.join("\n");
+      const emailHtml = buildTicketEmailHtml(
+        profile.full_name, event.title, eventDate, locationText, organizerName,
+        qrHtml, ticketsToEmail.length, false
+      );
 
       result = await sendEmailViaBrevo(
         profile.email, profile.full_name,
@@ -261,7 +256,9 @@ const handler = async (req: Request): Promise<Response> => {
       );
 
       if (!result.success) throw new Error(`Email delivery failed: ${result.error}`);
-      console.log("✅ Primary ticket email sent to:", profile.email);
+      console.log(`✅ Primary ticket email sent to: ${profile.email} (${ticketsToEmail.length} QR codes)`);
+    } else if (!attendeesOnly) {
+      console.log("⚠️ No tickets found for registration, skipping primary email");
     } else {
       console.log("⏭️ Skipping primary user email (attendeesOnly mode)");
     }
@@ -285,36 +282,48 @@ const handler = async (req: Request): Promise<Response> => {
             let guestTicketId = attendee.ticket_id;
             let guestQrCode = attendee.qr_code;
 
-            // Create a real ticket record if the attendee doesn't have one yet
+            // If no ticket yet (shouldn't happen after trigger fix, but safety fallback)
             if (!guestTicketId) {
-              const ticketResult = await createGuestTicket(supabase, attendee.id, registrationId, eventId, userId);
-              if (ticketResult) {
-                guestTicketId = ticketResult.ticketId;
-                guestQrCode = ticketResult.qrCode;
-              } else {
-                // Fallback: use attendee ID but log the issue
-                console.error(`Could not create ticket for attendee ${attendee.id}, skipping email`);
+              const qrCodeVal = `${eventId}:attendee:${attendee.id}:${crypto.randomUUID().slice(0, 8)}`;
+              const { data: ticket, error } = await supabase
+                .from("event_tickets")
+                .insert({
+                  registration_id: registrationId,
+                  event_id: eventId,
+                  user_id: userId,
+                  qr_code: qrCodeVal,
+                  is_used: false,
+                  is_group_booking: true,
+                })
+                .select("id")
+                .single();
+
+              if (error || !ticket) {
+                console.error(`Could not create ticket for attendee ${attendee.id}, skipping`);
                 continue;
               }
+              guestTicketId = ticket.id;
+              guestQrCode = qrCodeVal;
+
+              await supabase
+                .from("ticket_attendees")
+                .update({ ticket_id: ticket.id, qr_code: qrCodeVal })
+                .eq("id", attendee.id);
             }
 
-            // Generate QR code image from the real QR code data
             const guestQrUrl = await generateAndUploadQRCode(supabase, guestTicketId, guestQrCode);
-            const guestQrHtml = buildQrHtml(guestQrUrl, guestTicketId);
+            const guestQrHtml = buildSingleQrHtml(guestQrUrl, guestTicketId);
             const guestHtml = buildTicketEmailHtml(
-              attendee.attendee_name, event.title, eventDate, locationText, organizerName, guestQrHtml, true
+              attendee.attendee_name, event.title, eventDate, locationText, organizerName,
+              guestQrHtml, 1, true
             );
 
             const guestResult = await sendEmailViaBrevo(
-              attendee.attendee_email,
-              attendee.attendee_name,
-              `Your Ticket - ${event.title}`,
-              guestHtml
+              attendee.attendee_email, attendee.attendee_name,
+              `Your Ticket - ${event.title}`, guestHtml
             );
 
-            if (guestResult.success) {
-              guestEmailsSent++;
-            }
+            if (guestResult.success) guestEmailsSent++;
             console.log(`Guest email ${guestResult.success ? "sent" : "failed"}: ${attendee.attendee_email}`);
           } catch (guestError) {
             console.error(`Failed to send guest email to ${attendee.attendee_email}:`, guestError);
@@ -329,6 +338,7 @@ const handler = async (req: Request): Promise<Response> => {
       success: true,
       messageId: result.messageId,
       recipient: profile.email,
+      ticketCount: ticketsToEmail.length,
       guestEmailsSent,
     }), {
       status: 200,

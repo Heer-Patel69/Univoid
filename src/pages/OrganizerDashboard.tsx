@@ -28,7 +28,7 @@ import { PaymentReconciliation } from "@/components/organizer/PaymentReconciliat
 import { 
   Plus, Calendar, Users, CheckCircle, XCircle, Eye, 
   ScanLine, Pencil, TicketCheck, Clock, FileSpreadsheet, 
-  UserPlus, BarChart3, Shield, ChevronLeft, Gift, Sparkles, Mail, IndianRupee
+  UserPlus, BarChart3, Shield, ChevronLeft, Gift, Sparkles, Mail, IndianRupee, Send
 } from "lucide-react";
 import { EventEmailComposer } from "@/components/organizer/EventEmailComposer";
 import { format } from "date-fns";
@@ -199,6 +199,29 @@ const OrganizerDashboard = () => {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["event-registrations", selectedEvent] });
       queryClient.invalidateQueries({ queryKey: ["event-checkin-stats", selectedEvent] });
+    },
+  });
+
+  // Resend ticket email mutation
+  const resendTicketMutation = useMutation({
+    mutationFn: async ({ registrationId, userId }: { registrationId: string; userId: string }) => {
+      const { data, error } = await supabase.functions.invoke("send-ticket-email", {
+        body: {
+          registrationId,
+          eventId: selectedEvent,
+          userId,
+          resend: true,
+        },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || "Failed to send email");
+      return data;
+    },
+    onSuccess: (data) => {
+      toast({ title: `✅ Ticket email resent! (${data.ticketCount || 1} QR codes)` });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Failed to resend", description: error.message, variant: "destructive" });
     },
   });
 
@@ -591,7 +614,18 @@ const OrganizerDashboard = () => {
                                         >
                                           <XCircle className="w-3 h-3 mr-1" /> Reject
                                         </Button>
-                                      </>
+                                    </>
+                                    )}
+                                    {status === "approved" && (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="text-xs gap-1"
+                                        onClick={() => resendTicketMutation.mutate({ registrationId: reg.registration_id, userId: reg.user_id })}
+                                        disabled={resendTicketMutation.isPending}
+                                      >
+                                        <Send className="w-3 h-3" /> Resend Ticket
+                                      </Button>
                                     )}
                                   </div>
                                 </div>
