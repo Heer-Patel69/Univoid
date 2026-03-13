@@ -126,24 +126,21 @@ export function useRegistration(options: UseRegistrationOptions) {
             }
           );
           
-          // Send registration confirmation email (fire-and-forget, never block registration)
+          // Notify organizer about new registration (fire-and-forget)
           try {
-            const authData = await supabase.auth.getUser();
             const profileData = await supabase.from('profiles').select('full_name').eq('id', userId).maybeSingle();
             await supabase.functions.invoke('send-registration-email', {
               body: {
-                userEmail: authData.data.user?.email,
-                userName: profileData.data?.full_name || 'User',
+                eventId,
+                registrantName: profileData.data?.full_name || 'A user',
                 eventTitle: eventTitle || 'Event',
-                eventDate: new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
-                eventLocation: 'See event page for details',
                 isPaid: isPaidEvent || false,
                 ticketPrice: (customData._total_amount as number) || (customData._applied_price as number) || 0,
               },
             });
           } catch (emailError) {
             // Never let email failures affect registration success
-            console.error('Failed to send registration email:', emailError);
+            console.error('Failed to send organizer notification email:', emailError);
           }
         }
         
