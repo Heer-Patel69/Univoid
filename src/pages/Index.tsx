@@ -159,11 +159,10 @@ const Index = () => {
 
     <main className="flex-1">
       {/* Hero Section with Parallax */}
-      <section ref={heroRef} className="py-16 md:py-24 lg:py-32 relative overflow-hidden z-10">
+      <section ref={heroRef} className="py-10 md:py-24 lg:py-32 relative overflow-hidden z-10 px-4 md:px-0">
 
-        {/* Parallax Background Elements */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {/* Floating shapes that move at different speeds */}
+        {/* Parallax Background Elements - desktop only */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden hidden md:block">
           <div className="absolute -top-20 -left-20 w-64 h-64 rounded-full bg-primary/10 blur-3xl" style={{
             transform: `translateY(${scrollY * 0.3}px)`
           }} />
@@ -173,8 +172,6 @@ const Index = () => {
           <div className="absolute bottom-0 left-1/4 w-48 h-48 rounded-full bg-pastel-purple/30 blur-2xl" style={{
             transform: `translateY(${scrollY * 0.4}px)`
           }} />
-
-          {/* Decorative sketch elements */}
           <svg className="absolute top-20 left-10 w-16 h-16 text-foreground/5" style={{
             transform: `translateY(${scrollY * 0.15}px) rotate(${scrollY * 0.02}deg)`
           }} viewBox="0 0 100 100">
@@ -184,11 +181,6 @@ const Index = () => {
             transform: `translateY(${scrollY * 0.25}px) rotate(-${scrollY * 0.03}deg)`
           }} viewBox="0 0 100 100">
             <rect x="20" y="20" width="60" height="60" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="10 5" />
-          </svg>
-          <svg className="absolute bottom-32 left-1/3 w-12 h-12 text-foreground/5" style={{
-            transform: `translateY(${scrollY * 0.35}px)`
-          }} viewBox="0 0 100 100">
-            <polygon points="50,10 90,90 10,90" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="6 3" />
           </svg>
         </div>
 
