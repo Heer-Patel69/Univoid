@@ -80,15 +80,25 @@ const EditEvent = () => {
     enabled: !!eventId,
   });
 
-  // Convert a date string to local datetime-local input format (avoids UTC shift from toISOString)
+  // Convert DB datetime to local datetime-local input format
   const toLocalDatetime = (dateStr: string): string => {
     const d = new Date(dateStr);
+    if (Number.isNaN(d.getTime())) return "";
+
     const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    const hours = String(d.getHours()).padStart(2, '0');
-    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    const hours = String(d.getHours()).padStart(2, "0");
+    const minutes = String(d.getMinutes()).padStart(2, "0");
     return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  // Convert local datetime-local input back to UTC ISO string for timestamptz columns
+  const toUtcISOString = (localDatetime: string): string | null => {
+    if (!localDatetime) return null;
+    const d = new Date(localDatetime);
+    if (Number.isNaN(d.getTime())) return null;
+    return d.toISOString();
   };
 
   useEffect(() => {
