@@ -134,7 +134,7 @@ export const usePushNotifications = () => {
         // Fallback to direct notification API
         new Notification(payload.title, {
           body: payload.body,
-          icon: payload.icon || '/favicon.jpg',
+          icon: payload.icon || '/favicon.png',
           tag: 'univoid-notification-' + Date.now()
         });
       }

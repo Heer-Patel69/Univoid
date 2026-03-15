@@ -28,9 +28,7 @@ const Footer = () => {
         {/* Brand and Social */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
           <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-10 h-10 bg-primary rounded-xl border border-border flex items-center justify-center transition-all group-hover:translate-x-[-2px] group-hover:translate-y-[-2px] shadow-sketch-sm group-hover:shadow-sketch">
-              <span className="text-primary-foreground font-extrabold text-lg font-display">U</span>
-            </div>
+            <img src="/favicon.png" alt="UniVoid" className="w-10 h-10 rounded-xl transition-all group-hover:translate-x-[-2px] group-hover:translate-y-[-2px] shadow-sketch-sm group-hover:shadow-sketch" />
             <span className="font-extrabold text-xl text-foreground font-display">UniVoid</span>
           </Link>
           
