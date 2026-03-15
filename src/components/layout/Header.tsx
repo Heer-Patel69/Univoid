@@ -54,7 +54,9 @@ const Header = ({ onAuthClick }: HeaderProps) => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <PrefetchLink to="/" className="flex items-center gap-2.5 group">
-            <img src="/favicon.png" alt="UniVoid" className="w-10 h-10 rounded-xl shadow-sketch-sm group-hover:-translate-x-0.5 group-hover:-translate-y-0.5 group-hover:shadow-sketch transition-all duration-200" />
+            <div className="w-10 h-10 bg-primary border border-border rounded-xl flex items-center justify-center shadow-sketch-sm group-hover:-translate-x-0.5 group-hover:-translate-y-0.5 group-hover:shadow-sketch transition-all duration-200">
+              <span className="text-primary-foreground font-extrabold text-lg font-display">U</span>
+            </div>
             <span className="font-extrabold text-xl text-foreground font-display">UniVoid</span>
           </PrefetchLink>
 

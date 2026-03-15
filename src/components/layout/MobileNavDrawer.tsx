@@ -137,7 +137,9 @@ export const MobileNavDrawer = ({ onAuthClick }: MobileNavDrawerProps) => {
               className="flex items-center gap-2.5 group"
               onClick={handleLinkClick}
             >
-              <img src="/favicon.png" alt="UniVoid" className="w-10 h-10 rounded-2xl transition-all group-hover:scale-105 shadow-soft" />
+              <div className="w-10 h-10 bg-foreground rounded-2xl flex items-center justify-center transition-all group-hover:scale-105 shadow-soft">
+                <span className="text-background font-extrabold text-lg font-display">U</span>
+              </div>
               <SheetTitle className="font-extrabold text-xl text-foreground font-display">UniVoid</SheetTitle>
             </Link>
             <ThemeToggle className="rounded-full" />
