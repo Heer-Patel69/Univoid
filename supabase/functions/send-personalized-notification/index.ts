@@ -171,7 +171,7 @@ const handler = async (req: Request): Promise<Response> => {
                 title: notificationTitle,
                 message: notificationMessage,
                 link: notificationLink,
-                icon: '/favicon.jpg',
+                icon: '/favicon.png',
               }),
             });
 

@@ -46,7 +46,7 @@ const generateOrganizationData = () => ({
   "@type": "Organization",
   "name": "UniVoid",
   "url": SITE_URL,
-  "logo": `${SITE_URL}/images/univoid-og.jpg`,
+  "logo": `${SITE_URL}/favicon.png`,
   "description": "India's largest student learning platform for study materials, events, and opportunities.",
   "sameAs": [
     "https://twitter.com/UniVoid",

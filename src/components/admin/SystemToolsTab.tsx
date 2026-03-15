@@ -51,7 +51,7 @@ export const SystemToolsTab = ({ userId }: SystemToolsTabProps) => {
           notification: {
             title: testTitle,
             body: testMessage,
-            icon: '/favicon.jpg',
+            icon: '/favicon.png',
             link: '/dashboard',
             tag: 'test-notification',
           },
