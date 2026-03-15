@@ -382,7 +382,7 @@ async function handleBook(supabase: any, id: string) {
   const book = data as Book;
   const title = `${book.title} | Books | UniVoid`;
   const description = book.description || `Buy ${book.title}${book.author ? ` by ${book.author}` : ''} - ${book.category || 'Book'} available on UniVoid book marketplace.`;
-  const image = book.image_urls?.[0] || DEFAULT_OG_IMAGE;
+  const image = toPublicImageUrl(book.image_urls?.[0]) || DEFAULT_OG_IMAGE;
   const url = `${SITE_URL}/books/${id}`;
 
   const structuredData = {
