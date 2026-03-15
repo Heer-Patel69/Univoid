@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <!-- 
+  <!--
     UniVoid Sitemap Index
-    This file references all sitemaps for the website.
-    The dynamic sitemap is served from an Edge Function and includes all content.
+    Per the sitemap protocol, all referenced sitemaps must be hosted on the
+    same domain as this index file (univoid.tech).
   -->
+  <!-- Static pages sitemap (always available, served from same domain) -->
   <sitemap>
-    <loc>https://rtvrdbbojqsrbkngnjgq.supabase.co/functions/v1/sitemap</loc>
-    <lastmod>2026-01-25</lastmod>
+    <loc>https://univoid.tech/sitemap.xml</loc>
+    <lastmod>2026-03-15</lastmod>
   </sitemap>
 </sitemapindex>
