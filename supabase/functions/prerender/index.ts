@@ -613,7 +613,7 @@ Deno.serve(async (req) => {
 
     // Parse the path and handle different content types
     const materialsMatch = pathParam.match(/^\/materials\/([a-f0-9-]+)$/);
-    const eventsMatch = pathParam.match(/^\/events\/([a-f0-9-]+)$/);
+    const eventsMatch = pathParam.match(/^\/events\/([a-zA-Z0-9_-]+)$/);
     const booksMatch = pathParam.match(/^\/books\/([a-f0-9-]+)$/);
     const projectsMatch = pathParam.match(/^\/projects\/([a-f0-9-]+)$/);
     const tasksMatch = pathParam.match(/^\/tasks\/([a-f0-9-]+)$/);
