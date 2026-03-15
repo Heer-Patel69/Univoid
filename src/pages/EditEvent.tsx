@@ -80,6 +80,17 @@ const EditEvent = () => {
     enabled: !!eventId,
   });
 
+  // Convert a date string to local datetime-local input format (avoids UTC shift from toISOString)
+  const toLocalDatetime = (dateStr: string): string => {
+    const d = new Date(dateStr);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
   useEffect(() => {
     if (event) {
       setFormData({
@@ -94,9 +105,9 @@ const EditEvent = () => {
         venue_name: event.venue_name || "",
         venue_address: event.venue_address || "",
         maps_link: event.maps_link || "",
-        start_date: event.start_date ? new Date(event.start_date).toISOString().slice(0, 16) : "",
-        end_date: event.end_date ? new Date(event.end_date).toISOString().slice(0, 16) : "",
-        registration_end_date: (event as any).registration_end_date ? new Date((event as any).registration_end_date).toISOString().slice(0, 16) : "",
+        start_date: event.start_date ? toLocalDatetime(event.start_date) : "",
+        end_date: event.end_date ? toLocalDatetime(event.end_date) : "",
+        registration_end_date: (event as any).registration_end_date ? toLocalDatetime((event as any).registration_end_date) : "",
         description: event.description || "",
         terms_conditions: event.terms_conditions || "",
         is_paid: event.is_paid || false,

@@ -514,7 +514,7 @@ const EventDetail = () => {
       <SEOHead
         title={event.title}
         description={seoDescription}
-        image={event.flyer_url || undefined}
+        image={toDisplayUrl(event.flyer_url, { forceImage: true }) || undefined}
         url={`/events/${eventSlug}`}
         type="event"
         structuredData={eventStructuredData}
