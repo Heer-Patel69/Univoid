@@ -80,15 +80,25 @@ const EditEvent = () => {
     enabled: !!eventId,
   });
 
-  // Convert a date string to local datetime-local input format (avoids UTC shift from toISOString)
+  // Convert DB datetime to local datetime-local input format
   const toLocalDatetime = (dateStr: string): string => {
     const d = new Date(dateStr);
+    if (Number.isNaN(d.getTime())) return "";
+
     const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    const hours = String(d.getHours()).padStart(2, '0');
-    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    const hours = String(d.getHours()).padStart(2, "0");
+    const minutes = String(d.getMinutes()).padStart(2, "0");
     return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  // Convert local datetime-local input back to UTC ISO string for timestamptz columns
+  const toUtcISOString = (localDatetime: string): string | null => {
+    if (!localDatetime) return null;
+    const d = new Date(localDatetime);
+    if (Number.isNaN(d.getTime())) return null;
+    return d.toISOString();
   };
 
   useEffect(() => {
@@ -152,13 +162,16 @@ const EditEvent = () => {
         upiQrUrl = `event-assets:${path}`;
       }
 
+      const startDateIso = toUtcISOString(formData.start_date);
+      if (!startDateIso) throw new Error("Please select a valid start date and time.");
+
       const { error } = await supabase
         .from("events")
         .update({
           title: formData.title,
           category: formData.category,
           event_type: formData.event_type,
-          status: formData.status as 'draft' | 'published' | 'cancelled' | 'completed',
+          status: formData.status as "draft" | "published" | "cancelled" | "completed",
           poster_ratio: formData.poster_ratio,
           state: formData.state,
           city: formData.city,
@@ -167,14 +180,14 @@ const EditEvent = () => {
           venue_name: formData.is_location_decided ? formData.venue_name : null,
           venue_address: formData.is_location_decided ? formData.venue_address : null,
           maps_link: formData.is_location_decided ? formData.maps_link : null,
-          start_date: formData.start_date,
-          end_date: formData.end_date || null,
-          registration_end_date: formData.registration_end_date || null,
+          start_date: startDateIso,
+          end_date: toUtcISOString(formData.end_date),
+          registration_end_date: toUtcISOString(formData.registration_end_date),
           description: formData.description || null,
           terms_conditions: formData.terms_conditions || null,
           is_paid: formData.is_paid,
           price: formData.is_paid ? formData.price : 0,
-          max_capacity: formData.max_capacity ? parseInt(formData.max_capacity) : null,
+          max_capacity: formData.max_capacity ? parseInt(formData.max_capacity, 10) : null,
           upi_qr_url: formData.is_paid ? upiQrUrl : null,
           upi_vpa: formData.is_paid ? formData.upi_vpa : null,
           enable_quick_register: formData.enable_quick_register,
