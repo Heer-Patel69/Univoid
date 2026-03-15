@@ -4,6 +4,31 @@ import { getCorsHeaders, isCorsPreflightRequest, handleCorsPreflightRequest } fr
 const SITE_URL = "https://univoid.tech";
 const DEFAULT_OG_IMAGE = "https://univoid.tech/images/univoid-og.jpg";
 
+/**
+ * Convert a stored "bucket:path" value to a publicly accessible image URL
+ * via the image-proxy edge function.
+ */
+function toPublicImageUrl(storedValue: string | null | undefined): string | null {
+  if (!storedValue) return null;
+
+  // Already a full URL (external or legacy)
+  if (storedValue.startsWith('http://') || storedValue.startsWith('https://')) {
+    return storedValue;
+  }
+
+  // "bucket:path" format → proxy through image-proxy edge function
+  const colonIdx = storedValue.indexOf(':');
+  if (colonIdx > 0) {
+    const bucket = storedValue.substring(0, colonIdx);
+    const path = storedValue.substring(colonIdx + 1);
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+    const params = new URLSearchParams({ bucket, path });
+    return `${supabaseUrl}/functions/v1/image-proxy?${params.toString()}`;
+  }
+
+  return null;
+}
+
 // Bot User-Agent detection patterns
 const BOT_PATTERNS = [
   'googlebot',
