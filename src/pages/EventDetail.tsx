@@ -585,7 +585,10 @@ const EventDetail = () => {
               <Calendar className="w-4 h-4 mt-0.5 text-muted-foreground flex-shrink-0" />
               <div>
                 <p className="font-medium">{format(new Date(event.start_date), "EEE, MMM d, yyyy")}</p>
-                <p className="text-xs text-muted-foreground">{format(new Date(event.start_date), "h:mm a")}</p>
+                <p className="text-xs text-muted-foreground">
+                  {format(new Date(event.start_date), "h:mm a")}
+                  {event.end_date && ` – ${format(new Date(event.end_date), "h:mm a")}`}
+                </p>
               </div>
             </div>
             <div className="flex items-start gap-2.5 text-sm">
