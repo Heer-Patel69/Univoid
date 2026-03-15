@@ -128,10 +128,13 @@ export const EventCard = ({ event }: EventCardProps) => {
                         : "Location TBA"}
                   </span>
                 </div>
-                {/* Event Date */}
+                {/* Event Date & Time */}
                 <div className="flex items-center gap-1.5 text-white/90 text-sm">
                   <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
-                  <span className="drop-shadow-sm">{format(new Date(event.start_date), "dd MMM yyyy")}</span>
+                  <span className="drop-shadow-sm">
+                    {format(new Date(event.start_date), "dd MMM yyyy · h:mm a")}
+                    {event.end_date && ` – ${format(new Date(event.end_date), "h:mm a")}`}
+                  </span>
                 </div>
               </div>
 
