@@ -545,7 +545,7 @@ async function handleProfile(supabase: any, id: string) {
   const profile = data as Profile;
   const title = `${profile.full_name} | Student Profile | UniVoid`;
   const description = `${profile.full_name}${profile.college_name ? ` from ${profile.college_name}` : ''}${profile.branch ? `, ${profile.branch}` : ''}. XP: ${profile.total_xp || 0}. View profile on UniVoid.`;
-  const image = profile.profile_photo_url || DEFAULT_OG_IMAGE;
+  const image = toPublicImageUrl(profile.profile_photo_url) || DEFAULT_OG_IMAGE;
   const url = `${SITE_URL}/profile/${id}`;
 
   const structuredData = {
