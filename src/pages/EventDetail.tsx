@@ -367,7 +367,7 @@ const EventDetail = () => {
   const handleShare = async () => {
     // Use slug-based URL for professional sharing
     const eventSlug = event?.slug || eventId;
-    const shareUrl = `https://univoid.tech/events/${eventSlug}`;
+    const shareUrl = `https://univoid.tech/events/${eventSlug}?v=2`;
     
     try {
       await navigator.share({ title: event?.title, url: shareUrl });
