@@ -306,8 +306,8 @@ async function handleEvent(supabase: any, identifier: string) {
   const event = data as Event;
   const title = `${event.title} | Events | UniVoid`;
   const description = event.description || `Register for ${event.title} - ${event.category} event${event.venue_name ? ` at ${event.venue_name}` : ''}. Join now on UniVoid!`;
-  // IMPORTANT: Use flyer_url for social preview image
-  const image = event.flyer_url || DEFAULT_OG_IMAGE;
+  // IMPORTANT: Use flyer_url for social preview image, resolved to a public URL
+  const image = toPublicImageUrl(event.flyer_url) || DEFAULT_OG_IMAGE;
   // Use slug for canonical URL
   const eventSlug = event.slug || event.id;
   const url = `${SITE_URL}/events/${eventSlug}`;
