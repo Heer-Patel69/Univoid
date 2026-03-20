@@ -39,7 +39,7 @@ import {
 import { getOrganizerProfileByUserId, type OrganizerProfile } from "@/services/organizerService";
 import { toDisplayUrl } from "@/lib/storageProxy";
 import { formatRichText } from "@/lib/formatRichText";
-import { Calendar, MapPin, Users, IndianRupee, ExternalLink, Clock, Share2, CheckCircle, AlertCircle, Upload, Eye, BadgeCheck, ChevronDown, FileText, Image } from "lucide-react";
+import { Calendar, MapPin, Users, IndianRupee, ExternalLink, Clock, Share2, CheckCircle, AlertCircle, Upload, Eye, BadgeCheck, ChevronDown, FileText, Image, Copy, Check } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const EventDetail = () => {
