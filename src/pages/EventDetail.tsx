@@ -71,6 +71,7 @@ const EventDetail = () => {
   // Description expand state (WordPress-style read more)
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [membershipId, setMembershipId] = useState<string | null>(null);
+  const [upiCopied, setUpiCopied] = useState(false);
   
   // Refs for scroll capture system (BookMyShow-style)
   const leftColumnRef = useRef<HTMLDivElement>(null);
