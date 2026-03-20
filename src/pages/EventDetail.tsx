@@ -434,7 +434,7 @@ const EventDetail = () => {
   const paymentSection = event.is_paid ? (
     <div className="space-y-4 p-4 bg-muted rounded-xl">
       <p className="font-medium">Payment</p>
-      <p className="text-sm text-muted-foreground">Pay ₹{displayPrice} using UPI, then upload screenshot.</p>
+      <p className="text-sm text-muted-foreground">Pay ₹{priceCalculation.finalTotal} using UPI, then upload screenshot.</p>
       {event.upi_qr_url && (
         <div className="bg-background p-4 rounded-xl w-fit mx-auto">
           <img src={toDisplayUrl(event.upi_qr_url, { forceImage: true }) || undefined} alt="UPI QR" className="w-48 h-48 object-contain" loading="lazy" />
