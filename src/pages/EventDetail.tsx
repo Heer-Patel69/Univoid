@@ -39,7 +39,7 @@ import {
 import { getOrganizerProfileByUserId, type OrganizerProfile } from "@/services/organizerService";
 import { toDisplayUrl } from "@/lib/storageProxy";
 import { formatRichText } from "@/lib/formatRichText";
-import { Calendar, MapPin, Users, IndianRupee, ExternalLink, Clock, Share2, CheckCircle, AlertCircle, Upload, Eye, BadgeCheck, ChevronDown, FileText, Image } from "lucide-react";
+import { Calendar, MapPin, Users, IndianRupee, ExternalLink, Clock, Share2, CheckCircle, AlertCircle, Upload, Eye, BadgeCheck, ChevronDown, FileText, Image, Copy, Check } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const EventDetail = () => {
@@ -71,6 +71,7 @@ const EventDetail = () => {
   // Description expand state (WordPress-style read more)
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [membershipId, setMembershipId] = useState<string | null>(null);
+  const [upiCopied, setUpiCopied] = useState(false);
   
   // Refs for scroll capture system (BookMyShow-style)
   const leftColumnRef = useRef<HTMLDivElement>(null);
@@ -440,7 +441,23 @@ const EventDetail = () => {
           <img src={toDisplayUrl(event.upi_qr_url, { forceImage: true }) || undefined} alt="UPI QR" className="w-48 h-48 object-contain" loading="lazy" />
         </div>
       )}
-      {event.upi_vpa && <p className="text-center text-sm">UPI ID: <code className="bg-background px-2 py-1 rounded">{event.upi_vpa}</code></p>}
+      {event.upi_vpa && (
+        <div className="flex items-center justify-center gap-2 text-sm">
+          <span>UPI ID:</span>
+          <code className="bg-background px-2 py-1 rounded">{event.upi_vpa}</code>
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard.writeText(event.upi_vpa!);
+              setUpiCopied(true);
+              setTimeout(() => setUpiCopied(false), 2000);
+            }}
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-primary/10 hover:bg-primary/20 text-primary text-xs font-medium transition-colors"
+          >
+            {upiCopied ? <><Check className="w-3 h-3" /> Copied</> : <><Copy className="w-3 h-3" /> Copy</>}
+          </button>
+        </div>
+      )}
       <div className="space-y-2">
         <Label>Upload Payment Screenshot *</Label>
         <div className="border-2 border-dashed rounded-xl p-4 text-center">
