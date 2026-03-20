@@ -441,7 +441,23 @@ const EventDetail = () => {
           <img src={toDisplayUrl(event.upi_qr_url, { forceImage: true }) || undefined} alt="UPI QR" className="w-48 h-48 object-contain" loading="lazy" />
         </div>
       )}
-      {event.upi_vpa && <p className="text-center text-sm">UPI ID: <code className="bg-background px-2 py-1 rounded">{event.upi_vpa}</code></p>}
+      {event.upi_vpa && (
+        <div className="flex items-center justify-center gap-2 text-sm">
+          <span>UPI ID:</span>
+          <code className="bg-background px-2 py-1 rounded">{event.upi_vpa}</code>
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard.writeText(event.upi_vpa!);
+              setUpiCopied(true);
+              setTimeout(() => setUpiCopied(false), 2000);
+            }}
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-primary/10 hover:bg-primary/20 text-primary text-xs font-medium transition-colors"
+          >
+            {upiCopied ? <><Check className="w-3 h-3" /> Copied</> : <><Copy className="w-3 h-3" /> Copy</>}
+          </button>
+        </div>
+      )}
       <div className="space-y-2">
         <Label>Upload Payment Screenshot *</Label>
         <div className="border-2 border-dashed rounded-xl p-4 text-center">
