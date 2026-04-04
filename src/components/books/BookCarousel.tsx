@@ -103,3 +103,5 @@ const BookCarousel = ({ images, title }: BookCarouselProps) => {
     </div>
   );
 };
+
+export default BookCarousel;
