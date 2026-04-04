@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
+import { toDisplayUrl } from "@/lib/storageProxy";
 import { useNavigate, Link, useOutletContext, useSearchParams } from "react-router-dom";
 
 import ReportButton from "@/components/reports/ReportButton";
