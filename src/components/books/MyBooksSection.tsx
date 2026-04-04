@@ -144,7 +144,7 @@ const MyBooksSection = ({ books, isLoading, onRefresh }: MyBooksSectionProps) =>
                   <div className="w-20 h-28 flex-shrink-0 bg-secondary rounded overflow-hidden relative">
                     {book.image_urls && book.image_urls.length > 0 ? (
                       <img
-                        src={book.image_urls[0]}
+                        src={toDisplayUrl(book.image_urls[0], { forceImage: true }) || book.image_urls[0]}
                         alt={book.title}
                         className="w-full h-full object-cover"
                       />
