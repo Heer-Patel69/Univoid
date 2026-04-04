@@ -27,11 +27,11 @@ const BookCarousel = ({ images, title }: BookCarouselProps) => {
   }
 
   const goToPrevious = () => {
-    setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+    setCurrentIndex((prev) => (prev === 0 ? resolvedImages.length - 1 : prev - 1));
   };
 
   const goToNext = () => {
-    setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+    setCurrentIndex((prev) => (prev === resolvedImages.length - 1 ? 0 : prev + 1));
   };
 
   const goToSlide = (index: number) => {
@@ -43,13 +43,13 @@ const BookCarousel = ({ images, title }: BookCarouselProps) => {
       {/* Main Image */}
       <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-accent">
         <img
-          src={images[currentIndex]}
+          src={resolvedImages[currentIndex]}
           alt={`${title} - Image ${currentIndex + 1}`}
           className="w-full h-full object-contain"
         />
 
         {/* Navigation Arrows */}
-        {images.length > 1 && (
+        {resolvedImages.length > 1 && (
           <>
             <Button
               variant="secondary"
@@ -71,17 +71,17 @@ const BookCarousel = ({ images, title }: BookCarouselProps) => {
         )}
 
         {/* Image Counter */}
-        {images.length > 1 && (
+        {resolvedImages.length > 1 && (
           <div className="absolute bottom-3 right-3 bg-background/80 backdrop-blur-sm text-foreground text-sm px-3 py-1 rounded-full">
-            {currentIndex + 1} / {images.length}
+            {currentIndex + 1} / {resolvedImages.length}
           </div>
         )}
       </div>
 
       {/* Thumbnails */}
-      {images.length > 1 && (
+      {resolvedImages.length > 1 && (
         <div className="flex gap-2 mt-3 overflow-x-auto pb-2">
-          {images.map((img, index) => (
+          {resolvedImages.map((img, index) => (
             <button
               key={index}
               onClick={() => goToSlide(index)}
@@ -103,5 +103,3 @@ const BookCarousel = ({ images, title }: BookCarouselProps) => {
     </div>
   );
 };
-
-export default BookCarousel;
