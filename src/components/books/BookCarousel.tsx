@@ -11,7 +11,14 @@ interface BookCarouselProps {
 const BookCarousel = ({ images, title }: BookCarouselProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  if (!images || images.length === 0) {
+  // Convert stored paths (e.g. "book-images:userId/file.jpg") to proxy URLs
+  const resolvedImages = useMemo(() => {
+    return (images || [])
+      .map(img => toDisplayUrl(img, { forceImage: true }))
+      .filter((url): url is string => url !== null);
+  }, [images]);
+
+  if (!resolvedImages || resolvedImages.length === 0) {
     return (
       <div className="w-full aspect-[4/3] bg-accent flex items-center justify-center rounded-xl">
         <BookOpen className="w-16 h-16 text-primary" />
