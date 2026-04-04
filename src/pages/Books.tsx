@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
+import { toDisplayUrl } from "@/lib/storageProxy";
 import { useNavigate, Link, useOutletContext, useSearchParams } from "react-router-dom";
 
 import ReportButton from "@/components/reports/ReportButton";
@@ -317,7 +318,7 @@ const Books = () => {
                       {book.image_urls && book.image_urls.length > 0 ? (
                         <div className="relative overflow-hidden">
                           <img
-                            src={book.image_urls[0]}
+                            src={toDisplayUrl(book.image_urls[0], { forceImage: true }) || book.image_urls[0]}
                             alt={book.title}
                             className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
                             loading="lazy"
