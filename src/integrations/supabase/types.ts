@@ -2790,6 +2790,14 @@ export type Database = {
         }[]
       }
       get_registered_users_count: { Args: never; Returns: number }
+      get_seller_contact: {
+        Args: { p_book_id: string }
+        Returns: {
+          address: string
+          email: string
+          mobile: string
+        }[]
+      }
       has_organizer_profile: { Args: { p_user_id: string }; Returns: boolean }
       has_role: {
         Args: {
