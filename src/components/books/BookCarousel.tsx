@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toDisplayUrl } from "@/lib/storageProxy";
 
 interface BookCarouselProps {
   images: string[];
