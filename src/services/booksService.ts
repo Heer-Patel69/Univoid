@@ -108,18 +108,16 @@ export async function getSellerContact(bookId: string): Promise<{
   email: string;
   address: string;
 } | null> {
-  const { data, error } = await supabase
-    .from('books')
-    .select('seller_mobile, seller_email, seller_address')
-    .eq('id', bookId)
-    .single();
+  const { data, error } = await supabase.rpc('get_seller_contact', {
+    p_book_id: bookId
+  });
 
-  if (error || !data) return null;
+  if (error || !data || data.length === 0) return null;
 
   return {
-    mobile: data.seller_mobile,
-    email: data.seller_email,
-    address: data.seller_address,
+    mobile: data[0].mobile,
+    email: data[0].email,
+    address: data[0].address,
   };
 }
 
