@@ -616,17 +616,36 @@ export default function EnhancedMaterialPreview({
   };
 
   const renderDocPreview = () => (
-    <div className="aspect-[3/4] bg-muted rounded-lg flex flex-col items-center justify-center border border-border p-8">
-      <File className="w-20 h-20 text-muted-foreground/40 mb-4" />
-      <span className="text-lg font-medium text-foreground mb-2">
-        {material.file_type.toUpperCase()} Document
-      </span>
-      <span className="text-sm text-muted-foreground text-center mb-2">
-        Preview available for PDF files only.
-      </span>
-      <span className="text-xs text-muted-foreground">
-        {material.file_size ? formatFileSize(material.file_size) : 'Unknown size'}
-      </span>
+    <div className="space-y-3">
+      {/* Open Document button for non-PDF files */}
+      {material.file_url && (
+        <div className="flex items-center justify-between gap-2 p-3 bg-muted/50 rounded-lg border border-border">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <FileText className="w-4 h-4" />
+            <span>Open to view the document</span>
+          </div>
+          <Button 
+            variant="default"
+            size="sm"
+            onClick={handleOpenDocument}
+          >
+            <ExternalLink className="w-4 h-4 mr-2" />
+            Open Document
+          </Button>
+        </div>
+      )}
+      <div className="aspect-[3/4] bg-muted rounded-lg flex flex-col items-center justify-center border border-border p-8">
+        <File className="w-20 h-20 text-muted-foreground/40 mb-4" />
+        <span className="text-lg font-medium text-foreground mb-2">
+          {material.file_type.toUpperCase()} Document
+        </span>
+        <span className="text-sm text-muted-foreground text-center mb-2">
+          Inline preview available for PDF and image files only.
+        </span>
+        <span className="text-xs text-muted-foreground">
+          {material.file_size ? formatFileSize(material.file_size) : 'Unknown size'}
+        </span>
+      </div>
     </div>
   );
 

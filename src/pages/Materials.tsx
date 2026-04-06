@@ -189,25 +189,15 @@ const Materials = () => {
               return [newData, ...prev];
             });
           } else if (payload.eventType === 'UPDATE') {
-            // Check if material was just approved (status changed from pending to approved)
-            const wasJustApproved = newData?.status === 'approved' && 
-              (oldData?.status === 'pending' || oldData?.status === 'rejected');
-            
-            if (wasJustApproved) {
-              // Add newly approved material to the list
+            if (newData?.status === 'approved') {
+              // Material is approved - add if not in list, update if already there
               setAllMaterials(prev => {
                 if (prev.some(m => m.id === newData.id)) {
-                  // Already exists, update it
                   return prev.map(m => m.id === newData.id ? { ...m, ...newData } : m);
                 }
-                // Add to top of list
+                // Newly approved material - add to top
                 return [newData, ...prev];
               });
-            } else if (newData?.status === 'approved') {
-              // Update existing approved material
-              setAllMaterials(prev => prev.map(m => 
-                m.id === newData.id ? { ...m, ...newData } : m
-              ));
             } else {
               // Material was un-approved (rejected or back to pending), remove from list
               setAllMaterials(prev => prev.filter(m => m.id !== newData.id));
