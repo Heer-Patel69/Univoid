@@ -615,39 +615,98 @@ export default function EnhancedMaterialPreview({
     );
   };
 
-  const renderDocPreview = () => (
-    <div className="space-y-3">
-      {/* Open Document button for non-PDF files */}
-      {material.file_url && (
-        <div className="flex items-center justify-between gap-2 p-3 bg-muted/50 rounded-lg border border-border">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <FileText className="w-4 h-4" />
-            <span>Open to view the document</span>
+  const renderDocPreview = () => {
+    // Use Google Docs Viewer for Office documents if we have a signed URL
+    const canUseGoogleViewer = signedUrl && ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].includes(material.file_type.toLowerCase());
+    
+    if (canUseGoogleViewer) {
+      const googleViewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(signedUrl)}&embedded=true`;
+      
+      return (
+        <div className="space-y-3">
+          {/* Open Document button as fallback */}
+          <div className="flex items-center justify-between gap-2 p-3 bg-muted/50 rounded-lg border border-border">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <FileText className="w-4 h-4" />
+              <span>Can't see the preview?</span>
+            </div>
+            <Button 
+              variant="default"
+              size="sm"
+              onClick={handleOpenDocument}
+            >
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Open Document
+            </Button>
           </div>
-          <Button 
-            variant="default"
-            size="sm"
-            onClick={handleOpenDocument}
-          >
-            <ExternalLink className="w-4 h-4 mr-2" />
-            Open Document
-          </Button>
+
+          {/* Google Docs Viewer iframe */}
+          <div className="relative w-full aspect-[3/4] min-h-[300px] sm:min-h-[500px] bg-muted rounded-lg overflow-hidden border border-border">
+            {isLoading && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 z-10">
+                <Loader2 className="w-8 h-8 animate-spin text-primary mb-2" />
+                <span className="text-sm text-muted-foreground">Loading {material.file_type.toUpperCase()} preview...</span>
+              </div>
+            )}
+            
+            {previewError ? (
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
+                <File className="w-16 h-16 text-muted-foreground/40 mb-4" />
+                <p className="text-muted-foreground mb-2">Preview could not be loaded</p>
+                <p className="text-xs text-muted-foreground/70 text-center mb-4">
+                  Use the "Open Document" button above to view the file
+                </p>
+              </div>
+            ) : (
+              <iframe
+                src={googleViewerUrl}
+                className="w-full h-full border-0"
+                title={material.title}
+                onLoad={handleIframeLoad}
+                onError={handleIframeError}
+                style={{ border: 'none' }}
+                sandbox="allow-scripts allow-same-origin allow-popups"
+              />
+            )}
+          </div>
         </div>
-      )}
-      <div className="aspect-[3/4] bg-muted rounded-lg flex flex-col items-center justify-center border border-border p-8">
-        <File className="w-20 h-20 text-muted-foreground/40 mb-4" />
-        <span className="text-lg font-medium text-foreground mb-2">
-          {material.file_type.toUpperCase()} Document
-        </span>
-        <span className="text-sm text-muted-foreground text-center mb-2">
-          Inline preview available for PDF and image files only.
-        </span>
-        <span className="text-xs text-muted-foreground">
-          {material.file_size ? formatFileSize(material.file_size) : 'Unknown size'}
-        </span>
+      );
+    }
+
+    // Fallback for unsupported document types or no signed URL
+    return (
+      <div className="space-y-3">
+        {material.file_url && (
+          <div className="flex items-center justify-between gap-2 p-3 bg-muted/50 rounded-lg border border-border">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <FileText className="w-4 h-4" />
+              <span>Open to view the document</span>
+            </div>
+            <Button 
+              variant="default"
+              size="sm"
+              onClick={handleOpenDocument}
+            >
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Open Document
+            </Button>
+          </div>
+        )}
+        <div className="aspect-[3/4] bg-muted rounded-lg flex flex-col items-center justify-center border border-border p-8">
+          <File className="w-20 h-20 text-muted-foreground/40 mb-4" />
+          <span className="text-lg font-medium text-foreground mb-2">
+            {material.file_type.toUpperCase()} Document
+          </span>
+          <span className="text-sm text-muted-foreground text-center mb-2">
+            Use the button above to open and review this document.
+          </span>
+          <span className="text-xs text-muted-foreground">
+            {material.file_size ? formatFileSize(material.file_size) : 'Unknown size'}
+          </span>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderZipPreview = () => (
     <div className="aspect-[3/4] bg-muted rounded-lg flex flex-col items-center justify-center border border-border p-8">
