@@ -159,13 +159,18 @@ const Materials = () => {
   const batchSize = isLowEnd ? 9 : 15;
 
   const fetchMaterials = useCallback(async () => {
-    const result = await getMaterialsPaginated(0, batchSize);
-    setAllMaterials(result.data);
-    setHasMore(result.hasMore);
-    setIsLoading(false);
-    // Cache to sessionStorage
-    setSessionCache(result.data, result.hasMore);
-    return result.data;
+    try {
+      const result = await getMaterialsPaginated(0, batchSize);
+      setAllMaterials(result.data);
+      setHasMore(result.hasMore);
+      // Cache to sessionStorage
+      setSessionCache(result.data, result.hasMore);
+    } catch (error) {
+      console.error('Failed to fetch materials:', error);
+      // Don't clear existing data on error - keep showing what we have
+    } finally {
+      setIsLoading(false);
+    }
   }, [batchSize, setSessionCache]);
 
   // Initial fetch + real-time subscription
@@ -180,7 +185,6 @@ const Materials = () => {
         { event: '*', schema: 'public', table: 'materials' },
         (payload: any) => {
           const newData = payload.new as Material;
-          const oldData = payload.old as Material | null;
           
           if (payload.eventType === 'INSERT' && newData?.status === 'approved') {
             // New approved material inserted
@@ -190,7 +194,7 @@ const Materials = () => {
             });
           } else if (payload.eventType === 'UPDATE') {
             if (newData?.status === 'approved') {
-              // Material is approved - add if not in list, update if already there
+              // Material is approved or counter updated - update in place or add
               setAllMaterials(prev => {
                 if (prev.some(m => m.id === newData.id)) {
                   return prev.map(m => m.id === newData.id ? { ...m, ...newData } : m);
@@ -198,10 +202,12 @@ const Materials = () => {
                 // Newly approved material - add to top
                 return [newData, ...prev];
               });
-            } else {
-              // Material was un-approved (rejected or back to pending), remove from list
+            } else if (newData?.status === 'rejected' || newData?.status === 'pending') {
+              // Only remove if status is EXPLICITLY set to rejected/pending
+              // This prevents removal when status field is missing from partial updates
               setAllMaterials(prev => prev.filter(m => m.id !== newData.id));
             }
+            // If status is undefined/null in the payload, do nothing (counter updates etc.)
           } else if (payload.eventType === 'DELETE') {
             setAllMaterials(prev => prev.filter(m => m.id !== payload.old?.id));
           }
