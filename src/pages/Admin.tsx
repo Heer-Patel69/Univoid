@@ -1355,10 +1355,25 @@ const Admin = () => {
         } : null}
         isOpen={!!previewMaterial}
         onClose={() => setPreviewMaterial(null)}
-        onDownload={() => {
-          if (previewMaterial?.file_url) {
-            window.open(previewMaterial.file_url, '_blank');
+        onDownload={async () => {
+          if (!previewMaterial?.file_url) return;
+          const fileUrl = previewMaterial.file_url;
+          
+          // If it's a direct storage path, generate a signed URL first
+          if (!fileUrl.startsWith('http') && fileUrl.includes('/')) {
+            try {
+              const { data } = await supabase.storage
+                .from('materials')
+                .createSignedUrl(fileUrl, 3600);
+              if (data?.signedUrl) {
+                window.open(data.signedUrl, '_blank');
+                return;
+              }
+            } catch (err) {
+              console.error('Failed to generate download URL:', err);
+            }
           }
+          window.open(fileUrl, '_blank');
         }}
         isAdmin={true}
         onAdminPreviewComplete={handleAdminPreviewComplete}
