@@ -169,8 +169,8 @@ export function useRealtimeMaterials(
                 m.id === updated.id ? { ...m, ...updated } : m
               );
             }
-          } else {
-            // Material was rejected/removed from approved, remove from list
+          } else if (updated.status === 'rejected' || updated.status === 'pending') {
+            // Only remove if status is EXPLICITLY set to rejected/pending
             setMaterials(prev => prev.filter(m => m.id !== updated.id));
             materialsCache.data = materialsCache.data.filter(m => m.id !== updated.id);
           }
