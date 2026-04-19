@@ -42,6 +42,7 @@ import {
 import { getReports, updateReportStatus, deleteReportedContent, Report, ReportContentType } from "@/services/reportsService";
 import { logAdminError } from "@/services/errorLoggingService";
 import { supabase } from "@/integrations/supabase/client";
+import { getMaterialDownloadUrl } from "@/lib/storageProxy";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import {
@@ -538,18 +539,12 @@ const Admin = () => {
           <tbody>
             {items.map((item) => {
               const isPreviewed = previewedMaterialIds.has(item.id) || item.admin_previewed;
-              const canApprove = !isMaterial || item.status !== 'pending' || isPreviewed;
               
               return (
                 <tr key={item.id} className="border-b border-border last:border-0 hover:bg-muted/50">
                   <td className="p-3 font-medium text-foreground max-w-xs truncate">
                     <div className="flex items-center gap-2">
                       {item.title}
-                      {isMaterial && item.status === 'pending' && !isPreviewed && (
-                        <Badge variant="secondary" className="bg-amber-500/20 text-amber-700 text-xs">
-                          Preview Required
-                        </Badge>
-                      )}
                       {isMaterial && isPreviewed && (
                         <Badge variant="secondary" className="bg-green-500/20 text-green-700 text-xs">
                           <Check className="w-3 h-3 mr-1" />
@@ -581,8 +576,7 @@ const Admin = () => {
                             variant="default" 
                             size="sm" 
                             onClick={() => handleApprove(type, item)}
-                            disabled={processingId === item.id || (isMaterial && !canApprove)}
-                            title={isMaterial && !canApprove ? 'Preview required before approval' : ''}
+                            disabled={processingId === item.id}
                           >
                             {processingId === item.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                           </Button>
@@ -1355,25 +1349,10 @@ const Admin = () => {
         } : null}
         isOpen={!!previewMaterial}
         onClose={() => setPreviewMaterial(null)}
-        onDownload={async () => {
-          if (!previewMaterial?.file_url) return;
-          const fileUrl = previewMaterial.file_url;
-          
-          // If it's a direct storage path, generate a signed URL first
-          if (!fileUrl.startsWith('http') && fileUrl.includes('/')) {
-            try {
-              const { data } = await supabase.storage
-                .from('materials')
-                .createSignedUrl(fileUrl, 3600);
-              if (data?.signedUrl) {
-                window.open(data.signedUrl, '_blank');
-                return;
-              }
-            } catch (err) {
-              console.error('Failed to generate download URL:', err);
-            }
-          }
-          window.open(fileUrl, '_blank');
+        onDownload={() => {
+          if (!previewMaterial) return;
+          const downloadUrl = getMaterialDownloadUrl(previewMaterial.id, true);
+          window.open(downloadUrl, '_blank', 'noopener,noreferrer');
         }}
         isAdmin={true}
         onAdminPreviewComplete={handleAdminPreviewComplete}
