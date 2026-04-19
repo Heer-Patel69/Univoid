@@ -4,6 +4,7 @@ import { MAX_FILE_SIZE_BYTES, validateMaterialFile } from '@/lib/fileCompression
 import { materialsLogger } from '@/services/errorLoggingService';
 import type { CursorPage, CursorPageParam } from '@/hooks/useCursorPagination';
 import { resumableUpload, RESUMABLE_THRESHOLD } from '@/hooks/useResumableUpload';
+import { getMaterialDownloadUrl } from '@/lib/storageProxy';
 
 /**
  * Get proper user-friendly error message for upload failures
@@ -395,26 +396,8 @@ export async function getMyMaterials(userId: string): Promise<Material[]> {
 export async function getDownloadUrl(materialId: string): Promise<string | null> {
   const material = await getMaterialById(materialId);
   if (!material) return null;
-  
-  // file_url now stores the path, generate signed URL on demand
-  const filePath = material.file_url;
-  
-  // If it's already a full URL (legacy data), return as-is
-  if (filePath.startsWith('http')) {
-    return filePath;
-  }
-  
-  // Generate fresh signed URL (1 hour validity for downloads)
-  const { data, error } = await supabase.storage
-    .from('materials')
-    .createSignedUrl(filePath, 60 * 60); // 1 hour
-  
-  if (error) {
-    console.error('Failed to generate download URL:', error);
-    return null;
-  }
-  
-  return data?.signedUrl || null;
+
+  return getMaterialDownloadUrl(materialId, true);
 }
 
 export async function getPendingMaterials(): Promise<Material[]> {

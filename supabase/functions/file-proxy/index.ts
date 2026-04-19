@@ -45,8 +45,14 @@ const MIME_TYPES: Record<string, string> = {
   xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   ppt: 'application/vnd.ms-powerpoint',
   pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  txt: 'text/plain',
+  txt: 'text/plain; charset=utf-8',
+  rtf: 'application/rtf',
+  epub: 'application/epub+zip',
+  mobi: 'application/x-mobipocket-ebook',
+  csv: 'text/csv; charset=utf-8',
   zip: 'application/zip',
+  rar: 'application/vnd.rar',
+  '7z': 'application/x-7z-compressed',
 };
 
 function getMimeType(path: string): string {
