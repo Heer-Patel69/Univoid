@@ -1,24 +1,17 @@
 import { useState, useEffect, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
-import { BottomNav } from "@/components/layout/BottomNav";
-import AuthModal from "@/components/auth/AuthModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRoleRedirect } from "@/hooks/useRoleRedirect";
 import SEOHead from "@/components/common/SEOHead";
 
 import HeroBrutalist from "@/components/landing/HeroBrutalist";
-import FeatureRow from "@/components/landing/FeatureRow";
 
-// 3D assets used inline in this file (feature rows)
-import folder from "@/assets/3d-folder.png";
-import ticket from "@/assets/3d-ticket.png";
-import books from "@/assets/3d-books.png";
-import handshake from "@/assets/3d-handshake.png";
-import community from "@/assets/3d-community.png";
-
-// Below-fold sections lazy-loaded for fast LCP
+// Below-fold: lazy-loaded for fast LCP on mobile
+const Footer = lazy(() => import("@/components/layout/Footer"));
+const BottomNav = lazy(() => import("@/components/layout/BottomNav").then(m => ({ default: m.BottomNav })));
+const AuthModal = lazy(() => import("@/components/auth/AuthModal"));
+const FeatureRow = lazy(() => import("@/components/landing/FeatureRow"));
 const ProblemCollage = lazy(() => import("@/components/landing/ProblemCollage"));
 const SolutionSection = lazy(() => import("@/components/landing/SolutionSection"));
 const HowItWorksBrutalist = lazy(() => import("@/components/landing/HowItWorksBrutalist"));
@@ -26,6 +19,16 @@ const ComparisonTable = lazy(() => import("@/components/landing/ComparisonTable"
 const AnimatedStats = lazy(() => import("@/components/landing/AnimatedStats"));
 const Roadmap = lazy(() => import("@/components/landing/Roadmap"));
 const FinalCTABrutalist = lazy(() => import("@/components/landing/FinalCTABrutalist"));
+
+// 3D asset paths for feature rows — referenced as strings so Vite
+// only loads them when FeatureRow renders (below the fold)
+const featureImages = {
+  folder: () => import("@/assets/3d-folder.png").then(m => m.default),
+  ticket: () => import("@/assets/3d-ticket.png").then(m => m.default),
+  books: () => import("@/assets/3d-books.png").then(m => m.default),
+  handshake: () => import("@/assets/3d-handshake.png").then(m => m.default),
+  community: () => import("@/assets/3d-community.png").then(m => m.default),
+};
 
 const features = [
   {
@@ -40,7 +43,7 @@ const features = [
     ],
     ctaLabel: "Browse materials",
     ctaHref: "/materials",
-    image: folder,
+    imageLoader: featureImages.folder,
     imageAlt: "3D folder of study materials",
     accent: "bg-pastel-yellow",
   },
@@ -56,7 +59,7 @@ const features = [
     ],
     ctaLabel: "See events",
     ctaHref: "/events",
-    image: ticket,
+    imageLoader: featureImages.ticket,
     imageAlt: "3D event ticket",
     accent: "bg-pastel-blue",
   },
@@ -72,7 +75,7 @@ const features = [
     ],
     ctaLabel: "Explore books",
     ctaHref: "/books",
-    image: books,
+    imageLoader: featureImages.books,
     imageAlt: "3D stack of textbooks",
     accent: "bg-pastel-pink",
   },
@@ -88,7 +91,7 @@ const features = [
     ],
     ctaLabel: "Find a partner",
     ctaHref: "/projects",
-    image: handshake,
+    imageLoader: featureImages.handshake,
     imageAlt: "3D puzzle pieces connecting",
     accent: "bg-pastel-green",
   },
@@ -104,7 +107,7 @@ const features = [
     ],
     ctaLabel: "Join the community",
     ctaHref: "/colleges",
-    image: community,
+    imageLoader: featureImages.community,
     imageAlt: "3D group of student avatars",
     accent: "bg-pastel-purple",
   },
@@ -120,6 +123,30 @@ const faqs = [
   { q: "Will I get spammed with notifications?", a: "No. You control everything — only events, materials, and projects you've opted into will ping you." },
   { q: "Is my data safe?", a: "Yes. We use Google sign-in, strict access controls, and never sell student data. Read our Privacy Policy for the full picture." },
 ];
+
+/** Wrapper that dynamically loads the 3D image before rendering FeatureRow */
+const LazyFeatureRow = ({
+  imageLoader,
+  ...rest
+}: Omit<typeof features[0], 'imageLoader'> & {
+  imageLoader: () => Promise<string>;
+  index: number;
+  reverse: boolean;
+}) => {
+  const [imageSrc, setImageSrc] = useState<string>('');
+
+  useEffect(() => {
+    imageLoader().then(setImageSrc);
+  }, [imageLoader]);
+
+  if (!imageSrc) return <div className="h-[280px] md:h-[400px]" />;
+
+  return (
+    <Suspense fallback={<div className="h-[280px] md:h-[400px]" />}>
+      <FeatureRow {...rest} image={imageSrc} />
+    </Suspense>
+  );
+};
 
 const Index = () => {
   const [authOpen, setAuthOpen] = useState(false);
@@ -170,10 +197,14 @@ const Index = () => {
       <main className="flex-1">
         <HeroBrutalist onAuthClick={() => setAuthOpen(true)} />
 
+        {/* Suspense boundary 1: Problem + Solution (immediately after hero) */}
         <Suspense fallback={<div className="h-32" />}>
           <ProblemCollage />
           <SolutionSection />
+        </Suspense>
 
+        {/* Suspense boundary 2: Features + HowItWorks + Comparison (mid-page) */}
+        <Suspense fallback={<div className="h-32" />}>
           {/* Features — zigzag */}
           <section className="py-16 md:py-28 px-4">
             <div className="container-wide">
@@ -187,11 +218,19 @@ const Index = () => {
               </div>
               <div className="space-y-20 md:space-y-32 max-w-6xl mx-auto">
                 {features.map((f, i) => (
-                  <FeatureRow
+                  <LazyFeatureRow
                     key={f.eyebrow}
                     index={i}
                     reverse={i % 2 === 1}
-                    {...f}
+                    imageLoader={f.imageLoader}
+                    eyebrow={f.eyebrow}
+                    title={f.title}
+                    description={f.description}
+                    bullets={f.bullets}
+                    ctaLabel={f.ctaLabel}
+                    ctaHref={f.ctaHref}
+                    imageAlt={f.imageAlt}
+                    accent={f.accent}
                   />
                 ))}
               </div>
@@ -200,6 +239,10 @@ const Index = () => {
 
           <HowItWorksBrutalist />
           <ComparisonTable />
+        </Suspense>
+
+        {/* Suspense boundary 3: Stats + Roadmap + FAQ + CTA (bottom of page) */}
+        <Suspense fallback={<div className="h-32" />}>
           <AnimatedStats />
           <Roadmap />
 
@@ -260,9 +303,15 @@ const Index = () => {
         </Suspense>
       </main>
 
-      <Footer />
-      <BottomNav />
-      <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} />
+      <Suspense fallback={null}>
+        <Footer />
+        <BottomNav />
+      </Suspense>
+      {authOpen && (
+        <Suspense fallback={null}>
+          <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} />
+        </Suspense>
+      )}
     </div>
   );
 };

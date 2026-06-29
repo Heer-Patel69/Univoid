@@ -65,6 +65,7 @@ export const Floating3D = ({
         alt={alt}
         loading={eager ? "eager" : "lazy"}
         fetchPriority={eager ? "high" : "auto"}
+        decoding={eager ? "sync" : "async"}
         width={1024}
         height={1024}
         draggable={false}
