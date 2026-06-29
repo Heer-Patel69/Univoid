@@ -1,392 +1,270 @@
-import { useState, useEffect, useRef, lazy, Suspense, memo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect, lazy, Suspense } from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { BottomNav } from "@/components/layout/BottomNav";
 import AuthModal from "@/components/auth/AuthModal";
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRoleRedirect } from "@/hooks/useRoleRedirect";
-import { ArrowRight, FileText, Users, BookOpen, Bell, Library, Calendar, Puzzle, Repeat, LogIn, UserCheck, Map, Zap, CheckCircle, Plus, Minus } from "lucide-react";
 import SEOHead from "@/components/common/SEOHead";
-import { cn } from "@/lib/utils";
 
-// Lazy load heavy decorative components
-const FloatingDoodles = lazy(() => import("@/components/common/FloatingDoodles"));
+import HeroBrutalist from "@/components/landing/HeroBrutalist";
+import FeatureRow from "@/components/landing/FeatureRow";
 
-// Simple fade-in section - replaces heavy AnimatedSection for critical path
-const Section = memo(({ children, className, delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) => (
-  <div 
-    className={cn("animate-fade-in fill-mode-forwards", className)} 
-    style={{ 
-      animationDelay: `${delay}ms`,
-      opacity: 0, // Start invisible, animation will reveal
-    }}
-  >
-    {children}
-  </div>
-));
-Section.displayName = "Section";
+// 3D assets used inline in this file (feature rows)
+import folder from "@/assets/3d-folder.png";
+import ticket from "@/assets/3d-ticket.png";
+import books from "@/assets/3d-books.png";
+import handshake from "@/assets/3d-handshake.png";
+import community from "@/assets/3d-community.png";
+
+// Below-fold sections lazy-loaded for fast LCP
+const ProblemCollage = lazy(() => import("@/components/landing/ProblemCollage"));
+const SolutionSection = lazy(() => import("@/components/landing/SolutionSection"));
+const HowItWorksBrutalist = lazy(() => import("@/components/landing/HowItWorksBrutalist"));
+const ComparisonTable = lazy(() => import("@/components/landing/ComparisonTable"));
+const AnimatedStats = lazy(() => import("@/components/landing/AnimatedStats"));
+const Roadmap = lazy(() => import("@/components/landing/Roadmap"));
+const FinalCTABrutalist = lazy(() => import("@/components/landing/FinalCTABrutalist"));
+
+const features = [
+  {
+    eyebrow: "Study Materials",
+    title: "Notes that actually match your syllabus.",
+    description:
+      "Find verified PDFs, handwritten notes, and previous-year papers — filtered to your branch, semester, and college.",
+    bullets: [
+      "Branch-aware feed, no random spam",
+      "Upload your own and help juniors",
+      "One-tap preview & download",
+    ],
+    ctaLabel: "Browse materials",
+    ctaHref: "/materials",
+    image: folder,
+    imageAlt: "3D folder of study materials",
+    accent: "bg-pastel-yellow",
+  },
+  {
+    eyebrow: "Events",
+    title: "Never miss a hackathon or fest again.",
+    description:
+      "Discover hackathons, workshops, cultural fests, and tech talks happening across Indian colleges — with one-click registration.",
+    bullets: [
+      "Verified college events only",
+      "Buy tickets in seconds (UPI)",
+      "Live notifications for events you care about",
+    ],
+    ctaLabel: "See events",
+    ctaHref: "/events",
+    image: ticket,
+    imageAlt: "3D event ticket",
+    accent: "bg-pastel-blue",
+  },
+  {
+    eyebrow: "Book Exchange",
+    title: "Buy & sell textbooks with students nearby.",
+    description:
+      "Skip the overpriced shops. List the books you're done with, find what you need from seniors — directly, no middlemen.",
+    bullets: [
+      "Real photos, real prices, real students",
+      "Filter by college and course",
+      "Chat directly to seller",
+    ],
+    ctaLabel: "Explore books",
+    ctaHref: "/books",
+    image: books,
+    imageAlt: "3D stack of textbooks",
+    accent: "bg-pastel-pink",
+  },
+  {
+    eyebrow: "Project Partners",
+    title: "Find teammates who actually ship.",
+    description:
+      "Post your project, pick the stack, and connect with students who want to build — for hackathons, side projects, or your final year.",
+    bullets: [
+      "Filter by skills and interests",
+      "Send invites, manage your team",
+      "Showcase what you've built",
+    ],
+    ctaLabel: "Find a partner",
+    ctaHref: "/projects",
+    image: handshake,
+    imageAlt: "3D puzzle pieces connecting",
+    accent: "bg-pastel-green",
+  },
+  {
+    eyebrow: "Community",
+    title: "Your campus, online.",
+    description:
+      "Discover what students at your college and beyond are building, sharing, and attending — and grow your own network.",
+    bullets: [
+      "Verified college identity",
+      "Real opportunities, real people",
+      "No bots, no spam, no doom-scroll",
+    ],
+    ctaLabel: "Join the community",
+    ctaHref: "/colleges",
+    image: community,
+    imageAlt: "3D group of student avatars",
+    accent: "bg-pastel-purple",
+  },
+];
+
+const faqs = [
+  { q: "Is UniVoid free?", a: "Yes. UniVoid is completely free for students — sign in with Google and start exploring." },
+  { q: "Which colleges are supported?", a: "Every Indian college. Pick yours during onboarding and we'll personalise your feed instantly." },
+  { q: "Can I upload my own study material?", a: "Absolutely. Upload notes to help juniors, earn recognition, and climb the leaderboard." },
+  { q: "How does Book Exchange work?", a: "List a book in 30 seconds with photos. Buyers near your college contact you directly — UniVoid takes zero commission." },
+  { q: "Are events on UniVoid verified?", a: "Yes. Every event listing is reviewed before going live, so you never end up at a fake hackathon." },
+  { q: "How do I find project teammates?", a: "Post your idea with the stack and skills you need. Students who match can apply, and you choose who joins." },
+  { q: "Will I get spammed with notifications?", a: "No. You control everything — only events, materials, and projects you've opted into will ping you." },
+  { q: "Is my data safe?", a: "Yes. We use Google sign-in, strict access controls, and never sell student data. Read our Privacy Policy for the full picture." },
+];
 
 const Index = () => {
   const [authOpen, setAuthOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [scrollY, setScrollY] = useState(0);
-  const heroRef = useRef<HTMLElement>(null);
-  const {
-    user,
-    isLoading
-  } = useAuth();
+  const { user, isLoading } = useAuth();
   const navigate = useNavigate();
-  const {
-    getRedirectPath
-  } = useRoleRedirect();
+  const { getRedirectPath } = useRoleRedirect();
+
   useEffect(() => {
     if (!isLoading && user) {
-      navigate(getRedirectPath(), {
-        replace: true
-      });
+      navigate(getRedirectPath(), { replace: true });
     }
   }, [user, isLoading, navigate, getRedirectPath]);
-  useEffect(() => {
-    // PERFORMANCE: Skip parallax on mobile for faster paint
-    const isMobile = window.innerWidth < 768;
-    if (isMobile) return;
 
-    const handleScroll = () => {
-      if (heroRef.current) {
-        const heroBottom = heroRef.current.offsetHeight;
-        if (window.scrollY < heroBottom) {
-          setScrollY(window.scrollY);
-        }
-      }
-    };
-    window.addEventListener('scroll', handleScroll, {
-      passive: true
-    });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-  if (!isLoading && user) {
-    return null;
-  }
-  const trustItems = [{
-    icon: FileText,
-    label: "Student-shared Study Materials"
-  }, {
-    icon: Users,
-    label: "Projects & Tasks"
-  }, {
-    icon: BookOpen,
-    label: "Book Exchange"
-  }, {
-    icon: Bell,
-    label: "Real-time Notifications"
-  }];
-  const features = [{
-    icon: Library,
-    title: "Study Materials",
-    description: "Find and download notes, PDFs, and resources shared by students."
-  }, {
-    icon: Calendar,
-    title: "Events",
-    description: "Discover campus events, workshops, and hackathons."
-  }, {
-    icon: Puzzle,
-    title: "Projects Partner",
-    description: "Collaborate on real projects or find teammates."
-  }, {
-    icon: Repeat,
-    title: "Book Exchange",
-    description: "Buy, sell, or exchange books directly with students."
-  }];
-  const steps = [{
-    icon: LogIn,
-    title: "Sign in with Google",
-    description: "Quick and secure authentication"
-  }, {
-    icon: UserCheck,
-    title: "Complete your profile",
-    description: "Tell us about your college and interests"
-  }, {
-    icon: Map,
-    title: "Get a guided tour",
-    description: "Learn how to use all features"
-  }, {
-    icon: Zap,
-    title: "Start learning & collaborating",
-    description: "Access everything you need"
-  }];
-  const benefits = ["One platform instead of many", "Personalized content (not random feeds)", "Made for Indian colleges", "Works smoothly on mobile & desktop", "No spam — only relevant notifications"];
-  const faqs = [{
-    q: "Is UniVoid free?",
-    a: "Yes, UniVoid is completely free for students."
-  }, {
-    q: "Can I upload my own study material?",
-    a: "Yes. Upload notes to help others and earn recognition."
-  }, {
-    q: "How does Book Exchange work?",
-    a: "List books and connect directly with students near you."
-  }, {
-    q: "Will I get notifications?",
-    a: "Yes, for events and tasks relevant to you."
-  }, {
-    q: "Is profile completion mandatory?",
-    a: "Yes. It helps personalize content for you."
-  }];
-  return <div className="min-h-screen flex flex-col bg-sketch pb-24 md:pb-0 paper-texture relative overflow-x-hidden">
-      {/* Global floating doodles - hidden on mobile to prevent overlap */}
-      <Suspense fallback={null}>
-        <FloatingDoodles density="global" section="full" className="fixed inset-0 z-0 hidden md:block" />
-      </Suspense>
-    <SEOHead
-      title="UniVoid - Everything a College Student Needs"
-      description="Study materials, events, projects, tasks, and book exchange — all personalized for Indian students. Access notes, find teammates, and explore opportunities."
-      url="/"
-      keywords={['student platform', 'study materials', 'college events', 'hackathons', 'book exchange', 'project partner', 'UniVoid', 'Indian students']}
-      structuredData={{
-        "@type": "WebSite",
-        "name": "UniVoid",
-        "url": "https://univoid.tech",
-        "description": "India's largest student learning platform",
-        "potentialAction": {
-          "@type": "SearchAction",
-          "target": "https://univoid.tech/materials?search={search_term_string}",
-          "query-input": "required name=search_term_string"
-        }
-      }}
-    />
-    <Header onAuthClick={() => setAuthOpen(true)} />
+  if (!isLoading && user) return null;
 
-    <main className="flex-1">
-      {/* Hero Section with Parallax */}
-      <section ref={heroRef} className="py-10 md:py-24 lg:py-32 relative overflow-hidden z-10 px-4 md:px-0">
+  return (
+    <div className="min-h-screen flex flex-col bg-background pb-24 md:pb-0 paper-texture relative overflow-x-hidden">
+      <SEOHead
+        title="UniVoid — The Operating System for College Life"
+        description="Notes, events, books, projects, and your campus community — one app, zero chaos. Personalised for Indian college students."
+        url="/"
+        keywords={[
+          "student platform",
+          "study materials",
+          "college events",
+          "hackathons",
+          "book exchange",
+          "project partner",
+          "UniVoid",
+          "Indian college students",
+        ]}
+        structuredData={{
+          "@type": "WebSite",
+          "name": "UniVoid",
+          "url": "https://univoid.tech",
+          "description": "The operating system for college life — study materials, events, books, projects, community.",
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://univoid.tech/materials?search={search_term_string}",
+            "query-input": "required name=search_term_string",
+          },
+        }}
+      />
 
-        {/* Parallax Background Elements - desktop only */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden hidden md:block">
-          <div className="absolute -top-20 -left-20 w-64 h-64 rounded-full bg-primary/10 blur-3xl" style={{
-            transform: `translateY(${scrollY * 0.3}px)`
-          }} />
-          <div className="absolute top-1/4 -right-32 w-80 h-80 rounded-full bg-accent/20 blur-3xl" style={{
-            transform: `translateY(${scrollY * 0.2}px)`
-          }} />
-          <div className="absolute bottom-0 left-1/4 w-48 h-48 rounded-full bg-pastel-purple/30 blur-2xl" style={{
-            transform: `translateY(${scrollY * 0.4}px)`
-          }} />
-          <svg className="absolute top-20 left-10 w-16 h-16 text-foreground/5" style={{
-            transform: `translateY(${scrollY * 0.15}px) rotate(${scrollY * 0.02}deg)`
-          }} viewBox="0 0 100 100">
-            <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="8 4" />
-          </svg>
-          <svg className="absolute top-40 right-20 w-20 h-20 text-foreground/5" style={{
-            transform: `translateY(${scrollY * 0.25}px) rotate(-${scrollY * 0.03}deg)`
-          }} viewBox="0 0 100 100">
-            <rect x="20" y="20" width="60" height="60" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="10 5" />
-          </svg>
-        </div>
+      <Header onAuthClick={() => setAuthOpen(true)} />
 
-        <div className="container-wide relative z-10">
-          <div className="max-w-4xl mx-auto text-center">
-            <h1 className="font-display text-foreground mb-4 md:mb-6 text-balance text-3xl md:text-5xl lg:text-6xl font-extrabold leading-tight">
-              Everything a College Student Needs — In One Place
-            </h1>
-            <p className="text-base md:text-xl text-muted-foreground mb-8 md:mb-10 max-w-3xl mx-auto leading-relaxed">
-              Study materials, events, projects, tasks, and book exchange — personalized for Indian students.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
-              <Button size="lg" onClick={() => setAuthOpen(true)} className="btn-sketch btn-sketch-primary font-semibold text-base h-12 md:h-14 px-6 md:px-8 w-full sm:w-auto">
-                <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
-                  <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                  <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                  <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                  <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                </svg>
-                Get Started with Google
-              </Button>
-              <Link to="/materials" className="w-full sm:w-auto">
-                <Button variant="outline" size="lg" className="btn-sketch btn-sketch-secondary font-semibold text-base h-12 md:h-14 px-6 md:px-8 w-full">
-                  Explore Features
-                  <ArrowRight className="w-5 h-5 ml-2" strokeWidth={2} />
-                </Button>
-              </Link>
+      <main className="flex-1">
+        <HeroBrutalist onAuthClick={() => setAuthOpen(true)} />
+
+        <Suspense fallback={<div className="h-32" />}>
+          <ProblemCollage />
+          <SolutionSection />
+
+          {/* Features — zigzag */}
+          <section className="py-16 md:py-28 px-4">
+            <div className="container-wide">
+              <div className="text-center max-w-2xl mx-auto mb-14 md:mb-20">
+                <span className="inline-block text-xs font-bold tracking-widest uppercase px-3 py-1.5 rounded-full bg-secondary border-2 border-sketch-border shadow-sketch-sm mb-5">
+                  Everything you need
+                </span>
+                <h2 className="font-display font-extrabold text-3xl md:text-5xl text-foreground leading-tight">
+                  Five tools. One login. Zero chaos.
+                </h2>
+              </div>
+              <div className="space-y-20 md:space-y-32 max-w-6xl mx-auto">
+                {features.map((f, i) => (
+                  <FeatureRow
+                    key={f.eyebrow}
+                    index={i}
+                    reverse={i % 2 === 1}
+                    {...f}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
-        </div>
-      </section>
+          </section>
 
-      {/* Trust Strip */}
-      <Section delay={100}>
-        <section className="py-8 border-y-2 border-sketch-border bg-card">
-          <div className="container-wide">
-            <p className="text-center text-sm font-semibold text-muted-foreground mb-6 tracking-wide uppercase">
-              Built by students, for students.
-            </p>
-            <div className="flex flex-wrap justify-center gap-6 md:gap-10">
-              {trustItems.map((item, index) => <div key={index} className="flex items-center gap-2 text-foreground">
-                <item.icon className="w-5 h-5" strokeWidth={2} />
-                <span className="text-sm font-medium">{item.label}</span>
-              </div>)}
-            </div>
-          </div>
-        </section>
-      </Section>
+          <HowItWorksBrutalist />
+          <ComparisonTable />
+          <AnimatedStats />
+          <Roadmap />
 
-      {/* What is UniVoid */}
-      <section className="py-16 md:py-24 relative overflow-hidden">
-        <div className="container-wide relative z-10">
-          <Section className="max-w-3xl mx-auto text-center">
-            <h2 className="font-display text-foreground mb-6 text-3xl md:text-4xl font-bold">
-              What is UniVoid?
-            </h2>
-            <p className="text-muted-foreground leading-relaxed text-lg md:text-xl mt-4">
-              UniVoid is a student-first platform designed to simplify college life. Instead of using multiple apps and websites, UniVoid brings everything students actually need into one guided and personalized experience. No clutter. No confusion. Just useful features.
-            </p>
-          </Section>
-        </div>
-      </section>
-
-      {/* Core Features */}
-      <section className="py-16 md:py-24 bg-card border-y-2 border-sketch-border relative overflow-hidden">
-
-        <div className="container-wide relative z-10">
-          <Section className="text-center mb-12">
-            <h2 className="font-display text-foreground mb-4 text-3xl md:text-4xl font-bold">
-              Core Features
-            </h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Everything you need to succeed in college, organized in one place.
-            </p>
-          </Section>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((feature, index) => (
-              <Section key={index} delay={index * 50}>
-                <div className="card-sketch-hover group h-full cursor-pointer p-6">
-                  <div className="w-12 h-12 rounded-xl bg-sketch border-2 border-sketch-border shadow-sketch-sm flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 group-hover:bg-secondary">
-                    <feature.icon className="w-6 h-6 text-foreground transition-all duration-300" strokeWidth={2} />
-                  </div>
-                  <h3 className="font-display font-bold text-foreground text-lg mb-2">{feature.title}</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">{feature.description}</p>
+          {/* FAQ */}
+          <section className="py-16 md:py-28 px-4">
+            <div className="container-wide">
+              <div className="max-w-3xl mx-auto">
+                <div className="text-center mb-10 md:mb-14">
+                  <span className="inline-block text-xs font-bold tracking-widest uppercase px-3 py-1.5 rounded-full bg-secondary border-2 border-sketch-border shadow-sketch-sm mb-5">
+                    FAQ
+                  </span>
+                  <h2 className="font-display font-extrabold text-3xl md:text-5xl text-foreground leading-tight">
+                    Everything you wanted to ask.
+                  </h2>
                 </div>
-              </Section>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section className="py-16 md:py-24 relative overflow-hidden">
-        <div className="container-wide relative z-10">
-          <Section className="text-center mb-12">
-            <h2 className="font-display text-foreground mb-4 text-3xl md:text-4xl font-bold">
-              How It Works
-            </h2>
-          </Section>
-          <div className="max-w-3xl mx-auto">
-            <div className="space-y-6">
-              {steps.map((step, index) => (
-                <Section key={index} delay={index * 50}>
-                  <div className="flex items-start gap-6 group cursor-pointer">
-                    <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-card border-2 border-sketch-border shadow-sketch flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:shadow-sketch-sm group-hover:bg-primary/10">
-                      <step.icon className="w-6 h-6 text-foreground transition-transform duration-300 group-hover:scale-110" strokeWidth={2} />
-                    </div>
-                    <div className="flex-1 pt-2 transition-transform duration-200 group-hover:translate-x-1">
-                      <div className="flex items-center gap-3 mb-1">
-                        <span className="text-xs font-bold text-muted-foreground bg-secondary px-2 py-0.5 rounded-full transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-                          Step {index + 1}
-                        </span>
-                      </div>
-                      <h3 className="font-display font-bold text-foreground text-lg">{step.title}</h3>
-                      <p className="text-muted-foreground text-sm">{step.description}</p>
-                    </div>
-                  </div>
-                </Section>
-              ))}
+                <div className="space-y-3">
+                  {faqs.map((f, i) => {
+                    const open = openFaq === i;
+                    return (
+                      <button
+                        key={f.q}
+                        onClick={() => setOpenFaq(open ? null : i)}
+                        className="w-full text-left p-5 md:p-6 rounded-2xl bg-card border-2 border-sketch-border shadow-sketch hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-sketch-lg transition-all"
+                        aria-expanded={open}
+                      >
+                        <div className="flex items-center justify-between gap-4">
+                          <h3 className="font-display font-bold text-base md:text-lg text-foreground">
+                            {f.q}
+                          </h3>
+                          <span
+                            className={`flex-shrink-0 w-9 h-9 rounded-lg bg-secondary border-2 border-sketch-border flex items-center justify-center font-extrabold text-xl leading-none transition-transform ${
+                              open ? "rotate-45" : ""
+                            }`}
+                          >
+                            +
+                          </span>
+                        </div>
+                        <div
+                          className={`grid transition-[grid-template-rows,opacity] duration-300 ${
+                            open ? "grid-rows-[1fr] opacity-100 mt-3" : "grid-rows-[0fr] opacity-0"
+                          }`}
+                        >
+                          <div className="overflow-hidden">
+                            <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+                              {f.a}
+                            </p>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      </section>
+          </section>
 
-      {/* Why Students Use UniVoid */}
-      <section className="py-16 md:py-24 bg-card border-y-2 border-sketch-border relative overflow-hidden">
-        <div className="container-wide relative z-10">
-          <div className="max-w-3xl mx-auto">
-            <Section className="mb-8">
-              <h2 className="font-display text-foreground text-3xl md:text-4xl font-bold text-center">
-                Why Students Use UniVoid
-              </h2>
-            </Section>
-            <div className="space-y-4">
-              {benefits.map((benefit, index) => (
-                <Section key={index} delay={index * 50}>
-                  <div className="flex items-center gap-4 p-4 bg-sketch rounded-xl border-2 border-sketch-border shadow-sketch-sm group cursor-pointer transition-all duration-200 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-sketch">
-                    <div className="w-8 h-8 rounded-full bg-card border-2 border-sketch-border flex items-center justify-center flex-shrink-0 transition-all duration-300 group-hover:scale-110 group-hover:bg-success/20 group-hover:border-success">
-                      <CheckCircle className="w-5 h-5 text-foreground transition-colors duration-300 group-hover:text-success" strokeWidth={2} />
-                    </div>
-                    <span className="font-medium text-foreground transition-transform duration-200 group-hover:translate-x-1">{benefit}</span>
-                  </div>
-                </Section>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+          <FinalCTABrutalist onAuthClick={() => setAuthOpen(true)} />
+        </Suspense>
+      </main>
 
-      {/* FAQ */}
-      <section className="py-16 md:py-24">
-        <div className="container-wide">
-          <div className="max-w-3xl mx-auto">
-            <Section className="mb-8">
-              <h2 className="font-display text-foreground text-3xl md:text-4xl font-bold text-center">
-                Frequently Asked Questions
-              </h2>
-            </Section>
-            <div className="space-y-4">
-              {faqs.map((faq, index) => (
-                <Section key={index} delay={index * 30}>
-                  <div className="card-sketch cursor-pointer" onClick={() => setOpenFaq(openFaq === index ? null : index)}>
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-display font-bold text-foreground">{faq.q}</h3>
-                      <div className="w-8 h-8 rounded-lg bg-sketch flex items-center justify-center flex-shrink-0 ml-4">
-                        {openFaq === index ? <Minus className="w-4 h-4 text-foreground" strokeWidth={2} /> : <Plus className="w-4 h-4 text-foreground" strokeWidth={2} />}
-                      </div>
-                    </div>
-                    <div className={`overflow-hidden transition-all duration-300 ${openFaq === index ? 'max-h-40 opacity-100 mt-4' : 'max-h-0 opacity-0'}`}>
-                      <p className="text-muted-foreground text-sm leading-relaxed">{faq.a}</p>
-                    </div>
-                  </div>
-                </Section>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Final CTA */}
-      <Section>
-        <section className="py-16 md:py-24 bg-card border-y-2 border-sketch-border">
-          <div className="container-wide">
-            <div className="text-center max-w-2xl mx-auto">
-              <h2 className="font-display text-foreground mb-6 text-3xl md:text-4xl font-bold">
-                Start Your Smarter College Journey Today
-              </h2>
-              <Button size="lg" onClick={() => setAuthOpen(true)} className="btn-sketch btn-sketch-primary font-semibold text-base h-14 px-8">
-                <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
-                  <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                  <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                  <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                  <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                </svg>
-                Get Started with Google
-              </Button>
-            </div>
-          </div>
-        </section>
-      </Section>
-    </main>
-
-    <Footer />
-    <BottomNav />
-
-    <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} />
-  </div>;
+      <Footer />
+      <BottomNav />
+      <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} />
+    </div>
+  );
 };
+
 export default Index;
