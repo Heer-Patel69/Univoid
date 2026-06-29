@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toDisplayUrl } from "@/lib/storageProxy";
+import { validateFileUpload } from "@/lib/fileValidation";
 
 const EditOrganizerProfile = () => {
   const { user } = useAuth();
@@ -60,10 +61,11 @@ const EditOrganizerProfile = () => {
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
+      const validationError = validateFileUpload(file, 'image');
+      if (validationError) {
         toast({
-          title: "File too large",
-          description: "Logo must be under 5MB",
+          title: "Invalid file",
+          description: validationError,
           variant: "destructive",
         });
         return;

@@ -9,8 +9,10 @@ import { Textarea } from "@/components/ui/textarea";
 import RichTextarea from "@/components/common/RichTextarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { validateFileUpload } from "@/lib/fileValidation";
 import { supabase } from "@/integrations/supabase/client";
 import AuthModal from "@/components/auth/AuthModal";
 import { FormBuilder, type FormBuilderField } from "@/components/events/FormBuilder";
@@ -165,6 +167,14 @@ const CreateEvent = () => {
   const [uploading, setUploading] = useState(false);
 
   const handleQrFileChange = async (file: File | null) => {
+    if (file) {
+      const validationError = validateFileUpload(file, 'image');
+      if (validationError) {
+        toast({ title: "Invalid file", description: validationError, variant: "destructive" });
+        return;
+      }
+    }
+    
     setQrFile(file);
     if (file && user) {
       const upiId = await scanUpiFromFile(file, user.id);
@@ -202,17 +212,9 @@ const CreateEvent = () => {
       return;
     }
 
-    // Check file type
-    if (!file.type.startsWith('image/')) {
-      setFlyerError('Please upload an image file');
-      setFlyerFile(null);
-      e.target.value = ''; // Reset input
-      return;
-    }
-
-    // Check file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      setFlyerError('Image must be smaller than 10MB');
+    const validationError = validateFileUpload(file, 'image');
+    if (validationError) {
+      setFlyerError(validationError);
       setFlyerFile(null);
       e.target.value = '';
       return;

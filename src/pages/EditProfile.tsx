@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { NotificationPreferences } from "@/components/dashboard/NotificationPreferences";
 import { SearchableSelect } from "@/components/common/SearchableSelect";
 import { useMobileValidation } from "@/hooks/useMobileValidation";
+import { validateFileUpload } from "@/lib/fileValidation";
 
 const DEGREE_OPTIONS = [
   "B.Tech", "B.E", "B.Sc", "B.Com", "B.A", "BBA", "BCA", "B.Pharm", "MBBS", "LLB",
@@ -106,13 +107,9 @@ const EditProfile = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please select an image file");
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image must be less than 5MB");
+    const validationError = validateFileUpload(file, 'image');
+    if (validationError) {
+      toast.error(validationError);
       return;
     }
 

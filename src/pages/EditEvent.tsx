@@ -21,6 +21,7 @@ import { DeleteEventDialog } from "@/components/organizer/DeleteEventDialog";
 import { ArrowLeft, Save, Image, Loader2, Sparkles, Clock } from "lucide-react";
 import { useUpiScanner } from "@/hooks/useUpiScanner";
 import StateCitySelect from "@/components/common/StateCitySelect";
+import { validateFileUpload } from "@/lib/fileValidation";
 
 import MultiSelectPicker from "@/components/events/MultiSelectPicker";
 import { parseMultiValue, joinMultiValue } from "@/constants/eventOptions";
@@ -65,6 +66,13 @@ const EditEvent = () => {
   const [qrFile, setQrFile] = useState<File | null>(null);
 
   const handleQrFileChange = async (file: File | null) => {
+    if (file) {
+      const validationError = validateFileUpload(file, 'image');
+      if (validationError) {
+        toast({ title: "Invalid file", description: validationError, variant: "destructive" });
+        return;
+      }
+    }
     setQrFile(file);
     if (file && user) {
       const upiId = await scanUpiFromFile(file, user.id);
@@ -304,7 +312,17 @@ const EditEvent = () => {
                   <img src={event.flyer_url} alt="Current flyer" className="w-32 h-20 object-contain rounded-lg mb-2" />
                 )}
                 <div className="border-2 border-dashed rounded-xl p-4 text-center">
-                  <Input type="file" accept="image/*" onChange={(e) => setFlyerFile(e.target.files?.[0] || null)} className="hidden" id="flyer" />
+                  <Input type="file" accept="image/*" onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    if (file) {
+                      const validationError = validateFileUpload(file, 'image');
+                      if (validationError) {
+                        toast({ title: "Invalid file", description: validationError, variant: "destructive" });
+                        return;
+                      }
+                    }
+                    setFlyerFile(file);
+                  }} className="hidden" id="flyer" />
                   <label htmlFor="flyer" className="cursor-pointer flex flex-col items-center gap-2">
                     <Image className="w-8 h-8 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">{flyerFile ? flyerFile.name : "Upload new flyer"}</span>

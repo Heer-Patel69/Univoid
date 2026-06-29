@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Upload, AlertCircle } from "lucide-react";
 import { fetchEventFormFields, type FormField } from "@/services/eventFormService";
 import { supabase } from "@/integrations/supabase/client";
+import { validateFileUpload } from "@/lib/fileValidation";
 
 interface DynamicRegistrationFormProps {
   eventId: string;
@@ -363,8 +364,24 @@ const DynamicRegistrationForm = ({
               type="file"
               onChange={(e) => {
                 const file = e.target.files?.[0] || null;
+                if (file) {
+                  const validationError = validateFileUpload(file, 'any');
+                  if (validationError) {
+                    updateFieldValue(field.id, '');
+                    setFieldValues(prev => ({
+                      ...prev,
+                      [field.id]: { value: '', error: validationError }
+                    }));
+                    return;
+                  }
+                }
                 setFileUploads(prev => ({ ...prev, [field.id]: file }));
                 updateFieldValue(field.id, file?.name || '');
+                // Clear any previous error
+                setFieldValues(prev => ({
+                  ...prev,
+                  [field.id]: { value: file?.name || '', error: null }
+                }));
               }}
               className="hidden"
               id={`file-${field.id}`}

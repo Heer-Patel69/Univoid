@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import AuthModal from "@/components/auth/AuthModal";
+import { validateFileUpload } from "@/lib/fileValidation";
 import { Sparkles, Upload, Clock, CheckCircle, XCircle, Calendar, Users, Ticket, ArrowLeft } from "lucide-react";
 
 const BecomeOrganizer = () => {
@@ -213,7 +214,17 @@ const BecomeOrganizer = () => {
                   <Input
                     type="file"
                     accept="image/*,.pdf"
-                    onChange={(e) => setProofFile(e.target.files?.[0] || null)}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const validationError = validateFileUpload(file, 'any'); // We allow image or pdf
+                        if (validationError) {
+                          toast({ title: "Invalid file", description: validationError, variant: "destructive" });
+                          return;
+                        }
+                        setProofFile(file);
+                      }
+                    }}
                     className="hidden"
                     id="proof-file"
                   />

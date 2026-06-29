@@ -13,10 +13,10 @@ verify_jwt = false
 verify_jwt = true
 
 [functions.send-scholarship-alerts]
-verify_jwt = false
+verify_jwt = true
 
 [functions.send-registration-status-email]
-verify_jwt = false
+verify_jwt = true
 
 [functions.send-admin-invite]
 verify_jwt = true
@@ -31,28 +31,28 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.notify-matching-events]
-verify_jwt = false
+verify_jwt = true
 
 [functions.send-personalized-notification]
-verify_jwt = false
+verify_jwt = true
 
 [functions.compress-pdf]
 verify_jwt = true
 
 [functions.send-web-push]
-verify_jwt = false
+verify_jwt = true
 
 [functions.send-scholarship-reminders]
-verify_jwt = false
+verify_jwt = true
 
 [functions.fetch-india-scholarships]
-verify_jwt = false
+verify_jwt = true
 
 [functions.send-deadline-reminders]
-verify_jwt = false
+verify_jwt = true
 
 [functions.send-registration-email]
-verify_jwt = false
+verify_jwt = true
 
 [functions.sync-to-sheets]
 verify_jwt = true
@@ -73,11 +73,11 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.submit-to-google-indexing]
-verify_jwt = false
+verify_jwt = true
 
 [functions.send-brevo-email]
-verify_jwt = false
+verify_jwt = true
 
 [functions.send-ticket-email]
-verify_jwt = false
+verify_jwt = true
 

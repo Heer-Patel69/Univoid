@@ -1,8 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getCorsHeaders, isCorsPreflightRequest, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
-const ADMIN_EMAIL = "univoid35@gmail.com";
-const SENDER_EMAIL = "UniVoid <no-reply@univoid.in>";
+const ADMIN_EMAIL = Deno.env.get("ADMIN_EMAIL") || "admin@univoid.in";
+const SENDER_EMAIL = Deno.env.get("SENDER_EMAIL") || "UniVoid <no-reply@univoid.in>";
 
 interface ContactEmailPayload {
   name: string;
@@ -13,10 +13,15 @@ interface ContactEmailPayload {
 
 // Basic input sanitization
 function sanitizeInput(input: string, maxLength: number = 500): string {
+  if (!input) return "";
   return input
     .trim()
     .slice(0, maxLength)
-    .replace(/[<>]/g, ""); // Remove potential HTML tags
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 serve(async (req) => {

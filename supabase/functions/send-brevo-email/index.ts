@@ -4,8 +4,8 @@ import { getCorsHeaders, isCorsPreflightRequest, handleCorsPreflightRequest } fr
 
 // Brevo API Configuration
 const BREVO_API_KEY = Deno.env.get("BREVO_API_KEY");
-const SENDER_NAME = "UniVoid";
-const SENDER_EMAIL = "heerpatel1032@gmail.com";
+const SENDER_NAME = Deno.env.get("SENDER_NAME") || "UniVoid";
+const SENDER_EMAIL = Deno.env.get("SENDER_EMAIL") || "no-reply@univoid.in";
 
 // Email types
 type EmailType = 
@@ -25,6 +25,19 @@ interface EmailRequest {
 // Base64 encode for SMTP AUTH
 function base64Encode(str: string): string {
   return btoa(str);
+}
+
+// Basic input sanitization
+function sanitizeInput(input: string, maxLength: number = 500): string {
+  if (!input) return "";
+  return String(input)
+    .trim()
+    .slice(0, maxLength)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 // Send email via Brevo SMTP using raw TCP
@@ -139,7 +152,7 @@ function getEmailTemplate(title: string, content: string, ctaButton?: { text: st
 function generateEmailContent(type: EmailType, data: Record<string, unknown>): { subject: string; html: string } {
   switch (type) {
     case "login_notification": {
-      const userName = data.userName as string || "User";
+      const userName = sanitizeInput(data.userName as string || "User", 100);
       const loginTime = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
       const content = `
         <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">
@@ -167,10 +180,10 @@ function generateEmailContent(type: EmailType, data: Record<string, unknown>): {
     }
 
     case "event_created": {
-      const eventName = data.eventName as string;
-      const eventDate = data.eventDate as string;
-      const eventId = data.eventId as string;
-      const organizerName = data.organizerName as string || "Organizer";
+      const eventName = sanitizeInput(data.eventName as string, 200);
+      const eventDate = sanitizeInput(data.eventDate as string, 100);
+      const eventId = sanitizeInput(data.eventId as string, 100);
+      const organizerName = sanitizeInput(data.organizerName as string || "Organizer", 100);
       const content = `
         <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">
           Hi ${organizerName},
@@ -202,10 +215,10 @@ function generateEmailContent(type: EmailType, data: Record<string, unknown>): {
     }
 
     case "event_registration": {
-      const userName = data.userName as string || "Participant";
-      const eventName = data.eventName as string;
-      const eventDate = data.eventDate as string;
-      const eventLocation = data.eventLocation as string || "TBA";
+      const userName = sanitizeInput(data.userName as string || "Participant", 100);
+      const eventName = sanitizeInput(data.eventName as string, 200);
+      const eventDate = sanitizeInput(data.eventDate as string, 100);
+      const eventLocation = sanitizeInput(data.eventLocation as string || "TBA", 200);
       const isPaid = data.isPaid as boolean;
       const content = `
         <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">
@@ -255,12 +268,12 @@ function generateEmailContent(type: EmailType, data: Record<string, unknown>): {
 
     case "partner_request":
     case "area_request": {
-      const senderName = data.senderName as string;
-      const senderEmail = data.senderEmail as string;
+      const senderName = sanitizeInput(data.senderName as string, 100);
+      const senderEmail = sanitizeInput(data.senderEmail as string, 150);
       const requestType = type === "partner_request" ? "Project Partner" : "Area";
-      const projectName = data.projectName as string || "";
-      const message = data.message as string || "";
-      const recipientName = data.recipientName as string || "User";
+      const projectName = sanitizeInput(data.projectName as string || "", 200);
+      const message = sanitizeInput(data.message as string || "", 2000);
+      const recipientName = sanitizeInput(data.recipientName as string || "User", 100);
       
       const content = `
         <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">

@@ -23,6 +23,7 @@ import {
   Camera, Globe, Loader2, Sparkles, Trophy, ExternalLink
 } from "lucide-react";
 import confetti from "canvas-confetti";
+import { validateFileUpload } from "@/lib/fileValidation";
 
 // Step configurations
 const STEPS = [
@@ -211,10 +212,11 @@ const OrganizerOnboarding = () => {
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
+      const validationError = validateFileUpload(file, 'image');
+      if (validationError) {
         toast({
-          title: "File too large",
-          description: "Logo must be under 5MB",
+          title: "Invalid file",
+          description: validationError,
           variant: "destructive",
         });
         return;

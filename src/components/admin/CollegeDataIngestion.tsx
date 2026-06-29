@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Upload, CheckCircle, XCircle, Loader2, Database } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { validateFileUpload } from "@/lib/fileValidation";
 
 interface IngestionStats {
   total: number;
@@ -27,6 +28,12 @@ export default function CollegeDataIngestion() {
 
     if (!file.name.endsWith(".json")) {
       toast.error("Please upload a JSON file");
+      return;
+    }
+
+    const validationError = validateFileUpload(file, 'any');
+    if (validationError) {
+      toast.error(validationError);
       return;
     }
 

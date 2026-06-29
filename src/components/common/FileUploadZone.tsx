@@ -3,6 +3,7 @@ import { Upload, FileText, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
+import { validateFileUpload } from "@/lib/fileValidation";
 
 interface FileUploadZoneProps {
   onFileSelect: (file: File) => void;
@@ -52,13 +53,13 @@ export function FileUploadZone({
   }, []);
 
   const validateFile = useCallback((selectedFile: File): boolean => {
-    // Check video files first
-    const videoExtensions = ['mp4', 'mkv', 'avi', 'mov', 'wmv', 'flv', 'webm'];
-    const ext = selectedFile.name.split('.').pop()?.toLowerCase() || '';
-    if (videoExtensions.includes(ext)) {
-      toast.error("Video files are not allowed. Please upload documents or images.");
+    const validationError = validateFileUpload(selectedFile, 'any');
+    if (validationError) {
+      toast.error(validationError);
       return false;
     }
+
+    // Check video files first
     
     // Check file size with clear error message
     const maxSizeBytes = maxSizeMB * 1024 * 1024;

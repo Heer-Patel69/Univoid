@@ -18,6 +18,7 @@ import { useMobileValidation } from "@/hooks/useMobileValidation";
 import { useRateLimiter } from "@/hooks/useRateLimiter";
 import UpsellScreen from "@/components/events/UpsellScreen";
 import { toDisplayUrl } from "@/lib/storageProxy";
+import { validateFileUpload } from "@/lib/fileValidation";
 import {
   fetchEventUpsells,
   fetchUpsellSettings,
@@ -306,20 +307,11 @@ const FastRegister = () => {
   const handlePaymentFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
+      const validationError = validateFileUpload(file, 'image');
+      if (validationError) {
         toast({
           title: "Invalid file",
-          description: "Please upload an image file",
-          variant: "destructive",
-        });
-        return;
-      }
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        toast({
-          title: "File too large",
-          description: "Please upload an image smaller than 5MB",
+          description: validationError,
           variant: "destructive",
         });
         return;

@@ -461,7 +461,17 @@ const EventDetail = () => {
       <div className="space-y-2">
         <Label>Upload Payment Screenshot *</Label>
         <div className="border-2 border-dashed rounded-xl p-4 text-center">
-          <Input type="file" accept="image/*" onChange={(e) => setPaymentScreenshot(e.target.files?.[0] || null)} className="hidden" id="payment-screenshot" />
+          <Input type="file" accept="image/*" onChange={(e) => {
+            const file = e.target.files?.[0] || null;
+            if (file) {
+              const validationError = validateFileUpload(file, 'image');
+              if (validationError) {
+                toast({ title: "Invalid file", description: validationError, variant: "destructive" });
+                return;
+              }
+            }
+            setPaymentScreenshot(file);
+          }} className="hidden" id="payment-screenshot" />
           <label htmlFor="payment-screenshot" className="cursor-pointer flex flex-col items-center gap-2">
             <Upload className="w-8 h-8 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">{paymentScreenshot ? paymentScreenshot.name : "Click to upload"}</span>
