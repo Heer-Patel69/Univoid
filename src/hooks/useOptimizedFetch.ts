@@ -115,6 +115,7 @@ export function useOptimizedFetch<T>({
 
   const fetchData = useCallback(async (skipCache = false) => {
     // Check memory cache first, then sessionStorage (unless skipping)
+    let servedFromCache = false;
     if (cacheKey && !skipCache) {
       const cached = cache.get(cacheKey);
       if (cached && Date.now() - cached.timestamp < cacheTtl) {
@@ -122,19 +123,26 @@ export function useOptimizedFetch<T>({
           setData(cached.data as T);
           setIsLoading(false);
         }
-        return;
-      }
-      // Fallback to sessionStorage
-      const sessionCached = getSessionCache<T>(cacheKey, cacheTtl);
-      if (sessionCached) {
-        cache.set(cacheKey, { data: sessionCached, timestamp: Date.now() });
-        if (isMounted.current) {
-          setData(sessionCached);
-          setIsLoading(false);
+        // If the cached value looks empty, keep going and revalidate in background.
+        const isEmpty = Array.isArray(cached.data) && (cached.data as unknown[]).length === 0;
+        if (!isEmpty) return;
+        servedFromCache = true;
+      } else {
+        // Fallback to sessionStorage
+        const sessionCached = getSessionCache<T>(cacheKey, cacheTtl);
+        if (sessionCached) {
+          cache.set(cacheKey, { data: sessionCached, timestamp: Date.now() });
+          if (isMounted.current) {
+            setData(sessionCached);
+            setIsLoading(false);
+          }
+          const isEmpty = Array.isArray(sessionCached) && (sessionCached as unknown[]).length === 0;
+          if (!isEmpty) return;
+          servedFromCache = true;
         }
-        return;
       }
     }
+
 
     // Abort previous request
     if (abortControllerRef.current) {
