@@ -150,9 +150,10 @@ export function useOptimizedFetch<T>({
     }
     abortControllerRef.current = new AbortController();
 
-    if (isMounted.current) {
+    if (isMounted.current && !servedFromCache) {
       setIsLoading(true);
     }
+
 
     try {
       // Create timeout promise
