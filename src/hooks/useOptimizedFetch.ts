@@ -46,11 +46,24 @@ function getSessionCache<T>(key: string, ttl: number): T | null {
 
 function setSessionCache<T>(key: string, data: T): void {
   try {
+    // Don't persist "empty" results — they cause stale empty pages when data is added later.
+    if (Array.isArray(data) && data.length === 0) {
+      sessionStorage.removeItem(`cache_${key}`);
+      return;
+    }
+    if (data && typeof data === 'object' && !Array.isArray(data)) {
+      const values = Object.values(data as Record<string, unknown>);
+      if (values.length === 0) {
+        sessionStorage.removeItem(`cache_${key}`);
+        return;
+      }
+    }
     sessionStorage.setItem(`cache_${key}`, JSON.stringify({ data, timestamp: Date.now() }));
   } catch {
     // Ignore storage errors (quota exceeded, etc.)
   }
 }
+
 
 export function useOptimizedFetch<T>({
   fetchFn,
@@ -102,6 +115,7 @@ export function useOptimizedFetch<T>({
 
   const fetchData = useCallback(async (skipCache = false) => {
     // Check memory cache first, then sessionStorage (unless skipping)
+    let servedFromCache = false;
     if (cacheKey && !skipCache) {
       const cached = cache.get(cacheKey);
       if (cached && Date.now() - cached.timestamp < cacheTtl) {
@@ -109,19 +123,26 @@ export function useOptimizedFetch<T>({
           setData(cached.data as T);
           setIsLoading(false);
         }
-        return;
-      }
-      // Fallback to sessionStorage
-      const sessionCached = getSessionCache<T>(cacheKey, cacheTtl);
-      if (sessionCached) {
-        cache.set(cacheKey, { data: sessionCached, timestamp: Date.now() });
-        if (isMounted.current) {
-          setData(sessionCached);
-          setIsLoading(false);
+        // If the cached value looks empty, keep going and revalidate in background.
+        const isEmpty = Array.isArray(cached.data) && (cached.data as unknown[]).length === 0;
+        if (!isEmpty) return;
+        servedFromCache = true;
+      } else {
+        // Fallback to sessionStorage
+        const sessionCached = getSessionCache<T>(cacheKey, cacheTtl);
+        if (sessionCached) {
+          cache.set(cacheKey, { data: sessionCached, timestamp: Date.now() });
+          if (isMounted.current) {
+            setData(sessionCached);
+            setIsLoading(false);
+          }
+          const isEmpty = Array.isArray(sessionCached) && (sessionCached as unknown[]).length === 0;
+          if (!isEmpty) return;
+          servedFromCache = true;
         }
-        return;
       }
     }
+
 
     // Abort previous request
     if (abortControllerRef.current) {
@@ -129,9 +150,10 @@ export function useOptimizedFetch<T>({
     }
     abortControllerRef.current = new AbortController();
 
-    if (isMounted.current) {
+    if (isMounted.current && !servedFromCache) {
       setIsLoading(true);
     }
+
 
     try {
       // Create timeout promise

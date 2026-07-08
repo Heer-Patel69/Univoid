@@ -219,7 +219,21 @@ const Events = () => {
           </section>
         )}
 
-        {!isLoading && events?.length === 0 && (
+        {!isLoading && pastEvents.length > 0 && (
+          <section className="mb-12">
+            <div className="flex items-center gap-2 mb-6">
+              <h2 className="font-display text-xl font-semibold">Past Events</h2>
+              <Badge variant="secondary">{pastEvents.length}</Badge>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch staggered-grid-fast opacity-90">
+              {pastEvents.map((event) => (
+                <EventCard key={event.id} event={event} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {!isLoading && (events?.length ?? 0) === 0 && (
           <div className="text-center py-20">
             <div className="w-32 h-32 mx-auto mb-6 rounded-full bg-muted flex items-center justify-center">
               <Calendar className="w-16 h-16 text-muted-foreground/50" />
@@ -228,6 +242,7 @@ const Events = () => {
             <p className="text-muted-foreground mb-6">Check back later for upcoming events!</p>
           </div>
         )}
+
         </div>
       </main>
 

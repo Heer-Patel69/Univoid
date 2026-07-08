@@ -28,6 +28,8 @@ import ClubMembershipCheck from "@/components/events/ClubMembershipCheck";
 import QuickRegisterButton from "@/components/events/QuickRegisterButton";
 import UpsellScreen from "@/components/events/UpsellScreen";
 import TicketCategorySelector from "@/components/events/TicketCategorySelector";
+import { validateFileUpload } from "@/lib/fileValidation";
+
 import { fetchTicketCategories, saveTicketAttendees, type TicketCategorySelection } from "@/services/ticketCategoryService";
 import { supabase } from "@/integrations/supabase/client";
 import { 
