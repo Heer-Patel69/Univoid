@@ -46,11 +46,24 @@ function getSessionCache<T>(key: string, ttl: number): T | null {
 
 function setSessionCache<T>(key: string, data: T): void {
   try {
+    // Don't persist "empty" results — they cause stale empty pages when data is added later.
+    if (Array.isArray(data) && data.length === 0) {
+      sessionStorage.removeItem(`cache_${key}`);
+      return;
+    }
+    if (data && typeof data === 'object' && !Array.isArray(data)) {
+      const values = Object.values(data as Record<string, unknown>);
+      if (values.length === 0) {
+        sessionStorage.removeItem(`cache_${key}`);
+        return;
+      }
+    }
     sessionStorage.setItem(`cache_${key}`, JSON.stringify({ data, timestamp: Date.now() }));
   } catch {
     // Ignore storage errors (quota exceeded, etc.)
   }
 }
+
 
 export function useOptimizedFetch<T>({
   fetchFn,
