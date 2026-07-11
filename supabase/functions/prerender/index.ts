@@ -422,10 +422,6 @@ async function handleStudyMaterialsHub(supabase: any) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function handleStudyMaterialsCollege(supabase: any, collegeSlug: string) {
-  const { data: rows, error } = await supabase.rpc('exec_sql_ro' as never, {}).select().limit(0);
-  // Fall back to filter-in-code approach (RPC may not exist)
-  void rows; void error;
-
   const { data: all } = await supabase
     .from('materials')
     .select('id, title, subject, course, branch, college, downloads_count, views_count, created_at, updated_at')
