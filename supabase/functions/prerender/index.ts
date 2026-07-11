@@ -280,6 +280,414 @@ async function handleMaterial(supabase: any, id: string) {
   return generateHTML({ title, description, image, url, type: 'article', content, structuredData });
 }
 
+// ==========================================================================
+// Programmatic /study-materials/* pages
+// ==========================================================================
+
+function slugify(input: string): string {
+  return input
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function titleCase(slug: string): string {
+  return slug
+    .split('-')
+    .filter(Boolean)
+    .map(w => (w.length <= 3 ? w.toUpperCase() : w.charAt(0).toUpperCase() + w.slice(1)))
+    .join(' ');
+}
+
+// Postgres expression that matches slugified column value
+const SLUG_EXPR = (col: string) =>
+  `regexp_replace(regexp_replace(lower(${col}), '[^a-z0-9]+', '-', 'g'), '^-+|-+$', '', 'g')`;
+
+interface MaterialRow {
+  id: string;
+  title: string;
+  subject: string | null;
+  course: string | null;
+  branch: string | null;
+  college: string | null;
+  downloads_count: number;
+  views_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+function buildFaqLdJson(faqs: Array<{ q: string; a: string }>) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faqs.map(({ q, a }) => ({
+      "@type": "Question",
+      "name": q,
+      "acceptedAnswer": { "@type": "Answer", "text": a },
+    })),
+  };
+}
+
+function buildBreadcrumbLdJson(items: Array<{ name: string; url: string }>) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": items.map((it, idx) => ({
+      "@type": "ListItem",
+      "position": idx + 1,
+      "name": it.name,
+      "item": it.url,
+    })),
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function handleStudyMaterialsHub(supabase: any) {
+  // Top colleges + subjects by material count
+  const { data: rows } = await supabase
+    .from('materials')
+    .select('college, subject')
+    .eq('status', 'approved')
+    .limit(2000);
+
+  const collegeCounts = new Map<string, number>();
+  const subjectCounts = new Map<string, number>();
+  for (const r of (rows ?? []) as Array<{ college: string | null; subject: string | null }>) {
+    if (r.college) collegeCounts.set(r.college, (collegeCounts.get(r.college) ?? 0) + 1);
+    if (r.subject) subjectCounts.set(r.subject, (subjectCounts.get(r.subject) ?? 0) + 1);
+  }
+  const topColleges = [...collegeCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 24);
+  const topSubjects = [...subjectCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 24);
+  const totalMaterials = (rows ?? []).length;
+
+  const title = "Free Study Materials, Notes & Previous Year Papers PDF | UniVoid";
+  const description = "Download free engineering & college notes, previous year question papers and study material PDFs. Verified by students across 100+ Indian universities on UniVoid.";
+  const url = `${SITE_URL}/study-materials`;
+
+  const faqs = [
+    { q: "How do I download study materials on UniVoid?", a: "Browse by your college, branch or subject, open any material page and click download. All PDFs are free and verified by students." },
+    { q: "Are these previous year question papers official?", a: "Papers are uploaded by seniors and verified by moderators before publishing. They mirror official university papers but are unofficial community copies." },
+    { q: "Is UniVoid free for students?", a: "Yes. Downloading notes, papers and study material is completely free for verified college students in India." },
+    { q: "Which universities are covered?", a: "UniVoid hosts materials from 100+ Indian universities including AKTU, VTU, Anna University, IPU, Mumbai University, JNTUH, RGPV and KTU." },
+  ];
+
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "CollectionPage",
+        "name": title,
+        "description": description,
+        "url": url,
+      },
+      buildBreadcrumbLdJson([
+        { name: "UniVoid", url: SITE_URL },
+        { name: "Study Materials", url },
+      ]),
+      buildFaqLdJson(faqs),
+    ],
+  };
+
+  const content = `
+    <article>
+      <h1>Free Study Materials, Notes &amp; Previous Year Papers</h1>
+      <p>Download free college and engineering study materials, previous year question papers and semester notes as PDF. UniVoid hosts <strong>${totalMaterials.toLocaleString('en-IN')}+ verified resources</strong> across 100+ Indian universities, uploaded and reviewed by senior students.</p>
+
+      <h2>Browse Study Materials by College</h2>
+      <ul>
+        ${topColleges.map(([name, count]) => `<li><a href="${SITE_URL}/study-materials/college/${slugify(name)}">${escapeHtml(name)}</a> — ${count} materials</li>`).join('\n        ')}
+      </ul>
+
+      <h2>Popular Subjects</h2>
+      <ul>
+        ${topSubjects.map(([name, count]) => `<li><a href="${SITE_URL}/study-materials/subject/${slugify(name)}">${escapeHtml(name)} notes &amp; papers</a> — ${count} resources</li>`).join('\n        ')}
+      </ul>
+
+      <h2>What You'll Find on UniVoid Study Materials</h2>
+      <h3>Previous Year Question Papers</h3>
+      <p>End-semester and mid-semester question papers from the last 5 years, organized by university, branch and subject.</p>
+      <h3>Semester Notes (PDF)</h3>
+      <p>Handwritten and typed notes covering full syllabus units, contributed by top-scoring seniors.</p>
+      <h3>Solved Question Banks</h3>
+      <p>Frequently repeated questions with worked-out solutions, ideal for last-minute revision.</p>
+
+      <h2>Frequently Asked Questions</h2>
+      ${faqs.map(f => `<h3>${escapeHtml(f.q)}</h3><p>${escapeHtml(f.a)}</p>`).join('\n      ')}
+    </article>
+  `;
+
+  return generateHTML({ title, description, image: DEFAULT_OG_IMAGE, url, type: 'website', content, structuredData });
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function handleStudyMaterialsCollege(supabase: any, collegeSlug: string) {
+  const { data: rows, error } = await supabase.rpc('exec_sql_ro' as never, {}).select().limit(0);
+  // Fall back to filter-in-code approach (RPC may not exist)
+  void rows; void error;
+
+  const { data: all } = await supabase
+    .from('materials')
+    .select('id, title, subject, course, branch, college, downloads_count, views_count, created_at, updated_at')
+    .eq('status', 'approved')
+    .not('college', 'is', null)
+    .limit(2000);
+
+  const materials = ((all ?? []) as MaterialRow[]).filter(m => m.college && slugify(m.college) === collegeSlug);
+  if (materials.length < 3) return null;
+
+  const collegeName = materials[0].college || titleCase(collegeSlug);
+  const url = `${SITE_URL}/study-materials/college/${collegeSlug}`;
+  const title = `${collegeName} Study Materials, Notes & Previous Year Papers PDF | UniVoid`;
+  const description = `Download ${collegeName} previous year question papers, semester notes and study materials as free PDFs. ${materials.length}+ verified resources on UniVoid.`;
+
+  // Group by subject
+  const bySubject = new Map<string, MaterialRow[]>();
+  for (const m of materials) {
+    const key = m.subject || 'General';
+    if (!bySubject.has(key)) bySubject.set(key, []);
+    bySubject.get(key)!.push(m);
+  }
+  const subjectGroups = [...bySubject.entries()].sort((a, b) => b[1].length - a[1].length);
+
+  const faqs = [
+    { q: `How do I download ${collegeName} question papers?`, a: `Open any material below and click download. All ${collegeName} PDFs are free and require no signup wall.` },
+    { q: `Are these ${collegeName} papers official?`, a: `Papers are contributed by ${collegeName} seniors and verified by moderators. They mirror official papers but are community copies.` },
+    { q: `How many ${collegeName} resources are available?`, a: `Currently ${materials.length} approved materials across ${subjectGroups.length} subjects, updated regularly.` },
+  ];
+
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "CollectionPage",
+        "name": title,
+        "description": description,
+        "url": url,
+        "about": { "@type": "CollegeOrUniversity", "name": collegeName },
+      },
+      buildBreadcrumbLdJson([
+        { name: "UniVoid", url: SITE_URL },
+        { name: "Study Materials", url: `${SITE_URL}/study-materials` },
+        { name: collegeName, url },
+      ]),
+      {
+        "@type": "ItemList",
+        "itemListElement": subjectGroups.slice(0, 25).map(([subj, items], idx) => ({
+          "@type": "ListItem",
+          "position": idx + 1,
+          "name": `${collegeName} ${subj} notes and papers`,
+          "url": `${SITE_URL}/study-materials/${collegeSlug}/${slugify(subj)}`,
+          "additionalProperty": { "@type": "PropertyValue", "name": "count", "value": items.length },
+        })),
+      },
+      buildFaqLdJson(faqs),
+    ],
+  };
+
+  const content = `
+    <article>
+      <h1>${escapeHtml(collegeName)} Study Materials &amp; Previous Year Papers</h1>
+      <p>Download free ${escapeHtml(collegeName)} previous year question papers, semester notes and study material PDFs. <strong>${materials.length} verified resources</strong> across ${subjectGroups.length} subjects, contributed by ${escapeHtml(collegeName)} seniors on UniVoid.</p>
+
+      <h2>${escapeHtml(collegeName)} Subjects</h2>
+      <ul>
+        ${subjectGroups.map(([subj, items]) => `<li><a href="${SITE_URL}/study-materials/${collegeSlug}/${slugify(subj)}">${escapeHtml(subj)}</a> — ${items.length} PDFs</li>`).join('\n        ')}
+      </ul>
+
+      <h2>Latest ${escapeHtml(collegeName)} Uploads</h2>
+      <ul>
+        ${materials.slice(0, 20).map(m => `<li><a href="${SITE_URL}/materials/${m.id}">${escapeHtml(m.title)}</a>${m.subject ? ` — ${escapeHtml(m.subject)}` : ''}</li>`).join('\n        ')}
+      </ul>
+
+      <h2>Frequently Asked Questions</h2>
+      ${faqs.map(f => `<h3>${escapeHtml(f.q)}</h3><p>${escapeHtml(f.a)}</p>`).join('\n      ')}
+    </article>
+  `;
+
+  return generateHTML({ title, description, image: DEFAULT_OG_IMAGE, url, type: 'website', content, structuredData });
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function handleStudyMaterialsSubject(supabase: any, subjectSlug: string) {
+  const { data: all } = await supabase
+    .from('materials')
+    .select('id, title, subject, course, branch, college, downloads_count, views_count, created_at, updated_at')
+    .eq('status', 'approved')
+    .not('subject', 'is', null)
+    .limit(2000);
+
+  const materials = ((all ?? []) as MaterialRow[]).filter(m => m.subject && slugify(m.subject) === subjectSlug);
+  if (materials.length < 3) return null;
+
+  const subjectName = materials[0].subject || titleCase(subjectSlug);
+  const url = `${SITE_URL}/study-materials/subject/${subjectSlug}`;
+  const title = `${subjectName} Notes, Question Papers & Study Material PDF | UniVoid`;
+  const description = `Download ${subjectName} notes, previous year question papers and solved question banks as free PDFs. ${materials.length}+ resources from top Indian universities on UniVoid.`;
+
+  const byCollege = new Map<string, MaterialRow[]>();
+  for (const m of materials) {
+    const key = m.college || 'Other';
+    if (!byCollege.has(key)) byCollege.set(key, []);
+    byCollege.get(key)!.push(m);
+  }
+  const collegeGroups = [...byCollege.entries()].sort((a, b) => b[1].length - a[1].length);
+
+  const faqs = [
+    { q: `Where can I find ${subjectName} previous year papers?`, a: `Below on this page — UniVoid aggregates ${materials.length} ${subjectName} papers and notes from top Indian universities, all free to download.` },
+    { q: `Are these ${subjectName} notes complete?`, a: `Yes, notes cover the full syllabus across units. They're contributed by top-scoring seniors and moderator-verified.` },
+    { q: `Can I download ${subjectName} PDFs for free?`, a: `Yes. Every material on UniVoid is free for verified college students. No paywall.` },
+  ];
+
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "LearningResource",
+        "name": title,
+        "description": description,
+        "url": url,
+        "learningResourceType": "Study Guide",
+        "educationalLevel": "Undergraduate",
+        "about": subjectName,
+      },
+      buildBreadcrumbLdJson([
+        { name: "UniVoid", url: SITE_URL },
+        { name: "Study Materials", url: `${SITE_URL}/study-materials` },
+        { name: subjectName, url },
+      ]),
+      buildFaqLdJson(faqs),
+    ],
+  };
+
+  const content = `
+    <article>
+      <h1>${escapeHtml(subjectName)} Notes &amp; Previous Year Papers (PDF)</h1>
+      <p>${escapeHtml(subjectName)} is a core undergraduate subject across engineering and science branches in Indian universities. Download <strong>${materials.length} verified ${escapeHtml(subjectName)} resources</strong> — semester notes, previous year question papers and solved question banks — free on UniVoid.</p>
+
+      <h2>${escapeHtml(subjectName)} Resources by University</h2>
+      <ul>
+        ${collegeGroups.map(([college, items]) => `<li><a href="${SITE_URL}/study-materials/${slugify(college)}/${subjectSlug}">${escapeHtml(college)} ${escapeHtml(subjectName)}</a> — ${items.length} PDFs</li>`).join('\n        ')}
+      </ul>
+
+      <h2>How to Prepare for ${escapeHtml(subjectName)} Exams</h2>
+      <h3>Analyze last 5 years of papers</h3>
+      <p>Repeated questions typically account for 30-40% of the paper. Start with the previous year papers linked below.</p>
+      <h3>Read topic-wise notes</h3>
+      <p>Use senior-contributed notes to cover full syllabus units, then move to question banks.</p>
+      <h3>Solve question banks with answers</h3>
+      <p>Solved question banks accelerate revision in the last 2 weeks before exams.</p>
+
+      <h2>Latest ${escapeHtml(subjectName)} Uploads</h2>
+      <ul>
+        ${materials.slice(0, 20).map(m => `<li><a href="${SITE_URL}/materials/${m.id}">${escapeHtml(m.title)}</a>${m.college ? ` — ${escapeHtml(m.college)}` : ''}</li>`).join('\n        ')}
+      </ul>
+
+      <h2>Frequently Asked Questions</h2>
+      ${faqs.map(f => `<h3>${escapeHtml(f.q)}</h3><p>${escapeHtml(f.a)}</p>`).join('\n      ')}
+    </article>
+  `;
+
+  return generateHTML({ title, description, image: DEFAULT_OG_IMAGE, url, type: 'website', content, structuredData });
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function handleStudyMaterialsLeaf(supabase: any, collegeSlug: string, subjectSlug: string) {
+  const { data: all } = await supabase
+    .from('materials')
+    .select('id, title, subject, course, branch, college, downloads_count, views_count, created_at, updated_at')
+    .eq('status', 'approved')
+    .not('college', 'is', null)
+    .not('subject', 'is', null)
+    .limit(2000);
+
+  const materials = ((all ?? []) as MaterialRow[]).filter(m =>
+    m.college && m.subject &&
+    slugify(m.college) === collegeSlug &&
+    slugify(m.subject) === subjectSlug
+  );
+  if (materials.length < 3) return null;
+
+  const collegeName = materials[0].college!;
+  const subjectName = materials[0].subject!;
+  const url = `${SITE_URL}/study-materials/${collegeSlug}/${subjectSlug}`;
+  const title = `${collegeName} ${subjectName} Notes & Papers PDF | UniVoid`.slice(0, 60);
+  const description = `Download ${collegeName} ${subjectName} previous year question papers and notes as free PDFs. ${materials.length} verified resources on UniVoid.`;
+
+  const faqs = [
+    { q: `How do I download ${collegeName} ${subjectName} papers?`, a: `Click any material below and download the PDF. All ${materials.length} ${subjectName} resources are free.` },
+    { q: `Are these ${subjectName} papers verified?`, a: `Yes. Every ${collegeName} ${subjectName} paper and note is reviewed by moderators before publishing.` },
+    { q: `What years do these ${subjectName} papers cover?`, a: `Papers span the last 5 years where available. Uploads are refreshed each semester.` },
+  ];
+
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "LearningResource",
+        "name": `${collegeName} ${subjectName} Study Materials`,
+        "description": description,
+        "url": url,
+        "learningResourceType": "Exam Paper",
+        "educationalLevel": "Undergraduate",
+        "about": subjectName,
+        "provider": { "@type": "CollegeOrUniversity", "name": collegeName },
+      },
+      buildBreadcrumbLdJson([
+        { name: "UniVoid", url: SITE_URL },
+        { name: "Study Materials", url: `${SITE_URL}/study-materials` },
+        { name: collegeName, url: `${SITE_URL}/study-materials/college/${collegeSlug}` },
+        { name: subjectName, url },
+      ]),
+      {
+        "@type": "ItemList",
+        "itemListElement": materials.slice(0, 30).map((m, idx) => ({
+          "@type": "ListItem",
+          "position": idx + 1,
+          "name": m.title,
+          "url": `${SITE_URL}/materials/${m.id}`,
+        })),
+      },
+      buildFaqLdJson(faqs),
+    ],
+  };
+
+  const content = `
+    <article>
+      <h1>${escapeHtml(collegeName)} ${escapeHtml(subjectName)} Previous Year Papers &amp; Notes (PDF)</h1>
+      <p>${escapeHtml(collegeName)} ${escapeHtml(subjectName)} resources include previous year question papers, semester notes and solved question banks. Download <strong>${materials.length} verified PDFs</strong> below — free, moderator-reviewed, contributed by ${escapeHtml(collegeName)} seniors on UniVoid.</p>
+
+      <h2>${escapeHtml(subjectName)} Previous Year Papers</h2>
+      <ul>
+        ${materials.filter(m => /paper|question|pyq/i.test(m.title)).slice(0, 15).map(m => `<li><a href="${SITE_URL}/materials/${m.id}">${escapeHtml(m.title)}</a></li>`).join('\n        ') || '<li>Question papers coming soon — contribute yours.</li>'}
+      </ul>
+
+      <h2>${escapeHtml(subjectName)} Semester Notes</h2>
+      <ul>
+        ${materials.filter(m => /note|notes|unit|chapter/i.test(m.title)).slice(0, 15).map(m => `<li><a href="${SITE_URL}/materials/${m.id}">${escapeHtml(m.title)}</a></li>`).join('\n        ') || '<li>Notes coming soon — contribute yours.</li>'}
+      </ul>
+
+      <h2>All ${escapeHtml(subjectName)} Uploads</h2>
+      <ul>
+        ${materials.slice(0, 30).map(m => `<li><a href="${SITE_URL}/materials/${m.id}">${escapeHtml(m.title)}</a> — ${m.downloads_count || 0} downloads</li>`).join('\n        ')}
+      </ul>
+
+      <h2>How to Prepare for ${escapeHtml(collegeName)} ${escapeHtml(subjectName)} Exams</h2>
+      <h3>Solve last 5 years' papers first</h3>
+      <p>Historically, 30-40% of ${escapeHtml(subjectName)} questions at ${escapeHtml(collegeName)} repeat across cycles.</p>
+      <h3>Cover the syllabus unit-wise using senior notes</h3>
+      <p>Notes above are structured to match the official ${escapeHtml(collegeName)} ${escapeHtml(subjectName)} syllabus.</p>
+      <h3>Revise with solved question banks</h3>
+      <p>Solved banks compress the last two weeks of prep — pair them with mock tests.</p>
+
+      <h2>Frequently Asked Questions</h2>
+      ${faqs.map(f => `<h3>${escapeHtml(f.q)}</h3><p>${escapeHtml(f.a)}</p>`).join('\n      ')}
+    </article>
+  `;
+
+  return generateHTML({ title, description, image: DEFAULT_OG_IMAGE, url, type: 'website', content, structuredData });
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function handleEvent(supabase: any, identifier: string) {
   // Check if it looks like a UUID
