@@ -4,6 +4,7 @@ import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import AdminRoute from "@/components/auth/AdminRoute";
 import OrganizerRoute from "@/components/auth/OrganizerRoute";
 import CheckInRedirect from "@/components/common/CheckInRedirect";
+import StudyMaterialsRedirect from "@/components/common/StudyMaterialsRedirect";
 import AppLayout from "@/components/layout/AppLayout";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import {
@@ -110,9 +111,17 @@ export const AnimatedRoutes = () => {
 
       {/* Public pages with persistent AppLayout (Header/Footer) */}
       <Route element={<AppLayout />}>
+        {/* Programmatic SEO routes: bots get pre-rendered HTML from the prerender edge function.
+            Humans landing here from search redirect into /materials so they see the real listing. */}
+        <Route path="/study-materials" element={<Navigate to="/materials" replace />} />
+        <Route path="/study-materials/college/:collegeSlug" element={<StudyMaterialsRedirect kind="college" />} />
+        <Route path="/study-materials/subject/:subjectSlug" element={<StudyMaterialsRedirect kind="subject" />} />
+        <Route path="/study-materials/:collegeSlug/:subjectSlug" element={<StudyMaterialsRedirect kind="leaf" />} />
+
         <Route path="/materials" element={
           <Suspense fallback={<MaterialsSkeleton />}><Materials /></Suspense>
         } />
+
         <Route path="/materials/:materialId" element={
           <Suspense fallback={<DetailSkeleton />}><MaterialDetail /></Suspense>
         } />
