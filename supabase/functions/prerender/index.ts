@@ -1023,6 +1023,12 @@ Deno.serve(async (req) => {
     const tasksMatch = pathParam.match(/^\/tasks\/([a-f0-9-]+)$/);
     const profileMatch = pathParam.match(/^\/profile\/([a-f0-9-]+)$/);
 
+    // Programmatic study-materials routes
+    const smHub = pathParam.match(/^\/study-materials\/?$/);
+    const smCollege = pathParam.match(/^\/study-materials\/college\/([a-z0-9-]+)\/?$/);
+    const smSubject = pathParam.match(/^\/study-materials\/subject\/([a-z0-9-]+)\/?$/);
+    const smLeaf = pathParam.match(/^\/study-materials\/([a-z0-9-]+)\/([a-z0-9-]+)\/?$/);
+
     if (materialsMatch) {
       html = await handleMaterial(supabase, materialsMatch[1]);
     } else if (eventsMatch) {
@@ -1035,6 +1041,14 @@ Deno.serve(async (req) => {
       html = await handleTask(supabase, tasksMatch[1]);
     } else if (profileMatch) {
       html = await handleProfile(supabase, profileMatch[1]);
+    } else if (smHub) {
+      html = await handleStudyMaterialsHub(supabase);
+    } else if (smCollege) {
+      html = await handleStudyMaterialsCollege(supabase, smCollege[1]);
+    } else if (smSubject) {
+      html = await handleStudyMaterialsSubject(supabase, smSubject[1]);
+    } else if (smLeaf && smLeaf[1] !== 'college' && smLeaf[1] !== 'subject') {
+      html = await handleStudyMaterialsLeaf(supabase, smLeaf[1], smLeaf[2]);
     }
 
     if (html) {
