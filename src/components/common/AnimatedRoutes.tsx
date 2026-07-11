@@ -4,6 +4,7 @@ import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import AdminRoute from "@/components/auth/AdminRoute";
 import OrganizerRoute from "@/components/auth/OrganizerRoute";
 import CheckInRedirect from "@/components/common/CheckInRedirect";
+import StudyMaterialsRedirect from "@/components/common/StudyMaterialsRedirect";
 import AppLayout from "@/components/layout/AppLayout";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import {
