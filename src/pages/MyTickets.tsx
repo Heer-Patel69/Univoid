@@ -137,7 +137,7 @@ const MyTickets = () => {
     if (ticket.is_used) {
       return <Badge variant="secondary"><CheckCircle className="w-3 h-3 mr-1" /> Used</Badge>;
     }
-    if (isPast(new Date(ticket.event.start_date))) {
+    if (isDatePast(ticket.event?.start_date)) {
       return <Badge variant="outline"><Clock className="w-3 h-3 mr-1" /> Expired</Badge>;
     }
     return <Badge className="bg-green-600"><Shield className="w-3 h-3 mr-1" /> Valid</Badge>;
