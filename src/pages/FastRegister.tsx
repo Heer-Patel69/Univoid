@@ -918,7 +918,7 @@ const FastRegister = () => {
 
               <div className="space-y-3">
                 {(isApproved || !event.is_paid) && ticketId && (
-                  <Link to={`/my-tickets`} className="block">
+                  <Link to={`/my-events`} className="block">
                     <Button className="w-full" size="lg">
                       View My Ticket
                     </Button>

@@ -697,7 +697,7 @@ const EventDetail = () => {
                   : (<><Clock className="w-4 h-4" /><span>Payment pending verification</span></>)}
                 </div>
                 {existingRegistration.payment_status === "approved" && (
-                  <Link to="/my-tickets" className="block">
+                  <Link to="/my-events" className="block">
                     <Button className="w-full rounded-full gap-2">
                       <Eye className="w-4 h-4" /> View Your Ticket
                     </Button>
@@ -1036,7 +1036,7 @@ const EventDetail = () => {
                       : (<><Clock className="w-4 h-4" /><span>Payment pending verification</span></>)}
                     </div>
                     {existingRegistration.payment_status === "approved" && (
-                      <Link to="/my-tickets" className="block">
+                      <Link to="/my-events" className="block">
                         <Button className="w-full rounded-full gap-2">
                           <Eye className="w-4 h-4" /> View Your Ticket
                         </Button>

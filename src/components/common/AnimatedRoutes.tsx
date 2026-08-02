@@ -206,6 +206,7 @@ export const AnimatedRoutes = () => {
         <Route path="/my-events" element={
           <Suspense fallback={<ListingPageSkeleton />}><MyTickets /></Suspense>
         } />
+        <Route path="/my-tickets" element={<Navigate to="/my-events" replace />} />
         <Route path="/upload-material" element={
           <Suspense fallback={<TextSkeleton />}><UploadMaterial /></Suspense>
         } />
