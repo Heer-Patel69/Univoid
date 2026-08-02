@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, isPast } from "date-fns";
 import DOMPurify from "dompurify";
 import { Button } from "@/components/ui/button";
@@ -49,6 +49,7 @@ const EventDetail = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
@@ -153,8 +154,35 @@ const EventDetail = () => {
     queryKey: ["registration", event?.id, user?.id],
     queryFn: () => checkUserRegistration(event!.id, user!.id),
     enabled: !!event?.id && !!user,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 10 * 1000,
+    refetchOnWindowFocus: true,
   });
+
+  // Live-update registration status when the organizer approves/rejects
+  useEffect(() => {
+    if (!event?.id || !user?.id) return;
+    const channel = supabase
+      .channel(`event-registration-${event.id}-${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "event_registrations",
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["registration", event.id, user.id] });
+          queryClient.invalidateQueries({ queryKey: ["my-tickets", user.id] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [event?.id, user?.id, queryClient]);
+
 
   // Auto-open registration dialog after OAuth redirect from event page
   useEffect(() => {
@@ -658,16 +686,26 @@ const EventDetail = () => {
               </div>
             )}
             {existingRegistration && (
-              <div className={`p-2.5 rounded-lg flex items-center gap-2 text-sm ${
-                existingRegistration.payment_status === "approved" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
-                : existingRegistration.payment_status === "rejected" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
-                : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300"
-              }`}>
-                {existingRegistration.payment_status === "approved" ? (<><CheckCircle className="w-4 h-4" /><span>You're registered!</span></>) 
-                : existingRegistration.payment_status === "rejected" ? (<><AlertCircle className="w-4 h-4" /><span>Registration rejected. You cannot re-apply.</span></>)
-                : (<><Clock className="w-4 h-4" /><span>Payment pending verification</span></>)}
+              <div className="space-y-3">
+                <div className={`p-2.5 rounded-lg flex items-center gap-2 text-sm ${
+                  existingRegistration.payment_status === "approved" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                  : existingRegistration.payment_status === "rejected" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                  : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300"
+                }`}>
+                  {existingRegistration.payment_status === "approved" ? (<><CheckCircle className="w-4 h-4" /><span>You're registered!</span></>) 
+                  : existingRegistration.payment_status === "rejected" ? (<><AlertCircle className="w-4 h-4" /><span>Registration rejected. You cannot re-apply.</span></>)
+                  : (<><Clock className="w-4 h-4" /><span>Payment pending verification</span></>)}
+                </div>
+                {existingRegistration.payment_status === "approved" && (
+                  <Link to="/my-tickets" className="block">
+                    <Button className="w-full rounded-full gap-2">
+                      <Eye className="w-4 h-4" /> View Your Ticket
+                    </Button>
+                  </Link>
+                )}
               </div>
             )}
+
             {!existingRegistration && (
               <div className="space-y-3">
                 {!isEventPast && !isFullNow && canShowQuickRegister && (
@@ -987,16 +1025,26 @@ const EventDetail = () => {
                   </div>
                 )}
                 {existingRegistration && (
-                  <div className={`p-2.5 rounded-lg flex items-center gap-2 text-sm ${
-                    existingRegistration.payment_status === "approved" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
-                    : existingRegistration.payment_status === "rejected" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
-                    : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300"
-                  }`}>
-                    {existingRegistration.payment_status === "approved" ? (<><CheckCircle className="w-4 h-4" /><span>You're registered!</span></>) 
-                    : existingRegistration.payment_status === "rejected" ? (<><AlertCircle className="w-4 h-4" /><span>Registration rejected. You cannot re-apply.</span></>)
-                    : (<><Clock className="w-4 h-4" /><span>Payment pending verification</span></>)}
+                  <div className="space-y-3">
+                    <div className={`p-2.5 rounded-lg flex items-center gap-2 text-sm ${
+                      existingRegistration.payment_status === "approved" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                      : existingRegistration.payment_status === "rejected" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                      : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300"
+                    }`}>
+                      {existingRegistration.payment_status === "approved" ? (<><CheckCircle className="w-4 h-4" /><span>You're registered!</span></>) 
+                      : existingRegistration.payment_status === "rejected" ? (<><AlertCircle className="w-4 h-4" /><span>Registration rejected. You cannot re-apply.</span></>)
+                      : (<><Clock className="w-4 h-4" /><span>Payment pending verification</span></>)}
+                    </div>
+                    {existingRegistration.payment_status === "approved" && (
+                      <Link to="/my-tickets" className="block">
+                        <Button className="w-full rounded-full gap-2">
+                          <Eye className="w-4 h-4" /> View Your Ticket
+                        </Button>
+                      </Link>
+                    )}
                   </div>
                 )}
+
                 {!existingRegistration && (
                   <div className="space-y-3">
                     {!isEventPast && !isFullNow && canShowQuickRegister && (

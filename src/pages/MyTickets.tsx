@@ -29,8 +29,26 @@ interface PendingRegistration {
     start_date: string;
     venue_name: string | null;
     flyer_url: string | null;
-  };
+  } | null;
 }
+
+// Safe date helpers — never throw on missing/invalid dates
+const safeDate = (value?: string | null): Date | null => {
+  if (!value) return null;
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? null : d;
+};
+
+const safeFormat = (value: string | null | undefined, pattern: string, fallback = "Date TBA") => {
+  const d = safeDate(value);
+  return d ? format(d, pattern) : fallback;
+};
+
+const isDatePast = (value?: string | null) => {
+  const d = safeDate(value);
+  return d ? isPast(d) : false;
+};
+
 
 const MyTickets = () => {
   const { user } = useAuth();
@@ -95,13 +113,17 @@ const MyTickets = () => {
   // Categorize tickets
   const { upcomingTickets, usedTickets, expiredTickets } = useMemo(() => {
     if (!tickets) return { upcomingTickets: [], usedTickets: [], expiredTickets: [] };
-    
+
+    // Skip tickets whose event is missing (deleted/unpublished) to avoid render crashes
+    const valid = tickets.filter(t => !!t && !!t.event);
+
     return {
-      upcomingTickets: tickets.filter(t => !t.is_used && !isPast(new Date(t.event.start_date))),
-      usedTickets: tickets.filter(t => t.is_used),
-      expiredTickets: tickets.filter(t => !t.is_used && isPast(new Date(t.event.start_date))),
+      upcomingTickets: valid.filter(t => !t.is_used && !isDatePast(t.event.start_date)),
+      usedTickets: valid.filter(t => t.is_used),
+      expiredTickets: valid.filter(t => !t.is_used && isDatePast(t.event.start_date)),
     };
   }, [tickets]);
+
 
   const copyTicketId = (ticketId: string) => {
     navigator.clipboard.writeText(ticketId);
@@ -115,7 +137,7 @@ const MyTickets = () => {
     if (ticket.is_used) {
       return <Badge variant="secondary"><CheckCircle className="w-3 h-3 mr-1" /> Used</Badge>;
     }
-    if (isPast(new Date(ticket.event.start_date))) {
+    if (isDatePast(ticket.event?.start_date)) {
       return <Badge variant="outline"><Clock className="w-3 h-3 mr-1" /> Expired</Badge>;
     }
     return <Badge className="bg-green-600"><Shield className="w-3 h-3 mr-1" /> Valid</Badge>;
@@ -136,7 +158,8 @@ const MyTickets = () => {
   }
 
   const TicketCard = ({ ticket }: { ticket: TicketWithDetails }) => {
-    const isExpired = isPast(new Date(ticket.event.start_date));
+    if (!ticket?.event) return null;
+    const isExpired = isDatePast(ticket.event.start_date);
     const isValid = !ticket.is_used && !isExpired && !ticket.abuse_flag;
 
     return (
@@ -154,9 +177,10 @@ const MyTickets = () => {
                   </Link>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                     <Calendar className="w-4 h-4 flex-shrink-0" />
-                    {format(new Date(ticket.event.start_date), "EEE, MMM d 'at' h:mm a")}
+                    {safeFormat(ticket.event.start_date, "EEE, MMM d 'at' h:mm a")}
                   </div>
                   {ticket.event.venue_name && (
+
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <MapPin className="w-4 h-4 flex-shrink-0" />
                       <span className="truncate">{ticket.event.venue_name}</span>
@@ -188,7 +212,7 @@ const MyTickets = () => {
               {ticket.is_used && ticket.used_at && (
                 <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 p-2 rounded">
                   <CheckCircle className="w-3 h-3" />
-                  Checked in {format(new Date(ticket.used_at), "MMM d 'at' h:mm a")}
+                  Checked in {safeFormat(ticket.used_at, "MMM d 'at' h:mm a", "recently")}
                   {ticket.verification_method && (
                     <Badge variant="outline" className="text-[10px] ml-auto">
                       via {ticket.verification_method}
@@ -336,19 +360,19 @@ const MyTickets = () => {
                         <div className="flex-1 p-4 sm:p-6 space-y-3">
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex-1 min-w-0">
-                              <Link to={`/events/${reg.event.id}`}>
+                              <Link to={`/events/${reg.event?.id ?? reg.event_id}`}>
                                 <h3 className="font-display font-bold text-lg hover:text-primary transition-colors truncate">
-                                  {reg.event.title}
+                                  {reg.event?.title ?? "Event"}
                                 </h3>
                               </Link>
                               <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                                 <Calendar className="w-4 h-4 flex-shrink-0" />
-                                {format(new Date(reg.event.start_date), "EEE, MMM d 'at' h:mm a")}
+                                {safeFormat(reg.event?.start_date, "EEE, MMM d 'at' h:mm a")}
                               </div>
-                              {reg.event.venue_name && (
+                              {reg.event?.venue_name && (
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                   <MapPin className="w-4 h-4 flex-shrink-0" />
-                                  <span className="truncate">{reg.event.venue_name}</span>
+                                  <span className="truncate">{reg.event?.venue_name}</span>
                                 </div>
                               )}
                             </div>
@@ -373,7 +397,7 @@ const MyTickets = () => {
                                   <p className="text-sm text-muted-foreground mt-1">
                                     Your registration was not approved. You can try registering again.
                                   </p>
-                                  <Link to={`/events/${reg.event.id}`}>
+                                  <Link to={`/events/${reg.event?.id ?? reg.event_id}`}>
                                     <Button variant="outline" size="sm" className="mt-3 gap-2">
                                       <RefreshCw className="w-4 h-4" />
                                       Try Again
@@ -397,7 +421,7 @@ const MyTickets = () => {
                           )}
 
                           <p className="text-xs text-muted-foreground">
-                            Submitted on {format(new Date(reg.created_at), "MMM d, yyyy 'at' h:mm a")}
+                            Submitted on {safeFormat(reg.created_at, "MMM d, yyyy 'at' h:mm a", "recently")}
                           </p>
                         </div>
 
