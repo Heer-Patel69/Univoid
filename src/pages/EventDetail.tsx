@@ -153,8 +153,35 @@ const EventDetail = () => {
     queryKey: ["registration", event?.id, user?.id],
     queryFn: () => checkUserRegistration(event!.id, user!.id),
     enabled: !!event?.id && !!user,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 10 * 1000,
+    refetchOnWindowFocus: true,
   });
+
+  // Live-update registration status when the organizer approves/rejects
+  useEffect(() => {
+    if (!event?.id || !user?.id) return;
+    const channel = supabase
+      .channel(`event-registration-${event.id}-${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "event_registrations",
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["registration", event.id, user.id] });
+          queryClient.invalidateQueries({ queryKey: ["my-tickets", user.id] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [event?.id, user?.id, queryClient]);
+
 
   // Auto-open registration dialog after OAuth redirect from event page
   useEffect(() => {
