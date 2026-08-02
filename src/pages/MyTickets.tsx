@@ -113,13 +113,17 @@ const MyTickets = () => {
   // Categorize tickets
   const { upcomingTickets, usedTickets, expiredTickets } = useMemo(() => {
     if (!tickets) return { upcomingTickets: [], usedTickets: [], expiredTickets: [] };
-    
+
+    // Skip tickets whose event is missing (deleted/unpublished) to avoid render crashes
+    const valid = tickets.filter(t => !!t && !!t.event);
+
     return {
-      upcomingTickets: tickets.filter(t => !t.is_used && !isPast(new Date(t.event.start_date))),
-      usedTickets: tickets.filter(t => t.is_used),
-      expiredTickets: tickets.filter(t => !t.is_used && isPast(new Date(t.event.start_date))),
+      upcomingTickets: valid.filter(t => !t.is_used && !isDatePast(t.event.start_date)),
+      usedTickets: valid.filter(t => t.is_used),
+      expiredTickets: valid.filter(t => !t.is_used && isDatePast(t.event.start_date)),
     };
   }, [tickets]);
+
 
   const copyTicketId = (ticketId: string) => {
     navigator.clipboard.writeText(ticketId);
