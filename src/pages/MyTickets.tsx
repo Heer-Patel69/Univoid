@@ -212,7 +212,7 @@ const MyTickets = () => {
               {ticket.is_used && ticket.used_at && (
                 <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 p-2 rounded">
                   <CheckCircle className="w-3 h-3" />
-                  Checked in {format(new Date(ticket.used_at), "MMM d 'at' h:mm a")}
+                  Checked in {safeFormat(ticket.used_at, "MMM d 'at' h:mm a", "recently")}
                   {ticket.verification_method && (
                     <Badge variant="outline" className="text-[10px] ml-auto">
                       via {ticket.verification_method}
@@ -360,19 +360,19 @@ const MyTickets = () => {
                         <div className="flex-1 p-4 sm:p-6 space-y-3">
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex-1 min-w-0">
-                              <Link to={`/events/${reg.event.id}`}>
+                              <Link to={`/events/${reg.event?.id ?? reg.event_id}`}>
                                 <h3 className="font-display font-bold text-lg hover:text-primary transition-colors truncate">
-                                  {reg.event.title}
+                                  {reg.event?.title ?? "Event"}
                                 </h3>
                               </Link>
                               <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                                 <Calendar className="w-4 h-4 flex-shrink-0" />
-                                {format(new Date(reg.event.start_date), "EEE, MMM d 'at' h:mm a")}
+                                {safeFormat(reg.event?.start_date, "EEE, MMM d 'at' h:mm a")}
                               </div>
-                              {reg.event.venue_name && (
+                              {reg.event?.venue_name && (
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                   <MapPin className="w-4 h-4 flex-shrink-0" />
-                                  <span className="truncate">{reg.event.venue_name}</span>
+                                  <span className="truncate">{reg.event?.venue_name}</span>
                                 </div>
                               )}
                             </div>
@@ -397,7 +397,7 @@ const MyTickets = () => {
                                   <p className="text-sm text-muted-foreground mt-1">
                                     Your registration was not approved. You can try registering again.
                                   </p>
-                                  <Link to={`/events/${reg.event.id}`}>
+                                  <Link to={`/events/${reg.event?.id ?? reg.event_id}`}>
                                     <Button variant="outline" size="sm" className="mt-3 gap-2">
                                       <RefreshCw className="w-4 h-4" />
                                       Try Again
@@ -421,7 +421,7 @@ const MyTickets = () => {
                           )}
 
                           <p className="text-xs text-muted-foreground">
-                            Submitted on {format(new Date(reg.created_at), "MMM d, yyyy 'at' h:mm a")}
+                            Submitted on {safeFormat(reg.created_at, "MMM d, yyyy 'at' h:mm a", "recently")}
                           </p>
                         </div>
 
