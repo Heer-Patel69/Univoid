@@ -158,7 +158,8 @@ const MyTickets = () => {
   }
 
   const TicketCard = ({ ticket }: { ticket: TicketWithDetails }) => {
-    const isExpired = isPast(new Date(ticket.event.start_date));
+    if (!ticket?.event) return null;
+    const isExpired = isDatePast(ticket.event.start_date);
     const isValid = !ticket.is_used && !isExpired && !ticket.abuse_flag;
 
     return (
@@ -176,9 +177,10 @@ const MyTickets = () => {
                   </Link>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                     <Calendar className="w-4 h-4 flex-shrink-0" />
-                    {format(new Date(ticket.event.start_date), "EEE, MMM d 'at' h:mm a")}
+                    {safeFormat(ticket.event.start_date, "EEE, MMM d 'at' h:mm a")}
                   </div>
                   {ticket.event.venue_name && (
+
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <MapPin className="w-4 h-4 flex-shrink-0" />
                       <span className="truncate">{ticket.event.venue_name}</span>
