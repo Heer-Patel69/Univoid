@@ -109,11 +109,11 @@ export function useRegistration(options: UseRegistrationOptions) {
         // Show appropriate toast with action to view ticket
         if (result.already_registered) {
           toast.info(result.message, {
-            action: {
-              label: 'View Ticket',
-              onClick: () => navigate('/my-tickets'),
-            },
-          });
+              action: {
+                label: 'View Ticket',
+                onClick: () => navigate('/my-events'),
+              },
+            });
         } else {
           toast.success(isPaidEvent 
             ? 'Registration submitted! Payment pending verification.' 
@@ -121,7 +121,7 @@ export function useRegistration(options: UseRegistrationOptions) {
             {
               action: {
                 label: 'View Ticket',
-                onClick: () => navigate('/my-tickets'),
+                onClick: () => navigate('/my-events'),
               },
             }
           );
