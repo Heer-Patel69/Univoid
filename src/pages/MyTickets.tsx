@@ -29,8 +29,26 @@ interface PendingRegistration {
     start_date: string;
     venue_name: string | null;
     flyer_url: string | null;
-  };
+  } | null;
 }
+
+// Safe date helpers — never throw on missing/invalid dates
+const safeDate = (value?: string | null): Date | null => {
+  if (!value) return null;
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? null : d;
+};
+
+const safeFormat = (value: string | null | undefined, pattern: string, fallback = "Date TBA") => {
+  const d = safeDate(value);
+  return d ? format(d, pattern) : fallback;
+};
+
+const isDatePast = (value?: string | null) => {
+  const d = safeDate(value);
+  return d ? isPast(d) : false;
+};
+
 
 const MyTickets = () => {
   const { user } = useAuth();
