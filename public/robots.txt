@@ -47,8 +47,10 @@ Disallow: /check-in
 Disallow: /checkin
 Disallow: /fast-register
 
-# Primary sitemap (dynamic, includes all indexed content)
+# Primary sitemap index (references all sitemaps)
 Sitemap: https://univoid.tech/sitemap-index.xml
+# Direct sitemap fallback (static pages; always available)
+Sitemap: https://univoid.tech/sitemap.xml
 
 # Allow crawling of all static assets
 Allow: /*.js$

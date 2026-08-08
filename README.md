@@ -45,6 +45,18 @@ UniVoid is a student-first platform for Indian college students. Access study ma
 - **Preview**: `npm run preview`
 - **Lint**: `npm run lint`
 
+## Sitemap
+
+The website sitemap is served from the following URLs:
+
+| File | URL |
+|------|-----|
+| Sitemap (static public pages) | https://univoid.tech/sitemap.xml |
+| Sitemap index | https://univoid.tech/sitemap-index.xml |
+
+Submit `https://univoid.tech/sitemap.xml` to Google Search Console under
+**Sitemaps** to help Google discover and index all public pages.
+
 ## License
 
 All rights reserved.
